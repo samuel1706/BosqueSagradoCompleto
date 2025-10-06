@@ -1,0 +1,84 @@
+/* src/components/Sidebar.css */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: linear-gradient(180deg, #ffffff, #679750); /* Café pastel claro */
+  padding: 20px 10px;
+  box-shadow: 3px 0 10px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.logo img {
+  width: 90px;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #c9cc0a;
+}
+
+.menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu li {
+  margin-bottom: 12px;
+}
+
+.menu a,
+.submenu-toggle {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-radius: 10px;
+  background-color: #F7F4EA; /* Fondo claro */
+  color: #2E5939; /* Verde vivo bosque */
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.menu a:hover,
+.submenu-toggle:hover {
+  background: linear-gradient(90deg, #67d630, #95d34e); /* Verde más vivo y fresco */
+  color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: translateX(4px);
+}
+
+.submenu {
+  list-style: none;
+  padding-left: 20px;
+  margin-top: 5px;
+}
+
+.submenu li {
+  margin-bottom: 6px;
+}
+
+.submenu a {
+  background-color: rgb(230, 250, 230); /* Dorado clarito pastel */
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: block;
+  font-size: 0.9rem;
+  color: #2E5939;
+  transition: all 0.3s ease;
+}
+
+.submenu a:hover {
+  background: linear-gradient(90deg, #367417, #547929); /* Dorado más vivo */
+  color: #fff;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
