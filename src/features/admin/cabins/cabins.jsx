@@ -1,5 +1,5 @@
 // src/components/Cabins.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaChair, FaCheck, FaInfoCircle, FaSearch } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaChair, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaUsers } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 
@@ -89,7 +89,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -222,6 +222,73 @@ const warningValidationStyle = {
 };
 
 // ===============================================
+// ESTILOS PARA IMÁGENES
+// ===============================================
+const imageUploadStyle = {
+  border: '2px dashed #679750',
+  borderRadius: '10px',
+  padding: '20px',
+  textAlign: 'center',
+  backgroundColor: '#F7F4EA',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  marginBottom: '15px'
+};
+
+const imagePreviewContainerStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+  gap: '10px',
+  marginTop: '15px'
+};
+
+const imagePreviewStyle = {
+  position: 'relative',
+  borderRadius: '8px',
+  overflow: 'hidden',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+const imageStyle = {
+  width: '100%',
+  height: '100px',
+  objectFit: 'cover',
+  display: 'block'
+};
+
+const imageRemoveButtonStyle = {
+  position: 'absolute',
+  top: '5px',
+  right: '5px',
+  background: 'rgba(229, 115, 115, 0.9)',
+  color: 'white',
+  border: 'none',
+  borderRadius: '50%',
+  width: '24px',
+  height: '24px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '12px'
+};
+
+const imageGalleryStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+  gap: '15px',
+  marginTop: '15px'
+};
+
+const galleryImageStyle = {
+  width: '100%',
+  height: '120px',
+  objectFit: 'cover',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+// ===============================================
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
@@ -262,6 +329,17 @@ const VALIDATION_RULES = {
     errorMessages: {
       required: "Debe seleccionar una temporada."
     }
+  },
+  cantidadPersonas: {
+    min: 1,
+    max: 20,
+    required: true,
+    errorMessages: {
+      required: "La cantidad de personas es obligatoria.",
+      min: "La cantidad mínima es 1 persona.",
+      max: "La cantidad máxima es 20 personas.",
+      invalid: "La cantidad debe ser un número entero válido."
+    }
   }
 };
 
@@ -273,7 +351,8 @@ const API_SEDES = "http://localhost:5255/api/Sede";
 const API_TEMPORADAS = "http://localhost:5255/api/Temporada";
 const API_COMODIDADES = "http://localhost:5255/api/Comodidades";
 const API_CABANA_COMODIDADES = "http://localhost:5255/api/CabanaPorComodidades";
-const API_RESERVAS = "http://localhost:5255/api/Reservas";
+const API_RESERVAS = "http://localhost:5255/api/Reserva";
+const API_IMAGENES = "http://localhost:5255/api/ImgCabana";
 
 const tiposCabana = ["Familiar", "Pareja", "Individual", "Lujo", "Económica"];
 
@@ -297,7 +376,10 @@ const FormField = ({
   disabled = false,
   maxLength,
   placeholder,
-  showCharCount = false
+  showCharCount = false,
+  min,
+  max,
+  step
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
@@ -314,6 +396,12 @@ const FormField = ({
     if (name === 'nombre') {
       // Solo letras y espacios
       filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    } else if (name === 'cantidadPersonas') {
+      // Solo números enteros positivos
+      filteredValue = value.replace(/[^0-9]/g, "");
+      if (filteredValue && parseInt(filteredValue) > (max || 20)) {
+        filteredValue = max || "20";
+      }
     } else {
       filteredValue = value;
     }
@@ -399,6 +487,9 @@ const FormField = ({
             disabled={disabled}
             maxLength={maxLength}
             placeholder={placeholder}
+            min={min}
+            max={max}
+            step={step}
           />
           {showCharCount && maxLength && (
             <div style={{
@@ -427,6 +518,7 @@ const Cabins = () => {
   const [comodidades, setComodidades] = useState([]);
   const [cabanaComodidades, setCabanaComodidades] = useState([]);
   const [reservas, setReservas] = useState([]);
+  const [imagenes, setImagenes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -447,6 +539,7 @@ const Cabins = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const [newCabin, setNewCabin] = useState({
     nombre: "",
@@ -454,8 +547,11 @@ const Cabins = () => {
     estado: true,
     idTemporada: "",
     idSede: "",
+    cantidadPersonas: 2, // Valor por defecto
     comodidadesSeleccionadas: []
   });
+
+  const [imagenesSeleccionadas, setImagenesSeleccionadas] = useState([]);
 
   // ===============================================
   // EFECTOS
@@ -467,6 +563,7 @@ const Cabins = () => {
     fetchComodidades();
     fetchCabanaComodidades();
     fetchReservas();
+    fetchImagenes();
   }, []);
 
   // Validar formulario en tiempo real
@@ -476,6 +573,7 @@ const Cabins = () => {
       validateField('tipoCabana', newCabin.tipoCabana);
       validateField('idSede', newCabin.idSede);
       validateField('idTemporada', newCabin.idTemporada);
+      validateField('cantidadPersonas', newCabin.cantidadPersonas);
     }
   }, [newCabin, showForm]);
 
@@ -574,6 +672,27 @@ const Cabins = () => {
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
+    // Validaciones numéricas para cantidadPersonas
+    else if (fieldName === 'cantidadPersonas' && trimmedValue) {
+      const numericValue = parseInt(trimmedValue);
+      
+      if (isNaN(numericValue)) {
+        error = rules.errorMessages.invalid;
+      } else if (rules.min !== undefined && numericValue < rules.min) {
+        error = rules.errorMessages.min;
+      } else if (rules.max !== undefined && numericValue > rules.max) {
+        error = rules.errorMessages.max;
+      } else {
+        success = "Cantidad de personas válida.";
+        
+        // Advertencias específicas
+        if (numericValue > 10) {
+          warning = "Esta cabaña tiene capacidad para muchas personas. Verifique que sea correcto.";
+        } else if (numericValue === 1 && newCabin.tipoCabana === "Familiar") {
+          warning = "Las cabañas familiares suelen tener capacidad para más de 1 persona.";
+        }
+      }
+    }
     else if (trimmedValue) {
       success = `${fieldName === 'nombre' ? 'Nombre' : fieldName === 'tipoCabana' ? 'Tipo' : fieldName === 'idSede' ? 'Sede' : 'Temporada'} válido.`;
       
@@ -605,8 +724,9 @@ const Cabins = () => {
     const tipoValid = validateField('tipoCabana', newCabin.tipoCabana);
     const sedeValid = validateField('idSede', newCabin.idSede);
     const temporadaValid = validateField('idTemporada', newCabin.idTemporada);
+    const cantidadPersonasValid = validateField('cantidadPersonas', newCabin.cantidadPersonas);
 
-    const isValid = nombreValid && tipoValid && sedeValid && temporadaValid;
+    const isValid = nombreValid && tipoValid && sedeValid && temporadaValid && cantidadPersonasValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -727,6 +847,18 @@ const Cabins = () => {
     }
   };
 
+  const fetchImagenes = async () => {
+    try {
+      const res = await axios.get(API_IMAGENES, { timeout: 10000 });
+      
+      if (Array.isArray(res.data)) {
+        setImagenes(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener imágenes:", error);
+    }
+  };
+
   // Función para verificar si una cabaña tiene reservas activas
   const tieneReservasActivas = (cabanaId) => {
     return reservas.some(reserva => 
@@ -734,6 +866,99 @@ const Cabins = () => {
       reserva.estado !== 'Cancelada' && 
       reserva.estado !== 'Finalizada'
     );
+  };
+
+  // ===============================================
+  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // ===============================================
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    
+    // Validar tipos de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+    
+    if (invalidFiles.length > 0) {
+      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB por imagen)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const oversizedFiles = files.filter(file => file.size > maxSize);
+    
+    if (oversizedFiles.length > 0) {
+      displayAlert("Algunas imágenes son demasiado grandes. El tamaño máximo por imagen es 5MB.", "error");
+      return;
+    }
+
+    // Crear URLs para previsualización
+    const newImages = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      descripcion: `Imagen de ${newCabin.nombre || 'cabaña'}`,
+      isNew: true
+    }));
+
+    setImagenesSeleccionadas(prev => [...prev, ...newImages]);
+    e.target.value = ''; // Reset input
+  };
+
+  const removeImage = (index) => {
+    setImagenesSeleccionadas(prev => {
+      const newImages = [...prev];
+      // Liberar URL de objeto si es una imagen nueva
+      if (newImages[index].isNew) {
+        URL.revokeObjectURL(newImages[index].preview);
+      }
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
+
+  const uploadImagesToServer = async (cabanaId) => {
+    if (imagenesSeleccionadas.length === 0) return;
+
+    setUploadingImages(true);
+    
+    try {
+      for (const imagen of imagenesSeleccionadas) {
+        if (imagen.isNew) {
+          // Para imágenes nuevas, necesitarías enviar el archivo
+          // Aquí asumimos que la API acepta base64 o URLs
+          const formData = new FormData();
+          formData.append('file', imagen.file);
+          formData.append('idCabana', cabanaId);
+          formData.append('descripcion', imagen.descripcion);
+
+          await axios.post(API_IMAGENES, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error al subir imágenes:", error);
+      throw error;
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const deleteImage = async (imageId) => {
+    try {
+      await axios.delete(`${API_IMAGENES}/${imageId}`);
+      await fetchImagenes();
+      displayAlert("Imagen eliminada exitosamente", "success");
+    } catch (error) {
+      console.error("Error al eliminar imagen:", error);
+      handleApiError(error, "eliminar la imagen");
+    }
+  };
+
+  const getImagenesPorCabana = (cabanaId) => {
+    return imagenes.filter(img => img.idCabana === cabanaId);
   };
 
   const handleAddCabin = async (e) => {
@@ -755,7 +980,8 @@ const Cabins = () => {
       const cabinData = {
         ...newCabin,
         idTemporada: parseInt(newCabin.idTemporada),
-        idSede: parseInt(newCabin.idSede)
+        idSede: parseInt(newCabin.idSede),
+        cantidadPersonas: parseInt(newCabin.cantidadPersonas) // Asegurar que sea número
       };
 
       let cabanaId;
@@ -774,10 +1000,17 @@ const Cabins = () => {
         displayAlert("Cabaña agregada exitosamente.", "success");
       }
 
+      // Manejar comodidades
       await handleComodidades(cabanaId);
+      
+      // Manejar imágenes
+      if (imagenesSeleccionadas.length > 0) {
+        await uploadImagesToServer(cabanaId);
+      }
       
       await fetchCabins();
       await fetchCabanaComodidades();
+      await fetchImagenes();
       closeForm();
     } catch (error) {
       console.error("Error al guardar cabaña:", error);
@@ -844,19 +1077,26 @@ const Cabins = () => {
 
       setLoading(true);
       try {
-        // Primero eliminar las relaciones con comodidades
+        // Primero eliminar las imágenes asociadas
+        const imagenesCabin = imagenes.filter(img => img.idCabana === cabinToDelete.idCabana);
+        for (const imagen of imagenesCabin) {
+          await axios.delete(`${API_IMAGENES}/${imagen.idImagen}`);
+        }
+
+        // Luego eliminar las relaciones con comodidades
         const relacionesCabin = cabanaComodidades.filter(cc => cc.idCabana === cabinToDelete.idCabana);
         for (const relacion of relacionesCabin) {
           await axios.delete(`${API_CABANA_COMODIDADES}/${relacion.idCabanaComodidades}`);
           await actualizarCantidadComodidad(relacion.idComodidades, 1);
         }
 
-        // Luego eliminar la cabaña
+        // Finalmente eliminar la cabaña
         await axios.delete(`${API_CABANAS}/${cabinToDelete.idCabana}`);
         displayAlert("Cabaña eliminada exitosamente.", "success");
         await fetchCabins();
         await fetchCabanaComodidades();
         await fetchComodidades();
+        await fetchImagenes();
       } catch (error) {
         console.error("Error al eliminar cabaña:", error);
         
@@ -942,12 +1182,14 @@ const Cabins = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setImagenesSeleccionadas([]);
     setNewCabin({
       nombre: "",
       tipoCabana: "Familiar",
       estado: true,
       idTemporada: temporadas.length > 0 ? temporadas[0].idTemporada.toString() : "",
       idSede: sedes.length > 0 ? sedes[0].idSede.toString() : "",
+      cantidadPersonas: 2, // Reset a valor por defecto
       comodidadesSeleccionadas: []
     });
   };
@@ -987,12 +1229,21 @@ const Cabins = () => {
       .filter(cc => cc.idCabana === cabin.idCabana)
       .map(cc => cc.idComodidades.toString());
 
+    // Cargar imágenes existentes de la cabaña
+    const imagenesExistentes = getImagenesPorCabana(cabin.idCabana).map(img => ({
+      ...img,
+      preview: img.rutaImagen,
+      isNew: false
+    }));
+
     setNewCabin({
       ...cabin,
-      idTemporada: cabin.idTemporada.toString(),
-      idSede: cabin.idSede.toString(),
+      idTemporada: cabin.idTemporada ? cabin.idTemporada.toString() : (temporadas.length > 0 ? temporadas[0].idTemporada.toString() : ""),
+      idSede: cabin.idSede ? cabin.idSede.toString() : (sedes.length > 0 ? sedes[0].idSede.toString() : ""),
+      cantidadPersonas: cabin.cantidadPersonas || 2, // Incluir cantidad de personas
       comodidadesSeleccionadas: comodidadesActuales
     });
+    setImagenesSeleccionadas(imagenesExistentes);
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
@@ -1149,12 +1400,14 @@ const Cabins = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
+            setImagenesSeleccionadas([]);
             setNewCabin({
               nombre: "",
               tipoCabana: "Familiar",
               estado: true,
               idTemporada: temporadas.length > 0 ? temporadas[0].idTemporada.toString() : "",
               idSede: sedes.length > 0 ? sedes[0].idSede.toString() : "",
+              cantidadPersonas: 2, // Valor por defecto al crear nueva cabaña
               comodidadesSeleccionadas: []
             });
           }}
@@ -1213,11 +1466,10 @@ const Cabins = () => {
         </div>
       </div>
 
-      {/* Resto del código (formulario, modales, tabla) se mantiene igual */}
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 700 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>
                 {isEditing ? "Editar Cabaña" : "Nueva Cabaña"}
@@ -1238,6 +1490,7 @@ const Cabins = () => {
             </div>
             
             <form onSubmit={handleAddCabin}>
+              {/* Primera fila: Nombre */}
               <FormField
                 label="Nombre de la Cabaña"
                 name="nombre"
@@ -1253,7 +1506,14 @@ const Cabins = () => {
                 placeholder="Ej: Mykonos, Paraíso, Cabaña Familiar"
               />
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              {/* Segunda fila: Tipo y Capacidad en grid */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '15px', 
+                marginBottom: '15px',
+                alignItems: 'start'
+              }}>
                 <FormField
                   label="Tipo de Cabaña"
                   name="tipoCabana"
@@ -1268,6 +1528,37 @@ const Cabins = () => {
                   disabled={loading}
                 />
                 
+                <FormField
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaUsers />
+                      Capacidad de Personas
+                    </div>
+                  }
+                  name="cantidadPersonas"
+                  type="number"
+                  value={newCabin.cantidadPersonas}
+                  onChange={handleInputChange}
+                  error={formErrors.cantidadPersonas}
+                  success={formSuccess.cantidadPersonas}
+                  warning={formWarnings.cantidadPersonas}
+                  required={true}
+                  disabled={loading}
+                  min={VALIDATION_RULES.cantidadPersonas.min}
+                  max={VALIDATION_RULES.cantidadPersonas.max}
+                  step="1"
+                  placeholder="Ej: 2, 4, 6..."
+                />
+              </div>
+
+              {/* Tercera fila: Sede y Temporada en grid */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '15px', 
+                marginBottom: '15px',
+                alignItems: 'start'
+              }}>
                 <FormField
                   label="Sede"
                   name="idSede"
@@ -1284,24 +1575,131 @@ const Cabins = () => {
                   required={true}
                   disabled={loadingSedes || sedes.length === 0}
                 />
+
+                <FormField
+                  label="Temporada"
+                  name="idTemporada"
+                  type="select"
+                  value={newCabin.idTemporada}
+                  onChange={handleInputChange}
+                  error={formErrors.idTemporada}
+                  success={formSuccess.idTemporada}
+                  warning={formWarnings.idTemporada}
+                  options={temporadas.map(temp => ({ 
+                    value: temp.idTemporada.toString(), 
+                    label: `${temp.nombreTemporada} ($${temp.precio})` 
+                  }))}
+                  required={true}
+                  disabled={loadingTemporadas || temporadas.length === 0}
+                />
               </div>
 
-              <FormField
-                label="Temporada"
-                name="idTemporada"
-                type="select"
-                value={newCabin.idTemporada}
-                onChange={handleInputChange}
-                error={formErrors.idTemporada}
-                success={formSuccess.idTemporada}
-                warning={formWarnings.idTemporada}
-                options={temporadas.map(temp => ({ 
-                  value: temp.idTemporada.toString(), 
-                  label: `${temp.nombreTemporada} ($${temp.precio})` 
-                }))}
-                required={true}
-                disabled={loadingTemporadas || temporadas.length === 0}
-              />
+              {/* Gestión de Imágenes */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>
+                  Imágenes de la Cabaña
+                  <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                    (Puedes subir múltiples imágenes)
+                  </span>
+                </label>
+                
+                {/* Área de subida de imágenes */}
+                <div 
+                  style={imageUploadStyle}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.backgroundColor = '#E8F5E8';
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.backgroundColor = '#F7F4EA';
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.backgroundColor = '#F7F4EA';
+                    handleImageUpload({ target: { files: e.dataTransfer.files } });
+                  }}
+                >
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                    id="image-upload"
+                  />
+                  <label 
+                    htmlFor="image-upload"
+                    style={{ 
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px'
+                    }}
+                  >
+                    <FaUpload size={30} color="#679750" />
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#2E5939', marginBottom: '5px' }}>
+                        Haz clic o arrastra imágenes aquí
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#679750' }}>
+                        Formatos: JPEG, PNG, GIF, WebP (Máx. 5MB por imagen)
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Previsualización de imágenes */}
+                {imagenesSeleccionadas.length > 0 && (
+                  <div>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '10px'
+                    }}>
+                      <span style={{ fontWeight: '600', color: '#2E5939' }}>
+                        Imágenes seleccionadas ({imagenesSeleccionadas.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setImagenesSeleccionadas([])}
+                        style={{
+                          background: '#e57373',
+                          color: 'white',
+                          border: 'none',
+                          padding: '5px 10px',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Eliminar todas
+                      </button>
+                    </div>
+                    <div style={imagePreviewContainerStyle}>
+                      {imagenesSeleccionadas.map((imagen, index) => (
+                        <div key={index} style={imagePreviewStyle}>
+                          <img 
+                            src={imagen.preview} 
+                            alt={`Preview ${index + 1}`}
+                            style={imageStyle}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            style={imageRemoveButtonStyle}
+                            title="Eliminar imagen"
+                          >
+                            <FaTimes size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Selección de Comodidades */}
               <div style={{ marginBottom: '20px' }}>
@@ -1368,45 +1766,47 @@ const Cabins = () => {
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
                   type="submit"
-                  disabled={loading || isSubmitting}
+                  disabled={loading || isSubmitting || uploadingImages}
                   style={{
-                    backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting || uploadingImages) ? "#ccc" : "#2E5939",
                     color: "#fff",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting || uploadingImages) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
                   }}
                   onMouseOver={(e) => {
-                    if (!loading && !isSubmitting) {
+                    if (!loading && !isSubmitting && !uploadingImages) {
                       e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
                       e.target.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (!loading && !isSubmitting) {
+                    if (!loading && !isSubmitting && !uploadingImages) {
                       e.target.style.background = "#2E5939";
                       e.target.style.transform = "translateY(0)";
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Cabaña
+                  {uploadingImages ? "Subiendo imágenes..." : 
+                   loading ? "Guardando..." : 
+                   (isEditing ? "Actualizar" : "Guardar")} Cabaña
                 </button>
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={loading || isSubmitting}
+                  disabled={loading || isSubmitting || uploadingImages}
                   style={{
                     backgroundColor: "#ccc",
                     color: "#333",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting || uploadingImages) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
@@ -1423,7 +1823,7 @@ const Cabins = () => {
       {/* Modal de detalles */}
       {showDetails && currentCabin && (
         <div style={modalOverlayStyle}>
-          <div style={detailsModalStyle}>
+          <div style={{ ...detailsModalStyle, maxWidth: 800 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Cabaña</h2>
               <button
@@ -1464,6 +1864,61 @@ const Cabins = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Temporada</div>
                 <div style={detailValueStyle}>{getTemporadaNombre(currentCabin.idTemporada)}</div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaUsers />
+                    Capacidad
+                  </div>
+                </div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    backgroundColor: '#E8F5E8',
+                    color: '#2E5939',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {currentCabin.cantidadPersonas || 2} persona(s)
+                  </span>
+                </div>
+              </div>
+
+              {/* Galería de imágenes */}
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>
+                  Imágenes
+                  <span style={{ marginLeft: '10px', color: '#679750', fontSize: '0.8rem', fontWeight: 'normal' }}>
+                    ({getImagenesPorCabana(currentCabin.idCabana).length} imágenes)
+                  </span>
+                </div>
+                <div style={detailValueStyle}>
+                  {getImagenesPorCabana(currentCabin.idCabana).length > 0 ? (
+                    <div style={imageGalleryStyle}>
+                      {getImagenesPorCabana(currentCabin.idCabana).map((imagen) => (
+                        <div key={imagen.idImagen} style={imagePreviewStyle}>
+                          <img 
+                            src={imagen.rutaImagen} 
+                            alt={imagen.descripcion}
+                            style={galleryImageStyle}
+                          />
+                          <button
+                            onClick={() => deleteImage(imagen.idImagen)}
+                            style={imageRemoveButtonStyle}
+                            title="Eliminar imagen"
+                          >
+                            <FaTimes size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#999', fontStyle: 'italic' }}>No hay imágenes registradas</span>
+                  )}
+                </div>
               </div>
 
               <div style={detailItemStyle}>
@@ -1538,7 +1993,7 @@ const Cabins = () => {
               ¿Estás seguro de eliminar la cabaña "<strong>{cabinToDelete.nombre}</strong>"?
             </p>
             
-            {/* Advertencia sobre comodidades */}
+            {/* Advertencia sobre comodidades e imágenes */}
             <div style={{ 
               backgroundColor: '#fff3cd', 
               border: '1px solid #ffeaa7',
@@ -1551,7 +2006,7 @@ const Cabins = () => {
                 <strong style={{ color: '#856404' }}>Importante</strong>
               </div>
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Esta acción eliminará permanentemente la cabaña y todas sus relaciones con comodidades.
+                Esta acción eliminará permanentemente la cabaña, todas sus imágenes y relaciones con comodidades.
               </p>
             </div>
 
@@ -1638,6 +2093,8 @@ const Cabins = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Tipo</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Sede</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Temporada</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Capacidad</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Imágenes</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Comodidades</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
@@ -1646,7 +2103,7 @@ const Cabins = () => {
             <tbody>
               {paginatedCabins.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     {cabins.length === 0 ? "No hay cabañas registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
@@ -1673,6 +2130,36 @@ const Cabins = () => {
                     <td style={{ padding: "15px" }}>{cabin.tipoCabana}</td>
                     <td style={{ padding: "15px" }}>{getSedeNombre(cabin.idSede)}</td>
                     <td style={{ padding: "15px", textAlign: "center" }}>{getTemporadaNombre(cabin.idTemporada)}</td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                        <FaUsers color="#679750" />
+                        <span style={{ 
+                          backgroundColor: '#E8F5E8',
+                          color: '#2E5939',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>
+                          {cabin.cantidadPersonas || 2}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                        <FaImage color="#679750" />
+                        <span style={{ 
+                          backgroundColor: '#E8F5E8',
+                          color: '#2E5939',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>
+                          {getImagenesPorCabana(cabin.idCabana).length}
+                        </span>
+                      </div>
+                    </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
                         {getComodidadesPorCabana(cabin.idCabana).slice(0, 3).map((comodidad, index) => (

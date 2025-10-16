@@ -102,19 +102,58 @@ const modalContentStyle = {
   border: "2px solid #679750",
 };
 
+// Estilos mejorados para alertas
 const alertStyle = {
   position: 'fixed',
   top: 20,
   right: 20,
-  backgroundColor: '#2E5939',
-  color: 'white',
   padding: '15px 20px',
   borderRadius: '10px',
-  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
   zIndex: 10000,
   display: 'flex',
   alignItems: 'center',
-  gap: '10px'
+  gap: '12px',
+  fontWeight: '600',
+  fontSize: '16px',
+  minWidth: '300px',
+  maxWidth: '500px',
+  animation: 'slideInRight 0.3s ease-out',
+  borderLeft: '5px solid',
+  backdropFilter: 'blur(10px)',
+};
+
+const alertIconStyle = {
+  fontSize: '20px',
+  flexShrink: 0,
+};
+
+const alertSuccessStyle = {
+  ...alertStyle,
+  backgroundColor: '#d4edda',
+  color: '#155724',
+  borderLeftColor: '#28a745',
+};
+
+const alertErrorStyle = {
+  ...alertStyle,
+  backgroundColor: '#f8d7da',
+  color: '#721c24',
+  borderLeftColor: '#dc3545',
+};
+
+const alertWarningStyle = {
+  ...alertStyle,
+  backgroundColor: '#fff3cd',
+  color: '#856404',
+  borderLeftColor: '#ffc107',
+};
+
+const alertInfoStyle = {
+  ...alertStyle,
+  backgroundColor: '#d1ecf1',
+  color: '#0c5460',
+  borderLeftColor: '#17a2b8',
 };
 
 const detailsModalStyle = {
@@ -140,12 +179,14 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5
+  marginBottom: 5,
+  fontSize: "14px"
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939"
+  color: "#2E5939",
+  fontWeight: "500"
 };
 
 const validationMessageStyle = {
@@ -220,6 +261,12 @@ const VALIDATION_RULES = {
       required: "El número de celular es requerido.",
       exactLength: "El celular debe tener exactamente 10 dígitos.",
       pattern: "El celular debe comenzar con 3 y contener solo números."
+    }
+  },
+  estado: {
+    required: true,
+    errorMessages: {
+      required: "El estado es obligatorio."
     }
   }
 };
@@ -397,7 +444,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Admisede CON VALIDACIONES MEJORADAS
+// COMPONENTE PRINCIPAL Admisede CON ESTADO Y SIN ELIMINAR
 // ===============================================
 const Admisede = () => {
   const [sedes, setSedes] = useState([]);
@@ -406,8 +453,6 @@ const Admisede = () => {
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedSede, setSelectedSede] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [sedeToDelete, setSedeToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -415,6 +460,7 @@ const Admisede = () => {
 
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
+  const [alertType, setAlertType] = useState("success");
   const [formErrors, setFormErrors] = useState({});
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
@@ -423,6 +469,7 @@ const Admisede = () => {
     nombreSede: "",
     ubicacionSede: "",
     celular: "",
+    estado: true
   });
 
   // ===============================================
@@ -438,8 +485,74 @@ const Admisede = () => {
       validateField('nombreSede', newSede.nombreSede);
       validateField('ubicacionSede', newSede.ubicacionSede);
       validateField('celular', newSede.celular);
+      validateField('estado', newSede.estado);
     }
   }, [newSede, showForm]);
+
+  // Efecto para agregar estilos de animación
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // ===============================================
+  // FUNCIONES DE ALERTAS MEJORADAS
+  // ===============================================
+  const displayAlert = (message, type = "success") => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+      setAlertMessage("");
+    }, 5000);
+  };
+
+  const getAlertIcon = (type) => {
+    switch (type) {
+      case "success":
+        return <FaCheck style={alertIconStyle} />;
+      case "error":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "warning":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "info":
+        return <FaInfoCircle style={alertIconStyle} />;
+      default:
+        return <FaInfoCircle style={alertIconStyle} />;
+    }
+  };
+
+  const getAlertStyle = (type) => {
+    switch (type) {
+      case "success":
+        return alertSuccessStyle;
+      case "error":
+        return alertErrorStyle;
+      case "warning":
+        return alertWarningStyle;
+      case "info":
+        return alertInfoStyle;
+      default:
+        return alertSuccessStyle;
+    }
+  };
 
   // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
@@ -452,7 +565,7 @@ const Admisede = () => {
     let success = "";
     let warning = "";
 
-    const trimmedValue = value ? value.trim() : "";
+    const trimmedValue = value ? value.toString().trim() : "";
 
     // Validación de campo requerido
     if (rules.required && !trimmedValue) {
@@ -473,6 +586,10 @@ const Admisede = () => {
     // Validación de patrón
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
+    }
+    // Validación para estado
+    else if (fieldName === 'estado') {
+      success = value ? "Sede activa" : "Sede inactiva";
     }
     // Validación extra para ubicación: debe tener palabra clave y número
     else if (
@@ -535,11 +652,12 @@ const Admisede = () => {
     const nombreValid = validateField('nombreSede', sede.nombreSede);
     const ubicacionValid = validateField('ubicacionSede', sede.ubicacionSede);
     const celularValid = validateField('celular', sede.celular);
+    const estadoValid = validateField('estado', sede.estado);
 
-    const isValid = nombreValid && ubicacionValid && celularValid;
+    const isValid = nombreValid && ubicacionValid && celularValid && estadoValid;
     
     if (!isValid) {
-      displayAlert("❌ Por favor, corrige los errores en el formulario antes de guardar.");
+      displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
       // Scroll al primer error
       setTimeout(() => {
         const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
@@ -587,7 +705,7 @@ const Admisede = () => {
     e.preventDefault();
     
     if (isSubmitting) {
-      displayAlert("⏳ Ya se está procesando una solicitud. Por favor espere.");
+      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
       return;
     }
 
@@ -604,7 +722,8 @@ const Admisede = () => {
       const sedeData = {
         nombreSede: newSede.nombreSede.trim(),
         ubicacionSede: newSede.ubicacionSede.trim(),
-        celular: newSede.celular.trim()
+        celular: newSede.celular.trim(),
+        estado: newSede.estado === "true" || newSede.estado === true
       };
 
       console.log("📤 Enviando datos al servidor:", sedeData);
@@ -623,7 +742,7 @@ const Admisede = () => {
             'Accept': 'application/json'
           }
         });
-        displayAlert("✅ Sede actualizada exitosamente.");
+        displayAlert("Sede actualizada exitosamente.", "success");
       } else {
         // Para crear nueva sede
         console.log("➕ Creando nueva sede:", sedeData);
@@ -633,7 +752,7 @@ const Admisede = () => {
             'Accept': 'application/json'
           }
         });
-        displayAlert("✅ Sede agregada exitosamente.");
+        displayAlert("Sede agregada exitosamente.", "success");
       }
       
       console.log("✅ Respuesta del servidor:", response.data);
@@ -664,11 +783,11 @@ const Admisede = () => {
           }
           
           if (error.response.status === 400) {
-            displayAlert(`❌ Error de validación: ${serverMessage}`);
+            displayAlert(`Error de validación: ${serverMessage}`, "error");
           } else if (error.response.status === 409) {
-            displayAlert(`❌ Conflicto: ${serverMessage}`);
+            displayAlert(`Conflicto: ${serverMessage}`, "error");
           } else {
-            displayAlert(`❌ Error del servidor: ${serverMessage}`);
+            displayAlert(`Error del servidor: ${serverMessage}`, "error");
           }
         }
       } else {
@@ -680,127 +799,59 @@ const Admisede = () => {
     }
   };
 
-  const confirmDelete = async () => {
-    if (sedeToDelete) {
-      setLoading(true);
-      try {
-        await axios.delete(`${API_SEDES}/${sedeToDelete.idSede}`);
-        displayAlert("✅ Sede eliminada exitosamente.");
-        await fetchSedes();
-        
-        // Ajustar la página si es necesario
-        if (paginatedSedes.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        }
-      } catch (error) {
-        console.error("Error al eliminar sede:", error);
-        
-        // Manejo específico para error 409 (Conflict)
-        if (error.response && error.response.status === 409) {
-          displayAlert("❌ No se puede eliminar la sede porque tiene registros asociados (usuarios, reservas, etc.).");
-        } else {
-          handleApiError(error, "eliminar la sede");
-        }
-      } finally {
-        setLoading(false);
-        setSedeToDelete(null);
-        setShowDeleteConfirm(false);
-      }
-    }
-  };
-
   // ===============================================
   // FUNCIONES AUXILIARES MEJORADAS
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
+    let alertType = "error";
     
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-      errorMessage = "❌ Error de conexión. Verifica que el servidor esté ejecutándose.";
+      errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "❌ No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
     } else if (error.response) {
       if (error.response.status === 400) {
-        errorMessage = `❌ Error de validación (400): ${error.response.data?.title || error.response.data?.message || 'Datos inválidos enviados al servidor'}`;
+        errorMessage = `Error de validación (400): ${error.response.data?.title || error.response.data?.message || 'Datos inválidos enviados al servidor'}`;
       } else if (error.response.status === 404) {
-        errorMessage = "❌ Recurso no encontrado (404).";
+        errorMessage = "Recurso no encontrado (404).";
       } else if (error.response.status === 409) {
-        errorMessage = "❌ Conflicto: La sede tiene registros asociados.";
+        errorMessage = "Conflicto: La sede tiene registros asociados.";
       } else if (error.response.status === 500) {
-        errorMessage = "❌ Error interno del servidor (500).";
+        errorMessage = "Error interno del servidor (500).";
       } else {
-        errorMessage = `❌ Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
+        errorMessage = `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
       }
     } else if (error.request) {
-      errorMessage = "❌ No hay respuesta del servidor.";
+      errorMessage = "No hay respuesta del servidor.";
     } else {
-      errorMessage = `❌ Error inesperado: ${error.message}`;
+      errorMessage = `Error inesperado: ${error.message}`;
     }
     
     setError(errorMessage);
     if (!error.response || (error.response.status !== 400 && error.response.status !== 409)) {
-      displayAlert(errorMessage);
+      displayAlert(errorMessage, "error");
     }
   };
 
-  const displayAlert = (message) => {
-    setAlertMessage(message);
-    setShowAlert(true);
-    setTimeout(() => {
-      setShowAlert(false);
-      setAlertMessage("");
-    }, 5000);
-  };
-
-  // Filtrado de sedes basado en el término de búsqueda
-  const filteredSedes = useMemo(() => {
-    if (!searchTerm.trim()) return sedes;
-    
-    return sedes.filter((sede) =>
-      sede.nombreSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sede.ubicacionSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sede.celular?.includes(searchTerm)
-    );
-  }, [sedes, searchTerm]);
-
-  const totalPages = Math.ceil(filteredSedes.length / ITEMS_PER_PAGE);
-
-  const paginatedSedes = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredSedes.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredSedes, currentPage]);
-
-  const handleView = (sede) => {
-    setSelectedSede(sede);
-    setShowDetails(true);
-  };
-
-  const handleEdit = (sede) => {
-    setNewSede({
-      idSede: sede.idSede,
-      nombreSede: sede.nombreSede || "",
-      ubicacionSede: sede.ubicacionSede || "",
-      celular: sede.celular || ""
-    });
-    setIsEditing(true);
-    setShowForm(true);
-    setFormErrors({});
-    setFormSuccess({});
-    setFormWarnings({});
-  };
-
-  const handleDeleteClick = (sede) => {
-    setSedeToDelete(sede);
-    setShowDeleteConfirm(true);
-  };
-
-  const cancelDelete = () => {
-    setSedeToDelete(null);
-    setShowDeleteConfirm(false);
-  };
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  const toggleEstado = async (sede) => {
+    setLoading(true);
+    try {
+      const updatedSede = { 
+        ...sede, 
+        estado: !sede.estado 
+      };
+      await axios.put(`${API_SEDES}/${sede.idSede}`, updatedSede, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      displayAlert(`Sede ${updatedSede.estado ? 'activada' : 'desactivada'} exitosamente.`, "success");
+      await fetchSedes();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      handleApiError(error, "cambiar el estado");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -818,6 +869,7 @@ const Admisede = () => {
       nombreSede: "",
       ubicacionSede: "",
       celular: "",
+      estado: true
     });
     setFormErrors({});
     setFormSuccess({});
@@ -828,6 +880,50 @@ const Admisede = () => {
   const closeDetailsModal = () => {
     setShowDetails(false);
     setSelectedSede(null);
+  };
+
+  const handleView = (sede) => {
+    setSelectedSede(sede);
+    setShowDetails(true);
+  };
+
+  const handleEdit = (sede) => {
+    setNewSede({
+      idSede: sede.idSede,
+      nombreSede: sede.nombreSede || "",
+      ubicacionSede: sede.ubicacionSede || "",
+      celular: sede.celular || "",
+      estado: sede.estado.toString()
+    });
+    setIsEditing(true);
+    setShowForm(true);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
+  };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // ===============================================
+  const filteredSedes = useMemo(() => {
+    if (!searchTerm.trim()) return sedes;
+    
+    return sedes.filter((sede) =>
+      sede.nombreSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sede.ubicacionSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sede.celular?.includes(searchTerm)
+    );
+  }, [sedes, searchTerm]);
+
+  const totalPages = Math.ceil(filteredSedes.length / ITEMS_PER_PAGE);
+
+  const paginatedSedes = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSedes.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredSedes, currentPage]);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   // Función para limpiar búsqueda
@@ -849,20 +945,23 @@ const Admisede = () => {
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
       
-      {/* Alerta */}
+      {/* Alerta Mejorada */}
       {showAlert && (
-        <div style={{
-          ...alertStyle,
-          backgroundColor: alertMessage.includes('❌') ? '#e57373' : 
-                         alertMessage.includes('⚠️') ? '#ff9800' : '#2E5939'
-        }}>
-          {alertMessage.includes('❌') && <FaExclamationTriangle />}
-          {alertMessage.includes('✅') && <FaCheck />}
-          {alertMessage.includes('⚠️') && <FaInfoCircle />}
-          <span>{alertMessage}</span>
+        <div style={getAlertStyle(alertType)}>
+          {getAlertIcon(alertType)}
+          <span style={{ flex: 1 }}>{alertMessage}</span>
           <button 
             onClick={() => setShowAlert(false)}
-            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', marginLeft: '10px' }}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'inherit', 
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center'
+            }}
           >
             <FaTimes />
           </button>
@@ -921,7 +1020,9 @@ const Admisede = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Sedes</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {sedes.length} sedes registradas • {filteredSedes.length} filtradas
+            {sedes.length} sedes registradas • 
+            {sedes.filter(s => s.estado).length} activas • 
+            {filteredSedes.length} filtradas
           </p>
         </div>
         <button
@@ -935,6 +1036,7 @@ const Admisede = () => {
               nombreSede: "",
               ubicacionSede: "",
               celular: "",
+              estado: true
             });
           }}
           style={{
@@ -1116,11 +1218,27 @@ const Admisede = () => {
                 error={formErrors.celular}
                 success={formSuccess.celular}
                 warning={formWarnings.celular}
-                style={{ gridColumn: '1 / -1' }}
                 required={true}
                 disabled={loading}
                 maxLength={VALIDATION_RULES.celular.exactLength}
                 placeholder="10 dígitos, comenzando con 3 (Ej: 3123456789)"
+              />
+
+              <FormField
+                label="Estado de la Sede"
+                name="estado"
+                type="select"
+                value={newSede.estado}
+                onChange={handleChange}
+                error={formErrors.estado}
+                success={formSuccess.estado}
+                warning={formWarnings.estado}
+                options={[
+                  { value: "true", label: "🟢 Activa" },
+                  { value: "false", label: "🔴 Inactiva" }
+                ]}
+                required={true}
+                disabled={loading}
               />
 
               <div style={{ 
@@ -1225,6 +1343,17 @@ const Admisede = () => {
                 <div style={detailLabelStyle}>Celular</div>
                 <div style={detailValueStyle}>{selectedSede.celular}</div>
               </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Estado</div>
+                <div style={{
+                  ...detailValueStyle,
+                  color: selectedSede.estado ? '#4caf50' : '#e57373',
+                  fontWeight: 'bold'
+                }}>
+                  {selectedSede.estado ? '🟢 Activa' : '🔴 Inactiva'}
+                </div>
+              </div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1251,66 +1380,6 @@ const Admisede = () => {
                 }}
               >
                 Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Confirmación de Eliminación */}
-      {showDeleteConfirm && sedeToDelete && (
-        <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
-            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
-            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
-              ¿Estás seguro de eliminar la sede "<strong>{sedeToDelete.nombreSede}</strong>"?
-            </p>
-            <p style={{ marginBottom: 20, color: '#e57373', fontSize: '0.9rem' }}>
-              ⚠️ Nota: Si la sede tiene usuarios o reservas asociadas, no podrá ser eliminada.
-            </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
-              <button
-                onClick={confirmDelete}
-                disabled={loading}
-                style={{
-                  backgroundColor: loading ? "#ccc" : "#e57373",
-                  color: "white",
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: 10,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                }}
-              >
-                {loading ? "Eliminando..." : "Sí, Eliminar"}
-              </button>
-              <button
-                onClick={cancelDelete}
-                disabled={loading}
-                style={{
-                  backgroundColor: loading ? "#ccc" : "#2E5939",
-                  color: "#fff",
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: 10,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "#2E5939";
-                  }
-                }}
-              >
-                Cancelar
               </button>
             </div>
           </div>
@@ -1350,13 +1419,14 @@ const Admisede = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Nombre</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Ubicación</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Celular</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {paginatedSedes.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     {sedes.length === 0 ? "No hay sedes registradas" : "No se encontraron resultados"}
                     {searchTerm && (
                       <div style={{ marginTop: '10px' }}>
@@ -1389,6 +1459,24 @@ const Admisede = () => {
                     </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>{sede.celular}</td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
+                      <button
+                        onClick={() => toggleEstado(sede)}
+                        style={{
+                          cursor: "pointer",
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          border: "none",
+                          backgroundColor: sede.estado ? "#4caf50" : "#e57373",
+                          color: "white",
+                          fontWeight: "600",
+                          fontSize: "12px",
+                          minWidth: "80px"
+                        }}
+                      >
+                        {sede.estado ? "Activa" : "Inactiva"}
+                      </button>
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
                         <button
                           onClick={() => handleView(sede)}
@@ -1404,13 +1492,7 @@ const Admisede = () => {
                         >
                           <FaEdit />
                         </button>
-                        <button
-                          onClick={() => handleDeleteClick(sede)}
-                          style={btnAccion("#fbe9e7", "#e57373")}
-                          title="Eliminar Sede"
-                        >
-                          <FaTrash />
-                        </button>
+                        {/* Botón de eliminar eliminado según requerimiento */}
                       </div>
                     </td>
                   </tr>

@@ -262,6 +262,12 @@ const VALIDATION_RULES = {
       max: "El precio máximo es $10,000,000 COP.",
       invalid: "El precio debe ser un valor numérico válido."
     }
+  },
+  estado: {
+    required: true,
+    errorMessages: {
+      required: "El estado es obligatorio."
+    }
   }
 };
 
@@ -283,6 +289,7 @@ const FormField = ({
   error, 
   success,
   warning,
+  options = [],
   style = {}, 
   required = true, 
   disabled = false,
@@ -293,6 +300,14 @@ const FormField = ({
   max,
   step
 }) => {
+  const finalOptions = useMemo(() => {
+    if (type === "select") {
+      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
+      return [placeholderOption, ...options];
+    }
+    return options;
+  }, [options, type, required]);
+
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
@@ -369,7 +384,26 @@ const FormField = ({
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      {type === "textarea" ? (
+      {type === "select" ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          style={getInputStyle()}
+          required={required}
+          disabled={disabled}
+        >
+          {finalOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : type === "textarea" ? (
         <div>
           <textarea
             name={name}
@@ -431,7 +465,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Gestiservi CON VALIDACIONES MEJORADAS
+// COMPONENTE PRINCIPAL Gestiservi CON VALIDACIONES MEJORADAS Y ESTADO
 // ===============================================
 const Gestiservi = () => {
   const [servicios, setServicios] = useState([]);
@@ -456,7 +490,8 @@ const Gestiservi = () => {
   const [newServicio, setNewServicio] = useState({
     nombreServicio: "",
     precioServicio: "",
-    descripcion: ""
+    descripcion: "",
+    estado: true
   });
 
   // ===============================================
@@ -472,6 +507,7 @@ const Gestiservi = () => {
       validateField('nombreServicio', newServicio.nombreServicio);
       validateField('descripcion', newServicio.descripcion);
       validateField('precioServicio', newServicio.precioServicio);
+      validateField('estado', newServicio.estado);
     }
   }, [newServicio, showForm]);
 
@@ -595,6 +631,10 @@ const Gestiservi = () => {
         }
       }
     }
+    // Validación para estado
+    else if (fieldName === 'estado') {
+      success = value ? "Servicio activo" : "Servicio inactivo";
+    }
     // Validaciones de éxito y advertencia para otros campos
     else if (trimmedValue) {
       success = `${fieldName === 'nombreServicio' ? 'Nombre' : 'Descripción'} válido.`;
@@ -630,8 +670,9 @@ const Gestiservi = () => {
     const nombreValid = validateField('nombreServicio', newServicio.nombreServicio);
     const descripcionValid = validateField('descripcion', newServicio.descripcion);
     const precioValid = validateField('precioServicio', newServicio.precioServicio);
+    const estadoValid = validateField('estado', newServicio.estado);
 
-    const isValid = nombreValid && descripcionValid && precioValid;
+    const isValid = nombreValid && descripcionValid && precioValid && estadoValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -693,7 +734,8 @@ const Gestiservi = () => {
     try {
       const servicioData = {
         ...newServicio,
-        precioServicio: parseFloat(newServicio.precioServicio)
+        precioServicio: parseFloat(newServicio.precioServicio),
+        estado: newServicio.estado === "true" || newServicio.estado === true
       };
 
       if (isEditing) {
@@ -785,6 +827,26 @@ const Gestiservi = () => {
     }));
   };
 
+  const toggleEstado = async (servicio) => {
+    setLoading(true);
+    try {
+      const updatedServicio = { 
+        ...servicio, 
+        estado: !servicio.estado 
+      };
+      await axios.put(`${API_SERVICIOS}/${servicio.idServicio}`, updatedServicio, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      displayAlert(`Servicio ${updatedServicio.estado ? 'activado' : 'desactivado'} exitosamente.`, "success");
+      await fetchServicios();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      handleApiError(error, "cambiar el estado");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
@@ -794,7 +856,8 @@ const Gestiservi = () => {
     setNewServicio({
       nombreServicio: "",
       precioServicio: "",
-      descripcion: ""
+      descripcion: "",
+      estado: true
     });
   };
 
@@ -816,7 +879,9 @@ const Gestiservi = () => {
   const handleEdit = (servicio) => {
     setNewServicio({
       ...servicio,
-      precioServicio: servicio.precioServicio.toString()
+      precioServicio: servicio.precioServicio.toString(),
+      // Asegura que estado sea string "true" o "false"
+      estado: servicio.estado ? "true" : "false"
     });
     setIsEditing(true);
     setShowForm(true);
@@ -942,7 +1007,9 @@ const Gestiservi = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Servicios</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {servicios.length} servicios registrados • Valor total: {formatPrice(servicios.reduce((sum, servicio) => sum + servicio.precioServicio, 0))}
+            {servicios.length} servicios registrados • 
+            {servicios.filter(s => s.estado).length} activos • 
+            Valor total: {formatPrice(servicios.reduce((sum, servicio) => sum + servicio.precioServicio, 0))}
           </p>
         </div>
         <button
@@ -955,7 +1022,8 @@ const Gestiservi = () => {
             setNewServicio({
               nombreServicio: "",
               precioServicio: "",
-              descripcion: ""
+              descripcion: "",
+              estado: true
             });
           }}
           style={{
@@ -1084,7 +1152,6 @@ const Gestiservi = () => {
                 error={formErrors.precioServicio}
                 success={formSuccess.precioServicio}
                 warning={formWarnings.precioServicio}
-                style={{ gridColumn: '1 / -1' }}
                 required={true}
                 disabled={loading}
                 min={VALIDATION_RULES.precioServicio.min}
@@ -1092,6 +1159,8 @@ const Gestiservi = () => {
                 step="100"
                 placeholder="1000"
               />
+
+              
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20, gridColumn: '1 / -1' }}>
                 <button
@@ -1148,7 +1217,6 @@ const Gestiservi = () => {
         </div>
       )}
 
-      {/* Resto del código (Modal de detalles, Modal de Confirmación de Eliminación, Tabla, Paginación) se mantiene similar */}
       {/* Modal de detalles */}
       {showDetails && selectedServicio && (
         <div style={modalOverlayStyle}>
@@ -1189,6 +1257,17 @@ const Gestiservi = () => {
                 <div style={detailLabelStyle}>Precio</div>
                 <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750'}}>
                   {formatPrice(selectedServicio.precioServicio)}
+                </div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Estado</div>
+                <div style={{
+                  ...detailValueStyle,
+                  color: selectedServicio.estado ? '#4caf50' : '#e57373',
+                  fontWeight: 'bold'
+                }}>
+                  {selectedServicio.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
             </div>
@@ -1235,7 +1314,8 @@ const Gestiservi = () => {
                 <strong style={{ color: '#856404' }}>Servicio a eliminar</strong>
               </div>
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Precio: {formatPrice(servicioToDelete.precioServicio)}
+                Precio: {formatPrice(servicioToDelete.precioServicio)} | 
+                Estado: {servicioToDelete.estado ? 'Activo' : 'Inactivo'}
               </p>
             </div>
 
@@ -1321,13 +1401,14 @@ const Gestiservi = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Servicio</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Descripción</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {paginatedServicios.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     {servicios.length === 0 ? "No hay servicios registrados" : "No se encontraron resultados"}
                   </td>
                 </tr>
@@ -1342,6 +1423,24 @@ const Gestiservi = () => {
                     </td>
                     <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
                       {formatPrice(servicio.precioServicio)}
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <button
+                        onClick={() => toggleEstado(servicio)}
+                        style={{
+                          cursor: "pointer",
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          border: "none",
+                          backgroundColor: servicio.estado ? "#4caf50" : "#e57373",
+                          color: "white",
+                          fontWeight: "600",
+                          fontSize: "12px",
+                          minWidth: "80px"
+                        }}
+                      >
+                        {servicio.estado ? "Activo" : "Inactivo"}
+                      </button>
                     </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button

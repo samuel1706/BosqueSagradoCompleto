@@ -48,6 +48,14 @@ const inputErrorStyle = {
   backgroundColor: "#fdf2f2",
 };
 
+const yellowBlockedInputStyle = {
+  ...inputStyle,
+  backgroundColor: "#fffde7", // Amarillo claro
+  color: "#bfa100",
+  cursor: "not-allowed",
+  border: "1.5px solid #ffe082"
+};
+
 const navBtnStyle = (disabled) => ({
   cursor: disabled ? "not-allowed" : "pointer",
   padding: "8px 12px",
@@ -423,7 +431,12 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
-            style={getInputStyle()}
+            style={
+              // Si es fechaRegistro y está deshabilitado (edición), aplica el estilo amarillo bloqueado
+              name === "fechaRegistro" && disabled
+                ? yellowBlockedInputStyle
+                : getInputStyle()
+            }
             required={required}
             disabled={disabled}
             maxLength={maxLength}
@@ -450,7 +463,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Furniture (Comodidades) CON VALIDACIONES MEJORADAS
+// COMPONENTE PRINCIPAL Furniture (Comodidades) CON FECHA ACTUAL Y BLOQUEO DE FECHAS ANTERIORES
 // ===============================================
 const Furniture = () => {
   const [comodidades, setComodidades] = useState([]);
@@ -472,10 +485,15 @@ const Furniture = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Función para obtener la fecha actual en formato YYYY-MM-DD
+  const getCurrentDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
   const [newItem, setNewItem] = useState({
     nombreComodidades: "",
     descripcion: "",
-    fechaRegistro: new Date().toISOString().split('T')[0],
+    fechaRegistro: getCurrentDate(), // Fecha actual por defecto
     cantidad: 1,
     precio: 0
   });
@@ -722,7 +740,7 @@ const Furniture = () => {
       const comodidadData = {
         nombreComodidades: newItem.nombreComodidades.trim(),
         descripcion: newItem.descripcion.trim(),
-        fechaRegistro: newItem.fechaRegistro || new Date().toISOString().split('T')[0],
+        fechaRegistro: newItem.fechaRegistro || getCurrentDate(),
         cantidad: parseInt(newItem.cantidad),
         precio: parseFloat(newItem.precio)
       };
@@ -847,7 +865,7 @@ const Furniture = () => {
     setNewItem({
       nombreComodidades: "",
       descripcion: "",
-      fechaRegistro: new Date().toISOString().split('T')[0],
+      fechaRegistro: getCurrentDate(), // Siempre fecha actual al cerrar/abrir
       cantidad: 1,
       precio: 0
     });
@@ -879,7 +897,7 @@ const Furniture = () => {
           fechaRegistro = item.fechaRegistro;
         }
       } else {
-        fechaRegistro = new Date().toISOString().split('T')[0];
+        fechaRegistro = getCurrentDate(); // Usar fecha actual si no hay fecha
       }
 
       setNewItem({
@@ -1048,7 +1066,7 @@ const Furniture = () => {
             setNewItem({
               nombreComodidades: "",
               descripcion: "",
-              fechaRegistro: new Date().toISOString().split('T')[0],
+              fechaRegistro: getCurrentDate(), // Fecha actual al crear nueva comodidad
               cantidad: 1,
               precio: 0
             });
@@ -1167,7 +1185,9 @@ const Furniture = () => {
                     success={formSuccess.fechaRegistro}
                     warning={formWarnings.fechaRegistro}
                     required={true}
-                    disabled={loading}
+                    disabled={loading || isEditing} // Deshabilitado en edición
+                    min={getCurrentDate()} // Fecha mínima = hoy
+                    max="2099-12-31" // Fecha máxima
                   />
                 </div>
                 
@@ -1286,7 +1306,6 @@ const Furniture = () => {
         </div>
       )}
 
-      {/* Resto del código (Modal de detalles, Modal de Confirmación de Eliminación, Tabla, Paginación) se mantiene similar */}
       {/* Modal de detalles */}
       {showDetails && currentItem && (
         <div style={modalOverlayStyle}>

@@ -577,6 +577,29 @@ const Marca = () => {
     });
   };
 
+  // 1. Agrega el campo estado en el modelo de marca si no existe
+  // 2. Agrega la función para cambiar el estado
+  const handleToggleEstado = async (marca) => {
+    try {
+      setLoading(true);
+      await axios.put(`${API_MARCAS}/${marca.idMarca}`, {
+        ...marca,
+        estado: !marca.estado
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      displayAlert(
+        `Marca ${!marca.estado ? "activada" : "desactivada"} exitosamente.`,
+        "success"
+      );
+      await fetchMarcas();
+    } catch (error) {
+      handleApiError(error, "cambiar el estado de la marca");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ===============================================
   // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
@@ -942,13 +965,14 @@ const Marca = () => {
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>ID</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Nombre</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th> {/* NUEVA COLUMNA */}
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {paginatedMarcas.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={3} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     {marcas.length === 0 ? "No hay marcas registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
@@ -957,6 +981,27 @@ const Marca = () => {
                   <tr key={marca.idMarca} style={{ borderBottom: "1px solid #eee" }}>
                     <td style={{ padding: "15px", fontWeight: "500" }}>#{marca.idMarca}</td>
                     <td style={{ padding: "15px" }}>{marca.nombre}</td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <button
+                        onClick={() => handleToggleEstado(marca)}
+                        style={{
+                          backgroundColor: marca.estado ? "#28a745" : "#e57373",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "20px",
+                          padding: "6px 18px",
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                          transition: "background 0.2s"
+                        }}
+                        title={marca.estado ? "Desactivar" : "Activar"}
+                        disabled={loading}
+                      >
+                        {marca.estado ? "Activo" : "Inactivo"}
+                      </button>
+                    </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
                         onClick={() => handleView(marca)}
