@@ -1,11 +1,10 @@
-// src/components/AdminCompras.jsx
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaPlus, FaMinus, FaFilePdf, FaTimes, FaAsterisk, FaSearch, FaExclamationTriangle, FaBox } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaPlus, FaMinus, FaFilePdf, FaTimes, FaAsterisk, FaSearch, FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox, FaShoppingCart, FaDollarSign, FaHome, FaUser, FaSync, FaToggleOn, FaToggleOff } from "react-icons/fa";
 import { usePDF } from 'react-to-pdf';
 import axios from "axios";
 
 // ===============================================
-// ESTILOS ACTUALIZADOS (Coherentes con el sidebar)
+// ESTILOS MEJORADOS (CONSISTENTES CON COMODIDADES)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -30,15 +29,6 @@ const labelStyle = {
   fontWeight: "600",
   marginBottom: 4,
   color: "#2E5939",
-  position: 'relative'
-};
-
-const requiredAsteriskStyle = {
-  position: 'absolute',
-  top: 0,
-  right: -10,
-  color: 'red',
-  fontSize: '0.8em'
 };
 
 const inputStyle = {
@@ -50,6 +40,21 @@ const inputStyle = {
   color: "#2E5939",
   boxSizing: 'border-box',
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+  transition: "all 0.3s ease",
+};
+
+const inputErrorStyle = {
+  ...inputStyle,
+  border: "2px solid #e74c3c",
+  backgroundColor: "#fdf2f2",
+};
+
+const yellowBlockedInputStyle = {
+  ...inputStyle,
+  backgroundColor: "#fffde7",
+  color: "#bfa100",
+  cursor: "not-allowed",
+  border: "1.5px solid #ffe082"
 };
 
 const navBtnStyle = (disabled) => ({
@@ -72,69 +77,6 @@ const pageBtnStyle = (active) => ({
   fontWeight: "600",
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
-
-const formFieldStyle = {
-  marginBottom: 12,
-};
-
-const formContainerStyle = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '15px 20px',
-  padding: '0 10px'
-};
-
-const addProductButtonStyle = {
-  backgroundColor: "#2E5939",
-  color: "#fff",
-  padding: "15px 25px",
-  border: "none",
-  borderRadius: 10,
-  cursor: "pointer",
-  fontWeight: "600",
-  fontSize: "16px",
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '10px',
-  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-  transition: "all 0.3s ease",
-};
-
-const totalSummaryStyle = {
-  gridColumn: '1 / -1',
-  marginTop: 20,
-  paddingTop: 15,
-  borderTop: '1px solid #679750',
-  textAlign: 'right',
-  color: '#2E5939'
-};
-
-const totalLineStyle = {
-  display: 'flex',
-  justifyContent: 'flex-end',
-  alignItems: 'center',
-  marginBottom: 8,
-  gap: 15
-};
-
-const totalLabelStyle = {
-  fontWeight: 'bold',
-  fontSize: '1.1em',
-  width: '120px',
-  textAlign: 'right',
-  color: '#2E5939'
-};
-
-const totalValueStyle = {
-  fontSize: '1.1em',
-  minWidth: '150px',
-  textAlign: 'right',
-  padding: '5px 10px',
-  backgroundColor: '#F7F4EA',
-  borderRadius: 6,
-  color: '#2E5939',
-  fontWeight: 'bold'
-};
 
 const modalOverlayStyle = {
   position: "fixed",
@@ -164,95 +106,58 @@ const modalContentStyle = {
   border: "2px solid #679750",
 };
 
-const modalCloseBtnStyle = {
-  position: 'absolute',
-  top: 15,
-  right: 15,
-  backgroundColor: 'transparent',
-  border: 'none',
-  fontSize: '1.5em',
-  color: '#2E5939',
-  cursor: 'pointer',
-};
-
-const modalItemRowStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  marginBottom: 5,
-  paddingBottom: 5,
-  borderBottom: '1px dashed rgba(46, 89, 57, 0.3)'
-};
-
-const itemSubtotalDisplayStyle = {
-  ...inputStyle,
-  backgroundColor: '#F7F4EA',
-  color: '#2E5939',
-  fontWeight: 'bold',
-  display: 'flex',
-  alignItems: 'center',
-  height: '42px'
-};
-
+// Estilos mejorados para alertas
 const alertStyle = {
   position: 'fixed',
   top: 20,
   right: 20,
-  backgroundColor: '#2E5939',
-  color: 'white',
   padding: '15px 20px',
   borderRadius: '10px',
-  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
   zIndex: 10000,
   display: 'flex',
   alignItems: 'center',
-  gap: '10px'
+  gap: '12px',
+  fontWeight: '600',
+  fontSize: '16px',
+  minWidth: '300px',
+  maxWidth: '500px',
+  animation: 'slideInRight 0.3s ease-out',
+  borderLeft: '5px solid',
+  backdropFilter: 'blur(10px)',
 };
 
-const deleteModalContentStyle = {
-  backgroundColor: "#fff",
-  padding: 30,
-  borderRadius: 12,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-  width: "90%",
-  maxWidth: 500,
-  color: "#2E5939",
-  textAlign: 'center',
-  border: "2px solid #679750",
+const alertIconStyle = {
+  fontSize: '20px',
+  flexShrink: 0,
 };
 
-const pdfModalContentStyle = {
-  backgroundColor: "#fff",
-  padding: 30,
-  borderRadius: 12,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-  width: "90%",
-  maxWidth: 500,
-  color: "#2E5939",
-  textAlign: 'center',
-  border: "2px solid #679750",
+const alertSuccessStyle = {
+  ...alertStyle,
+  backgroundColor: '#d4edda',
+  color: '#155724',
+  borderLeftColor: '#28a745',
 };
 
-const readOnlyInputStyle = {
-  ...inputStyle,
-  backgroundColor: '#e9ecef',
-  color: '#495057',
-  cursor: 'not-allowed'
+const alertErrorStyle = {
+  ...alertStyle,
+  backgroundColor: '#f8d7da',
+  color: '#721c24',
+  borderLeftColor: '#dc3545',
 };
 
-const compactItemRowStyle = {
-  display: 'grid',
-  gridTemplateColumns: '2fr 1fr 1fr 1fr 40px',
-  gap: '10px',
-  alignItems: 'center',
-  marginBottom: '15px',
-  padding: '15px',
-  backgroundColor: 'rgba(46, 89, 57, 0.05)',
-  borderRadius: '8px',
-  border: '1px solid rgba(46, 89, 57, 0.1)'
+const alertWarningStyle = {
+  ...alertStyle,
+  backgroundColor: '#fff3cd',
+  color: '#856404',
+  borderLeftColor: '#ffc107',
 };
 
-const compactFormFieldStyle = {
-  marginBottom: 0
+const alertInfoStyle = {
+  ...alertStyle,
+  backgroundColor: '#d1ecf1',
+  color: '#0c5460',
+  borderLeftColor: '#17a2b8',
 };
 
 const detailsModalStyle = {
@@ -261,7 +166,7 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -278,14 +183,39 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5,
-  fontSize: "14px"
+  marginBottom: 5
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939",
-  fontWeight: "500"
+  color: "#2E5939"
+};
+
+const validationMessageStyle = {
+  fontSize: "0.8rem",
+  marginTop: "4px",
+  display: "flex",
+  alignItems: "center",
+  gap: "5px"
+};
+
+const successValidationStyle = {
+  ...validationMessageStyle,
+  color: "#4caf50"
+};
+
+const errorValidationStyle = {
+  ...validationMessageStyle,
+  color: "#e57373"
+};
+
+const warningValidationStyle = {
+  ...validationMessageStyle,
+  color: "#ff9800"
+};
+
+const formFieldStyle = {
+  marginBottom: 15,
 };
 
 const productsSectionStyle = {
@@ -335,33 +265,147 @@ const removeButtonStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: '12px'
+  fontSize: '12px',
+  transition: "all 0.3s ease",
+};
+
+const productChipStyle = {
+  backgroundColor: '#2E5939',
+  color: 'white',
+  padding: '4px 8px',
+  borderRadius: '12px',
+  fontSize: '11px',
+  margin: '2px',
+  display: 'inline-block'
+};
+
+const totalSummaryStyle = {
+  gridColumn: '1 / -1',
+  marginTop: 20,
+  paddingTop: 15,
+  borderTop: '1px solid #679750',
+  textAlign: 'right',
+  color: '#2E5939'
+};
+
+const totalLineStyle = {
+  display: 'flex',
+  justifyContent: 'flex-end',
+  alignItems: 'center',
+  marginBottom: 8,
+  gap: 15
+};
+
+const totalLabelStyle = {
+  fontWeight: 'bold',
+  fontSize: '1.1em',
+  width: '120px',
+  textAlign: 'right',
+  color: '#2E5939'
+};
+
+const totalValueStyle = {
+  fontSize: '1.1em',
+  minWidth: '150px',
+  textAlign: 'right',
+  padding: '5px 10px',
+  backgroundColor: '#F7F4EA',
+  borderRadius: 6,
+  color: '#2E5939',
+  fontWeight: 'bold'
+};
+
+const toggleButtonStyle = (active) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  padding: '10px 16px',
+  borderRadius: '25px',
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '14px',
+  transition: 'all 0.3s ease',
+  backgroundColor: active ? '#4caf50' : '#e57373',
+  color: 'white',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  minWidth: '140px'
+});
+
+// ===============================================
+// VALIDACIONES Y PATRONES
+// ===============================================
+const VALIDATION_RULES = {
+  idProveedor: {
+    required: true,
+    errorMessages: {
+      required: "El proveedor es obligatorio."
+    }
+  },
+  metodoPago: {
+    required: true,
+    errorMessages: {
+      required: "El método de pago es obligatorio."
+    }
+  },
+  cantidad: {
+    min: 1,
+    max: 1000,
+    required: true,
+    errorMessages: {
+      required: "La cantidad es obligatoria.",
+      min: "La cantidad mínima es 1.",
+      max: "La cantidad máxima es 1000.",
+      invalid: "La cantidad debe ser un número entero válido."
+    }
+  },
+  precioUnitario: {
+    min: 0,
+    max: 10000000,
+    required: true,
+    errorMessages: {
+      required: "El precio unitario es obligatorio.",
+      min: "El precio mínimo es $0.",
+      max: "El precio máximo es $10,000,000.",
+      invalid: "El precio debe ser un valor numérico válido."
+    }
+  }
 };
 
 // ===============================================
-// DATOS DE CONFIGURACIÓN
+// CONFIGURACIÓN DE API
 // ===============================================
-
-const API_COMPRAS = "http://localhost:5255/api/Compras";
-const API_PROVEEDORES = "http://localhost:5255/api/Proveedore";
-const API_PRODUCTOS = "http://localhost:5255/api/Productos";
-const API_DETALLE_COMPRAS = "http://localhost:5255/api/DetalleCompras";
-
+const API_COMPRAS = "http://localhost:5204/api/Compras";
+const API_PROVEEDORES = "http://localhost:5204/api/Proveedore";
+const API_PRODUCTOS = "http://localhost:5204/api/Productos";
+const API_DETALLE_COMPRAS = "http://localhost:5204/api/DetalleCompras";
 const IVA_RATE = 0.19;
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField
+// COMPONENTE FormField MEJORADO
 // ===============================================
-const FormField = ({ label, name, type = "text", value, onChange, error, options = [], style = {}, required = true, min = undefined, placeholder = "", step = undefined, disabled = false, readOnly = false }) => {
-  const finalOptions = useMemo(() => {
-    if (type === "select") {
-      const placeholderOption = { value: "", label: placeholder || "Selecciona", disabled: required };
-      return [placeholderOption, ...options];
-    }
-    return options;
-  }, [options, type, required, placeholder]);
-
+const FormField = ({ 
+  label, 
+  name, 
+  type = "text", 
+  value, 
+  onChange, 
+  error, 
+  success,
+  warning,
+  style = {}, 
+  required = true, 
+  disabled = false,
+  options = [],
+  placeholder,
+  min,
+  max,
+  step,
+  readOnly = false,
+  icon
+}) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
@@ -372,87 +416,141 @@ const FormField = ({ label, name, type = "text", value, onChange, error, options
       if (parts.length > 2) {
         filteredValue = parts[0] + '.' + parts.slice(1).join('');
       }
+      if (parts.length === 2 && parts[1].length > 2) {
+        filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
+      }
     }
+    
     onChange({ target: { name, value: filteredValue } });
   };
 
-  return (
-    <div style={{ ...formFieldStyle, ...style }}>
-      {label && (
-        <label style={labelStyle}>
-          {label}
-          {required && <span style={requiredAsteriskStyle}><FaAsterisk /></span>}
-        </label>
-      )}
-      {type === "select" ? (
-        <select
-          name={name}
-          value={value}
-          onChange={onChange}
-          style={{
-            ...inputStyle,
-            border: error ? "1px solid red" : "1px solid #ccc",
-            ...(readOnly ? readOnlyInputStyle : {})
-          }}
-          required={required}
-          disabled={disabled || readOnly}
-        >
-          {finalOptions.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-            >
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : type === "textarea" ? (
-        <textarea
-          name={name}
-          value={value}
-          onChange={onChange}
-          style={{
-            ...inputStyle,
-            minHeight: "60px",
-            resize: "vertical",
-            border: error ? "1px solid red" : "1px solid #ccc",
-            ...(readOnly ? readOnlyInputStyle : {})
-          }}
-          required={required}
-          placeholder={placeholder || label}
-          disabled={disabled || readOnly}
-        ></textarea>
-      ) : (
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={(name === 'cantidad' || name === 'precioUnitario') ? handleFilteredInputChange : onChange}
-          style={{
-            ...inputStyle,
-            border: error ? "1px solid red" : "1px solid #ccc",
-            ...(readOnly ? readOnlyInputStyle : {})
-          }}
-          required={required}
-          min={min}
-          step={step}
-          placeholder={placeholder || label}
-          disabled={disabled || readOnly}
-          readOnly={readOnly}
-        />
-      )}
-      {error && (
-        <p style={{ color: "red", fontSize: "0.8rem", marginTop: "4px" }}>
+  const getInputStyle = () => {
+    let borderColor = "#ccc";
+    if (error) borderColor = "#e57373";
+    else if (success) borderColor = "#4caf50";
+    else if (warning) borderColor = "#ff9800";
+
+    return {
+      ...inputStyle,
+      border: `1px solid ${borderColor}`,
+      borderLeft: `4px solid ${borderColor}`,
+      paddingLeft: icon ? '40px' : '12px'
+    };
+  };
+
+  const getValidationMessage = () => {
+    if (error) {
+      return (
+        <div style={errorValidationStyle}>
+          <FaExclamationTriangle size={12} />
           {error}
-        </p>
-      )}
+        </div>
+      );
+    }
+    if (success) {
+      return (
+        <div style={successValidationStyle}>
+          <FaCheck size={12} />
+          {success}
+        </div>
+      );
+    }
+    if (warning) {
+      return (
+        <div style={warningValidationStyle}>
+          <FaInfoCircle size={12} />
+          {warning}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const finalOptions = useMemo(() => {
+    if (type === "select") {
+      const placeholderOption = { value: "", label: placeholder || "Selecciona", disabled: required };
+      return [placeholderOption, ...options];
+    }
+    return options;
+  }, [options, type, required, placeholder]);
+
+  return (
+    <div style={{ marginBottom: '15px', ...style }}>
+      <label style={labelStyle}>
+        {label}
+        {required && <span style={{ color: "red" }}>*</span>}
+      </label>
+      <div style={{ position: 'relative' }}>
+        {icon && (
+          <div style={{
+            position: 'absolute',
+            left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#2E5939',
+            zIndex: 1
+          }}>
+            {icon}
+          </div>
+        )}
+        {type === "select" ? (
+          <select
+            name={name}
+            value={value}
+            onChange={onChange}
+            style={getInputStyle()}
+            required={required}
+            disabled={disabled || readOnly}
+          >
+            {finalOptions.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : type === "textarea" ? (
+          <textarea
+            name={name}
+            value={value}
+            onChange={onChange}
+            style={{
+              ...getInputStyle(),
+              minHeight: "80px",
+              resize: "vertical",
+              fontFamily: "inherit"
+            }}
+            required={required}
+            disabled={disabled || readOnly}
+            placeholder={placeholder}
+          />
+        ) : (
+          <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={(name === 'cantidad' || name === 'precioUnitario') ? handleFilteredInputChange : onChange}
+            style={readOnly ? yellowBlockedInputStyle : getInputStyle()}
+            required={required}
+            disabled={disabled || readOnly}
+            placeholder={placeholder}
+            min={min}
+            max={max}
+            step={step}
+            readOnly={readOnly}
+          />
+        )}
+      </div>
+      {getValidationMessage()}
     </div>
   );
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL AdminCompras
+// COMPONENTE PRINCIPAL AdminCompras CON ESTILO MEJORADO
 // ===============================================
 const AdminCompras = () => {
   const [compras, setCompras] = useState([]);
@@ -472,7 +570,9 @@ const AdminCompras = () => {
     total: 0
   });
   const [productosCompra, setProductosCompra] = useState([]);
-  const [errors, setErrors] = useState({});
+  const [formErrors, setFormErrors] = useState({});
+  const [formSuccess, setFormSuccess] = useState({});
+  const [formWarnings, setFormWarnings] = useState({});
   const [showDetails, setShowDetails] = useState(false);
   const [selectedCompra, setSelectedCompra] = useState(null);
   const [selectedDetalleCompras, setSelectedDetalleCompras] = useState([]);
@@ -480,12 +580,13 @@ const AdminCompras = () => {
   const [compraToDelete, setCompraToDelete] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
+  const [alertType, setAlertType] = useState("success");
   const [loading, setLoading] = useState(false);
   const [loadingProveedores, setLoadingProveedores] = useState(false);
   const [loadingProductos, setLoadingProductos] = useState(false);
-  const [loadingDetalleCompras, setLoadingDetalleCompras] = useState(false);
   const [error, setError] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const pdfRef = useRef();
   const { toPDF, targetRef } = usePDF({filename: `compra_${selectedCompra?.idCompra || 'nueva'}.pdf`});
@@ -500,6 +601,84 @@ const AdminCompras = () => {
     fetchDetalleCompras();
   }, []);
 
+  // Validar formulario en tiempo real
+  useEffect(() => {
+    if (showForm) {
+      validateField('idProveedor', newCompra.idProveedor);
+      validateField('metodoPago', newCompra.metodoPago);
+    }
+  }, [newCompra, showForm]);
+
+  // Efecto para agregar estilos de animación
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // ===============================================
+  // FUNCIONES DE ALERTAS MEJORADAS
+  // ===============================================
+  const displayAlert = (message, type = "success") => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+      setAlertMessage("");
+    }, 5000);
+  };
+
+  const getAlertIcon = (type) => {
+    switch (type) {
+      case "success":
+        return <FaCheck style={alertIconStyle} />;
+      case "error":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "warning":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "info":
+        return <FaInfoCircle style={alertIconStyle} />;
+      default:
+        return <FaInfoCircle style={alertIconStyle} />;
+    }
+  };
+
+  const getAlertStyle = (type) => {
+    switch (type) {
+      case "success":
+        return alertSuccessStyle;
+      case "error":
+        return alertErrorStyle;
+      case "warning":
+        return alertWarningStyle;
+      case "info":
+        return alertInfoStyle;
+      default:
+        return alertSuccessStyle;
+    }
+  };
+
   // ===============================================
   // FUNCIONES DE LA API
   // ===============================================
@@ -507,7 +686,6 @@ const AdminCompras = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("🔍 Conectando a la API de compras:", API_COMPRAS);
       const res = await axios.get(API_COMPRAS, {
         timeout: 10000,
         headers: {
@@ -515,8 +693,6 @@ const AdminCompras = () => {
           'Content-Type': 'application/json'
         }
       });
-      
-      console.log("✅ Datos de compras recibidos:", res.data);
       
       if (Array.isArray(res.data)) {
         setCompras(res.data);
@@ -534,16 +710,12 @@ const AdminCompras = () => {
   const fetchProveedores = async () => {
     setLoadingProveedores(true);
     try {
-      console.log("🔍 Conectando a la API de proveedores:", API_PROVEEDORES);
       const res = await axios.get(API_PROVEEDORES, {
         timeout: 10000
       });
       
-      console.log("✅ Datos de proveedores recibidos:", res.data);
-      
       if (Array.isArray(res.data)) {
         setProveedores(res.data);
-        // Establecer el primer proveedor como valor por defecto si no hay uno seleccionado
         if (res.data.length > 0 && !newCompra.idProveedor) {
           setNewCompra(prev => ({ ...prev, idProveedor: res.data[0].idProveedor.toString() }));
         }
@@ -559,12 +731,9 @@ const AdminCompras = () => {
   const fetchProductos = async () => {
     setLoadingProductos(true);
     try {
-      console.log("🔍 Conectando a la API de productos:", API_PRODUCTOS);
       const res = await axios.get(API_PRODUCTOS, {
         timeout: 10000
       });
-      
-      console.log("✅ Datos de productos recibidos:", res.data);
       
       if (Array.isArray(res.data)) {
         setProductos(res.data);
@@ -578,23 +747,16 @@ const AdminCompras = () => {
   };
 
   const fetchDetalleCompras = async () => {
-    setLoadingDetalleCompras(true);
     try {
-      console.log("🔍 Conectando a la API de detalle compras:", API_DETALLE_COMPRAS);
       const res = await axios.get(API_DETALLE_COMPRAS, {
         timeout: 10000
       });
-      
-      console.log("✅ Datos de detalle compras recibidos:", res.data);
       
       if (Array.isArray(res.data)) {
         setDetalleCompras(res.data);
       }
     } catch (error) {
       console.error("❌ Error al obtener detalle compras:", error);
-      // No mostramos alerta para este error ya que puede que la tabla no exista
-    } finally {
-      setLoadingDetalleCompras(false);
     }
   };
 
@@ -610,100 +772,193 @@ const AdminCompras = () => {
     }
   };
 
+  // ===============================================
+  // FUNCIONES DE VALIDACIÓN MEJORADAS
+  // ===============================================
+  const validateField = (fieldName, value) => {
+    const rules = VALIDATION_RULES[fieldName];
+    if (!rules) return true;
+
+    let error = "";
+    let success = "";
+    let warning = "";
+
+    const trimmedValue = value ? value.toString().trim() : "";
+
+    if (rules.required && !trimmedValue) {
+      error = rules.errorMessages.required;
+    }
+    else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
+      error = rules.errorMessages.minLength;
+    }
+    else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
+      error = rules.errorMessages.maxLength;
+    }
+    else if (trimmedValue && (fieldName === 'cantidad' || fieldName === 'precioUnitario')) {
+      const numericValue = fieldName === 'cantidad' ? parseInt(trimmedValue) : parseFloat(trimmedValue);
+      
+      if (isNaN(numericValue)) {
+        error = rules.errorMessages.invalid;
+      } else if (rules.min !== undefined && numericValue < rules.min) {
+        error = rules.errorMessages.min;
+      } else if (rules.max !== undefined && numericValue > rules.max) {
+        error = rules.errorMessages.max;
+      } else {
+        success = `${fieldName === 'cantidad' ? 'Cantidad' : 'Precio'} válido.`;
+        
+        // Advertencias específicas
+        if (fieldName === 'precioUnitario' && numericValue > 1000000) {
+          warning = "El precio es bastante alto. Verifique que sea correcto.";
+        } else if (fieldName === 'cantidad' && numericValue > 100) {
+          warning = "La cantidad es alta. Verifique que sea necesaria.";
+        }
+      }
+    }
+    else if (trimmedValue) {
+      success = "Campo válido.";
+    }
+
+    setFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    setFormSuccess(prev => ({ ...prev, [fieldName]: success }));
+    setFormWarnings(prev => ({ ...prev, [fieldName]: warning }));
+
+    return !error;
+  };
+
+  const validateForm = () => {
+    const proveedorValid = validateField('idProveedor', newCompra.idProveedor);
+    const metodoPagoValid = validateField('metodoPago', newCompra.metodoPago);
+
+    // Validar productos
+    if (productosCompra.length === 0) {
+      displayAlert("Debe agregar al menos un producto a la compra.", "error");
+      return false;
+    }
+
+    for (const producto of productosCompra) {
+      const cantidadValid = validateField('cantidad', producto.cantidad);
+      const precioValid = validateField('precioUnitario', producto.precioUnitario);
+      if (!cantidadValid || !precioValid) {
+        displayAlert("Por favor, corrige los errores en los productos antes de guardar.", "error");
+        return false;
+      }
+    }
+
+    const isValid = proveedorValid && metodoPagoValid;
+    
+    if (!isValid) {
+      displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+
+    return isValid;
+  };
+
   const handleAddCompra = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      setLoading(true);
-      try {
-        const compraData = {
-          ...newCompra,
-          idProveedor: parseInt(newCompra.idProveedor),
-          subtotal: parseFloat(newCompra.subtotal),
-          iva: parseFloat(newCompra.iva),
-          total: parseFloat(newCompra.total)
-        };
+    
+    if (isSubmitting) {
+      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
+      return;
+    }
 
-        let compraId;
+    if (!validateForm()) {
+      return;
+    }
 
-        if (isEditing) {
-          // Actualizar compra existente
-          await axios.put(`${API_COMPRAS}/${newCompra.idCompra}`, compraData, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-          compraId = newCompra.idCompra;
+    setIsSubmitting(true);
+    setLoading(true);
+    
+    try {
+      const compraData = {
+        ...newCompra,
+        idProveedor: parseInt(newCompra.idProveedor),
+        subtotal: parseFloat(newCompra.subtotal),
+        iva: parseFloat(newCompra.iva),
+        total: parseFloat(newCompra.total)
+      };
+
+      let compraId;
+
+      if (isEditing) {
+        await axios.put(`${API_COMPRAS}/${newCompra.idCompra}`, compraData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        compraId = newCompra.idCompra;
+        
+        try {
+          const detallesExistentes = detalleCompras.filter(dc => dc.idCompra === compraId);
+          for (const detalle of detallesExistentes) {
+            await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
+          }
           
-          // Eliminar detalles existentes y agregar nuevos
-          try {
-            const detallesExistentes = detalleCompras.filter(dc => dc.idCompra === compraId);
-            for (const detalle of detallesExistentes) {
-              await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
-            }
+          for (const producto of productosCompra) {
+            const subtotal = parseFloat(producto.subtotal);
+            const iva = subtotal * IVA_RATE;
+            const total = subtotal + iva;
             
-            // Agregar nuevos detalles
-            for (const producto of productosCompra) {
-              const subtotal = parseFloat(producto.subtotal);
-              const iva = subtotal * IVA_RATE;
-              const total = subtotal + iva;
-              
-              const detalleData = {
-                idCompra: compraId,
-                idProducto: parseInt(producto.idProducto),
-                cantidad: parseInt(producto.cantidad),
-                subtotal: subtotal,
-                iva: iva,
-                total: total
-              };
-              await axios.post(API_DETALLE_COMPRAS, detalleData, {
-                headers: { 'Content-Type': 'application/json' }
-              });
-            }
-          } catch (error) {
-            console.warn("No se pudo actualizar los detalles de la compra:", error);
+            const detalleData = {
+              idCompra: compraId,
+              idProducto: parseInt(producto.idProducto),
+              cantidad: parseInt(producto.cantidad),
+              subtotal: subtotal,
+              iva: iva,
+              total: total
+            };
+            await axios.post(API_DETALLE_COMPRAS, detalleData, {
+              headers: { 'Content-Type': 'application/json' }
+            });
           }
-          
-          displayAlert("Compra actualizada exitosamente.");
-        } else {
-          // Crear nueva compra
-          const response = await axios.post(API_COMPRAS, compraData, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-          compraId = response.data.idCompra;
-          
-          // Agregar detalles a la compra
-          try {
-            for (const producto of productosCompra) {
-              const subtotal = parseFloat(producto.subtotal);
-              const iva = subtotal * IVA_RATE;
-              const total = subtotal + iva;
-              
-              const detalleData = {
-                idCompra: compraId,
-                idProducto: parseInt(producto.idProducto),
-                cantidad: parseInt(producto.cantidad),
-                subtotal: subtotal,
-                iva: iva,
-                total: total
-              };
-              await axios.post(API_DETALLE_COMPRAS, detalleData, {
-                headers: { 'Content-Type': 'application/json' }
-              });
-            }
-          } catch (error) {
-            console.warn("No se pudieron agregar los detalles a la compra:", error);
-          }
-          
-          displayAlert("Compra agregada exitosamente.");
+        } catch (error) {
+          console.warn("No se pudo actualizar los detalles de la compra:", error);
         }
-
-        await fetchCompras();
-        await fetchDetalleCompras();
-        closeForm();
-      } catch (error) {
-        console.error("Error al guardar compra:", error);
-        handleApiError(error, isEditing ? "actualizar la compra" : "agregar la compra");
-      } finally {
-        setLoading(false);
+        
+        displayAlert("Compra actualizada exitosamente.", "success");
+      } else {
+        const response = await axios.post(API_COMPRAS, compraData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        compraId = response.data.idCompra;
+        
+        try {
+          for (const producto of productosCompra) {
+            const subtotal = parseFloat(producto.subtotal);
+            const iva = subtotal * IVA_RATE;
+            const total = subtotal + iva;
+            
+            const detalleData = {
+              idCompra: compraId,
+              idProducto: parseInt(producto.idProducto),
+              cantidad: parseInt(producto.cantidad),
+              subtotal: subtotal,
+              iva: iva,
+              total: total
+            };
+            await axios.post(API_DETALLE_COMPRAS, detalleData, {
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        } catch (error) {
+          console.warn("No se pudieron agregar los detalles a la compra:", error);
+        }
+        
+        displayAlert("Compra agregada exitosamente.", "success");
       }
+
+      await fetchCompras();
+      await fetchDetalleCompras();
+      closeForm();
+    } catch (error) {
+      console.error("Error al guardar compra:", error);
+      handleApiError(error, isEditing ? "actualizar la compra" : "agregar la compra");
+    } finally {
+      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -711,7 +966,6 @@ const AdminCompras = () => {
     if (compraToDelete) {
       setLoading(true);
       try {
-        // Primero eliminar los detalles asociados a la compra
         try {
           const detallesAsociados = detalleCompras.filter(dc => dc.idCompra === compraToDelete.idCompra);
           for (const detalle of detallesAsociados) {
@@ -721,12 +975,15 @@ const AdminCompras = () => {
           console.warn("No se pudieron eliminar los detalles de la compra:", error);
         }
         
-        // Luego eliminar la compra
         await axios.delete(`${API_COMPRAS}/${compraToDelete.idCompra}`);
-        displayAlert("Compra eliminada exitosamente.");
+        displayAlert("Compra eliminada exitosamente.", "success");
         
         await fetchCompras();
         await fetchDetalleCompras();
+        
+        if (paginatedCompras.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
       } catch (error) {
         console.error("Error al eliminar compra:", error);
         handleApiError(error, "eliminar la compra");
@@ -739,62 +996,61 @@ const AdminCompras = () => {
   };
 
   // ===============================================
-  // FUNCIONES AUXILIARES
+  // FUNCIONES AUXILIARES MEJORADAS
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
+    let alertType = "error";
     
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
     } else if (error.response) {
-      errorMessage = `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
+      if (error.response.status === 400) {
+        errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
+      } else if (error.response.status === 404) {
+        errorMessage = "Recurso no encontrado.";
+      } else if (error.response.status === 409) {
+        errorMessage = "Conflicto: La compra está siendo utilizada y no puede ser eliminada.";
+        alertType = "warning";
+      } else if (error.response.status === 500) {
+        errorMessage = "Error interno del servidor.";
+      } else {
+        errorMessage = `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
+      }
     } else if (error.request) {
       errorMessage = "No hay respuesta del servidor.";
+    } else {
+      errorMessage = `Error inesperado: ${error.message}`;
     }
     
     setError(errorMessage);
-    displayAlert(errorMessage);
-  };
-
-  const displayAlert = (message) => {
-    setAlertMessage(message);
-    setShowAlert(true);
-    setTimeout(() => {
-      setShowAlert(false);
-      setAlertMessage("");
-    }, 4000);
-  };
-
-  const validateForm = () => {
-    if (!newCompra.idProveedor) {
-      displayAlert("Debe seleccionar un proveedor.");
-      return false;
-    }
-    if (productosCompra.length === 0) {
-      displayAlert("Debe agregar al menos un producto a la compra.");
-      return false;
-    }
-    if (!newCompra.metodoPago) {
-      displayAlert("Debe seleccionar un método de pago.");
-      return false;
-    }
-    return true;
+    displayAlert(errorMessage, alertType);
   };
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
+    const { name, value } = e.target;
     setNewCompra((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value,
+    }));
+  };
+
+  // Función para cambiar el estado con el botón toggle
+  const toggleEstado = () => {
+    setNewCompra(prev => ({
+      ...prev,
+      estado: !prev.estado
     }));
   };
 
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
     setNewCompra({
       idProveedor: proveedores.length > 0 ? proveedores[0].idProveedor.toString() : "",
       metodoPago: "Transferencia",
@@ -804,7 +1060,6 @@ const AdminCompras = () => {
       total: 0
     });
     setProductosCompra([]);
-    setErrors({});
   };
 
   const closeDetailsModal = () => {
@@ -818,12 +1073,18 @@ const AdminCompras = () => {
     setShowDeleteConfirm(false);
   };
 
-  const toggleActive = async (compra) => {
+  // FUNCIÓN CORREGIDA PARA CAMBIAR ESTADO
+  const toggleEstadoCompra = async (compra) => {
     setLoading(true);
     try {
-      const updatedCompra = { ...compra, estado: !compra.estado };
-      await axios.put(`${API_COMPRAS}/${compra.idCompra}`, updatedCompra);
-      displayAlert(`Compra ${updatedCompra.estado ? 'activada' : 'desactivada'} exitosamente.`);
+      const updatedCompra = { 
+        ...compra, 
+        estado: !compra.estado 
+      };
+      await axios.put(`${API_COMPRAS}/${compra.idCompra}`, updatedCompra, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      displayAlert(`Compra ${updatedCompra.estado ? 'activada' : 'desactivada'} exitosamente.`, "success");
       await fetchCompras();
     } catch (error) {
       console.error("Error al cambiar estado:", error);
@@ -846,17 +1107,19 @@ const AdminCompras = () => {
       idProveedor: compra.idProveedor.toString()
     });
     
-    // Cargar detalles de la compra
     const detalles = await fetchDetalleComprasByCompraId(compra.idCompra);
     setProductosCompra(detalles.map(detalle => ({
       idProducto: detalle.idProducto.toString(),
       cantidad: detalle.cantidad.toString(),
-      precioUnitario: (detalle.subtotal / detalle.cantidad).toFixed(2), // Calcular precio unitario
+      precioUnitario: (detalle.subtotal / detalle.cantidad).toFixed(2),
       subtotal: detalle.subtotal
     })));
     
     setIsEditing(true);
     setShowForm(true);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
   };
 
   const handleDeleteClick = (compra) => {
@@ -878,7 +1141,7 @@ const AdminCompras = () => {
     if (selectedCompra) {
       toPDF();
       handleClosePdfModal();
-      displayAlert("PDF generado exitosamente");
+      displayAlert("PDF generado exitosamente", "success");
     }
   };
 
@@ -887,7 +1150,7 @@ const AdminCompras = () => {
   // ===============================================
   const addProducto = () => {
     if (productos.length === 0) {
-      displayAlert("No hay productos disponibles para agregar.");
+      displayAlert("No hay productos disponibles para agregar.", "warning");
       return;
     }
     
@@ -912,7 +1175,6 @@ const AdminCompras = () => {
     const nuevosProductos = [...productosCompra];
     
     if (field === 'cantidad' || field === 'precioUnitario') {
-      // Filtrar solo números y punto decimal
       value = value.replace(/[^0-9.]/g, "");
       const parts = value.split('.');
       if (parts.length > 2) {
@@ -922,7 +1184,6 @@ const AdminCompras = () => {
     
     nuevosProductos[index][field] = value;
     
-    // Recalcular subtotal si cambia cantidad o precio
     if (field === 'cantidad' || field === 'precioUnitario') {
       const cantidad = parseFloat(nuevosProductos[index].cantidad) || 0;
       const precioUnitario = parseFloat(nuevosProductos[index].precioUnitario) || 0;
@@ -946,6 +1207,9 @@ const AdminCompras = () => {
     }));
   };
 
+  // ===============================================
+  // FUNCIONES PARA OBTENER NOMBRES Y DETALLES
+  // ===============================================
   const getProductoNombre = (idProducto) => {
     const producto = productos.find(p => p.idProducto === idProducto);
     return producto ? producto.nombre : `Producto ${idProducto}`;
@@ -962,31 +1226,34 @@ const AdminCompras = () => {
     };
   };
 
-  // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
-  // ===============================================
-  const filteredCompras = useMemo(() => {
-    return compras.filter(compra => {
-      const proveedor = proveedores.find(p => p.idProveedor === compra.idProveedor);
-      return proveedor?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             compra.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase());
+  const getProductosDeCompra = (idCompra) => {
+    const detalles = detalleCompras.filter(dc => dc.idCompra === idCompra);
+    return detalles.map(detalle => {
+      const producto = getProductoInfo(detalle.idProducto);
+      return {
+        ...producto,
+        cantidad: detalle.cantidad,
+        precioUnitario: detalle.subtotal / detalle.cantidad,
+        subtotal: detalle.subtotal
+      };
     });
-  }, [compras, proveedores, searchTerm]);
-
-  const totalPages = Math.ceil(filteredCompras.length / ITEMS_PER_PAGE);
-
-  const paginatedCompras = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredCompras.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredCompras, currentPage]);
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  // ===============================================
-  // FUNCIONES PARA OBTENER NOMBRES (CORREGIDAS)
-  // ===============================================
+  const getNombresProductosCompra = (idCompra) => {
+    const productosCompra = getProductosDeCompra(idCompra);
+    if (productosCompra.length === 0) return "Sin productos";
+    
+    const productosMostrar = productosCompra.slice(0, 2);
+    const nombres = productosMostrar.map(p => p.nombre);
+    
+    let resultado = nombres.join(', ');
+    if (productosCompra.length > 2) {
+      resultado += ` +${productosCompra.length - 2} más`;
+    }
+    
+    return resultado;
+  };
+
   const getProveedorNombre = (idProveedor) => {
     const proveedor = proveedores.find(p => p.idProveedor === idProveedor);
     return proveedor ? proveedor.nombre : `Proveedor ${idProveedor}`;
@@ -1014,7 +1281,32 @@ const AdminCompras = () => {
   ];
 
   // ===============================================
-  // COMPONENTE PDF TEMPLATE (ACTUALIZADO)
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // ===============================================
+  const filteredCompras = useMemo(() => {
+    return compras.filter(compra => {
+      const proveedor = proveedores.find(p => p.idProveedor === compra.idProveedor);
+      const productosCompra = getNombresProductosCompra(compra.idCompra);
+      
+      return proveedor?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             compra.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             productosCompra.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  }, [compras, proveedores, searchTerm, detalleCompras, productos]);
+
+  const totalPages = Math.ceil(filteredCompras.length / ITEMS_PER_PAGE);
+
+  const paginatedCompras = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredCompras.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredCompras, currentPage]);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // ===============================================
+  // COMPONENTE PDF TEMPLATE
   // ===============================================
   const PDFTemplate = ({ compra, proveedor, detallesCompra }) => {
     return (
@@ -1105,17 +1397,23 @@ const AdminCompras = () => {
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
       
-      {/* Alerta */}
+      {/* Alerta Mejorada */}
       {showAlert && (
-        <div style={{
-          ...alertStyle,
-          backgroundColor: alertMessage.includes('Error') ? '#e57373' : '#2E5939'
-        }}>
-          {alertMessage.includes('Error') && <FaExclamationTriangle />}
-          <span>{alertMessage}</span>
+        <div style={getAlertStyle(alertType)}>
+          {getAlertIcon(alertType)}
+          <span style={{ flex: 1 }}>{alertMessage}</span>
           <button 
             onClick={() => setShowAlert(false)}
-            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'inherit', 
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center'
+            }}
           >
             <FaTimes />
           </button>
@@ -1152,6 +1450,19 @@ const AdminCompras = () => {
             >
               Reintentar
             </button>
+            <button
+              onClick={() => setError(null)}
+              style={{
+                backgroundColor: '#6c757d',
+                color: 'white',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}
@@ -1161,82 +1472,108 @@ const AdminCompras = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Compras</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {compras.length} compras registradas | {proveedores.length} proveedores | {productos.length} productos
+            {compras.length} compras registradas • {proveedores.length} proveedores • {productos.length} productos
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setIsEditing(false);
-            setNewCompra({
-              idProveedor: proveedores.length > 0 ? proveedores[0].idProveedor.toString() : "",
-              metodoPago: "Transferencia",
-              estado: true,
-              subtotal: 0,
-              iva: 0,
-              total: 0
-            });
-            setProductosCompra([]);
-          }}
-          style={{
-            backgroundColor: "#2E5939",
-            color: "white",
-            padding: "12px 20px",
-            border: "none",
-            borderRadius: 10,
-            cursor: "pointer",
-            fontWeight: "600",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease",
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-            e.target.style.transform = "translateY(-2px)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#2E5939";
-            e.target.style.transform = "translateY(0)";
-          }}
-        >
-          <FaPlus /> Agregar Compra
-        </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            onClick={fetchCompras}
+            style={{
+              backgroundColor: "#679750",
+              color: "white",
+              padding: "10px 12px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+            title="Recargar compras"
+          >
+            <FaSync />
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              setFormErrors({});
+              setFormSuccess({});
+              setFormWarnings({});
+              setNewCompra({
+                idProveedor: proveedores.length > 0 ? proveedores[0].idProveedor.toString() : "",
+                metodoPago: "Transferencia",
+                estado: true,
+                subtotal: 0,
+                iva: 0,
+                total: 0
+              });
+              setProductosCompra([]);
+            }}
+            style={{
+              backgroundColor: "#2E5939",
+              color: "white",
+              padding: "12px 20px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              transition: "all 0.3s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+              e.target.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#2E5939";
+              e.target.style.transform = "translateY(0)";
+            }}
+          >
+            <FaPlus /> Nueva Compra
+          </button>
+        </div>
       </div>
 
       {/* Barra de búsqueda */}
       <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <input
-          type="text"
-          placeholder="Buscar por proveedor o método de pago..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-          style={{
-            padding: "12px 15px",
-            borderRadius: 10,
-            border: "1px solid #ccc",
-            width: "100%",
-            maxWidth: 400,
-            backgroundColor: "#F7F4EA",
-            color: "#2E5939",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          }}
-        />
+        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+          <input
+            type="text"
+            placeholder="Buscar por proveedor, producto o método de pago..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              padding: "12px 12px 12px 40px",
+              borderRadius: 10,
+              border: "1px solid #ccc",
+              width: "100%",
+              backgroundColor: "#F7F4EA",
+              color: "#2E5939",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            }}
+          />
+        </div>
         <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
           {filteredCompras.length} resultados
         </div>
       </div>
 
-      {/* Formulario de agregar/editar - ACTUALIZADO CON PRODUCTOS */}
+      {/* Formulario de agregar/editar - MEJORADO Y ORGANIZADO */}
       {showForm && (
         <div style={modalOverlayStyle}>
           <div style={{...modalContentStyle, maxWidth: '900px'}}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
                 {isEditing ? "Editar Compra" : "Nueva Compra"}
               </h2>
               <button
@@ -1248,69 +1585,168 @@ const AdminCompras = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
+                disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
             
             <form onSubmit={handleAddCompra}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                <div>
-                  <label style={labelStyle}>Proveedor *</label>
-                  <select
+              {/* Sección de Información Básica */}
+              <div style={{ 
+                backgroundColor: 'rgba(46, 89, 57, 0.05)', 
+                padding: '20px', 
+                borderRadius: '10px',
+                marginBottom: '20px',
+                border: '1px solid rgba(46, 89, 57, 0.1)'
+              }}>
+                <h3 style={{ margin: '0 0 15px 0', color: "#2E5939", display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FaInfoCircle />
+                  Información Básica
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px' }}>
+                  <FormField
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaUser />
+                        Proveedor
+                      </div>
+                    }
                     name="idProveedor"
+                    type="select"
                     value={newCompra.idProveedor}
                     onChange={handleInputChange}
-                    style={inputStyle}
-                    required
+                    error={formErrors.idProveedor}
+                    success={formSuccess.idProveedor}
+                    warning={formWarnings.idProveedor}
+                    required={true}
                     disabled={loadingProveedores || proveedores.length === 0}
-                  >
-                    <option value="">Seleccionar proveedor</option>
-                    {proveedores.map(proveedor => (
-                      <option key={proveedor.idProveedor} value={proveedor.idProveedor}>
-                        {proveedor.nombre} - {proveedor.celular}
-                      </option>
-                    ))}
-                  </select>
-                  {loadingProveedores && <small style={{color: '#679750'}}>Cargando proveedores...</small>}
-                </div>
+                    options={proveedores.map(proveedor => ({
+                      value: proveedor.idProveedor,
+                      label: `${proveedor.nombre} - ${proveedor.celular}`
+                    }))}
+                    placeholder="Seleccionar proveedor"
+                    icon={<FaUser />}
+                  />
 
-                <div>
-                  <label style={labelStyle}>Método de Pago *</label>
-                  <select
+                  <FormField
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaDollarSign />
+                        Método de Pago
+                      </div>
+                    }
                     name="metodoPago"
+                    type="select"
                     value={newCompra.metodoPago}
                     onChange={handleInputChange}
-                    style={inputStyle}
-                    required
-                  >
-                    {metodoPagoOptions.map(metodo => (
-                      <option key={metodo.value} value={metodo.value}>
-                        {metodo.label}
-                      </option>
-                    ))}
-                  </select>
+                    error={formErrors.metodoPago}
+                    success={formSuccess.metodoPago}
+                    warning={formWarnings.metodoPago}
+                    required={true}
+                    options={metodoPagoOptions}
+                    icon={<FaDollarSign />}
+                  />
+
+                  {/* Botón Toggle para Estado */}
+                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
+                    <label style={labelStyle}>
+                      Estado de la Compra
+                      <span style={{ color: "red" }}>*</span>
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                      <button
+                        type="button"
+                        onClick={toggleEstado}
+                        style={toggleButtonStyle(newCompra.estado)}
+                        disabled={loading}
+                      >
+                        {newCompra.estado ? (
+                          <>
+                            <FaToggleOn size={20} />
+                            <span>🟢 Activa</span>
+                          </>
+                        ) : (
+                          <>
+                            <FaToggleOff size={20} />
+                            <span>🔴 Inactiva</span>
+                          </>
+                        )}
+                      </button>
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newCompra.estado ? '#4caf50' : '#e57373',
+                        fontWeight: '500'
+                      }}>
+                        {newCompra.estado 
+                          ? 'La compra está activa y disponible en el sistema' 
+                          : 'La compra está inactiva y no disponible en el sistema'
+                        }
+                      </span>
+                    </div>
+                    {formErrors.estado && (
+                      <div style={errorValidationStyle}>
+                        <FaExclamationTriangle size={12} />
+                        {formErrors.estado}
+                      </div>
+                    )}
+                    {formSuccess.estado && (
+                      <div style={successValidationStyle}>
+                        <FaCheck size={12} />
+                        {formSuccess.estado}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Sección de Productos */}
+              {/* Sección de Productos - MEJORADA */}
               <div style={productsSectionStyle}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h3 style={{ margin: 0, color: "#2E5939" }}>Productos de la Compra</h3>
+                  <h3 style={{ margin: 0, color: "#2E5939" }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaBox />
+                      Productos de la Compra
+                      <span style={{ 
+                        backgroundColor: '#2E5939', 
+                        color: 'white', 
+                        borderRadius: '50%', 
+                        width: '24px', 
+                        height: '24px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        fontSize: '12px'
+                      }}>
+                        {productosCompra.length}
+                      </span>
+                    </div>
+                  </h3>
                   <button
                     type="button"
                     onClick={addProducto}
                     style={{
                       backgroundColor: "#679750",
                       color: "white",
-                      padding: "8px 15px",
+                      padding: "10px 15px",
                       border: "none",
                       borderRadius: 8,
                       cursor: "pointer",
                       fontWeight: "600",
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '5px'
+                      gap: '5px',
+                      transition: "all 0.3s ease",
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                      e.target.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = "#679750";
+                      e.target.style.transform = "translateY(0)";
                     }}
                   >
                     <FaPlus /> Agregar Producto
@@ -1318,9 +1754,10 @@ const AdminCompras = () => {
                 </div>
 
                 {productosCompra.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: '#679750' }}>
-                    <FaBox style={{ fontSize: '2em', marginBottom: '10px' }} />
-                    <p>No hay productos agregados a la compra</p>
+                  <div style={{ textAlign: 'center', padding: '30px', color: '#679750' }}>
+                    <FaBox style={{ fontSize: '3em', marginBottom: '15px', opacity: 0.5 }} />
+                    <p style={{ margin: 0, fontSize: '16px' }}>No hay productos agregados a la compra</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '14px', opacity: 0.7 }}>Haz clic en "Agregar Producto" para comenzar</p>
                   </div>
                 ) : (
                   <>
@@ -1336,7 +1773,10 @@ const AdminCompras = () => {
                         <select
                           value={producto.idProducto}
                           onChange={(e) => handleProductoChange(index, 'idProducto', e.target.value)}
-                          style={inputStyle}
+                          style={{
+                            ...inputStyle,
+                            border: formErrors[`producto_${index}_id`] ? "1px solid #e57373" : "1px solid #ccc"
+                          }}
                         >
                           {productos.map(prod => (
                             <option key={prod.idProducto} value={prod.idProducto}>
@@ -1348,17 +1788,31 @@ const AdminCompras = () => {
                           type="text"
                           value={producto.cantidad}
                           onChange={(e) => handleProductoChange(index, 'cantidad', e.target.value)}
-                          style={inputStyle}
+                          style={{
+                            ...inputStyle,
+                            border: formErrors[`producto_${index}_cantidad`] ? "1px solid #e57373" : "1px solid #ccc"
+                          }}
                           placeholder="Cantidad"
                         />
                         <input
                           type="text"
                           value={producto.precioUnitario}
                           onChange={(e) => handleProductoChange(index, 'precioUnitario', e.target.value)}
-                          style={inputStyle}
+                          style={{
+                            ...inputStyle,
+                            border: formErrors[`producto_${index}_precio`] ? "1px solid #e57373" : "1px solid #ccc"
+                          }}
                           placeholder="Precio"
                         />
-                        <div style={itemSubtotalDisplayStyle}>
+                        <div style={{
+                          ...inputStyle,
+                          backgroundColor: '#F7F4EA',
+                          color: '#2E5939',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          height: '42px'
+                        }}>
                           ${parseFloat(producto.subtotal || 0).toLocaleString('es-CO')}
                         </div>
                         <button
@@ -1366,6 +1820,14 @@ const AdminCompras = () => {
                           onClick={() => removeProducto(index)}
                           style={removeButtonStyle}
                           title="Eliminar producto"
+                          onMouseOver={(e) => {
+                            e.target.style.backgroundColor = '#c62828';
+                            e.target.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.backgroundColor = '#e57373';
+                            e.target.style.transform = 'scale(1)';
+                          }}
                         >
                           <FaTimes />
                         </button>
@@ -1387,7 +1849,13 @@ const AdminCompras = () => {
                 </div>
                 <div style={totalLineStyle}>
                   <span style={{ ...totalLabelStyle, fontSize: '1.2em' }}>Total:</span>
-                  <span style={{ ...totalValueStyle, fontSize: '1.2em', backgroundColor: '#679750', color: 'white' }}>
+                  <span style={{ 
+                    ...totalValueStyle, 
+                    fontSize: '1.2em', 
+                    backgroundColor: '#679750', 
+                    color: 'white',
+                    border: '2px solid #2E5939'
+                  }}>
                     ${newCompra.total.toLocaleString('es-CO')}
                   </span>
                 </div>
@@ -1396,34 +1864,48 @@ const AdminCompras = () => {
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                   style={{
-                    backgroundColor: loading ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
                     color: "#fff",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: loading ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    transition: "all 0.3s ease",
+                    flex: 1
+                  }}
+                  onMouseOver={(e) => {
+                    if (!loading && !isSubmitting) {
+                      e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                      e.target.style.transform = "translateY(-2px)";
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!loading && !isSubmitting) {
+                      e.target.style.background = "#2E5939";
+                      e.target.style.transform = "translateY(0)";
+                    }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Compra
+                  {loading ? "Guardando..." : (isEditing ? "Actualizar Compra" : "Guardar Compra")}
                 </button>
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                   style={{
                     backgroundColor: "#ccc",
                     color: "#333",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: loading ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    flex: 1
                   }}
                 >
                   Cancelar
@@ -1434,12 +1916,12 @@ const AdminCompras = () => {
         </div>
       )}
 
-      {/* Modal de detalles (ACTUALIZADO CON DETALLES) */}
+      {/* Modal de detalles */}
       {showDetails && selectedCompra && (
         <div style={modalOverlayStyle}>
           <div style={{...detailsModalStyle, maxWidth: '700px'}}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Compra</h2>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles de la Compra #{selectedCompra.idCompra}</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1449,6 +1931,7 @@ const AdminCompras = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1456,12 +1939,12 @@ const AdminCompras = () => {
             
             <div>
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>ID</div>
-                <div style={detailValueStyle}>#{selectedCompra.idCompra}</div>
-              </div>
-              
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Proveedor</div>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaUser />
+                    Proveedor
+                  </div>
+                </div>
                 <div style={detailValueStyle}>{getProveedorNombre(selectedCompra.idProveedor)}</div>
               </div>
               
@@ -1478,10 +1961,6 @@ const AdminCompras = () => {
                       <div style={detailLabelStyle}>Email Proveedor</div>
                       <div style={detailValueStyle}>{proveedorInfo.correo}</div>
                     </div>
-                    <div style={detailItemStyle}>
-                      <div style={detailLabelStyle}>Dirección Proveedor</div>
-                      <div style={detailValueStyle}>{proveedorInfo.direccion}, {proveedorInfo.ciudad}</div>
-                    </div>
                   </>
                 );
               })()}
@@ -1491,9 +1970,14 @@ const AdminCompras = () => {
                 <div style={detailValueStyle}>{selectedCompra.metodoPago}</div>
               </div>
 
-              {/* Productos de la compra */}
+              {/* Productos de la compra - MEJORADO */}
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Productos ({selectedDetalleCompras.length})</div>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaBox />
+                    Productos ({selectedDetalleCompras.length})
+                  </div>
+                </div>
                 <div style={detailValueStyle}>
                   {selectedDetalleCompras.length > 0 ? (
                     <div style={{ marginTop: '10px' }}>
@@ -1502,22 +1986,31 @@ const AdminCompras = () => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          padding: '8px',
+                          padding: '12px',
                           backgroundColor: 'rgba(46, 89, 57, 0.05)',
-                          borderRadius: '6px',
-                          marginBottom: '5px'
+                          borderRadius: '8px',
+                          marginBottom: '8px',
+                          border: '1px solid rgba(46, 89, 57, 0.1)'
                         }}>
-                          <span style={{ fontWeight: 'bold' }}>
-                            {getProductoNombre(detalle.idProducto)}
-                          </span>
-                          <span style={{ fontSize: '14px' }}>
-                            {detalle.cantidad} x ${(detalle.subtotal / detalle.cantidad).toLocaleString('es-CO')} = ${detalle.subtotal.toLocaleString('es-CO')}
-                          </span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                              {getProductoNombre(detalle.idProducto)}
+                            </div>
+                            <div style={{ fontSize: '14px', color: '#679750' }}>
+                              Cantidad: {detalle.cantidad} | 
+                              Precio unitario: ${(detalle.subtotal / detalle.cantidad).toLocaleString('es-CO')}
+                            </div>
+                          </div>
+                          <div style={{ fontWeight: 'bold', color: '#2E5939' }}>
+                            ${detalle.subtotal.toLocaleString('es-CO')}
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    "No hay productos registrados"
+                    <div style={{ color: '#e57373', fontStyle: 'italic' }}>
+                      No hay productos registrados para esta compra
+                    </div>
                   )}
                 </div>
               </div>
@@ -1534,7 +2027,7 @@ const AdminCompras = () => {
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Total</div>
-                <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750'}}>
+                <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750', fontSize: '1.2em'}}>
                   ${selectedCompra.total.toLocaleString('es-CO')}
                 </div>
               </div>
@@ -1564,7 +2057,16 @@ const AdminCompras = () => {
                   fontWeight: "600",
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px'
+                  gap: '5px',
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "#2E5939";
+                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 <FaFilePdf /> Exportar PDF
@@ -1596,6 +2098,23 @@ const AdminCompras = () => {
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
               ¿Estás seguro de eliminar la compra del proveedor "<strong>{getProveedorNombre(compraToDelete.idProveedor)}</strong>"?
             </p>
+            
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffeaa7',
+              borderRadius: '8px',
+              padding: '15px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <FaInfoCircle style={{ color: '#856404' }} />
+                <strong style={{ color: '#856404' }}>Información</strong>
+              </div>
+              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
+                Total: ${compraToDelete.total.toLocaleString('es-CO')} | Productos: {getProductosDeCompra(compraToDelete.idCompra).length}
+              </p>
+            </div>
+
             <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
               <button
                 onClick={confirmDelete}
@@ -1608,6 +2127,7 @@ const AdminCompras = () => {
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                 }}
               >
                 {loading ? "Eliminando..." : "Sí, Eliminar"}
@@ -1623,6 +2143,18 @@ const AdminCompras = () => {
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "#2E5939";
+                  }
                 }}
               >
                 Cancelar
@@ -1635,7 +2167,7 @@ const AdminCompras = () => {
       {/* Modal de PDF */}
       {showPdfModal && selectedCompra && (
         <div style={modalOverlayStyle}>
-          <div style={pdfModalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
             <h2 style={{ marginBottom: 20, color: "#2E5939" }}>Exportar a PDF</h2>
             <p style={{ marginBottom: 30, color: "#2E5939" }}>
               ¿Estás seguro que deseas exportar la compra #{selectedCompra.idCompra} a PDF?
@@ -1651,6 +2183,15 @@ const AdminCompras = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "#2E5939";
+                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 Exportar
@@ -1694,7 +2235,7 @@ const AdminCompras = () => {
           </div>
         )}
 
-        {/* Tabla */}
+        {/* Tabla - ACTUALIZADA CON NOMBRES DE PRODUCTOS */}
         {!loading && (
           <table style={{
             width: "100%",
@@ -1706,7 +2247,7 @@ const AdminCompras = () => {
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Proveedor</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Método Pago</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Productos</th>
+                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Productos</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Total</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
@@ -1716,32 +2257,68 @@ const AdminCompras = () => {
               {paginatedCompras.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {compras.length === 0 ? "No hay compras registradas" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaBox size={30} color="#679750" />
+                      {compras.length === 0 ? "No hay compras registradas" : "No se encontraron resultados"}
+                      {compras.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primera Compra
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedCompras.map((compra) => {
-                  const productosCount = detalleCompras.filter(dc => dc.idCompra === compra.idCompra).length;
+                  const productosCompra = getProductosDeCompra(compra.idCompra);
+                  const nombresProductos = getNombresProductosCompra(compra.idCompra);
+                  
                   return (
                     <tr key={compra.idCompra} style={{ borderBottom: "1px solid #eee" }}>
-                      <td style={{ padding: "15px", fontWeight: "500" }}>{getProveedorNombre(compra.idProveedor)}</td>
-                      <td style={{ padding: "15px" }}>{compra.metodoPago}</td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>
-                        <span style={{
-                          backgroundColor: productosCount > 0 ? '#2E5939' : '#ccc',
-                          color: 'white',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 'bold'
-                        }}>
-                          {productosCount} productos
-                        </span>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        {getProveedorNombre(compra.idProveedor)}
                       </td>
-                      <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>${compra.total.toLocaleString('es-CO')}</td>
+                      <td style={{ padding: "15px" }}>{compra.metodoPago}</td>
+                      <td style={{ padding: "15px" }}>
+                        <div style={{ maxWidth: '300px' }}>
+                          <div style={{ marginBottom: '5px', fontWeight: '500' }}>
+                            {nombresProductos}
+                          </div>
+                          {productosCompra.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              {productosCompra.slice(0, 3).map((producto, index) => (
+                                <span key={index} style={productChipStyle}>
+                                  {producto.cantidad}x {producto.nombre}
+                                </span>
+                              ))}
+                              {productosCompra.length > 3 && (
+                                <span style={productChipStyle}>
+                                  +{productosCompra.length - 3} más
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
+                        ${compra.total.toLocaleString('es-CO')}
+                      </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
                         <button
-                          onClick={() => toggleActive(compra)}
+                          onClick={() => toggleEstadoCompra(compra)}
                           style={{
                             cursor: "pointer",
                             padding: "6px 12px",
@@ -1751,41 +2328,50 @@ const AdminCompras = () => {
                             color: "white",
                             fontWeight: "600",
                             fontSize: "12px",
-                            minWidth: "80px"
+                            minWidth: "80px",
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            e.target.style.transform = "scale(1.05)";
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.transform = "scale(1)";
                           }}
                         >
                           {compra.estado ? "Activa" : "Inactiva"}
                         </button>
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
-                        <button
-                          onClick={() => handleView(compra)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Ver Detalles"
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(compra)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(compra)}
-                          style={btnAccion("#fbe9e7", "#e57373")}
-                          title="Eliminar"
-                        >
-                          <FaTrash />
-                        </button>
-                        <button
-                          onClick={() => handleOpenPdfModal(compra)}
-                          style={btnAccion("#cfe2f3", "#2E5939")}
-                          title="Exportar PDF"
-                        >
-                          <FaFilePdf />
-                        </button>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => handleView(compra)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(compra)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(compra)}
+                            style={btnAccion("#fbe9e7", "#e57373")}
+                            title="Eliminar"
+                          >
+                            <FaTrash />
+                          </button>
+                          <button
+                            onClick={() => handleOpenPdfModal(compra)}
+                            style={btnAccion("#cfe2f3", "#2E5939")}
+                            title="Exportar PDF"
+                          >
+                            <FaFilePdf />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1813,6 +2399,7 @@ const AdminCompras = () => {
                 key={page}
                 onClick={() => goToPage(page)}
                 style={pageBtnStyle(currentPage === page)}
+                aria-current={currentPage === page ? "page" : undefined}
               >
                 {page}
               </button>
@@ -1825,6 +2412,76 @@ const AdminCompras = () => {
           >
             Siguiente
           </button>
+        </div>
+      )}
+
+      {/* Estadísticas */}
+      {!loading && compras.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {compras.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Compras
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {compras.filter(c => c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Compras Activas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {productos.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Productos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              ${compras.reduce((sum, compra) => sum + compra.total, 0).toLocaleString('es-CO')}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total Compras
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaClock, FaTag } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -69,17 +69,6 @@ const pageBtnStyle = (active) => ({
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
 
-const formFieldStyle = {
-  marginBottom: 12,
-};
-
-const formContainerStyle = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '15px 20px',
-  padding: '0 10px'
-};
-
 const modalOverlayStyle = {
   position: "fixed",
   top: 0,
@@ -99,7 +88,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -168,7 +157,7 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -222,9 +211,9 @@ const warningValidationStyle = {
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
-  // Solo letras y espacios, sin números ni caracteres especiales
-  nombreServicio: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-  descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/
+  nombreServicio: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]+$/,
+  descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/,
+  duracion: /^[0-9]+$/
 };
 
 const VALIDATION_RULES = {
@@ -243,10 +232,9 @@ const VALIDATION_RULES = {
   descripcion: {
     minLength: 10,
     maxLength: 500,
-    required: true,
+    required: false, // Cambiado a false ya que la API permite null
     pattern: VALIDATION_PATTERNS.descripcion,
     errorMessages: {
-      required: "La descripción es obligatoria.",
       minLength: "La descripción debe tener al menos 10 caracteres.",
       maxLength: "La descripción no puede exceder los 500 caracteres.",
       pattern: "La descripción contiene caracteres no válidos."
@@ -263,6 +251,24 @@ const VALIDATION_RULES = {
       invalid: "El precio debe ser un valor numérico válido."
     }
   },
+  duracion: {
+    min: 15,
+    max: 480,
+    required: false, // Cambiado a false ya que no está en la API
+    pattern: VALIDATION_PATTERNS.duracion,
+    errorMessages: {
+      min: "La duración mínima es 15 minutos.",
+      max: "La duración máxima es 480 minutos (8 horas).",
+      pattern: "La duración debe ser un número entero válido.",
+      invalid: "La duración debe ser un número entero válido."
+    }
+  },
+  categoria: {
+    required: false, // Cambiado a false ya que no está en la API
+    errorMessages: {
+      required: "La categoría es obligatoria."
+    }
+  },
   estado: {
     required: true,
     errorMessages: {
@@ -274,8 +280,18 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_SERVICIOS = "http://localhost:5255/api/Servicio";
+const API_SERVICIOS = "http://localhost:5204/api/Servicios";
 const ITEMS_PER_PAGE = 5;
+
+// Categorías predefinidas para servicios
+const CATEGORIAS_SERVICIOS = [
+  { value: "spa", label: "💆 Spa y Bienestar" },
+  { value: "gastronomia", label: "🍽️ Gastronomía" },
+  { value: "aventura", label: "🏞️ Aventura y Deporte" },
+  { value: "cultural", label: "🎭 Cultural y Entretenimiento" },
+  { value: "transporte", label: "🚗 Transporte" },
+  { value: "otros", label: "📦 Otros Servicios" }
+];
 
 // ===============================================
 // COMPONENTE FormField PARA SERVICIOS
@@ -313,8 +329,7 @@ const FormField = ({
     let filteredValue = value;
 
     if (name === 'nombreServicio') {
-      // Solo letras y espacios
-      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]/g, "");
     } else if (name === 'descripcion') {
       if (value === "" || VALIDATION_PATTERNS.descripcion.test(value)) {
         filteredValue = value;
@@ -329,6 +344,11 @@ const FormField = ({
       }
       if (parts.length === 2 && parts[1].length > 2) {
         filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
+      }
+    } else if (name === 'duracion') {
+      filteredValue = value.replace(/[^0-9]/g, "");
+      if (filteredValue && parseInt(filteredValue) > (max || 480)) {
+        filteredValue = max || "480";
       }
     } else {
       filteredValue = value;
@@ -465,7 +485,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Gestiservi CON VALIDACIONES MEJORADAS Y ESTADO
+// COMPONENTE PRINCIPAL Gestiservi MEJORADO
 // ===============================================
 const Gestiservi = () => {
   const [servicios, setServicios] = useState([]);
@@ -486,8 +506,11 @@ const Gestiservi = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [filterCategoria, setFilterCategoria] = useState("");
 
+  // Estado inicial basado en la estructura de tu API
   const [newServicio, setNewServicio] = useState({
+    idServicio: 0,
     nombreServicio: "",
     precioServicio: "",
     descripcion: "",
@@ -594,24 +617,19 @@ const Gestiservi = () => {
 
     const trimmedValue = value ? value.toString().trim() : "";
 
-    // Validación de campo requerido
     if (rules.required && !trimmedValue) {
       error = rules.errorMessages.required;
     }
-    // Validación de longitud mínima
     else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
       error = rules.errorMessages.minLength;
     }
-    // Validación de longitud máxima
     else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
       error = rules.errorMessages.maxLength;
     }
-    // Validación de patrón
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
-    // Validaciones numéricas para precio
-    else if (fieldName === 'precioServicio' && trimmedValue) {
+    else if (trimmedValue && fieldName === 'precioServicio') {
       const numericValue = parseFloat(trimmedValue);
       
       if (isNaN(numericValue)) {
@@ -623,32 +641,28 @@ const Gestiservi = () => {
       } else {
         success = "Precio válido.";
         
-        // Advertencias específicas para precios
+        // Advertencias específicas
         if (numericValue > 1000000) {
           warning = "El precio es bastante alto. Verifique que sea correcto.";
-        } else if (numericValue < 5000) {
-          warning = "El precio es bajo para un servicio. Considere ajustarlo.";
         }
       }
     }
-    // Validación para estado
     else if (fieldName === 'estado') {
       success = value ? "Servicio activo" : "Servicio inactivo";
     }
-    // Validaciones de éxito y advertencia para otros campos
     else if (trimmedValue) {
-      success = `${fieldName === 'nombreServicio' ? 'Nombre' : 'Descripción'} válido.`;
+      success = `${fieldName === 'nombreServicio' ? 'Nombre' : fieldName === 'descripcion' ? 'Descripción' : 'Categoría'} válido.`;
       
       if (fieldName === 'nombreServicio' && trimmedValue.length > 50) {
         warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
       } else if (fieldName === 'descripcion' && trimmedValue.length > 300) {
         warning = "La descripción es muy larga. Considere ser más conciso.";
-      } else if (fieldName === 'descripcion' && trimmedValue.length < 20) {
+      } else if (fieldName === 'descripcion' && trimmedValue.length < 20 && trimmedValue.length > 0) {
         warning = "La descripción es muy breve. Sea más descriptivo.";
       }
     }
 
-    // Verificación de duplicados para nombre (solo si no estamos editando el mismo servicio)
+    // Verificación de duplicados para nombre
     if (fieldName === 'nombreServicio' && trimmedValue && !error) {
       const duplicate = servicios.find(servicio => 
         servicio.nombreServicio.toLowerCase() === trimmedValue.toLowerCase() && 
@@ -668,15 +682,16 @@ const Gestiservi = () => {
 
   const validateForm = () => {
     const nombreValid = validateField('nombreServicio', newServicio.nombreServicio);
-    const descripcionValid = validateField('descripcion', newServicio.descripcion);
     const precioValid = validateField('precioServicio', newServicio.precioServicio);
     const estadoValid = validateField('estado', newServicio.estado);
 
-    const isValid = nombreValid && descripcionValid && precioValid && estadoValid;
+    // La descripción es opcional según la API
+    const descripcionValid = !newServicio.descripcion || validateField('descripcion', newServicio.descripcion);
+
+    const isValid = nombreValid && precioValid && estadoValid && descripcionValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
-      // Scroll al primer error
       setTimeout(() => {
         const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
         if (firstErrorField) {
@@ -732,13 +747,19 @@ const Gestiservi = () => {
     setLoading(true);
     
     try {
+      // Preparar datos según la estructura de tu API
       const servicioData = {
-        ...newServicio,
+        nombreServicio: newServicio.nombreServicio.trim(),
         precioServicio: parseFloat(newServicio.precioServicio),
+        descripcion: newServicio.descripcion?.trim() || null, // La API permite null
         estado: newServicio.estado === "true" || newServicio.estado === true
       };
 
+      console.log("📤 Enviando datos:", servicioData);
+
       if (isEditing) {
+        // Para edición, incluir el idServicio
+        servicioData.idServicio = newServicio.idServicio;
         await axios.put(`${API_SERVICIOS}/${newServicio.idServicio}`, servicioData, {
           headers: { 'Content-Type': 'application/json' }
         });
@@ -771,7 +792,6 @@ const Gestiservi = () => {
       } catch (error) {
         console.error("❌ Error al eliminar servicio:", error);
         
-        // Manejo específico para error de integridad referencial
         if (error.response && error.response.status === 409) {
           displayAlert("No se puede eliminar el servicio porque está siendo utilizado en reservas.", "error");
         } else {
@@ -795,7 +815,7 @@ const Gestiservi = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -854,6 +874,7 @@ const Gestiservi = () => {
     setFormSuccess({});
     setFormWarnings({});
     setNewServicio({
+      idServicio: 0,
       nombreServicio: "",
       precioServicio: "",
       descripcion: "",
@@ -880,7 +901,7 @@ const Gestiservi = () => {
     setNewServicio({
       ...servicio,
       precioServicio: servicio.precioServicio.toString(),
-      // Asegura que estado sea string "true" o "false"
+      descripcion: servicio.descripcion || "", // Manejar null
       estado: servicio.estado ? "true" : "false"
     });
     setIsEditing(true);
@@ -899,11 +920,17 @@ const Gestiservi = () => {
   // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
   const filteredServicios = useMemo(() => {
-    return servicios.filter(servicio =>
+    let filtered = servicios.filter(servicio =>
       servicio.nombreServicio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      servicio.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
+      (servicio.descripcion && servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [servicios, searchTerm]);
+
+    if (filterCategoria) {
+      filtered = filtered.filter(servicio => servicio.categoria === filterCategoria);
+    }
+
+    return filtered;
+  }, [servicios, searchTerm, filterCategoria]);
 
   const totalPages = Math.ceil(filteredServicios.length / ITEMS_PER_PAGE);
 
@@ -916,7 +943,9 @@ const Gestiservi = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  // Función para formatear precio
+  // ===============================================
+  // FUNCIONES PARA FORMATEAR DATOS
+  // ===============================================
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -924,6 +953,11 @@ const Gestiservi = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(price);
+  };
+
+  const formatDescripcion = (descripcion) => {
+    if (!descripcion) return "Sin descripción";
+    return descripcion.length > 80 ? `${descripcion.substring(0, 80)}...` : descripcion;
   };
 
   // ===============================================
@@ -974,7 +1008,7 @@ const Gestiservi = () => {
             <button
               onClick={fetchServicios}
               style={{
-                backgroundColor: '#2E5939',
+                backgroundColor: "#2E5939",
                 color: 'white',
                 padding: '8px 16px',
                 border: 'none',
@@ -1020,6 +1054,7 @@ const Gestiservi = () => {
             setFormSuccess({});
             setFormWarnings({});
             setNewServicio({
+              idServicio: 0,
               nombreServicio: "",
               precioServicio: "",
               descripcion: "",
@@ -1053,9 +1088,9 @@ const Gestiservi = () => {
         </button>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      {/* Filtros y búsqueda */}
+      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1076,6 +1111,7 @@ const Gestiservi = () => {
             }}
           />
         </div>
+
         <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
           {filteredServicios.length} resultados
         </div>
@@ -1084,7 +1120,7 @@ const Gestiservi = () => {
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
                 {isEditing ? "Editar Servicio" : "Nuevo Servicio"}
@@ -1104,65 +1140,80 @@ const Gestiservi = () => {
               </button>
             </div>
             
-            <form onSubmit={handleAddServicio} style={formContainerStyle}>
-              <FormField
-                label="Nombre del Servicio"
-                name="nombreServicio"
-                value={newServicio.nombreServicio}
-                onChange={handleChange}
-                error={formErrors.nombreServicio}
-                success={formSuccess.nombreServicio}
-                warning={formWarnings.nombreServicio}
-                style={{ gridColumn: '1 / -1' }}
-                required={true}
-                disabled={loading}
-                maxLength={VALIDATION_RULES.nombreServicio.maxLength}
-                showCharCount={true}
-                placeholder="Ej: Masaje Relajante, Spa Completo, Caminata Ecológica..."
-              />
+            <form onSubmit={handleAddServicio}>
+              <div style={{ marginBottom: '20px' }}>
+                <FormField
+                  label="Nombre del Servicio"
+                  name="nombreServicio"
+                  value={newServicio.nombreServicio}
+                  onChange={handleChange}
+                  error={formErrors.nombreServicio}
+                  success={formSuccess.nombreServicio}
+                  warning={formWarnings.nombreServicio}
+                  required={true}
+                  disabled={loading}
+                  maxLength={VALIDATION_RULES.nombreServicio.maxLength}
+                  showCharCount={true}
+                  placeholder="Ej: Masaje Relajante, Spa Completo, Caminata Ecológica..."
+                />
 
-              <FormField
-                label="Descripción"
-                name="descripcion"
-                type="textarea"
-                value={newServicio.descripcion}
-                onChange={handleChange}
-                error={formErrors.descripcion}
-                success={formSuccess.descripcion}
-                warning={formWarnings.descripcion}
-                style={{ gridColumn: '1 / -1' }}
-                required={true}
-                disabled={loading}
-                maxLength={VALIDATION_RULES.descripcion.maxLength}
-                showCharCount={true}
-                placeholder="Descripción detallada del servicio, incluyendo beneficios y duración..."
-              />
+                <FormField
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaDollarSign />
+                      Precio (COP)
+                    </div>
+                  }
+                  name="precioServicio"
+                  type="number"
+                  value={newServicio.precioServicio}
+                  onChange={handleChange}
+                  error={formErrors.precioServicio}
+                  success={formSuccess.precioServicio}
+                  warning={formWarnings.precioServicio}
+                  required={true}
+                  disabled={loading}
+                  min={VALIDATION_RULES.precioServicio.min}
+                  max={VALIDATION_RULES.precioServicio.max}
+                  step="100"
+                  placeholder="1000"
+                />
 
-              <FormField
-                label={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaDollarSign />
-                    Precio del Servicio (COP)
-                  </div>
-                }
-                name="precioServicio"
-                type="number"
-                value={newServicio.precioServicio}
-                onChange={handleChange}
-                error={formErrors.precioServicio}
-                success={formSuccess.precioServicio}
-                warning={formWarnings.precioServicio}
-                required={true}
-                disabled={loading}
-                min={VALIDATION_RULES.precioServicio.min}
-                max={VALIDATION_RULES.precioServicio.max}
-                step="100"
-                placeholder="1000"
-              />
+                <FormField
+                  label="Estado"
+                  name="estado"
+                  type="select"
+                  value={newServicio.estado}
+                  onChange={handleChange}
+                  error={formErrors.estado}
+                  success={formSuccess.estado}
+                  warning={formWarnings.estado}
+                  options={[
+                    { value: "true", label: "🟢 Activo" },
+                    { value: "false", label: "🔴 Inactivo" }
+                  ]}
+                  required={true}
+                  disabled={loading}
+                />
 
-              
+                <FormField
+                  label="Descripción"
+                  name="descripcion"
+                  type="textarea"
+                  value={newServicio.descripcion}
+                  onChange={handleChange}
+                  error={formErrors.descripcion}
+                  success={formSuccess.descripcion}
+                  warning={formWarnings.descripcion}
+                  required={false} // Opcional según la API
+                  disabled={loading}
+                  maxLength={VALIDATION_RULES.descripcion.maxLength}
+                  showCharCount={true}
+                  placeholder="Descripción detallada del servicio (opcional)..."
+                />
+              </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20, gridColumn: '1 / -1' }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
@@ -1220,7 +1271,7 @@ const Gestiservi = () => {
       {/* Modal de detalles */}
       {showDetails && selectedServicio && (
         <div style={modalOverlayStyle}>
-          <div style={detailsModalStyle}>
+          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Servicio</h2>
               <button
@@ -1247,16 +1298,27 @@ const Gestiservi = () => {
                 <div style={detailLabelStyle}>Nombre</div>
                 <div style={detailValueStyle}>{selectedServicio.nombreServicio}</div>
               </div>
-              
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Descripción</div>
-                <div style={detailValueStyle}>{selectedServicio.descripcion}</div>
-              </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Precio</div>
                 <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750'}}>
                   {formatPrice(selectedServicio.precioServicio)}
+                </div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Descripción</div>
+                <div style={{ 
+                  backgroundColor: "#F7F4EA", 
+                  padding: 15,
+                  borderRadius: 8,
+                  fontSize: 15,
+                  color: '#2E5939',
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  lineHeight: '1.5',
+                  minHeight: '60px'
+                }}>
+                  {selectedServicio.descripcion || "Sin descripción"}
                 </div>
               </div>
 
@@ -1301,7 +1363,6 @@ const Gestiservi = () => {
               ¿Estás seguro de eliminar el servicio "<strong>{servicioToDelete.nombreServicio}</strong>"?
             </p>
             
-            {/* Advertencia sobre valor */}
             <div style={{ 
               backgroundColor: '#fff3cd', 
               border: '1px solid #ffeaa7',
@@ -1399,7 +1460,6 @@ const Gestiservi = () => {
             <thead>
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Servicio</th>
-                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Descripción</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
@@ -1408,18 +1468,43 @@ const Gestiservi = () => {
             <tbody>
               {paginatedServicios.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {servicios.length === 0 ? "No hay servicios registrados" : "No se encontraron resultados"}
+                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {servicios.length === 0 ? "No hay servicios registrados" : "No se encontraron resultados"}
+                      {servicios.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Servicio
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedServicios.map((servicio) => (
                   <tr key={servicio.idServicio} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{servicio.nombreServicio}</td>
-                    <td style={{ padding: "15px" }}>
-                      {servicio.descripcion?.length > 100 
-                        ? `${servicio.descripcion.substring(0, 100)}...` 
-                        : servicio.descripcion}
+                    <td style={{ padding: "15px", fontWeight: "500" }}>
+                      <div>
+                        <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+                          {servicio.nombreServicio}
+                        </div>
+                        <div style={{ fontSize: "13px", color: "#679750", lineHeight: "1.3" }}>
+                          {formatDescripcion(servicio.descripcion)}
+                        </div>
+                      </div>
                     </td>
                     <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
                       {formatPrice(servicio.precioServicio)}
@@ -1502,6 +1587,76 @@ const Gestiservi = () => {
           >
             Siguiente
           </button>
+        </div>
+      )}
+
+      {/* Estadísticas */}
+      {!loading && servicios.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {servicios.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Servicios
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {servicios.filter(s => s.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Servicios Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {servicios.filter(s => !s.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Servicios Inactivos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPrice(servicios.reduce((sum, servicio) => sum + servicio.precioServicio, 0))}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -292,9 +292,7 @@ const galleryImageStyle = {
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
-  // Solo letras y espacios, sin números ni caracteres especiales
   nombre: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-  tipoCabana: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/
 };
 
 const VALIDATION_RULES = {
@@ -307,15 +305,13 @@ const VALIDATION_RULES = {
       required: "El nombre de la cabaña es obligatorio.",
       minLength: "El nombre debe tener al menos 2 caracteres.",
       maxLength: "El nombre no puede exceder los 50 caracteres.",
-      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, números, espacios, guiones y guiones bajos."
+      pattern: "El nombre solo puede contener letras y espacios."
     }
   },
-  tipoCabana: {
+  idTipoCabana: {
     required: true,
-    pattern: VALIDATION_PATTERNS.tipoCabana,
     errorMessages: {
-      required: "El tipo de cabaña es obligatorio.",
-      pattern: "Tipo de cabaña no válido."
+      required: "El tipo de cabaña es obligatorio."
     }
   },
   idSede: {
@@ -330,15 +326,15 @@ const VALIDATION_RULES = {
       required: "Debe seleccionar una temporada."
     }
   },
-  cantidadPersonas: {
+  capacidad: {
     min: 1,
     max: 20,
     required: true,
     errorMessages: {
-      required: "La cantidad de personas es obligatoria.",
-      min: "La cantidad mínima es 1 persona.",
-      max: "La cantidad máxima es 20 personas.",
-      invalid: "La cantidad debe ser un número entero válido."
+      required: "La capacidad es obligatoria.",
+      min: "La capacidad mínima es 1 persona.",
+      max: "La capacidad máxima es 20 personas.",
+      invalid: "La capacidad debe ser un número entero válido."
     }
   }
 };
@@ -346,15 +342,14 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_CABANAS = "http://localhost:5255/api/Cabanas";
-const API_SEDES = "http://localhost:5255/api/Sede";
-const API_TEMPORADAS = "http://localhost:5255/api/Temporada";
-const API_COMODIDADES = "http://localhost:5255/api/Comodidades";
-const API_CABANA_COMODIDADES = "http://localhost:5255/api/CabanaPorComodidades";
-const API_RESERVAS = "http://localhost:5255/api/Reserva";
-const API_IMAGENES = "http://localhost:5255/api/ImgCabana";
-
-const tiposCabana = ["Familiar", "Pareja", "Individual", "Lujo", "Económica"];
+const API_CABANAS = "http://localhost:5204/api/Cabana";
+const API_SEDES = "http://localhost:5204/api/Sede";
+const API_TEMPORADAS = "http://localhost:5204/api/Temporada";
+const API_TIPOS_CABANA = "http://localhost:5204/api/TipoCabana";
+const API_COMODIDADES = "http://localhost:5204/api/Comodidades";
+const API_CABANA_COMODIDADES = "http://localhost:5204/api/CabanaPorComodidades";
+const API_RESERVAS = "http://localhost:5204/api/Reserva";
+const API_IMAGENES = "http://localhost:5204/api/ImgCabana";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -394,10 +389,8 @@ const FormField = ({
     let filteredValue = value;
 
     if (name === 'nombre') {
-      // Solo letras y espacios
       filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
-    } else if (name === 'cantidadPersonas') {
-      // Solo números enteros positivos
+    } else if (name === 'capacidad') {
       filteredValue = value.replace(/[^0-9]/g, "");
       if (filteredValue && parseInt(filteredValue) > (max || 20)) {
         filteredValue = max || "20";
@@ -509,12 +502,13 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Cabins CON MANEJO MEJORADO DE ALERTAS
+// COMPONENTE PRINCIPAL Cabins CORREGIDO
 // ===============================================
 const Cabins = () => {
   const [cabins, setCabins] = useState([]);
   const [sedes, setSedes] = useState([]);
   const [temporadas, setTemporadas] = useState([]);
+  const [tiposCabana, setTiposCabana] = useState([]);
   const [comodidades, setComodidades] = useState([]);
   const [cabanaComodidades, setCabanaComodidades] = useState([]);
   const [reservas, setReservas] = useState([]);
@@ -533,6 +527,7 @@ const Cabins = () => {
   const [loading, setLoading] = useState(false);
   const [loadingSedes, setLoadingSedes] = useState(false);
   const [loadingTemporadas, setLoadingTemporadas] = useState(false);
+  const [loadingTiposCabana, setLoadingTiposCabana] = useState(false);
   const [loadingComodidades, setLoadingComodidades] = useState(false);
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
@@ -543,11 +538,11 @@ const Cabins = () => {
 
   const [newCabin, setNewCabin] = useState({
     nombre: "",
-    tipoCabana: "Familiar",
+    idTipoCabana: "",
     estado: true,
     idTemporada: "",
     idSede: "",
-    cantidadPersonas: 2, // Valor por defecto
+    capacidad: 2,
     comodidadesSeleccionadas: []
   });
 
@@ -560,6 +555,7 @@ const Cabins = () => {
     fetchCabins();
     fetchSedes();
     fetchTemporadas();
+    fetchTiposCabana();
     fetchComodidades();
     fetchCabanaComodidades();
     fetchReservas();
@@ -570,10 +566,10 @@ const Cabins = () => {
   useEffect(() => {
     if (showForm) {
       validateField('nombre', newCabin.nombre);
-      validateField('tipoCabana', newCabin.tipoCabana);
+      validateField('idTipoCabana', newCabin.idTipoCabana);
       validateField('idSede', newCabin.idSede);
       validateField('idTemporada', newCabin.idTemporada);
-      validateField('cantidadPersonas', newCabin.cantidadPersonas);
+      validateField('capacidad', newCabin.capacidad);
     }
   }, [newCabin, showForm]);
 
@@ -672,8 +668,8 @@ const Cabins = () => {
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
-    // Validaciones numéricas para cantidadPersonas
-    else if (fieldName === 'cantidadPersonas' && trimmedValue) {
+    // Validaciones numéricas para capacidad
+    else if (fieldName === 'capacidad' && trimmedValue) {
       const numericValue = parseInt(trimmedValue);
       
       if (isNaN(numericValue)) {
@@ -683,18 +679,16 @@ const Cabins = () => {
       } else if (rules.max !== undefined && numericValue > rules.max) {
         error = rules.errorMessages.max;
       } else {
-        success = "Cantidad de personas válida.";
+        success = "Capacidad válida.";
         
         // Advertencias específicas
         if (numericValue > 10) {
           warning = "Esta cabaña tiene capacidad para muchas personas. Verifique que sea correcto.";
-        } else if (numericValue === 1 && newCabin.tipoCabana === "Familiar") {
-          warning = "Las cabañas familiares suelen tener capacidad para más de 1 persona.";
         }
       }
     }
     else if (trimmedValue) {
-      success = `${fieldName === 'nombre' ? 'Nombre' : fieldName === 'tipoCabana' ? 'Tipo' : fieldName === 'idSede' ? 'Sede' : 'Temporada'} válido.`;
+      success = `${fieldName === 'nombre' ? 'Nombre' : fieldName === 'idTipoCabana' ? 'Tipo' : fieldName === 'idSede' ? 'Sede' : 'Temporada'} válido.`;
       
       if (fieldName === 'nombre' && trimmedValue.length > 30) {
         warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
@@ -721,12 +715,12 @@ const Cabins = () => {
 
   const validateForm = () => {
     const nombreValid = validateField('nombre', newCabin.nombre);
-    const tipoValid = validateField('tipoCabana', newCabin.tipoCabana);
+    const tipoValid = validateField('idTipoCabana', newCabin.idTipoCabana);
     const sedeValid = validateField('idSede', newCabin.idSede);
     const temporadaValid = validateField('idTemporada', newCabin.idTemporada);
-    const cantidadPersonasValid = validateField('cantidadPersonas', newCabin.cantidadPersonas);
+    const capacidadValid = validateField('capacidad', newCabin.capacidad);
 
-    const isValid = nombreValid && tipoValid && sedeValid && temporadaValid && cantidadPersonasValid;
+    const isValid = nombreValid && tipoValid && sedeValid && temporadaValid && capacidadValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -776,9 +770,6 @@ const Cabins = () => {
       
       if (Array.isArray(res.data)) {
         setSedes(res.data);
-        if (res.data.length > 0 && !newCabin.idSede) {
-          setNewCabin(prev => ({ ...prev, idSede: res.data[0].idSede.toString() }));
-        }
       }
     } catch (error) {
       console.error("Error al obtener sedes:", error);
@@ -795,15 +786,28 @@ const Cabins = () => {
       
       if (Array.isArray(res.data)) {
         setTemporadas(res.data);
-        if (res.data.length > 0 && !newCabin.idTemporada) {
-          setNewCabin(prev => ({ ...prev, idTemporada: res.data[0].idTemporada.toString() }));
-        }
       }
     } catch (error) {
       console.error("Error al obtener temporadas:", error);
       handleApiError(error, "cargar las temporadas");
     } finally {
       setLoadingTemporadas(false);
+    }
+  };
+
+  const fetchTiposCabana = async () => {
+    setLoadingTiposCabana(true);
+    try {
+      const res = await axios.get(API_TIPOS_CABANA, { timeout: 10000 });
+      
+      if (Array.isArray(res.data)) {
+        setTiposCabana(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener tipos de cabaña:", error);
+      handleApiError(error, "cargar los tipos de cabaña");
+    } finally {
+      setLoadingTiposCabana(false);
     }
   };
 
@@ -924,20 +928,20 @@ const Cabins = () => {
     try {
       for (const imagen of imagenesSeleccionadas) {
         if (imagen.isNew) {
-          // Para imágenes nuevas, necesitarías enviar el archivo
-          // Aquí asumimos que la API acepta base64 o URLs
           const formData = new FormData();
           formData.append('file', imagen.file);
-          formData.append('idCabana', cabanaId);
+          formData.append('idCabana', cabanaId.toString());
           formData.append('descripcion', imagen.descripcion);
 
           await axios.post(API_IMAGENES, formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
-            }
+            },
+            timeout: 15000
           });
         }
       }
+      displayAlert("Imágenes subidas exitosamente", "success");
     } catch (error) {
       console.error("Error al subir imágenes:", error);
       throw error;
@@ -977,17 +981,28 @@ const Cabins = () => {
     setLoading(true);
     
     try {
+      // CORRECCIÓN: Preparar datos según el modelo del backend
       const cabinData = {
-        ...newCabin,
+        nombre: newCabin.nombre,
+        idTipoCabana: parseInt(newCabin.idTipoCabana),
+        estado: newCabin.estado,
         idTemporada: parseInt(newCabin.idTemporada),
         idSede: parseInt(newCabin.idSede),
-        cantidadPersonas: parseInt(newCabin.cantidadPersonas) // Asegurar que sea número
+        capacidad: parseInt(newCabin.capacidad)
       };
+
+      console.log("Enviando datos de cabaña:", cabinData);
 
       let cabanaId;
 
       if (isEditing) {
-        await axios.put(`${API_CABANAS}/${newCabin.idCabana}`, cabinData, {
+        // CORRECCIÓN: Incluir el ID en los datos para la edición
+        const updateData = {
+          ...cabinData,
+          idCabana: parseInt(newCabin.idCabana)
+        };
+        
+        await axios.put(`${API_CABANAS}/${newCabin.idCabana}`, updateData, {
           headers: { 'Content-Type': 'application/json' }
         });
         cabanaId = newCabin.idCabana;
@@ -1023,44 +1038,24 @@ const Cabins = () => {
 
   const handleComodidades = async (cabanaId) => {
     try {
+      // Eliminar relaciones existentes
       const relacionesExistentes = cabanaComodidades.filter(cc => cc.idCabana === cabanaId);
       for (const relacion of relacionesExistentes) {
         await axios.delete(`${API_CABANA_COMODIDADES}/${relacion.idCabanaComodidades}`);
-        await actualizarCantidadComodidad(relacion.idComodidades, 1);
       }
 
+      // Crear nuevas relaciones
       for (const comodidadId of newCabin.comodidadesSeleccionadas) {
         const relacionData = {
-          idCabana: cabanaId,
+          idCabana: parseInt(cabanaId),
           idComodidades: parseInt(comodidadId)
         };
         await axios.post(API_CABANA_COMODIDADES, relacionData, {
           headers: { 'Content-Type': 'application/json' }
         });
-        await actualizarCantidadComodidad(parseInt(comodidadId), -1);
       }
     } catch (error) {
       console.error("Error al manejar comodidades:", error);
-      throw error;
-    }
-  };
-
-  const actualizarCantidadComodidad = async (comodidadId, cambio) => {
-    try {
-      const comodidad = comodidades.find(c => c.idComodidades === comodidadId);
-      if (comodidad) {
-        const nuevaCantidad = comodidad.cantidad + cambio;
-        if (nuevaCantidad >= 0) {
-          await axios.put(`${API_COMODIDADES}/${comodidadId}`, {
-            ...comodidad,
-            cantidad: nuevaCantidad
-          }, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error al actualizar cantidad de comodidad:", error);
       throw error;
     }
   };
@@ -1087,7 +1082,6 @@ const Cabins = () => {
         const relacionesCabin = cabanaComodidades.filter(cc => cc.idCabana === cabinToDelete.idCabana);
         for (const relacion of relacionesCabin) {
           await axios.delete(`${API_CABANA_COMODIDADES}/${relacion.idCabanaComodidades}`);
-          await actualizarCantidadComodidad(relacion.idComodidades, 1);
         }
 
         // Finalmente eliminar la cabaña
@@ -1095,7 +1089,6 @@ const Cabins = () => {
         displayAlert("Cabaña eliminada exitosamente.", "success");
         await fetchCabins();
         await fetchCabanaComodidades();
-        await fetchComodidades();
         await fetchImagenes();
       } catch (error) {
         console.error("Error al eliminar cabaña:", error);
@@ -1124,7 +1117,7 @@ const Cabins = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1164,12 +1157,7 @@ const Cabins = () => {
       if (index > -1) {
         comodidadesActuales.splice(index, 1);
       } else {
-        const comodidad = comodidades.find(c => c.idComodidades === parseInt(comodidadId));
-        if (comodidad && comodidad.cantidad > 0) {
-          comodidadesActuales.push(comodidadId);
-        } else {
-          displayAlert("Esta comodidad no está disponible en este momento.", "warning");
-        }
+        comodidadesActuales.push(comodidadId);
       }
       
       return { ...prev, comodidadesSeleccionadas: comodidadesActuales };
@@ -1185,11 +1173,11 @@ const Cabins = () => {
     setImagenesSeleccionadas([]);
     setNewCabin({
       nombre: "",
-      tipoCabana: "Familiar",
+      idTipoCabana: "",
       estado: true,
-      idTemporada: temporadas.length > 0 ? temporadas[0].idTemporada.toString() : "",
-      idSede: sedes.length > 0 ? sedes[0].idSede.toString() : "",
-      cantidadPersonas: 2, // Reset a valor por defecto
+      idTemporada: "",
+      idSede: "",
+      capacidad: 2,
       comodidadesSeleccionadas: []
     });
   };
@@ -1207,8 +1195,20 @@ const Cabins = () => {
   const toggleActive = async (cabin) => {
     setLoading(true);
     try {
-      const updatedCabin = { ...cabin, estado: !cabin.estado };
-      await axios.put(`${API_CABANAS}/${cabin.idCabana}`, updatedCabin);
+      // CORRECCIÓN: Enviar todos los campos requeridos según el modelo
+      const updatedCabin = { 
+        idCabana: cabin.idCabana,
+        nombre: cabin.nombre,
+        idTipoCabana: cabin.idTipoCabana,
+        capacidad: cabin.capacidad,
+        estado: !cabin.estado,
+        idTemporada: cabin.idTemporada,
+        idSede: cabin.idSede
+      };
+      
+      await axios.put(`${API_CABANAS}/${cabin.idCabana}`, updatedCabin, {
+        headers: { 'Content-Type': 'application/json' }
+      });
       displayAlert(`Cabaña ${updatedCabin.estado ? 'activada' : 'desactivada'} exitosamente.`, "success");
       await fetchCabins();
     } catch (error) {
@@ -1225,6 +1225,9 @@ const Cabins = () => {
   };
 
   const handleEdit = (cabin) => {
+    console.log("Editando cabaña:", cabin);
+    
+    // CORRECCIÓN: Cargar datos correctamente para edición
     const comodidadesActuales = cabanaComodidades
       .filter(cc => cc.idCabana === cabin.idCabana)
       .map(cc => cc.idComodidades.toString());
@@ -1236,13 +1239,18 @@ const Cabins = () => {
       isNew: false
     }));
 
+    // CORRECCIÓN: Asegurar que todos los campos se carguen correctamente
     setNewCabin({
-      ...cabin,
-      idTemporada: cabin.idTemporada ? cabin.idTemporada.toString() : (temporadas.length > 0 ? temporadas[0].idTemporada.toString() : ""),
-      idSede: cabin.idSede ? cabin.idSede.toString() : (sedes.length > 0 ? sedes[0].idSede.toString() : ""),
-      cantidadPersonas: cabin.cantidadPersonas || 2, // Incluir cantidad de personas
+      idCabana: cabin.idCabana,
+      nombre: cabin.nombre || "",
+      idTipoCabana: cabin.idTipoCabana ? cabin.idTipoCabana.toString() : "",
+      estado: cabin.estado !== undefined ? cabin.estado : true,
+      idTemporada: cabin.idTemporada ? cabin.idTemporada.toString() : "",
+      idSede: cabin.idSede ? cabin.idSede.toString() : "",
+      capacidad: cabin.capacidad || 2,
       comodidadesSeleccionadas: comodidadesActuales
     });
+    
     setImagenesSeleccionadas(imagenesExistentes);
     setIsEditing(true);
     setShowForm(true);
@@ -1268,7 +1276,7 @@ const Cabins = () => {
   const filteredCabins = useMemo(() => {
     return cabins.filter(cabin =>
       cabin.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cabin.tipoCabana?.toLowerCase().includes(searchTerm.toLowerCase())
+      (getTipoCabanaNombre(cabin.idTipoCabana)?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [cabins, searchTerm]);
 
@@ -1296,17 +1304,17 @@ const Cabins = () => {
     return temporada ? temporada.nombreTemporada : `Temporada ${idTemporada}`;
   };
 
+  const getTipoCabanaNombre = (idTipoCabana) => {
+    const tipo = tiposCabana.find(t => t.idTipoCabana === idTipoCabana);
+    return tipo ? tipo.nombreTipoCabana : `Tipo ${idTipoCabana}`;
+  };
+
   const getComodidadesPorCabana = (cabanaId) => {
     const relaciones = cabanaComodidades.filter(cc => cc.idCabana === cabanaId);
     return relaciones.map(relacion => {
       const comodidad = comodidades.find(c => c.idComodidades === relacion.idComodidades);
       return comodidad ? comodidad.nombreComodidades : `Comodidad ${relacion.idComodidades}`;
     });
-  };
-
-  const getComodidadDisponible = (comodidadId) => {
-    const comodidad = comodidades.find(c => c.idComodidades === parseInt(comodidadId));
-    return comodidad ? comodidad.cantidad > 0 : false;
   };
 
   // ===============================================
@@ -1390,7 +1398,7 @@ const Cabins = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Cabañas</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {cabins.length} cabañas registradas | {sedes.length} sedes | {temporadas.length} temporadas | {comodidades.length} comodidades
+            {cabins.length} cabañas registradas | {sedes.length} sedes | {temporadas.length} temporadas | {tiposCabana.length} tipos
           </p>
         </div>
         <button
@@ -1403,11 +1411,11 @@ const Cabins = () => {
             setImagenesSeleccionadas([]);
             setNewCabin({
               nombre: "",
-              tipoCabana: "Familiar",
+              idTipoCabana: "",
               estado: true,
-              idTemporada: temporadas.length > 0 ? temporadas[0].idTemporada.toString() : "",
-              idSede: sedes.length > 0 ? sedes[0].idSede.toString() : "",
-              cantidadPersonas: 2, // Valor por defecto al crear nueva cabaña
+              idTemporada: "",
+              idSede: "",
+              capacidad: 2,
               comodidadesSeleccionadas: []
             });
           }}
@@ -1506,7 +1514,7 @@ const Cabins = () => {
                 placeholder="Ej: Mykonos, Paraíso, Cabaña Familiar"
               />
 
-              {/* Segunda fila: Tipo y Capacidad en grid */}
+              {/* Segunda fila: Tipo y Sede en grid */}
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: '1fr 1fr', 
@@ -1516,49 +1524,21 @@ const Cabins = () => {
               }}>
                 <FormField
                   label="Tipo de Cabaña"
-                  name="tipoCabana"
+                  name="idTipoCabana"
                   type="select"
-                  value={newCabin.tipoCabana}
+                  value={newCabin.idTipoCabana}
                   onChange={handleInputChange}
-                  error={formErrors.tipoCabana}
-                  success={formSuccess.tipoCabana}
-                  warning={formWarnings.tipoCabana}
-                  options={tiposCabana.map(tipo => ({ value: tipo, label: tipo }))}
+                  error={formErrors.idTipoCabana}
+                  success={formSuccess.idTipoCabana}
+                  warning={formWarnings.idTipoCabana}
+                  options={tiposCabana.map(tipo => ({ 
+                    value: tipo.idTipoCabana.toString(), 
+                    label: tipo.nombreTipoCabana 
+                  }))}
                   required={true}
-                  disabled={loading}
+                  disabled={loadingTiposCabana || tiposCabana.length === 0}
                 />
                 
-                <FormField
-                  label={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaUsers />
-                      Capacidad de Personas
-                    </div>
-                  }
-                  name="cantidadPersonas"
-                  type="number"
-                  value={newCabin.cantidadPersonas}
-                  onChange={handleInputChange}
-                  error={formErrors.cantidadPersonas}
-                  success={formSuccess.cantidadPersonas}
-                  warning={formWarnings.cantidadPersonas}
-                  required={true}
-                  disabled={loading}
-                  min={VALIDATION_RULES.cantidadPersonas.min}
-                  max={VALIDATION_RULES.cantidadPersonas.max}
-                  step="1"
-                  placeholder="Ej: 2, 4, 6..."
-                />
-              </div>
-
-              {/* Tercera fila: Sede y Temporada en grid */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gap: '15px', 
-                marginBottom: '15px',
-                alignItems: 'start'
-              }}>
                 <FormField
                   label="Sede"
                   name="idSede"
@@ -1575,7 +1555,16 @@ const Cabins = () => {
                   required={true}
                   disabled={loadingSedes || sedes.length === 0}
                 />
+              </div>
 
+              {/* Tercera fila: Temporada y Capacidad in grid - MEJOR ORGANIZADO */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '15px', 
+                marginBottom: '15px',
+                alignItems: 'start'
+              }}>
                 <FormField
                   label="Temporada"
                   name="idTemporada"
@@ -1587,11 +1576,73 @@ const Cabins = () => {
                   warning={formWarnings.idTemporada}
                   options={temporadas.map(temp => ({ 
                     value: temp.idTemporada.toString(), 
-                    label: `${temp.nombreTemporada} ($${temp.precio})` 
+                    label: `${temp.nombreTemporada} ($${temp.precio || '0'})` 
                   }))}
                   required={true}
                   disabled={loadingTemporadas || temporadas.length === 0}
                 />
+
+                {/* Campo de Capacidad Mejorado */}
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={labelStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaUsers />
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span>Capacidad de Personas</span>
+                        <span style={{ color: "red" }}>*</span>
+                      </span>
+                    </div>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="number"
+                      name="capacidad"
+                      value={newCabin.capacidad}
+                      onChange={handleInputChange}
+                      style={{
+                        ...inputStyle,
+                        border: `1px solid ${formErrors.capacidad ? '#e57373' : formSuccess.capacidad ? '#4caf50' : formWarnings.capacidad ? '#ff9800' : '#ccc'}`,
+                        borderLeft: `4px solid ${formErrors.capacidad ? '#e57373' : formSuccess.capacidad ? '#4caf50' : formWarnings.capacidad ? '#ff9800' : '#ccc'}`,
+                        paddingRight: '60px'
+                      }}
+                      required={true}
+                      disabled={loading}
+                      min={VALIDATION_RULES.capacidad.min}
+                      max={VALIDATION_RULES.capacidad.max}
+                      step="1"
+                      placeholder="Ej: 2, 4, 6..."
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#679750',
+                      fontWeight: '600',
+                      fontSize: '14px'
+                    }}>
+                      personas
+                    </div>
+                  </div>
+                  {formErrors.capacidad && (
+                    <div style={errorValidationStyle}>
+                      <FaExclamationTriangle size={12} />
+                      {formErrors.capacidad}
+                    </div>
+                  )}
+                  {formSuccess.capacidad && !formErrors.capacidad && (
+                    <div style={successValidationStyle}>
+                      <FaCheck size={12} />
+                      {formSuccess.capacidad}
+                    </div>
+                  )}
+                  {formWarnings.capacidad && !formErrors.capacidad && (
+                    <div style={warningValidationStyle}>
+                      <FaInfoCircle size={12} />
+                      {formWarnings.capacidad}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Gestión de Imágenes */}
@@ -1728,25 +1779,15 @@ const Cabins = () => {
                           display: 'flex', 
                           alignItems: 'center', 
                           gap: '8px', 
-                          cursor: getComodidadDisponible(comodidad.idComodidades.toString()) || 
-                                 newCabin.comodidadesSeleccionadas.includes(comodidad.idComodidades.toString()) ? 
-                                 'pointer' : 'not-allowed'
+                          cursor: 'pointer'
                         }}>
                           <input
                             type="checkbox"
                             checked={newCabin.comodidadesSeleccionadas.includes(comodidad.idComodidades.toString())}
                             onChange={() => handleComodidadChange(comodidad.idComodidades.toString())}
-                            disabled={!getComodidadDisponible(comodidad.idComodidades.toString()) && 
-                                     !newCabin.comodidadesSeleccionadas.includes(comodidad.idComodidades.toString())}
                           />
-                          <span style={{ 
-                            color: getComodidadDisponible(comodidad.idComodidades.toString()) ? 
-                                  '#2E5939' : '#999' 
-                          }}>
-                            {comodidad.nombreComodidades} 
-                            <small style={{ marginLeft: '8px', color: '#679750' }}>
-                              (Disponibles: {comodidad.cantidad})
-                            </small>
+                          <span style={{ color: '#2E5939' }}>
+                            {comodidad.nombreComodidades}
                           </span>
                         </label>
                       </div>
@@ -1820,6 +1861,8 @@ const Cabins = () => {
         </div>
       )}
 
+ 
+
       {/* Modal de detalles */}
       {showDetails && currentCabin && (
         <div style={modalOverlayStyle}>
@@ -1853,7 +1896,7 @@ const Cabins = () => {
               
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Tipo</div>
-                <div style={detailValueStyle}>{currentCabin.tipoCabana}</div>
+                <div style={detailValueStyle}>{getTipoCabanaNombre(currentCabin.idTipoCabana)}</div>
               </div>
               
               <div style={detailItemStyle}>
@@ -1882,7 +1925,7 @@ const Cabins = () => {
                     fontSize: '14px',
                     fontWeight: '600'
                   }}>
-                    {currentCabin.cantidadPersonas || 2} persona(s)
+                    {currentCabin.capacidad || 2} persona(s)
                   </span>
                 </div>
               </div>
@@ -1904,6 +1947,9 @@ const Cabins = () => {
                             src={imagen.rutaImagen} 
                             alt={imagen.descripcion}
                             style={galleryImageStyle}
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/150x120/679750/FFFFFF?text=Imagen+No+Disponible';
+                            }}
                           />
                           <button
                             onClick={() => deleteImage(imagen.idImagen)}
@@ -2021,7 +2067,7 @@ const Cabins = () => {
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
+                                   fontWeight: "600",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                 }}
               >
@@ -2076,6 +2122,15 @@ const Cabins = () => {
             <div style={{ fontSize: '18px', marginBottom: '10px' }}>
               🔄 Cargando cabañas...
             </div>
+            <div style={{ 
+              width: '40px', 
+              height: '40px', 
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #2E5939',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto'
+            }}></div>
           </div>
         )}
 
@@ -2104,12 +2159,36 @@ const Cabins = () => {
               {paginatedCabins.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {cabins.length === 0 ? "No hay cabañas registradas" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {cabins.length === 0 ? "No hay cabañas registradas" : "No se encontraron resultados"}
+                      {cabins.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primera Cabaña
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedCabins.map((cabin) => (
-                  <tr key={cabin.idCabana} style={{ borderBottom: "1px solid #eee" }}>
+                  <tr key={cabin.idCabana} style={{ 
+                    borderBottom: "1px solid #eee",
+                    backgroundColor: cabin.estado ? '#fff' : '#f9f9f9'
+                  }}>
                     <td style={{ padding: "15px", fontWeight: "500" }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {cabin.nombre}
@@ -2127,7 +2206,7 @@ const Cabins = () => {
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: "15px" }}>{cabin.tipoCabana}</td>
+                    <td style={{ padding: "15px" }}>{getTipoCabanaNombre(cabin.idTipoCabana)}</td>
                     <td style={{ padding: "15px" }}>{getSedeNombre(cabin.idSede)}</td>
                     <td style={{ padding: "15px", textAlign: "center" }}>{getTemporadaNombre(cabin.idTemporada)}</td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
@@ -2141,7 +2220,7 @@ const Cabins = () => {
                           fontSize: '12px',
                           fontWeight: '500'
                         }}>
-                          {cabin.cantidadPersonas || 2}
+                          {cabin.capacidad || 2}
                         </span>
                       </div>
                     </td>
@@ -2180,8 +2259,9 @@ const Cabins = () => {
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
                         onClick={() => toggleActive(cabin)}
+                        disabled={loading}
                         style={{
-                          cursor: "pointer",
+                          cursor: loading ? "not-allowed" : "pointer",
                           padding: "6px 12px",
                           borderRadius: "20px",
                           border: "none",
@@ -2189,7 +2269,8 @@ const Cabins = () => {
                           color: "white",
                           fontWeight: "600",
                           fontSize: "12px",
-                          minWidth: "80px"
+                          minWidth: "80px",
+                          opacity: loading ? 0.6 : 1
                         }}
                       >
                         {cabin.estado ? "Activa" : "Inactiva"}
@@ -2212,7 +2293,11 @@ const Cabins = () => {
                       </button>
                       <button
                         onClick={() => handleDeleteClick(cabin)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
+                        style={{
+                          ...btnAccion("#fbe9e7", "#e57373"),
+                          opacity: tieneReservasActivas(cabin.idCabana) ? 0.5 : 1,
+                          cursor: tieneReservasActivas(cabin.idCabana) ? "not-allowed" : "pointer"
+                        }}
                         title={tieneReservasActivas(cabin.idCabana) ? "No se puede eliminar - Tiene reservas activas" : "Eliminar"}
                         disabled={tieneReservasActivas(cabin.idCabana)}
                       >
@@ -2229,7 +2314,7 @@ const Cabins = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -2237,18 +2322,33 @@ const Cabins = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -2256,6 +2356,85 @@ const Cabins = () => {
           >
             Siguiente
           </button>
+          
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
+          }}>
+            Página {currentPage} de {totalPages}
+          </div>
+        </div>
+      )}
+
+      {/* Estadísticas rápidas */}
+      {!loading && cabins.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {cabins.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Cabañas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {cabins.filter(c => c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Cabañas Activas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {cabins.filter(c => !c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Cabañas Inactivas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {cabins.filter(c => tieneReservasActivas(c.idCabana)).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Con Reservas Activas
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -2263,3 +2442,4 @@ const Cabins = () => {
 };
 
 export default Cabins;
+

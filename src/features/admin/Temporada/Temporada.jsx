@@ -1,9 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt } from "react-icons/fa";
+import { 
+  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
+  FaExclamationTriangle, FaCheck, FaInfoCircle, FaCalendarAlt,
+  FaPercentage, FaSync
+} from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES)
+// ESTILOS MEJORADOS (CONSISTENTES CON PAQUETES)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -42,20 +46,6 @@ const inputStyle = {
   transition: "all 0.3s ease",
 };
 
-const inputErrorStyle = {
-  ...inputStyle,
-  border: "2px solid #e74c3c",
-  backgroundColor: "#fdf2f2",
-};
-
-const yellowBlockedInputStyle = {
-  ...inputStyle,
-  backgroundColor: "#fffde7",
-  color: "#bfa100",
-  cursor: "not-allowed",
-  border: "1.5px solid #ffe082"
-};
-
 const navBtnStyle = (disabled) => ({
   cursor: disabled ? "not-allowed" : "pointer",
   padding: "8px 12px",
@@ -76,6 +66,13 @@ const pageBtnStyle = (active) => ({
   fontWeight: "600",
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
+
+const formContainerStyle = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '15px 20px',
+  padding: '0 10px'
+};
 
 const modalOverlayStyle = {
   position: "fixed",
@@ -165,7 +162,7 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 600,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -182,12 +179,14 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5
+  marginBottom: 5,
+  fontSize: "14px"
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939"
+  color: "#2E5939",
+  fontWeight: "500"
 };
 
 const validationMessageStyle = {
@@ -217,63 +216,43 @@ const warningValidationStyle = {
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
-  nombreSede: /^(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_&()]+$/,
-  ubicacionSede: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^°]+$/,
-  celular: /^3[0-9]{9}$/
+  nombreTemporada: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&]+$/,
 };
 
 const VALIDATION_RULES = {
-  nombreSede: {
+  nombreTemporada: {
     minLength: 2,
-    maxLength: 100,
+    maxLength: 50,
     required: true,
-    pattern: VALIDATION_PATTERNS.nombreSede,
+    pattern: VALIDATION_PATTERNS.nombreTemporada,
     errorMessages: {
-      required: "El nombre de la sede es obligatorio.",
+      required: "El nombre de la temporada es obligatorio.",
       minLength: "El nombre debe tener al menos 2 caracteres.",
-      maxLength: "El nombre no puede exceder los 100 caracteres.",
-      pattern: "El nombre contiene caracteres no permitidos o no tiene letras.",
-      onlyNumbers: "El nombre no puede ser solo números."
+      maxLength: "El nombre no puede exceder los 50 caracteres.",
+      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, espacios, guiones y el símbolo &."
     }
   },
-  ubicacionSede: {
-    minLength: 10,
-    maxLength: 200,
+  porcentaje: {
     required: true,
-    pattern: VALIDATION_PATTERNS.ubicacionSede,
+    min: 0,
+    max: 100,
     errorMessages: {
-      required: "La ubicación es obligatoria.",
-      minLength: "La ubicación debe tener al menos 10 caracteres.",
-      maxLength: "La ubicación no puede exceder los 200 caracteres.",
-      pattern: "La ubicación contiene caracteres no válidos."
-    }
-  },
-  celular: {
-    exactLength: 10,
-    required: true,
-    pattern: VALIDATION_PATTERNS.celular,
-    errorMessages: {
-      required: "El número de celular es obligatorio.",
-      exactLength: "El celular debe tener exactamente 10 dígitos.",
-      pattern: "El celular debe comenzar con 3 y contener solo números."
-    }
-  },
-  estado: {
-    required: true,
-    errorMessages: {
-      required: "El estado es obligatorio."
+      required: "El porcentaje es obligatorio.",
+      min: "El porcentaje no puede ser menor a 0%.",
+      max: "El porcentaje no puede ser mayor a 100%.",
+      invalid: "El porcentaje debe ser un número válido (ej: 10 o 15.5)."
     }
   }
 };
 
 // ===============================================
-// CONFIGURACIÓN DE API
+// DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_SEDES = "http://localhost:5204/api/Sede";
+const API_TEMPORADA = "http://localhost:5204/api/Temporada";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField MEJORADO
+// COMPONENTE FormField PARA TEMPORADA
 // ===============================================
 const FormField = ({ 
   label, 
@@ -287,28 +266,25 @@ const FormField = ({
   style = {}, 
   required = true, 
   disabled = false,
-  options = [],
   maxLength,
   placeholder,
-  showCharCount = false
+  showCharCount = false,
+  min,
+  max,
+  step,
+  icon
 }) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
 
-    if (name === 'celular') {
-      filteredValue = value.replace(/[^0-9]/g, "").slice(0, 10);
-    } else if (name === 'nombreSede') {
-      if (value === "" || VALIDATION_PATTERNS.nombreSede.test(value)) {
-        filteredValue = value;
-      } else {
-        return;
-      }
-    } else if (name === 'ubicacionSede') {
-      if (value === "" || VALIDATION_PATTERNS.ubicacionSede.test(value)) {
-        filteredValue = value;
-      } else {
-        return;
+    if (name === 'nombreTemporada') {
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&]/g, "");
+    } else if (name === 'porcentaje') {
+      filteredValue = value.replace(/[^0-9.]/g, "");
+      const parts = filteredValue.split('.');
+      if (parts.length > 2) {
+        filteredValue = parts[0] + '.' + parts.slice(1).join('');
       }
     } else {
       filteredValue = value;
@@ -327,6 +303,7 @@ const FormField = ({
       ...inputStyle,
       border: `1px solid ${borderColor}`,
       borderLeft: `4px solid ${borderColor}`,
+      paddingLeft: icon ? '40px' : '12px'
     };
   };
 
@@ -358,69 +335,25 @@ const FormField = ({
     return null;
   };
 
-  const finalOptions = useMemo(() => {
-    if (type === "select") {
-      const placeholderOption = { value: "", label: placeholder || "Selecciona", disabled: required };
-      return [placeholderOption, ...options];
-    }
-    return options;
-  }, [options, type, required, placeholder]);
-
   return (
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      
-      {type === "select" ? (
-        <select
-          name={name}
-          value={value}
-          onChange={onChange}
-          style={getInputStyle()}
-          required={required}
-          disabled={disabled}
-        >
-          {finalOptions.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-            >
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : type === "textarea" ? (
-        <div>
-          <textarea
-            name={name}
-            value={value}
-            onChange={handleFilteredInputChange}
-            style={{
-              ...getInputStyle(),
-              minHeight: "80px",
-              resize: "vertical",
-              fontFamily: "inherit"
-            }}
-            required={required}
-            disabled={disabled}
-            maxLength={maxLength}
-            placeholder={placeholder}
-          />
-          {showCharCount && maxLength && (
-            <div style={{
-              fontSize: "0.75rem",
-              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
-              textAlign: "right",
-              marginTop: "4px"
-            }}>
-              {value.length}/{maxLength} caracteres
-            </div>
-          )}
-        </div>
-      ) : (
+      <div style={{ position: 'relative' }}>
+        {icon && (
+          <div style={{
+            position: 'absolute',
+            left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#2E5939',
+            zIndex: 1
+          }}>
+            {icon}
+          </div>
+        )}
         <div>
           <input
             type={type}
@@ -432,6 +365,9 @@ const FormField = ({
             disabled={disabled}
             maxLength={maxLength}
             placeholder={placeholder}
+            min={min}
+            max={max}
+            step={step}
           />
           {showCharCount && maxLength && (
             <div style={{
@@ -444,56 +380,56 @@ const FormField = ({
             </div>
           )}
         </div>
-      )}
+      </div>
       {getValidationMessage()}
     </div>
   );
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Admisede CON ESTILOS MEJORADOS
+// COMPONENTE PRINCIPAL TEMPORADA MEJORADO
 // ===============================================
-const Admisede = () => {
-  const [sedes, setSedes] = useState([]);
+const Temporada = () => {
+  const [temporadas, setTemporadas] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null);
+  const [selectedTemporada, setSelectedTemporada] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [temporadaToDelete, setTemporadaToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState("success");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newItem, setNewItem] = useState({
-    nombreSede: "",
-    ubicacionSede: "",
-    celular: "",
-    estado: true
+  // Estado inicial basado en la estructura de tu API
+  const [newTemporada, setNewTemporada] = useState({
+    idTemporada: 0,
+    nombreTemporada: "",
+    porcentaje: ""
   });
 
   // ===============================================
   // EFECTOS
   // ===============================================
   useEffect(() => {
-    fetchSedes();
+    fetchTemporadas();
   }, []);
 
   // Validar formulario en tiempo real
   useEffect(() => {
     if (showForm) {
-      validateField('nombreSede', newItem.nombreSede);
-      validateField('ubicacionSede', newItem.ubicacionSede);
-      validateField('celular', newItem.celular);
-      validateField('estado', newItem.estado);
+      validateField('nombreTemporada', newTemporada.nombreTemporada);
+      validateField('porcentaje', newTemporada.porcentaje);
     }
-  }, [newItem, showForm]);
+  }, [newTemporada, showForm]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -508,11 +444,6 @@ const Admisede = () => {
           transform: translateX(0);
           opacity: 1;
         }
-      }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(style);
@@ -566,34 +497,6 @@ const Admisede = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE LA API
-  // ===============================================
-  const fetchSedes = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(API_SEDES, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setSedes(res.data);
-      } else {
-        throw new Error("Formato de datos inválido");
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener sedes:", error);
-      handleApiError(error, "cargar las sedes");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
   // ===============================================
   const validateField = (fieldName, value) => {
@@ -615,48 +518,41 @@ const Admisede = () => {
     else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
       error = rules.errorMessages.maxLength;
     }
-    else if (trimmedValue && rules.exactLength && trimmedValue.length !== rules.exactLength) {
-      error = rules.errorMessages.exactLength;
-    }
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
-    else if (fieldName === 'nombreSede' && /^\d+$/.test(trimmedValue)) {
-      error = rules.errorMessages.onlyNumbers;
-    }
-    else if (trimmedValue) {
-      success = `${fieldName === 'nombreSede' ? 'Nombre' : fieldName === 'ubicacionSede' ? 'Ubicación' : fieldName === 'celular' ? 'Celular' : 'Estado'} válido.`;
+    else if (trimmedValue && fieldName === 'porcentaje') {
+      const numericValue = parseFloat(trimmedValue);
       
-      // Advertencias específicas
-      if (fieldName === 'nombreSede' && trimmedValue.length > 50) {
-        warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
-      } else if (fieldName === 'ubicacionSede' && trimmedValue.length < 20) {
-        warning = "La ubicación es breve. Sea más específico para mejor ubicación.";
-      } else if (fieldName === 'celular') {
-        // Validar que el celular empiece con 3
-        if (!trimmedValue.startsWith('3')) {
-          warning = "Los números celulares en Colombia generalmente empiezan con 3.";
+      if (isNaN(numericValue)) {
+        error = rules.errorMessages.invalid;
+      } else if (rules.min !== undefined && numericValue < rules.min) {
+        error = rules.errorMessages.min;
+      } else if (rules.max !== undefined && numericValue > rules.max) {
+        error = rules.errorMessages.max;
+      } else {
+        success = "Porcentaje válido.";
+        
+        // Advertencias específicas
+        if (numericValue > 70) {
+          warning = "Porcentaje muy alto. Verifique que sea correcto.";
+        } else if (numericValue === 0) {
+          warning = "Porcentaje en 0% — no se aplicará incremento.";
         }
       }
     }
+    else if (trimmedValue) {
+      success = "Campo válido.";
+    }
 
-    // Verificación de duplicados para nombre y celular
-    if ((fieldName === 'nombreSede' || fieldName === 'celular') && trimmedValue && !error) {
-      const duplicate = sedes.find(item => {
-        if (fieldName === 'nombreSede') {
-          return item.nombreSede.toLowerCase() === trimmedValue.toLowerCase() && 
-                 (!isEditing || item.idSede !== newItem.idSede);
-        } else if (fieldName === 'celular') {
-          return item.celular === trimmedValue && 
-                 (!isEditing || item.idSede !== newItem.idSede);
-        }
-        return false;
-      });
-      
+    // Verificación de duplicados para nombre
+    if (fieldName === 'nombreTemporada' && trimmedValue && !error) {
+      const duplicate = temporadas.find(temp => 
+        temp.nombreTemporada.toLowerCase() === trimmedValue.toLowerCase() && 
+        (!isEditing || temp.idTemporada !== newTemporada.idTemporada)
+      );
       if (duplicate) {
-        error = fieldName === 'nombreSede' 
-          ? "Ya existe una sede con este nombre." 
-          : "Ya existe una sede con este número de celular.";
+        error = "Ya existe una temporada con este nombre.";
       }
     }
 
@@ -668,12 +564,10 @@ const Admisede = () => {
   };
 
   const validateForm = () => {
-    const nombreValid = validateField('nombreSede', newItem.nombreSede);
-    const ubicacionValid = validateField('ubicacionSede', newItem.ubicacionSede);
-    const celularValid = validateField('celular', newItem.celular);
-    const estadoValid = validateField('estado', newItem.estado);
+    const nombreValid = validateField('nombreTemporada', newTemporada.nombreTemporada);
+    const porcentajeValid = validateField('porcentaje', newTemporada.porcentaje);
 
-    const isValid = nombreValid && ubicacionValid && celularValid && estadoValid;
+    const isValid = nombreValid && porcentajeValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -688,7 +582,35 @@ const Admisede = () => {
     return isValid;
   };
 
-  const handleAddSede = async (e) => {
+  // ===============================================
+  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
+  // ===============================================
+  const fetchTemporadas = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(API_TEMPORADA, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setTemporadas(res.data);
+      } else {
+        throw new Error("Formato de datos inválido");
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener temporadas:", error);
+      handleApiError(error, "cargar las temporadas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTemporada = async (e) => {
     e.preventDefault();
     
     if (isSubmitting) {
@@ -704,53 +626,64 @@ const Admisede = () => {
     setLoading(true);
     
     try {
-      const sedeData = {
-        nombreSede: newItem.nombreSede.trim(),
-        ubicacionSede: newItem.ubicacionSede.trim(),
-        celular: newItem.celular.trim(),
-        estado: newItem.estado === "true" || newItem.estado === true
+      // Preparar datos según la estructura de tu API
+      const temporadaData = {
+        nombreTemporada: newTemporada.nombreTemporada.trim(),
+        porcentaje: parseFloat(newTemporada.porcentaje)
       };
 
-      console.log("📤 Enviando datos al servidor:", sedeData);
+      console.log("📤 Enviando datos:", temporadaData);
 
       if (isEditing) {
-        const dataToUpdate = {
-          idSede: parseInt(newItem.idSede),
-          ...sedeData
-        };
-        
-        await axios.put(`${API_SEDES}/${newItem.idSede}`, dataToUpdate, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
+        // Para edición, incluir el idTemporada
+        temporadaData.idTemporada = newTemporada.idTemporada;
+        await axios.put(`${API_TEMPORADA}/${newTemporada.idTemporada}`, temporadaData, {
+          headers: { 'Content-Type': 'application/json' }
         });
-        
-        displayAlert("Sede actualizada exitosamente.", "success");
+        displayAlert("Temporada actualizada exitosamente.", "success");
       } else {
-        await axios.post(API_SEDES, sedeData, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
+        await axios.post(API_TEMPORADA, temporadaData, {
+          headers: { 'Content-Type': 'application/json' }
         });
-        
-        displayAlert("Sede agregada exitosamente.", "success");
+        displayAlert("Temporada agregada exitosamente.", "success");
       }
       
-      await fetchSedes();
+      await fetchTemporadas();
       closeForm();
     } catch (error) {
-      console.error("❌ Error al guardar sede:", error);
-      handleApiError(error, isEditing ? "actualizar la sede" : "agregar la sede");
+      console.error("❌ Error al guardar temporada:", error);
+      handleApiError(error, isEditing ? "actualizar la temporada" : "agregar la temporada");
     } finally {
       setLoading(false);
       setIsSubmitting(false);
     }
   };
 
+  const confirmDelete = async () => {
+    if (temporadaToDelete) {
+      setLoading(true);
+      try {
+        await axios.delete(`${API_TEMPORADA}/${temporadaToDelete.idTemporada}`);
+        displayAlert("Temporada eliminada exitosamente.", "success");
+        await fetchTemporadas();
+      } catch (error) {
+        console.error("❌ Error al eliminar temporada:", error);
+        
+        if (error.response && error.response.status === 409) {
+          displayAlert("No se puede eliminar la temporada porque está siendo utilizada en tarifas existentes.", "error");
+        } else {
+          handleApiError(error, "eliminar la temporada");
+        }
+      } finally {
+        setLoading(false);
+        setTemporadaToDelete(null);
+        setShowDeleteConfirm(false);
+      }
+    }
+  };
+
   // ===============================================
-  // FUNCIONES AUXILIARES
+  // FUNCIONES AUXILIARES MEJORADAS
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
@@ -766,7 +699,7 @@ const Admisede = () => {
       } else if (error.response.status === 404) {
         errorMessage = "Recurso no encontrado.";
       } else if (error.response.status === 409) {
-        errorMessage = "Conflicto: Ya existe una sede con estos datos.";
+        errorMessage = "Conflicto: La temporada está siendo utilizada y no puede ser eliminada.";
         alertType = "warning";
       } else if (error.response.status === 500) {
         errorMessage = "Error interno del servidor.";
@@ -783,11 +716,11 @@ const Admisede = () => {
     displayAlert(errorMessage, alertType);
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewItem((prev) => ({
+    setNewTemporada((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
   };
 
@@ -797,33 +730,33 @@ const Admisede = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
-    setNewItem({
-      nombreSede: "",
-      ubicacionSede: "",
-      celular: "",
-      estado: true
+    setNewTemporada({
+      idTemporada: 0,
+      nombreTemporada: "",
+      porcentaje: ""
     });
   };
 
   const closeDetailsModal = () => {
     setShowDetails(false);
-    setCurrentItem(null);
+    setSelectedTemporada(null);
   };
 
-  const handleView = (item) => {
-    setCurrentItem(item);
+  const cancelDelete = () => {
+    setTemporadaToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleView = (temporada) => {
+    setSelectedTemporada(temporada);
     setShowDetails(true);
   };
 
-  const handleEdit = (item) => {
-    setNewItem({
-      idSede: item.idSede,
-      nombreSede: item.nombreSede || "",
-      ubicacionSede: item.ubicacionSede || "",
-      celular: item.celular || "",
-      estado: item.estado.toString()
+  const handleEdit = (temporada) => {
+    setNewTemporada({
+      ...temporada,
+      porcentaje: temporada.porcentaje.toString()
     });
-    
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
@@ -831,46 +764,37 @@ const Admisede = () => {
     setFormWarnings({});
   };
 
-  const toggleEstado = async (sede) => {
-    setLoading(true);
-    try {
-      const updatedSede = { 
-        ...sede, 
-        estado: !sede.estado 
-      };
-      await axios.put(`${API_SEDES}/${sede.idSede}`, updatedSede, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      displayAlert(`Sede ${updatedSede.estado ? 'activada' : 'desactivada'} exitosamente.`, "success");
-      await fetchSedes();
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
-      handleApiError(error, "cambiar el estado");
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteClick = (temporada) => {
+    setTemporadaToDelete(temporada);
+    setShowDeleteConfirm(true);
   };
 
   // ===============================================
   // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
-  const filteredItems = useMemo(() => {
-    return sedes.filter((item) =>
-      item.nombreSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.ubicacionSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.celular?.includes(searchTerm)
+  const filteredTemporadas = useMemo(() => {
+    return temporadas.filter(temporada =>
+      temporada.nombreTemporada?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [sedes, searchTerm]);
+  }, [temporadas, searchTerm]);
 
-  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredTemporadas.length / ITEMS_PER_PAGE);
 
-  const paginatedItems = useMemo(() => {
+  const paginatedTemporadas = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredItems.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredItems, currentPage]);
+    return filteredTemporadas.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredTemporadas, currentPage]);
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // ===============================================
+  // FUNCIONES PARA FORMATEAR DATOS
+  // ===============================================
+  const formatPercentage = (value) => {
+    const v = isNaN(parseFloat(value)) ? 0 : parseFloat(value);
+    return Number.isInteger(v) ? `${v}%` : `${v.toFixed(1)}%`;
   };
 
   // ===============================================
@@ -919,7 +843,7 @@ const Admisede = () => {
           <p>{error}</p>
           <div style={{ marginTop: '10px' }}>
             <button
-              onClick={fetchSedes}
+              onClick={fetchTemporadas}
               style={{
                 backgroundColor: '#2E5939',
                 color: 'white',
@@ -952,50 +876,70 @@ const Admisede = () => {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Sedes</h2>
+          <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Temporadas</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {sedes.length} sedes registradas • {sedes.filter(s => s.estado).length} activas
+            {temporadas.length} temporadas registradas
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setIsEditing(false);
-            setFormErrors({});
-            setFormSuccess({});
-            setFormWarnings({});
-            setNewItem({
-              nombreSede: "",
-              ubicacionSede: "",
-              celular: "",
-              estado: true
-            });
-          }}
-          style={{
-            backgroundColor: "#2E5939",
-            color: "white",
-            padding: "12px 20px",
-            border: "none",
-            borderRadius: 10,
-            cursor: "pointer",
-            fontWeight: "600",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease",
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-            e.target.style.transform = "translateY(-2px)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#2E5939";
-            e.target.style.transform = "translateY(0)";
-          }}
-        >
-          <FaPlus /> Agregar Sede
-        </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            onClick={fetchTemporadas}
+            style={{
+              backgroundColor: "#679750",
+              color: "white",
+              padding: "10px 12px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+            title="Recargar temporadas"
+          >
+            <FaSync />
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              setFormErrors({});
+              setFormSuccess({});
+              setFormWarnings({});
+              setNewTemporada({
+                idTemporada: 0,
+                nombreTemporada: "",
+                porcentaje: ""
+              });
+            }}
+            style={{
+              backgroundColor: "#2E5939",
+              color: "white",
+              padding: "12px 20px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              transition: "all 0.3s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+              e.target.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#2E5939";
+              e.target.style.transform = "translateY(0)";
+            }}
+          >
+            <FaPlus /> Nueva Temporada
+          </button>
+        </div>
       </div>
 
       {/* Barra de búsqueda */}
@@ -1004,7 +948,7 @@ const Admisede = () => {
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
-            placeholder="Buscar por nombre, ubicación o celular..."
+            placeholder="Buscar por nombre de temporada..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -1022,17 +966,17 @@ const Admisede = () => {
           />
         </div>
         <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredItems.length} resultados
+          {filteredTemporadas.length} resultados
         </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
-                {isEditing ? "Editar Sede" : "Agregar Nueva Sede"}
+                {isEditing ? "Editar Temporada" : "Nueva Temporada"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1043,93 +987,75 @@ const Admisede = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
             
-            <form onSubmit={handleAddSede}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <FormField
-                    label="Nombre de la Sede"
-                    name="nombreSede"
-                    value={newItem.nombreSede}
-                    onChange={handleInputChange}
-                    error={formErrors.nombreSede}
-                    success={formSuccess.nombreSede}
-                    warning={formWarnings.nombreSede}
-                    required={true}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.nombreSede.maxLength}
-                    showCharCount={true}
-                    placeholder="Ej: Sede Principal, Sede Norte..."
-                  />
-                </div>
-                
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <FormField
-                    label={
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaMapMarkerAlt />
-                        Ubicación
-                      </div>
-                    }
-                    name="ubicacionSede"
-                    type="textarea"
-                    value={newItem.ubicacionSede}
-                    onChange={handleInputChange}
-                    error={formErrors.ubicacionSede}
-                    success={formSuccess.ubicacionSede}
-                    warning={formWarnings.ubicacionSede}
-                    required={true}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.ubicacionSede.maxLength}
-                    showCharCount={true}
-                    placeholder="Ej: Calle 123 #45-67, Barrio El Poblado, Medellín..."
-                  />
-                </div>
-                
-                <div>
-                  <FormField
-                    label="Celular de Contacto"
-                    name="celular"
-                    type="tel"
-                    value={newItem.celular}
-                    onChange={handleInputChange}
-                    error={formErrors.celular}
-                    success={formSuccess.celular}
-                    warning={formWarnings.celular}
-                    required={true}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.celular.exactLength}
-                    placeholder="10 dígitos, comenzando con 3"
-                  />
-                </div>
+            <form onSubmit={handleAddTemporada}>
+              <div style={formContainerStyle}>
+                <FormField
+                  label="Nombre de la Temporada"
+                  name="nombreTemporada"
+                  value={newTemporada.nombreTemporada}
+                  onChange={handleChange}
+                  error={formErrors.nombreTemporada}
+                  success={formSuccess.nombreTemporada}
+                  warning={formWarnings.nombreTemporada}
+                  style={{ gridColumn: '1 / -1' }}
+                  required={true}
+                  disabled={loading}
+                  maxLength={VALIDATION_RULES.nombreTemporada.maxLength}
+                  showCharCount={true}
+                  placeholder="Ej: Alta Temporada, Baja Temporada, Temporada Media..."
+                  icon={<FaCalendarAlt />}
+                />
 
-                <div>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newItem.estado}
-                    onChange={handleInputChange}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "🟢 Activa" },
-                      { value: "false", label: "🔴 Inactiva" }
-                    ]}
-                  />
-                </div>
+                <FormField
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaPercentage />
+                      Porcentaje (%)
+                    </div>
+                  }
+                  name="porcentaje"
+                  type="number"
+                  value={newTemporada.porcentaje}
+                  onChange={handleChange}
+                  error={formErrors.porcentaje}
+                  success={formSuccess.porcentaje}
+                  warning={formWarnings.porcentaje}
+                  required={true}
+                  disabled={loading}
+                  min={VALIDATION_RULES.porcentaje.min}
+                  max={VALIDATION_RULES.porcentaje.max}
+                  step="0.1"
+                  placeholder="10"
+                  icon={<FaPercentage />}
+                />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+              {/* Resumen de la temporada */}
+              {newTemporada.porcentaje && (
+                <div style={{
+                  backgroundColor: '#E8F5E8',
+                  border: '1px solid #679750',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen de la Temporada</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
+                    <div>Porcentaje de incremento:</div>
+                    <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                      {formatPercentage(newTemporada.porcentaje)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
@@ -1141,9 +1067,9 @@ const Admisede = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
+                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
-                    flex: 1
                   }}
                   onMouseOver={(e) => {
                     if (!loading && !isSubmitting) {
@@ -1158,7 +1084,7 @@ const Admisede = () => {
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar Sede" : "Guardar Sede")}
+                  {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Temporada
                 </button>
                 <button
                   type="button"
@@ -1172,8 +1098,8 @@ const Admisede = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
+                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                    flex: 1
                   }}
                 >
                   Cancelar
@@ -1185,11 +1111,11 @@ const Admisede = () => {
       )}
 
       {/* Modal de detalles */}
-      {showDetails && currentItem && (
+      {showDetails && selectedTemporada && (
         <div style={modalOverlayStyle}>
-          <div style={detailsModalStyle}>
+          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles de la Sede</h2>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Temporada</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1199,7 +1125,6 @@ const Admisede = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1208,47 +1133,26 @@ const Admisede = () => {
             <div>
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>ID</div>
-                <div style={detailValueStyle}>#{currentItem.idSede}</div>
+                <div style={detailValueStyle}>#{selectedTemporada.idTemporada}</div>
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Nombre</div>
-                <div style={detailValueStyle}>{currentItem.nombreSede}</div>
-              </div>
-              
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>
+                <div style={detailLabelStyle}>Nombre de la Temporada</div>
+                <div style={detailValueStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaMapMarkerAlt />
-                    Ubicación
+                    <FaCalendarAlt color="#679750" />
+                    {selectedTemporada.nombreTemporada}
                   </div>
                 </div>
-                <div style={{ 
-                  backgroundColor: "#F7F4EA", 
-                  padding: 15,
-                  borderRadius: 8,
-                  fontSize: 15,
-                  color: '#2E5939',
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  lineHeight: '1.5'
-                }}>
-                  {currentItem.ubicacionSede}
-                </div>
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Celular</div>
-                <div style={detailValueStyle}>{currentItem.celular}</div>
-              </div>
-
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Estado</div>
-                <div style={{
-                  ...detailValueStyle,
-                  color: currentItem.estado ? '#4caf50' : '#e57373',
-                  fontWeight: 'bold'
-                }}>
-                  {currentItem.estado ? '🟢 Activa' : '🔴 Inactiva'}
+                <div style={detailLabelStyle}>Porcentaje</div>
+                <div style={{ ...detailValueStyle, fontWeight: 'bold', color: '#2E5939' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaPercentage color="#679750" />
+                    {formatPercentage(selectedTemporada.porcentaje)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1264,19 +1168,84 @@ const Admisede = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteConfirm && temporadaToDelete && (
+        <div style={modalOverlayStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar la temporada "<strong>{temporadaToDelete.nombreTemporada}</strong>"?
+            </p>
+            
+            {/* Advertencia sobre valor */}
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffeaa7',
+              borderRadius: '8px',
+              padding: '15px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <FaInfoCircle style={{ color: '#856404' }} />
+                <strong style={{ color: '#856404' }}>Temporada a eliminar</strong>
+              </div>
+              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
+                Porcentaje: {formatPercentage(temporadaToDelete.porcentaje)}
+              </p>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+              <button
+                onClick={confirmDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  color: "white",
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                }}
+              >
+                {loading ? "Eliminando..." : "Sí, Eliminar"}
+              </button>
+              <button
+                onClick={cancelDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#2E5939",
+                  color: "#fff",
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                   transition: "all 0.3s ease",
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  e.target.style.transform = "translateY(-2px)";
+                  if (!loading) {
+                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  }
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.background = "#2E5939";
-                  e.target.style.transform = "translateY(0)";
+                  if (!loading) {
+                    e.target.style.background = "#2E5939";
+                  }
                 }}
               >
-                Cerrar
+                Cancelar
               </button>
             </div>
           </div>
@@ -1298,7 +1267,7 @@ const Admisede = () => {
             color: "#2E5939"
           }}>
             <div style={{ fontSize: '18px', marginBottom: '10px' }}>
-              🔄 Cargando sedes...
+              🔄 Cargando temporadas...
             </div>
           </div>
         )}
@@ -1313,72 +1282,73 @@ const Admisede = () => {
           }}>
             <thead>
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
-                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Nombre</th>
-                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Ubicación</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Celular</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
+                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Temporada</th>
+                <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Porcentaje</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedItems.length === 0 && !loading ? (
+              {paginatedTemporadas.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {sedes.length === 0 ? "No hay sedes registradas" : "No se encontraron resultados"}
+                  <td colSpan={3} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {temporadas.length === 0 ? "No hay temporadas registradas" : "No se encontraron resultados"}
+                      {temporadas.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primera Temporada
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((item) => (
-                  <tr key={item.idSede} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{item.nombreSede}</td>
-                    <td style={{ padding: "15px" }}>
-                      {item.ubicacionSede?.length > 50 
-                        ? `${item.ubicacionSede.substring(0, 50)}...` 
-                        : item.ubicacionSede}
+                paginatedTemporadas.map((temporada) => (
+                  <tr key={temporada.idTemporada} style={{ borderBottom: "1px solid #eee" }}>
+                    <td style={{ padding: "15px", fontWeight: "500" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaCalendarAlt color="#679750" />
+                        {temporada.nombreTemporada}
+                      </div>
                     </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{item.celular}</td>
+                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
+                      {formatPercentage(temporada.porcentaje)}
+                    </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
-                        onClick={() => toggleEstado(item)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: item.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px",
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.transform = "scale(1.05)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.transform = "scale(1)";
-                        }}
+                        onClick={() => handleView(temporada)}
+                        style={btnAccion("#F7F4EA", "#2E5939")}
+                        title="Ver Detalles"
                       >
-                        {item.estado ? "Activa" : "Inactiva"}
+                        <FaEye />
                       </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                        <button
-                          onClick={() => handleView(item)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Ver Detalles"
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(item)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar Sede"
-                        >
-                          <FaEdit />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleEdit(temporada)}
+                        style={btnAccion("#F7F4EA", "#2E5939")}
+                        title="Editar"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(temporada)}
+                        style={btnAccion("#fbe9e7", "#e57373")}
+                        title="Eliminar"
+                      >
+                        <FaTrash />
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -1405,7 +1375,6 @@ const Admisede = () => {
                 key={page}
                 onClick={() => goToPage(page)}
                 style={pageBtnStyle(currentPage === page)}
-                aria-current={currentPage === page ? "page" : undefined}
               >
                 {page}
               </button>
@@ -1422,7 +1391,7 @@ const Admisede = () => {
       )}
 
       {/* Estadísticas */}
-      {!loading && sedes.length > 0 && (
+      {!loading && temporadas.length > 0 && (
         <div style={{
           marginTop: '20px',
           display: 'grid',
@@ -1437,10 +1406,10 @@ const Admisede = () => {
             border: '1px solid #679750'
           }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedes.length}
+              {temporadas.length}
             </div>
             <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Sedes
+              Total Temporadas
             </div>
           </div>
           
@@ -1452,25 +1421,25 @@ const Admisede = () => {
             border: '1px solid #679750'
           }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedes.filter(s => s.estado).length}
+              {temporadas.filter(t => t.porcentaje > 0).length}
             </div>
             <div style={{ fontSize: '14px', color: '#679750' }}>
-              Sedes Activas
+              Con Incremento
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
+            backgroundColor: '#E8F5E8',
             padding: '15px',
             borderRadius: '10px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
+            border: '1px solid #679750'
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
-              {sedes.filter(s => !s.estado).length}
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPercentage(temporadas.reduce((sum, temp) => sum + temp.porcentaje, 0) / temporadas.length)}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
-              Sedes Inactivas
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Promedio %
             </div>
           </div>
         </div>
@@ -1479,4 +1448,4 @@ const Admisede = () => {
   );
 };
 
-export default Admisede;
+export default Temporada;

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaConciergeBell } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaConciergeBell, FaToggleOn, FaToggleOff } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -212,26 +212,29 @@ const warningValidationStyle = {
   color: "#ff9800"
 };
 
-const servicioTagStyle = {
-  display: 'inline-flex',
+const toggleButtonStyle = (active) => ({
+  display: 'flex',
   alignItems: 'center',
-  gap: '5px',
-  backgroundColor: '#E8F5E8',
-  color: '#2E5939',
-  padding: '4px 8px',
-  borderRadius: '12px',
-  fontSize: '12px',
-  fontWeight: '500',
-  margin: '2px'
-};
+  justifyContent: 'center',
+  gap: '8px',
+  padding: '10px 16px',
+  borderRadius: '25px',
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '14px',
+  transition: 'all 0.3s ease',
+  backgroundColor: active ? '#4caf50' : '#e57373',
+  color: 'white',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  minWidth: '140px'
+});
 
 // ===============================================
 // VALIDACIONES Y PATRONES PARA PAQUETES
 // ===============================================
 const VALIDATION_PATTERNS = {
-  // Solo letras y espacios, sin números ni caracteres especiales
-  nombrePaquete: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-  descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/
+  nombrePaquete: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]+$/,
 };
 
 const VALIDATION_RULES = {
@@ -244,12 +247,12 @@ const VALIDATION_RULES = {
       required: "El nombre del paquete es obligatorio.",
       minLength: "El nombre debe tener al menos 2 caracteres.",
       maxLength: "El nombre no puede exceder los 100 caracteres.",
-      pattern: "El nombre solo puede contener letras y espacios. No se permiten números ni caracteres especiales."
+      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, espacios, guiones y el símbolo &."
     }
   },
   precioPaquete: {
-    min: 1000, // mínimo 1000
-    max: 10000000, // máximo 10,000,000
+    min: 1000,
+    max: 10000000,
     required: true,
     errorMessages: {
       required: "El precio es obligatorio.",
@@ -291,11 +294,10 @@ const VALIDATION_RULES = {
       invalid: "El descuento debe ser un valor numérico válido."
     }
   },
-  serviciosSeleccionados: {
+  estado: {
     required: true,
     errorMessages: {
-      required: "Debe seleccionar al menos un servicio.",
-      min: "Seleccione al menos un servicio."
+      required: "El estado es obligatorio."
     }
   }
 };
@@ -303,9 +305,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PAQUETES = "http://localhost:5255/api/Paquetes";
-const API_SERVICIOS = "http://localhost:5255/api/Servicio";
-const API_PAQUETE_SERVICIOS = "http://localhost:5255/api/ServicioPorPaquete";
+const API_PAQUETES = "http://localhost:5204/api/Paquete";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -336,11 +336,7 @@ const FormField = ({
     let filteredValue = value;
 
     if (name === 'nombrePaquete') {
-      if (value === "" || VALIDATION_PATTERNS.nombrePaquete.test(value)) {
-        filteredValue = value;
-      } else {
-        return;
-      }
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]/g, "");
     } else if (name === 'precioPaquete' || name === 'personas' || name === 'dias' || name === 'descuento') {
       filteredValue = value.replace(/[^0-9.]/g, "");
       const parts = filteredValue.split('.');
@@ -418,62 +414,32 @@ const FormField = ({
             {icon}
           </div>
         )}
-        {type === "textarea" ? (
-          <div>
-            <textarea
-              name={name}
-              value={value}
-              onChange={handleFilteredInputChange}
-              style={{
-                ...getInputStyle(),
-                minHeight: "80px",
-                resize: "vertical",
-                fontFamily: "inherit"
-              }}
-              required={required}
-              disabled={disabled}
-              maxLength={maxLength}
-              placeholder={placeholder}
-            />
-            {showCharCount && maxLength && (
-              <div style={{
-                fontSize: "0.75rem",
-                color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
-                textAlign: "right",
-                marginTop: "4px"
-              }}>
-                {value.length}/{maxLength} caracteres
-              </div>
-            )}
-          </div>
-        ) : (
-          <div>
-            <input
-              type={type}
-              name={name}
-              value={value}
-              onChange={handleFilteredInputChange}
-              style={getInputStyle()}
-              required={required}
-              disabled={disabled}
-              maxLength={maxLength}
-              placeholder={placeholder}
-              min={min}
-              max={max}
-              step={step}
-            />
-            {showCharCount && maxLength && (
-              <div style={{
-                fontSize: "0.75rem",
-                color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
-                textAlign: "right",
-                marginTop: "4px"
-              }}>
-                {value.length}/{maxLength} caracteres
-              </div>
-            )}
-          </div>
-        )}
+        <div>
+          <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={handleFilteredInputChange}
+            style={getInputStyle()}
+            required={required}
+            disabled={disabled}
+            maxLength={maxLength}
+            placeholder={placeholder}
+            min={min}
+            max={max}
+            step={step}
+          />
+          {showCharCount && maxLength && (
+            <div style={{
+              fontSize: "0.75rem",
+              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+              textAlign: "right",
+              marginTop: "4px"
+            }}>
+              {value.length}/{maxLength} caracteres
+            </div>
+          )}
+        </div>
       </div>
       {getValidationMessage()}
     </div>
@@ -481,12 +447,10 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Gestipaq CON VALIDACIONES MEJORADAS
+// COMPONENTE PRINCIPAL Gestipaq MEJORADO
 // ===============================================
 const Gestipaq = () => {
   const [paquetes, setPaquetes] = useState([]);
-  const [servicios, setServicios] = useState([]);
-  const [paqueteServicios, setPaqueteServicios] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -499,21 +463,21 @@ const Gestipaq = () => {
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState("success");
   const [loading, setLoading] = useState(false);
-  const [loadingServicios, setLoadingServicios] = useState(false);
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estado inicial basado en la estructura de tu API
   const [newPackage, setNewPackage] = useState({
+    idPaquete: 0,
     nombrePaquete: "",
     precioPaquete: "",
-    personas: 2,
-    dias: 1,
-    descuento: 0,
-    estado: true,
-    serviciosSeleccionados: []
+    personas: "2",
+    dias: "1",
+    descuento: "0",
+    estado: true
   });
 
   // ===============================================
@@ -521,8 +485,6 @@ const Gestipaq = () => {
   // ===============================================
   useEffect(() => {
     fetchPaquetes();
-    fetchServicios();
-    fetchPaqueteServicios();
   }, []);
 
   // Validar formulario en tiempo real
@@ -533,7 +495,7 @@ const Gestipaq = () => {
       validateField('personas', newPackage.personas);
       validateField('dias', newPackage.dias);
       validateField('descuento', newPackage.descuento);
-      validateField('serviciosSeleccionados', newPackage.serviciosSeleccionados);
+      validateField('estado', newPackage.estado);
     }
   }, [newPackage, showForm]);
 
@@ -614,26 +576,22 @@ const Gestipaq = () => {
     let warning = "";
 
     const trimmedValue = value ? value.toString().trim() : "";
-    const numericValue = parseFloat(trimmedValue);
 
-    // Validación de campo requerido
     if (rules.required && !trimmedValue) {
       error = rules.errorMessages.required;
     }
-    // Validación de longitud mínima
     else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
       error = rules.errorMessages.minLength;
     }
-    // Validación de longitud máxima
     else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
       error = rules.errorMessages.maxLength;
     }
-    // Validación de patrón
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
-    // Validaciones numéricas
-    else if (['precioPaquete', 'personas', 'dias', 'descuento'].includes(fieldName) && trimmedValue) {
+    else if (trimmedValue && (fieldName === 'precioPaquete' || fieldName === 'personas' || fieldName === 'dias' || fieldName === 'descuento')) {
+      const numericValue = parseFloat(trimmedValue);
+      
       if (isNaN(numericValue)) {
         error = rules.errorMessages.invalid;
       } else if (rules.min !== undefined && numericValue < rules.min) {
@@ -646,34 +604,25 @@ const Gestipaq = () => {
                   fieldName === 'dias' ? 'Días' : 'Descuento'} válido.`;
         
         // Advertencias específicas
-        if (fieldName === 'precioPaquete') {
-          if (numericValue > 1000000) {
-            warning = "El precio es bastante alto. Verifique que sea correcto.";
-          } else if (numericValue < 50000) {
-            warning = "El precio es bajo para un paquete. Considere ajustarlo.";
-          }
+        if (fieldName === 'precioPaquete' && numericValue > 1000000) {
+          warning = "El precio es bastante alto. Verifique que sea correcto.";
         } else if (fieldName === 'descuento' && numericValue > 30) {
           warning = "Descuento muy alto. Considere si es sostenible.";
+        } else if (fieldName === 'personas' && numericValue > 20) {
+          warning = "Grupo grande. Verifique disponibilidad.";
+        } else if (fieldName === 'dias' && numericValue > 15) {
+          warning = "Estadía extensa. Verifique disponibilidad.";
         }
       }
     }
-    // Validación de servicios seleccionados
-    else if (fieldName === 'serviciosSeleccionados') {
-      if (value.length === 0) {
-        error = rules.errorMessages.required;
-      } else {
-        success = `${value.length} servicio(s) seleccionado(s).`;
-        if (value.length > 5) {
-          warning = "Muchos servicios seleccionados. Considere si todos son necesarios.";
-        }
-      }
+    else if (fieldName === 'estado') {
+      success = value ? "Paquete activo" : "Paquete inactivo";
     }
-    // Validaciones de éxito para otros campos
     else if (trimmedValue) {
       success = "Campo válido.";
     }
 
-    // Verificación de duplicados para nombre (solo si no estamos editando el mismo paquete)
+    // Verificación de duplicados para nombre
     if (fieldName === 'nombrePaquete' && trimmedValue && !error) {
       const duplicate = paquetes.find(paquete => 
         paquete.nombrePaquete.toLowerCase() === trimmedValue.toLowerCase() && 
@@ -697,9 +646,9 @@ const Gestipaq = () => {
     const personasValid = validateField('personas', newPackage.personas);
     const diasValid = validateField('dias', newPackage.dias);
     const descuentoValid = validateField('descuento', newPackage.descuento);
-    const serviciosValid = validateField('serviciosSeleccionados', newPackage.serviciosSeleccionados);
+    const estadoValid = validateField('estado', newPackage.estado);
 
-    const isValid = nombreValid && precioValid && personasValid && diasValid && descuentoValid && serviciosValid;
+    const isValid = nombreValid && precioValid && personasValid && diasValid && descuentoValid && estadoValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -742,37 +691,6 @@ const Gestipaq = () => {
     }
   };
 
-  const fetchServicios = async () => {
-    setLoadingServicios(true);
-    try {
-      const res = await axios.get(API_SERVICIOS, {
-        timeout: 10000
-      });
-      
-      if (Array.isArray(res.data)) {
-        setServicios(res.data);
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener servicios:", error);
-    } finally {
-      setLoadingServicios(false);
-    }
-  };
-
-  const fetchPaqueteServicios = async () => {
-    try {
-      const res = await axios.get(API_PAQUETE_SERVICIOS, {
-        timeout: 10000
-      });
-      
-      if (Array.isArray(res.data)) {
-        setPaqueteServicios(res.data);
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener relaciones paquete-servicios:", error);
-    }
-  };
-
   const handleAddPackage = async (e) => {
     e.preventDefault();
     
@@ -789,41 +707,34 @@ const Gestipaq = () => {
     setLoading(true);
     
     try {
+      // Preparar datos según la estructura de tu API
       const packageData = {
-        idPaquete: newPackage.idPaquete,
         nombrePaquete: newPackage.nombrePaquete.trim(),
         precioPaquete: parseFloat(newPackage.precioPaquete),
         personas: parseInt(newPackage.personas),
         dias: parseInt(newPackage.dias),
         descuento: parseFloat(newPackage.descuento),
-        estado: newPackage.estado === "true" || newPackage.estado === true
+        estado: newPackage.estado
       };
 
-      let paqueteId;
+      console.log("📤 Enviando datos:", packageData);
 
       if (isEditing) {
+        // Para edición, incluir el idPaquete
+        packageData.idPaquete = newPackage.idPaquete;
         await axios.put(`${API_PAQUETES}/${newPackage.idPaquete}`, packageData, {
           headers: { 'Content-Type': 'application/json' }
         });
-        paqueteId = newPackage.idPaquete;
         displayAlert("Paquete actualizado exitosamente.", "success");
       } else {
-        const response = await axios.post(API_PAQUETES, packageData, {
+        await axios.post(API_PAQUETES, packageData, {
           headers: { 'Content-Type': 'application/json' }
         });
-        paqueteId = response.data.idPaquete;
         displayAlert("Paquete agregado exitosamente.", "success");
-      }
-
-      // MANEJAR SERVICIOS DESPUÉS DE GUARDAR EL PAQUETE
-      if (newPackage.serviciosSeleccionados.length > 0 && paqueteId) {
-        await handleServicios(paqueteId);
       }
       
       await fetchPaquetes();
-      await fetchPaqueteServicios();
       closeForm();
-      
     } catch (error) {
       console.error("❌ Error al guardar paquete:", error);
       handleApiError(error, isEditing ? "actualizar el paquete" : "agregar el paquete");
@@ -833,66 +744,16 @@ const Gestipaq = () => {
     }
   };
 
-  const handleServicios = async (paqueteId) => {
-    try {
-      // ELIMINAR RELACIONES EXISTENTES
-      const relacionesExistentes = paqueteServicios.filter(ps => ps.idPaquete === paqueteId);
-      
-      for (const relacion of relacionesExistentes) {
-        try {
-          await axios.delete(`${API_PAQUETE_SERVICIOS}/${relacion.idServicioPaquete}`);
-        } catch (deleteError) {
-          console.error(`Error eliminando relación ${relacion.idServicioPaquete}:`, deleteError);
-        }
-      }
-
-      // CREAR NUEVAS RELACIONES
-      for (const servicioId of newPackage.serviciosSeleccionados) {
-        try {
-          const relacionData = {
-            idPaquete: parseInt(paqueteId),
-            idServicio: parseInt(servicioId)
-          };
-          
-          await axios.post(API_PAQUETE_SERVICIOS, relacionData, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        } catch (servicioError) {
-          console.error(`Error asociando servicio ${servicioId}:`, servicioError);
-        }
-      }
-      
-    } catch (error) {
-      console.error("❌ Error al manejar servicios:", error);
-      throw error;
-    }
-  };
-
   const confirmDelete = async () => {
     if (packageToDelete) {
       setLoading(true);
       try {
-        // PRIMERO ELIMINAR LAS RELACIONES CON SERVICIOS
-        const relacionesPaquete = paqueteServicios.filter(ps => ps.idPaquete === packageToDelete.idPaquete);
-        
-        for (const relacion of relacionesPaquete) {
-          try {
-            await axios.delete(`${API_PAQUETE_SERVICIOS}/${relacion.idServicioPaquete}`);
-          } catch (deleteError) {
-            console.error("Error eliminando relación:", deleteError);
-          }
-        }
-
-        // LUEGO ELIMINAR EL PAQUETE
         await axios.delete(`${API_PAQUETES}/${packageToDelete.idPaquete}`);
-        
         displayAlert("Paquete eliminado exitosamente.", "success");
         await fetchPaquetes();
-        await fetchPaqueteServicios();
       } catch (error) {
         console.error("❌ Error al eliminar paquete:", error);
         
-        // Manejo específico para error de integridad referencial
         if (error.response && error.response.status === 409) {
           displayAlert("No se puede eliminar el paquete porque está siendo utilizado en reservas.", "error");
         } else {
@@ -916,7 +777,7 @@ const Gestipaq = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -948,24 +809,12 @@ const Gestipaq = () => {
     }));
   };
 
-  const handleServicioChange = (servicioId) => {
-    setNewPackage(prev => {
-      const serviciosActuales = [...prev.serviciosSeleccionados];
-      const index = serviciosActuales.indexOf(servicioId);
-      
-      if (index > -1) {
-        serviciosActuales.splice(index, 1);
-      } else {
-        serviciosActuales.push(servicioId);
-      }
-      
-      const updatedPackage = { ...prev, serviciosSeleccionados: serviciosActuales };
-      
-      // Validar servicios seleccionados
-      validateField("serviciosSeleccionados", serviciosActuales);
-      
-      return updatedPackage;
-    });
+  // Función para cambiar el estado con el botón toggle
+  const toggleEstado = () => {
+    setNewPackage(prev => ({
+      ...prev,
+      estado: !prev.estado
+    }));
   };
 
   const closeForm = () => {
@@ -975,13 +824,13 @@ const Gestipaq = () => {
     setFormSuccess({});
     setFormWarnings({});
     setNewPackage({
+      idPaquete: 0,
       nombrePaquete: "",
       precioPaquete: "",
-      personas: 2,
-      dias: 1,
-      descuento: 0,
-      estado: true,
-      serviciosSeleccionados: []
+      personas: "2",
+      dias: "1",
+      descuento: "0",
+      estado: true
     });
   };
 
@@ -995,17 +844,12 @@ const Gestipaq = () => {
     setShowDeleteConfirm(false);
   };
 
-  const toggleEstado = async (paquete) => {
+  const toggleEstadoPaquete = async (paquete) => {
     setLoading(true);
     try {
-      const updatedPackage = {
-        idPaquete: paquete.idPaquete,
-        nombrePaquete: paquete.nombrePaquete,
-        precioPaquete: paquete.precioPaquete,
-        personas: paquete.personas,
-        dias: paquete.dias,
-        descuento: paquete.descuento,
-        estado: !paquete.estado
+      const updatedPackage = { 
+        ...paquete, 
+        estado: !paquete.estado 
       };
       await axios.put(`${API_PAQUETES}/${paquete.idPaquete}`, updatedPackage, {
         headers: { 'Content-Type': 'application/json' }
@@ -1026,23 +870,14 @@ const Gestipaq = () => {
   };
 
   const handleEdit = (paquete) => {
-    // OBTENER SERVICIOS ACTUALES DE ESTE PAQUETE
-    const serviciosActuales = paqueteServicios
-      .filter(ps => ps.idPaquete === paquete.idPaquete)
-      .map(ps => ps.idServicio.toString());
-
-    // PREPARAR DATOS PARA EL FORMULARIO
     setNewPackage({
-      idPaquete: paquete.idPaquete,
-      nombrePaquete: paquete.nombrePaquete || "",
-      precioPaquete: paquete.precioPaquete?.toString() || "",
-      personas: paquete.personas?.toString() || "2",
-      dias: paquete.dias?.toString() || "1",
-      descuento: paquete.descuento?.toString() || "0",
-      estado: paquete.estado?.toString() || "true",
-      serviciosSeleccionados: serviciosActuales
+      ...paquete,
+      precioPaquete: paquete.precioPaquete.toString(),
+      personas: paquete.personas.toString(),
+      dias: paquete.dias.toString(),
+      descuento: paquete.descuento.toString(),
+      estado: paquete.estado
     });
-    
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
@@ -1076,21 +911,8 @@ const Gestipaq = () => {
   };
 
   // ===============================================
-  // FUNCIONES PARA OBTENER DATOS RELACIONADOS
+  // FUNCIONES PARA FORMATEAR DATOS
   // ===============================================
-  const getServiciosPorPaquete = (paqueteId) => {
-    const relaciones = paqueteServicios.filter(ps => ps.idPaquete === paqueteId);
-    return relaciones.map(relacion => {
-      const servicio = servicios.find(s => s.idServicio === relacion.idServicio);
-      return servicio ? {
-        id: servicio.idServicio,
-        nombre: servicio.nombreServicio,
-        precio: servicio.precioServicio
-      } : null;
-    }).filter(servicio => servicio !== null);
-  };
-
-  // Función para formatear precio
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -1100,7 +922,6 @@ const Gestipaq = () => {
     }).format(price);
   };
 
-  // Calcular precio con descuento
   const calcularPrecioConDescuento = (precio, descuento) => {
     return precio - (precio * descuento / 100);
   };
@@ -1186,7 +1007,9 @@ const Gestipaq = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Paquetes</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {paquetes.length} paquetes registrados • {servicios.length} servicios disponibles
+            {paquetes.length} paquetes registrados • 
+            {paquetes.filter(p => p.estado).length} activos • 
+            Valor total: {formatPrice(paquetes.reduce((sum, paquete) => sum + paquete.precioPaquete, 0))}
           </p>
         </div>
         <button
@@ -1197,13 +1020,13 @@ const Gestipaq = () => {
             setFormSuccess({});
             setFormWarnings({});
             setNewPackage({
+              idPaquete: 0,
               nombrePaquete: "",
               precioPaquete: "",
-              personas: 2,
-              dias: 1,
-              descuento: 0,
-              estado: true,
-              serviciosSeleccionados: []
+              personas: "2",
+              dias: "1",
+              descuento: "0",
+              estado: true
             });
           }}
           style={{
@@ -1264,7 +1087,7 @@ const Gestipaq = () => {
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
                 {isEditing ? "Editar Paquete" : "Nuevo Paquete"}
@@ -1392,57 +1215,59 @@ const Gestipaq = () => {
                   placeholder="0"
                   icon={<FaTag />}
                 />
-              </div>
 
-              {/* Selección de Servicios */}
-              <div style={{ marginBottom: '20px', marginTop: '15px' }}>
-                <label style={labelStyle}>
-                  Servicios Incluidos
-                  <span style={{ color: "red" }}>*</span>:
-                </label>
-                {formErrors.serviciosSeleccionados && (
-                  <p style={{ color: "red", fontSize: "0.8rem", marginBottom: "8px" }}>
-                    {formErrors.serviciosSeleccionados}
-                  </p>
-                )}
-                <div style={{ 
-                  border: formErrors.serviciosSeleccionados ? '1px solid #e57373' : '1px solid #ccc', 
-                  borderRadius: '8px', 
-                  padding: '15px',
-                  backgroundColor: '#F7F4EA',
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
-                  {loadingServicios ? (
-                    <div style={{ textAlign: 'center', color: '#679750' }}>Cargando servicios...</div>
-                  ) : servicios.length === 0 ? (
-                    <div style={{ textAlign: 'center', color: '#666' }}>No hay servicios disponibles</div>
-                  ) : (
-                    servicios.map(servicio => (
-                      <div key={servicio.idServicio} style={{ marginBottom: '10px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                          <input
-                            type="checkbox"
-                            checked={newPackage.serviciosSeleccionados.includes(servicio.idServicio.toString())}
-                            onChange={() => handleServicioChange(servicio.idServicio.toString())}
-                          />
-                          <span style={{ color: '#2E5939' }}>
-                            {servicio.nombreServicio} 
-                            <small style={{ marginLeft: '8px', color: '#679750' }}>
-                              ({formatPrice(servicio.precioServicio)})
-                            </small>
-                          </span>
-                        </label>
+                {/* Botón Toggle para Estado - oculto en modo edición */}
+                {!isEditing && (
+                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
+                    <label style={labelStyle}>
+                      Estado del Paquete
+                      <span style={{ color: "red" }}>*</span>
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                      <button
+                        type="button"
+                        onClick={toggleEstado}
+                        style={toggleButtonStyle(newPackage.estado)}
+                        disabled={loading}
+                      >
+                        {newPackage.estado ? (
+                          <>
+                            <FaToggleOn size={20} />
+                            <span>🟢 Activo</span>
+                          </>
+                        ) : (
+                          <>
+                            <FaToggleOff size={20} />
+                            <span>🔴 Inactivo</span>
+                          </>
+                        )}
+                      </button>
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newPackage.estado ? '#4caf50' : '#e57373',
+                        fontWeight: '500'
+                      }}>
+                        {newPackage.estado 
+                          ? 'El paquete está activo y disponible para reservas' 
+                          : 'El paquete está inactivo y no disponible para reservas'
+                        }
+                      </span>
+                    </div>
+                    {formErrors.estado && (
+                      <div style={errorValidationStyle}>
+                        <FaExclamationTriangle size={12} />
+                        {formErrors.estado}
                       </div>
-                    ))
-                  )}
-                </div>
-                <div style={formSuccess.serviciosSeleccionados ? successValidationStyle : {}}>
-                  {formSuccess.serviciosSeleccionados && <FaCheck size={12} />}
-                  {formSuccess.serviciosSeleccionados || formWarnings.serviciosSeleccionados ? 
-                    formSuccess.serviciosSeleccionados || formWarnings.serviciosSeleccionados : 
-                    "Selecciona los servicios que incluirá este paquete"}
-                </div>
+                    )}
+                    {formSuccess.estado && (
+                      <div style={successValidationStyle}>
+                        <FaCheck size={12} />
+                        {formSuccess.estado}
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
 
               {/* Resumen del paquete */}
@@ -1538,7 +1363,7 @@ const Gestipaq = () => {
       {/* Modal de detalles */}
       {showDetails && selectedPackage && (
         <div style={modalOverlayStyle}>
-          <div style={detailsModalStyle}>
+          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Paquete</h2>
               <button
@@ -1590,23 +1415,6 @@ const Gestipaq = () => {
                 <div style={detailLabelStyle}>Precio Final</div>
                 <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750'}}>
                   {formatPrice(calcularPrecioConDescuento(selectedPackage.precioPaquete, selectedPackage.descuento))}
-                </div>
-              </div>
-
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Servicios Incluidos</div>
-                <div style={detailValueStyle}>
-                  {getServiciosPorPaquete(selectedPackage.idPaquete).length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px' }}>
-                      {getServiciosPorPaquete(selectedPackage.idPaquete).map((servicio, index) => (
-                        <span key={index} style={servicioTagStyle}>
-                          <FaConciergeBell size={10} /> {servicio.nombre} ({formatPrice(servicio.precio)})
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span style={{ color: '#999', fontStyle: 'italic' }}>No tiene servicios asignados</span>
-                  )}
                 </div>
               </div>
               
@@ -1666,7 +1474,8 @@ const Gestipaq = () => {
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
                 Precio: {formatPrice(packageToDelete.precioPaquete)} | 
                 Personas: {packageToDelete.personas} | 
-                Días: {packageToDelete.dias}
+                Días: {packageToDelete.dias} |
+                Descuento: {packageToDelete.descuento}%
               </p>
             </div>
 
@@ -1755,7 +1564,6 @@ const Gestipaq = () => {
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Personas</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Días</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Descuento</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Servicios</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1763,8 +1571,29 @@ const Gestipaq = () => {
             <tbody>
               {paginatedPaquetes.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {paquetes.length === 0 ? "No hay paquetes registrados" : "No se encontraron resultados"}
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {paquetes.length === 0 ? "No hay paquetes registrados" : "No se encontraron resultados"}
+                      {paquetes.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Paquete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -1779,25 +1608,8 @@ const Gestipaq = () => {
                     <td style={{ padding: "15px", textAlign: "center" }}>{paquete.dias}</td>
                     <td style={{ padding: "15px", textAlign: "center" }}>{paquete.descuento}%</td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
-                        {getServiciosPorPaquete(paquete.idPaquete).slice(0, 2).map((servicio, index) => (
-                          <span key={index} style={servicioTagStyle}>
-                            <FaConciergeBell size={8} /> {servicio.nombre}
-                          </span>
-                        ))}
-                        {getServiciosPorPaquete(paquete.idPaquete).length > 2 && (
-                          <span style={{
-                            ...servicioTagStyle,
-                            backgroundColor: '#F7F4EA'
-                          }}>
-                            +{getServiciosPorPaquete(paquete.idPaquete).length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
-                        onClick={() => toggleEstado(paquete)}
+                        onClick={() => toggleEstadoPaquete(paquete)}
                         style={{
                           cursor: "pointer",
                           padding: "6px 12px",
@@ -1873,6 +1685,76 @@ const Gestipaq = () => {
           >
             Siguiente
           </button>
+        </div>
+      )}
+
+      {/* Estadísticas */}
+      {!loading && paquetes.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {paquetes.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Paquetes
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {paquetes.filter(p => p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Paquetes Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {paquetes.filter(p => p.descuento > 0).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Con Descuento
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPrice(paquetes.reduce((sum, paquete) => sum + paquete.precioPaquete, 0))}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total
+            </div>
+          </div>
         </div>
       )}
     </div>

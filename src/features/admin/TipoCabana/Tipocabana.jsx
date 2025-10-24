@@ -1,9 +1,10 @@
+// src/components/TipoCabana.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaHome, FaCouch, FaBed, FaStar, FaUsers, FaTree } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES)
+// ESTILOS MEJORADOS
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -42,20 +43,6 @@ const inputStyle = {
   transition: "all 0.3s ease",
 };
 
-const inputErrorStyle = {
-  ...inputStyle,
-  border: "2px solid #e74c3c",
-  backgroundColor: "#fdf2f2",
-};
-
-const yellowBlockedInputStyle = {
-  ...inputStyle,
-  backgroundColor: "#fffde7",
-  color: "#bfa100",
-  cursor: "not-allowed",
-  border: "1.5px solid #ffe082"
-};
-
 const navBtnStyle = (disabled) => ({
   cursor: disabled ? "not-allowed" : "pointer",
   padding: "8px 12px",
@@ -77,6 +64,13 @@ const pageBtnStyle = (active) => ({
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
 
+const formContainerStyle = {
+  display: 'grid',
+  gridTemplateColumns: '1fr',
+  gap: '15px',
+  padding: '0 10px'
+};
+
 const modalOverlayStyle = {
   position: "fixed",
   top: 0,
@@ -96,7 +90,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -152,20 +146,13 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
-const alertInfoStyle = {
-  ...alertStyle,
-  backgroundColor: '#d1ecf1',
-  color: '#0c5460',
-  borderLeftColor: '#17a2b8',
-};
-
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -182,12 +169,14 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5
+  marginBottom: 5,
+  fontSize: "14px"
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939"
+  color: "#2E5939",
+  fontWeight: "500"
 };
 
 const validationMessageStyle = {
@@ -217,45 +206,33 @@ const warningValidationStyle = {
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
-  nombreSede: /^(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_&()]+$/,
-  ubicacionSede: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^°]+$/,
-  celular: /^3[0-9]{9}$/
+  nombreTipoCabana: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&]+$/,
+  descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/
 };
 
 const VALIDATION_RULES = {
-  nombreSede: {
+  nombreTipoCabana: {
     minLength: 2,
-    maxLength: 100,
+    maxLength: 50,
     required: true,
-    pattern: VALIDATION_PATTERNS.nombreSede,
+    pattern: VALIDATION_PATTERNS.nombreTipoCabana,
     errorMessages: {
-      required: "El nombre de la sede es obligatorio.",
+      required: "El nombre del tipo de cabaña es obligatorio.",
       minLength: "El nombre debe tener al menos 2 caracteres.",
-      maxLength: "El nombre no puede exceder los 100 caracteres.",
-      pattern: "El nombre contiene caracteres no permitidos o no tiene letras.",
-      onlyNumbers: "El nombre no puede ser solo números."
+      maxLength: "El nombre no puede exceder los 50 caracteres.",
+      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, espacios, guiones y el símbolo &."
     }
   },
-  ubicacionSede: {
-    minLength: 10,
+  descripcion: {
+    minLength: 5,
     maxLength: 200,
     required: true,
-    pattern: VALIDATION_PATTERNS.ubicacionSede,
+    pattern: VALIDATION_PATTERNS.descripcion,
     errorMessages: {
-      required: "La ubicación es obligatoria.",
-      minLength: "La ubicación debe tener al menos 10 caracteres.",
-      maxLength: "La ubicación no puede exceder los 200 caracteres.",
-      pattern: "La ubicación contiene caracteres no válidos."
-    }
-  },
-  celular: {
-    exactLength: 10,
-    required: true,
-    pattern: VALIDATION_PATTERNS.celular,
-    errorMessages: {
-      required: "El número de celular es obligatorio.",
-      exactLength: "El celular debe tener exactamente 10 dígitos.",
-      pattern: "El celular debe comenzar con 3 y contener solo números."
+      required: "La descripción es obligatoria.",
+      minLength: "La descripción debe tener al menos 5 caracteres.",
+      maxLength: "La descripción no puede exceder los 200 caracteres.",
+      pattern: "La descripción contiene caracteres no válidos."
     }
   },
   estado: {
@@ -267,13 +244,13 @@ const VALIDATION_RULES = {
 };
 
 // ===============================================
-// CONFIGURACIÓN DE API
+// DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_SEDES = "http://localhost:5204/api/Sede";
-const ITEMS_PER_PAGE = 5;
+const API_TIPO_CABANA = "http://localhost:5204/api/TipoCabana";
+const ITEMS_PER_PAGE = 10;
 
 // ===============================================
-// COMPONENTE FormField MEJORADO
+// COMPONENTE FormField PARA TIPO CABAÑA
 // ===============================================
 const FormField = ({ 
   label, 
@@ -284,28 +261,30 @@ const FormField = ({
   error, 
   success,
   warning,
+  options = [],
   style = {}, 
   required = true, 
   disabled = false,
-  options = [],
   maxLength,
   placeholder,
   showCharCount = false
 }) => {
+  const finalOptions = useMemo(() => {
+    if (type === "select") {
+      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
+      return [placeholderOption, ...options];
+    }
+    return options;
+  }, [options, type, required]);
+
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
 
-    if (name === 'celular') {
-      filteredValue = value.replace(/[^0-9]/g, "").slice(0, 10);
-    } else if (name === 'nombreSede') {
-      if (value === "" || VALIDATION_PATTERNS.nombreSede.test(value)) {
-        filteredValue = value;
-      } else {
-        return;
-      }
-    } else if (name === 'ubicacionSede') {
-      if (value === "" || VALIDATION_PATTERNS.ubicacionSede.test(value)) {
+    if (name === 'nombreTipoCabana') {
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&]/g, "");
+    } else if (name === 'descripcion') {
+      if (value === "" || VALIDATION_PATTERNS.descripcion.test(value)) {
         filteredValue = value;
       } else {
         return;
@@ -358,21 +337,12 @@ const FormField = ({
     return null;
   };
 
-  const finalOptions = useMemo(() => {
-    if (type === "select") {
-      const placeholderOption = { value: "", label: placeholder || "Selecciona", disabled: required };
-      return [placeholderOption, ...options];
-    }
-    return options;
-  }, [options, type, required, placeholder]);
-
   return (
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      
       {type === "select" ? (
         <select
           name={name}
@@ -451,51 +421,49 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Admisede CON ESTILOS MEJORADOS
+// COMPONENTE PRINCIPAL TipoCabana CORREGIDO
 // ===============================================
-const Admisede = () => {
-  const [sedes, setSedes] = useState([]);
+const TipoCabana = () => {
+  const [tiposCabana, setTiposCabana] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null);
+  const [selectedTipoCabana, setSelectedTipoCabana] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [tipoCabanaToDelete, setTipoCabanaToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState("success");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newItem, setNewItem] = useState({
-    nombreSede: "",
-    ubicacionSede: "",
-    celular: "",
-    estado: true
+  const [newTipoCabana, setNewTipoCabana] = useState({
+    nombreTipoCabana: "",
+    descripcion: "",
+    estado: "true"
   });
 
   // ===============================================
   // EFECTOS
   // ===============================================
   useEffect(() => {
-    fetchSedes();
+    fetchTiposCabana();
   }, []);
 
-  // Validar formulario en tiempo real
   useEffect(() => {
     if (showForm) {
-      validateField('nombreSede', newItem.nombreSede);
-      validateField('ubicacionSede', newItem.ubicacionSede);
-      validateField('celular', newItem.celular);
-      validateField('estado', newItem.estado);
+      validateField('nombreTipoCabana', newTipoCabana.nombreTipoCabana);
+      validateField('descripcion', newTipoCabana.descripcion);
+      validateField('estado', newTipoCabana.estado);
     }
-  }, [newItem, showForm]);
+  }, [newTipoCabana, showForm]);
 
-  // Efecto para agregar estilos de animación
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -508,11 +476,6 @@ const Admisede = () => {
           transform: translateX(0);
           opacity: 1;
         }
-      }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(style);
@@ -543,8 +506,6 @@ const Admisede = () => {
         return <FaExclamationTriangle style={alertIconStyle} />;
       case "warning":
         return <FaExclamationTriangle style={alertIconStyle} />;
-      case "info":
-        return <FaInfoCircle style={alertIconStyle} />;
       default:
         return <FaInfoCircle style={alertIconStyle} />;
     }
@@ -558,38 +519,8 @@ const Admisede = () => {
         return alertErrorStyle;
       case "warning":
         return alertWarningStyle;
-      case "info":
-        return alertInfoStyle;
       default:
         return alertSuccessStyle;
-    }
-  };
-
-  // ===============================================
-  // FUNCIONES DE LA API
-  // ===============================================
-  const fetchSedes = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(API_SEDES, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setSedes(res.data);
-      } else {
-        throw new Error("Formato de datos inválido");
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener sedes:", error);
-      handleApiError(error, "cargar las sedes");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -615,48 +546,31 @@ const Admisede = () => {
     else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
       error = rules.errorMessages.maxLength;
     }
-    else if (trimmedValue && rules.exactLength && trimmedValue.length !== rules.exactLength) {
-      error = rules.errorMessages.exactLength;
-    }
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
-    else if (fieldName === 'nombreSede' && /^\d+$/.test(trimmedValue)) {
-      error = rules.errorMessages.onlyNumbers;
+    else if (fieldName === 'estado') {
+      success = value === "true" ? "Tipo de cabaña activo" : "Tipo de cabaña inactivo";
     }
     else if (trimmedValue) {
-      success = `${fieldName === 'nombreSede' ? 'Nombre' : fieldName === 'ubicacionSede' ? 'Ubicación' : fieldName === 'celular' ? 'Celular' : 'Estado'} válido.`;
+      success = `${fieldName === 'nombreTipoCabana' ? 'Nombre' : 'Descripción'} válido.`;
       
-      // Advertencias específicas
-      if (fieldName === 'nombreSede' && trimmedValue.length > 50) {
+      if (fieldName === 'nombreTipoCabana' && trimmedValue.length > 30) {
         warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
-      } else if (fieldName === 'ubicacionSede' && trimmedValue.length < 20) {
-        warning = "La ubicación es breve. Sea más específico para mejor ubicación.";
-      } else if (fieldName === 'celular') {
-        // Validar que el celular empiece con 3
-        if (!trimmedValue.startsWith('3')) {
-          warning = "Los números celulares en Colombia generalmente empiezan con 3.";
-        }
+      } else if (fieldName === 'descripcion' && trimmedValue.length > 150) {
+        warning = "La descripción es muy larga. Considere ser más conciso.";
+      } else if (fieldName === 'descripcion' && trimmedValue.length < 10) {
+        warning = "La descripción es muy breve. Sea más descriptivo.";
       }
     }
 
-    // Verificación de duplicados para nombre y celular
-    if ((fieldName === 'nombreSede' || fieldName === 'celular') && trimmedValue && !error) {
-      const duplicate = sedes.find(item => {
-        if (fieldName === 'nombreSede') {
-          return item.nombreSede.toLowerCase() === trimmedValue.toLowerCase() && 
-                 (!isEditing || item.idSede !== newItem.idSede);
-        } else if (fieldName === 'celular') {
-          return item.celular === trimmedValue && 
-                 (!isEditing || item.idSede !== newItem.idSede);
-        }
-        return false;
-      });
-      
+    if (fieldName === 'nombreTipoCabana' && trimmedValue && !error) {
+      const duplicate = tiposCabana.find(tipo => 
+        tipo.nombreTipoCabana.toLowerCase() === trimmedValue.toLowerCase() && 
+        (!isEditing || tipo.idTipoCabana !== newTipoCabana.idTipoCabana)
+      );
       if (duplicate) {
-        error = fieldName === 'nombreSede' 
-          ? "Ya existe una sede con este nombre." 
-          : "Ya existe una sede con este número de celular.";
+        error = "Ya existe un tipo de cabaña con este nombre.";
       }
     }
 
@@ -668,12 +582,11 @@ const Admisede = () => {
   };
 
   const validateForm = () => {
-    const nombreValid = validateField('nombreSede', newItem.nombreSede);
-    const ubicacionValid = validateField('ubicacionSede', newItem.ubicacionSede);
-    const celularValid = validateField('celular', newItem.celular);
-    const estadoValid = validateField('estado', newItem.estado);
+    const nombreValid = validateField('nombreTipoCabana', newTipoCabana.nombreTipoCabana);
+    const descripcionValid = validateField('descripcion', newTipoCabana.descripcion);
+    const estadoValid = validateField('estado', newTipoCabana.estado);
 
-    const isValid = nombreValid && ubicacionValid && celularValid && estadoValid;
+    const isValid = nombreValid && descripcionValid && estadoValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -688,7 +601,62 @@ const Admisede = () => {
     return isValid;
   };
 
-  const handleAddSede = async (e) => {
+  // ===============================================
+  // FUNCIONES DE LA API CORREGIDAS
+  // ===============================================
+  const checkApiAvailability = async () => {
+    try {
+      const response = await axios.get(API_TIPO_CABANA, { timeout: 5000 });
+      console.log("✅ API disponible:", response.status);
+      return true;
+    } catch (error) {
+      console.error("❌ API no disponible:", error.message);
+      return false;
+    }
+  };
+
+  const fetchTiposCabana = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("🔄 Intentando conectar a:", API_TIPO_CABANA);
+      const res = await axios.get(API_TIPO_CABANA, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log("✅ Respuesta de la API:", res);
+      console.log("📊 Datos recibidos:", res.data);
+      
+      if (Array.isArray(res.data)) {
+        setTiposCabana(res.data);
+        console.log(`📝 ${res.data.length} tipos de cabaña cargados`);
+      } else if (res.data && Array.isArray(res.data.$values)) {
+        // Si la API devuelve un objeto con propiedad $values (common in .NET)
+        setTiposCabana(res.data.$values);
+        console.log(`📝 ${res.data.$values.length} tipos de cabaña cargados`);
+      } else {
+        console.warn("⚠️ Formato de datos inesperado:", res.data);
+        throw new Error("Formato de datos inválido del servidor");
+      }
+    } catch (error) {
+      console.error("❌ Error completo al cargar:", error);
+      console.error("❌ Detalles del error:", {
+        message: error.message,
+        code: error.code,
+        response: error.response,
+        request: error.request
+      });
+      handleApiError(error, "cargar los tipos de cabaña");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTipoCabana = async (e) => {
     e.preventDefault();
     
     if (isSubmitting) {
@@ -704,45 +672,53 @@ const Admisede = () => {
     setLoading(true);
     
     try {
-      const sedeData = {
-        nombreSede: newItem.nombreSede.trim(),
-        ubicacionSede: newItem.ubicacionSede.trim(),
-        celular: newItem.celular.trim(),
-        estado: newItem.estado === "true" || newItem.estado === true
+      // CORRECCIÓN: Formato de datos corregido para la API
+      const tipoCabanaData = {
+        nombreTipoCabana: newTipoCabana.nombreTipoCabana.trim(),
+        descripcion: newTipoCabana.descripcion.trim(),
+        estado: newTipoCabana.estado === "true"
       };
 
-      console.log("📤 Enviando datos al servidor:", sedeData);
+      // DEBUG: Ver qué se está enviando
+      console.log("📤 Enviando datos a la API:", tipoCabanaData);
+      console.log("🔗 URL:", isEditing ? 
+        `${API_TIPO_CABANA}/${newTipoCabana.idTipoCabana}` : 
+        API_TIPO_CABANA);
 
       if (isEditing) {
-        const dataToUpdate = {
-          idSede: parseInt(newItem.idSede),
-          ...sedeData
-        };
-        
-        await axios.put(`${API_SEDES}/${newItem.idSede}`, dataToUpdate, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+        const response = await axios.put(
+          `${API_TIPO_CABANA}/${newTipoCabana.idTipoCabana}`, 
+          tipoCabanaData,
+          {
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
           }
-        });
-        
-        displayAlert("Sede actualizada exitosamente.", "success");
+        );
+        console.log("✅ Respuesta de actualización:", response.data);
+        displayAlert("Tipo de cabaña actualizado exitosamente.", "success");
       } else {
-        await axios.post(API_SEDES, sedeData, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+        const response = await axios.post(
+          API_TIPO_CABANA, 
+          tipoCabanaData,
+          {
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
           }
-        });
-        
-        displayAlert("Sede agregada exitosamente.", "success");
+        );
+        console.log("✅ Respuesta de creación:", response.data);
+        displayAlert("Tipo de cabaña agregado exitosamente.", "success");
       }
       
-      await fetchSedes();
+      await fetchTiposCabana();
       closeForm();
     } catch (error) {
-      console.error("❌ Error al guardar sede:", error);
-      handleApiError(error, isEditing ? "actualizar la sede" : "agregar la sede");
+      console.error("❌ Error completo:", error);
+      console.error("❌ Respuesta del error:", error.response?.data);
+      handleApiError(error, isEditing ? "actualizar el tipo de cabaña" : "agregar el tipo de cabaña");
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -750,45 +726,134 @@ const Admisede = () => {
   };
 
   // ===============================================
-  // FUNCIONES AUXILIARES
+  // FUNCIÓN DE ELIMINACIÓN CORREGIDA
+  // ===============================================
+  const confirmDelete = async () => {
+    if (!tipoCabanaToDelete) return;
+    setLoading(true);
+    try {
+      console.log("🗑️ Intentando eliminar:", tipoCabanaToDelete.idTipoCabana);
+      
+      await axios.delete(`${API_TIPO_CABANA}/${tipoCabanaToDelete.idTipoCabana}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Eliminar del estado local para actualizar la UI inmediatamente
+      setTiposCabana(prev => prev.filter(t => t.idTipoCabana !== tipoCabanaToDelete.idTipoCabana));
+
+      displayAlert("Tipo de cabaña eliminado correctamente.", "success");
+    } catch (error) {
+      console.error("❌ Error al eliminar tipo de cabaña:", error);
+      console.error("❌ Detalles del error:", error.response?.data);
+      
+      // Si la API devuelve conflicto por dependencias, informar claramente
+      if (error.response && error.response.status === 409) {
+        displayAlert("No se puede eliminar el tipo de cabaña porque está siendo utilizado en cabañas existentes.", "error");
+      } else if (error.response && error.response.status === 404) {
+        displayAlert("El tipo de cabaña no fue encontrado en el servidor.", "error");
+      } else {
+        handleApiError(error, "eliminar el tipo de cabaña");
+      }
+    } finally {
+      setLoading(false);
+      setTipoCabanaToDelete(null);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  // ===============================================
+  // FUNCIONES AUXILIARES MEJORADAS
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
     let alertType = "error";
     
-    if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-      errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
-    } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
-    } else if (error.response) {
-      if (error.response.status === 400) {
-        errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
-      } else if (error.response.status === 404) {
-        errorMessage = "Recurso no encontrado.";
-      } else if (error.response.status === 409) {
-        errorMessage = "Conflicto: Ya existe una sede con estos datos.";
-        alertType = "warning";
-      } else if (error.response.status === 500) {
-        errorMessage = "Error interno del servidor.";
-      } else {
-        errorMessage = `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
+    console.error(`🔴 Error en ${operation}:`, error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+        errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en http://localhost:5204";
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = "No se puede conectar al servidor. Verifica que esté ejecutándose en el puerto 5204";
+      } else if (error.response) {
+        // El servidor respondió con un código de error
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        console.error(`📊 Error ${status}:`, data);
+        
+        switch (status) {
+          case 400:
+            errorMessage = `Error de validación: ${data?.title || data?.message || 'Datos inválidos'}`;
+            break;
+          case 404:
+            errorMessage = "Recurso no encontrado en el servidor.";
+            break;
+          case 409:
+            errorMessage = data?.message || "Conflicto: El registro no puede ser procesado.";
+            alertType = "warning";
+            break;
+          case 500:
+            errorMessage = `Error interno del servidor: ${data?.title || 'Contacta al administrador'}`;
+            break;
+          default:
+            errorMessage = `Error ${status}: ${JSON.stringify(data)}`;
+        }
+      } else if (error.request) {
+        // La request fue hecha pero no hubo respuesta
+        errorMessage = "El servidor no respondió. Verifica que la API esté funcionando.";
       }
-    } else if (error.request) {
-      errorMessage = "No hay respuesta del servidor.";
     } else {
-      errorMessage = `Error inesperado: ${error.message}`;
+      // Error no relacionado con Axios
+      errorMessage = `Error: ${error.message}`;
     }
     
     setError(errorMessage);
     displayAlert(errorMessage, alertType);
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewItem((prev) => ({
+    setNewTipoCabana((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
+  };
+
+  const toggleEstado = async (tipoCabana) => {
+    setLoading(true);
+    try {
+      const updatedTipoCabana = { 
+        ...tipoCabana, 
+        estado: !tipoCabana.estado 
+      };
+      
+      console.log("🔄 Actualizando estado:", updatedTipoCabana);
+      
+      const response = await axios.put(
+        `${API_TIPO_CABANA}/${tipoCabana.idTipoCabana}`, 
+        updatedTipoCabana,
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      console.log("✅ Estado actualizado:", response.data);
+      
+      displayAlert(`Tipo de cabaña ${updatedTipoCabana.estado ? 'activado' : 'desactivado'} exitosamente.`, "success");
+      await fetchTiposCabana();
+    } catch (error) {
+      console.error("❌ Error al cambiar estado:", error);
+      console.error("❌ Detalles del error:", error.response?.data);
+      handleApiError(error, "cambiar el estado");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const closeForm = () => {
@@ -797,33 +862,33 @@ const Admisede = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
-    setNewItem({
-      nombreSede: "",
-      ubicacionSede: "",
-      celular: "",
-      estado: true
+    setNewTipoCabana({
+      nombreTipoCabana: "",
+      descripcion: "",
+      estado: "true"
     });
   };
 
   const closeDetailsModal = () => {
     setShowDetails(false);
-    setCurrentItem(null);
+    setSelectedTipoCabana(null);
   };
 
-  const handleView = (item) => {
-    setCurrentItem(item);
+  const cancelDelete = () => {
+    setTipoCabanaToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleView = (tipoCabana) => {
+    setSelectedTipoCabana(tipoCabana);
     setShowDetails(true);
   };
 
-  const handleEdit = (item) => {
-    setNewItem({
-      idSede: item.idSede,
-      nombreSede: item.nombreSede || "",
-      ubicacionSede: item.ubicacionSede || "",
-      celular: item.celular || "",
-      estado: item.estado.toString()
+  const handleEdit = (tipoCabana) => {
+    setNewTipoCabana({
+      ...tipoCabana,
+      estado: tipoCabana.estado.toString() // Convertir a string para el select
     });
-    
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
@@ -831,46 +896,48 @@ const Admisede = () => {
     setFormWarnings({});
   };
 
-  const toggleEstado = async (sede) => {
-    setLoading(true);
-    try {
-      const updatedSede = { 
-        ...sede, 
-        estado: !sede.estado 
-      };
-      await axios.put(`${API_SEDES}/${sede.idSede}`, updatedSede, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      displayAlert(`Sede ${updatedSede.estado ? 'activada' : 'desactivada'} exitosamente.`, "success");
-      await fetchSedes();
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
-      handleApiError(error, "cambiar el estado");
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteClick = (tipoCabana) => {
+    setTipoCabanaToDelete(tipoCabana);
+    setShowDeleteConfirm(true);
   };
 
   // ===============================================
   // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
-  const filteredItems = useMemo(() => {
-    return sedes.filter((item) =>
-      item.nombreSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.ubicacionSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.celular?.includes(searchTerm)
+  const filteredTiposCabana = useMemo(() => {
+    return tiposCabana.filter(tipo =>
+      tipo.nombreTipoCabana?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tipo.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [sedes, searchTerm]);
+  }, [tiposCabana, searchTerm]);
 
-  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredTiposCabana.length / ITEMS_PER_PAGE);
 
-  const paginatedItems = useMemo(() => {
+  const paginatedTiposCabana = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredItems.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredItems, currentPage]);
+    return filteredTiposCabana.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredTiposCabana, currentPage]);
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // Función para obtener el icono según el tipo de cabaña
+  const getTipoIcon = (nombreTipo) => {
+    const nombre = nombreTipo?.toLowerCase();
+    if (nombre?.includes('lujo') || nombre?.includes('premium') || nombre?.includes('vip')) {
+      return <FaStar style={{ color: '#FFD700' }} />;
+    } else if (nombre?.includes('familiar') || nombre?.includes('family')) {
+      return <FaHome style={{ color: '#4CAF50' }} />;
+    } else if (nombre?.includes('económica') || nombre?.includes('economica') || nombre?.includes('standard')) {
+      return <FaBed style={{ color: '#2196F3' }} />;
+    } else if (nombre?.includes('rústica') || nombre?.includes('rustica') || nombre?.includes('campestre')) {
+      return <FaTree style={{ color: '#8B4513' }} />;
+    } else if (nombre?.includes('suite') || nombre?.includes('ejecutiva')) {
+      return <FaCouch style={{ color: '#9C27B0' }} />;
+    } else {
+      return <FaHome style={{ color: '#679750' }} />;
+    }
   };
 
   // ===============================================
@@ -919,7 +986,7 @@ const Admisede = () => {
           <p>{error}</p>
           <div style={{ marginTop: '10px' }}>
             <button
-              onClick={fetchSedes}
+              onClick={fetchTiposCabana}
               style={{
                 backgroundColor: '#2E5939',
                 color: 'white',
@@ -952,9 +1019,10 @@ const Admisede = () => {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Sedes</h2>
+          <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Tipos de Cabaña</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {sedes.length} sedes registradas • {sedes.filter(s => s.estado).length} activas
+            {tiposCabana.length} tipos registrados • 
+            {tiposCabana.filter(t => t.estado).length} activos
           </p>
         </div>
         <button
@@ -964,11 +1032,10 @@ const Admisede = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
-            setNewItem({
-              nombreSede: "",
-              ubicacionSede: "",
-              celular: "",
-              estado: true
+            setNewTipoCabana({
+              nombreTipoCabana: "",
+              descripcion: "",
+              estado: "true"
             });
           }}
           style={{
@@ -994,17 +1061,17 @@ const Admisede = () => {
             e.target.style.transform = "translateY(0)";
           }}
         >
-          <FaPlus /> Agregar Sede
+          <FaPlus /> Agregar Tipo
         </button>
       </div>
 
       {/* Barra de búsqueda */}
       <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
-            placeholder="Buscar por nombre, ubicación o celular..."
+            placeholder="Buscar por nombre o descripción..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -1022,7 +1089,7 @@ const Admisede = () => {
           />
         </div>
         <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredItems.length} resultados
+          {filteredTiposCabana.length} resultados
         </div>
       </div>
 
@@ -1031,8 +1098,8 @@ const Admisede = () => {
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
-                {isEditing ? "Editar Sede" : "Agregar Nueva Sede"}
+              <h2 style={{ margin: 0, color: "#2E5939" }}>
+                {isEditing ? "Editar Tipo de Cabaña" : "Nuevo Tipo de Cabaña"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1043,93 +1110,62 @@ const Admisede = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
             
-            <form onSubmit={handleAddSede}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <FormField
-                    label="Nombre de la Sede"
-                    name="nombreSede"
-                    value={newItem.nombreSede}
-                    onChange={handleInputChange}
-                    error={formErrors.nombreSede}
-                    success={formSuccess.nombreSede}
-                    warning={formWarnings.nombreSede}
-                    required={true}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.nombreSede.maxLength}
-                    showCharCount={true}
-                    placeholder="Ej: Sede Principal, Sede Norte..."
-                  />
-                </div>
-                
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <FormField
-                    label={
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaMapMarkerAlt />
-                        Ubicación
-                      </div>
-                    }
-                    name="ubicacionSede"
-                    type="textarea"
-                    value={newItem.ubicacionSede}
-                    onChange={handleInputChange}
-                    error={formErrors.ubicacionSede}
-                    success={formSuccess.ubicacionSede}
-                    warning={formWarnings.ubicacionSede}
-                    required={true}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.ubicacionSede.maxLength}
-                    showCharCount={true}
-                    placeholder="Ej: Calle 123 #45-67, Barrio El Poblado, Medellín..."
-                  />
-                </div>
-                
-                <div>
-                  <FormField
-                    label="Celular de Contacto"
-                    name="celular"
-                    type="tel"
-                    value={newItem.celular}
-                    onChange={handleInputChange}
-                    error={formErrors.celular}
-                    success={formSuccess.celular}
-                    warning={formWarnings.celular}
-                    required={true}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.celular.exactLength}
-                    placeholder="10 dígitos, comenzando con 3"
-                  />
-                </div>
+            <form onSubmit={handleAddTipoCabana} style={formContainerStyle}>
+              <FormField
+                label="Nombre del Tipo"
+                name="nombreTipoCabana"
+                value={newTipoCabana.nombreTipoCabana}
+                onChange={handleChange}
+                error={formErrors.nombreTipoCabana}
+                success={formSuccess.nombreTipoCabana}
+                warning={formWarnings.nombreTipoCabana}
+                required={true}
+                disabled={loading}
+                maxLength={VALIDATION_RULES.nombreTipoCabana.maxLength}
+                showCharCount={true}
+                placeholder="Ej: Lujo, Familiar, Económica, Premium..."
+              />
 
-                <div>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newItem.estado}
-                    onChange={handleInputChange}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "🟢 Activa" },
-                      { value: "false", label: "🔴 Inactiva" }
-                    ]}
-                  />
-                </div>
-              </div>
+              <FormField
+                label="Descripción"
+                name="descripcion"
+                type="textarea"
+                value={newTipoCabana.descripcion}
+                onChange={handleChange}
+                error={formErrors.descripcion}
+                success={formSuccess.descripcion}
+                warning={formWarnings.descripcion}
+                required={true}
+                disabled={loading}
+                maxLength={VALIDATION_RULES.descripcion.maxLength}
+                showCharCount={true}
+                placeholder="Descripción detallada del tipo de cabaña, características principales..."
+              />
 
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+              <FormField
+                label="Estado"
+                name="estado"
+                type="select"
+                value={newTipoCabana.estado}
+                onChange={handleChange}
+                error={formErrors.estado}
+                success={formSuccess.estado}
+                warning={formWarnings.estado}
+                options={[
+                  { value: "true", label: "🟢 Activo" },
+                  { value: "false", label: "🔴 Inactivo" }
+                ]}
+                required={true}
+                disabled={loading}
+              />
+
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
@@ -1141,9 +1177,9 @@ const Admisede = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
+                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
-                    flex: 1
                   }}
                   onMouseOver={(e) => {
                     if (!loading && !isSubmitting) {
@@ -1158,7 +1194,7 @@ const Admisede = () => {
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar Sede" : "Guardar Sede")}
+                  {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Tipo
                 </button>
                 <button
                   type="button"
@@ -1172,8 +1208,8 @@ const Admisede = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
+                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                    flex: 1
                   }}
                 >
                   Cancelar
@@ -1185,11 +1221,11 @@ const Admisede = () => {
       )}
 
       {/* Modal de detalles */}
-      {showDetails && currentItem && (
+      {showDetails && selectedTipoCabana && (
         <div style={modalOverlayStyle}>
           <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles de la Sede</h2>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Tipo de Cabaña</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1199,7 +1235,6 @@ const Admisede = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1208,47 +1243,32 @@ const Admisede = () => {
             <div>
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>ID</div>
-                <div style={detailValueStyle}>#{currentItem.idSede}</div>
+                <div style={detailValueStyle}>#{selectedTipoCabana.idTipoCabana}</div>
               </div>
               
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Nombre</div>
-                <div style={detailValueStyle}>{currentItem.nombreSede}</div>
-              </div>
-              
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaMapMarkerAlt />
-                    Ubicación
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {getTipoIcon(selectedTipoCabana.nombreTipoCabana)}
+                    {selectedTipoCabana.nombreTipoCabana}
                   </div>
                 </div>
-                <div style={{ 
-                  backgroundColor: "#F7F4EA", 
-                  padding: 15,
-                  borderRadius: 8,
-                  fontSize: 15,
-                  color: '#2E5939',
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  lineHeight: '1.5'
-                }}>
-                  {currentItem.ubicacionSede}
-                </div>
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Celular</div>
-                <div style={detailValueStyle}>{currentItem.celular}</div>
+                <div style={detailLabelStyle}>Descripción</div>
+                <div style={detailValueStyle}>{selectedTipoCabana.descripcion}</div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
                   ...detailValueStyle,
-                  color: currentItem.estado ? '#4caf50' : '#e57373',
+                  color: selectedTipoCabana.estado ? '#4caf50' : '#e57373',
                   fontWeight: 'bold'
                 }}>
-                  {currentItem.estado ? '🟢 Activa' : '🔴 Inactiva'}
+                  {selectedTipoCabana.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
             </div>
@@ -1264,19 +1284,71 @@ const Admisede = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = "#2E5939";
-                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación - CORREGIDO */}
+      {showDeleteConfirm && tipoCabanaToDelete && (
+        <div style={modalOverlayStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 12, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 18, fontSize: '1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar de forma permanente el tipo de cabaña "<strong>{tipoCabanaToDelete.nombreTipoCabana}</strong>"? Esta acción no se puede deshacer.
+            </p>
+
+            <div style={{ 
+              backgroundColor: '#ffecec', 
+              border: '1px solid #e57373',
+              borderRadius: '8px',
+              padding: '12px 15px',
+              marginBottom: '18px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <FaInfoCircle style={{ color: '#e57373' }} />
+                <strong style={{ color: '#2E5939' }}>Atención</strong>
+              </div>
+              <p style={{ color: '#2E5939', margin: 0, fontSize: '0.9rem' }}>
+                Si el tipo está asociado a cabañas, la eliminación será rechazada por el servidor y se mostrará el motivo.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+              <button
+                onClick={confirmDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#e53935",
+                  color: "white",
+                  padding: "10px 22px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "700",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                }}
+              >
+                {loading ? "Eliminando..." : "Sí, Eliminar"}
+              </button>
+              <button
+                onClick={cancelDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#2E5939",
+                  color: "#fff",
+                  padding: "10px 22px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                Cancelar
               </button>
             </div>
           </div>
@@ -1298,7 +1370,7 @@ const Admisede = () => {
             color: "#2E5939"
           }}>
             <div style={{ fontSize: '18px', marginBottom: '10px' }}>
-              🔄 Cargando sedes...
+              🔄 Cargando tipos de cabaña...
             </div>
           </div>
         )}
@@ -1313,70 +1385,86 @@ const Admisede = () => {
           }}>
             <thead>
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
-                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Nombre</th>
-                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Ubicación</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Celular</th>
+                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Tipo</th>
+                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Descripción</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedItems.length === 0 && !loading ? (
+              {paginatedTiposCabana.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {sedes.length === 0 ? "No hay sedes registradas" : "No se encontraron resultados"}
+                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    {tiposCabana.length === 0 ? "No hay tipos de cabaña registrados" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((item) => (
-                  <tr key={item.idSede} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{item.nombreSede}</td>
-                    <td style={{ padding: "15px" }}>
-                      {item.ubicacionSede?.length > 50 
-                        ? `${item.ubicacionSede.substring(0, 50)}...` 
-                        : item.ubicacionSede}
+                paginatedTiposCabana.map((tipo) => (
+                  <tr key={tipo.idTipoCabana} style={{ borderBottom: "1px solid #eee" }}>
+                    <td style={{ padding: "15px", fontWeight: "500" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {getTipoIcon(tipo.nombreTipoCabana)}
+                        {tipo.nombreTipoCabana}
+                      </div>
                     </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{item.celular}</td>
+                    <td style={{ padding: "15px" }}>
+                      {tipo.descripcion?.length > 100 
+                        ? `${tipo.descripcion.substring(0, 100)}...` 
+                        : tipo.descripcion}
+                    </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
-                        onClick={() => toggleEstado(item)}
+                        onClick={() => toggleEstado(tipo)}
+                        disabled={loading}
                         style={{
-                          cursor: "pointer",
+                          cursor: loading ? "not-allowed" : "pointer",
                           padding: "6px 12px",
                           borderRadius: "20px",
                           border: "none",
-                          backgroundColor: item.estado ? "#4caf50" : "#e57373",
+                          backgroundColor: tipo.estado ? "#4caf50" : "#e57373",
                           color: "white",
                           fontWeight: "600",
                           fontSize: "12px",
                           minWidth: "80px",
+                          opacity: loading ? 0.6 : 1,
                           transition: "all 0.3s ease",
                         }}
                         onMouseOver={(e) => {
-                          e.target.style.transform = "scale(1.05)";
+                          if (!loading) {
+                            e.target.style.transform = "scale(1.05)";
+                          }
                         }}
                         onMouseOut={(e) => {
-                          e.target.style.transform = "scale(1)";
+                          if (!loading) {
+                            e.target.style.transform = "scale(1)";
+                          }
                         }}
                       >
-                        {item.estado ? "Activa" : "Inactiva"}
+                        {tipo.estado ? "Activo" : "Inactivo"}
                       </button>
                     </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                      <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
                         <button
-                          onClick={() => handleView(item)}
+                          onClick={() => handleView(tipo)}
                           style={btnAccion("#F7F4EA", "#2E5939")}
                           title="Ver Detalles"
                         >
                           <FaEye />
                         </button>
                         <button
-                          onClick={() => handleEdit(item)}
+                          onClick={() => handleEdit(tipo)}
                           style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar Sede"
+                          title="Editar"
                         >
                           <FaEdit />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(tipo); }}
+                          style={btnAccion("#fbe9e7", "#e57373")}
+                          title="Eliminar"
+                        >
+                          <FaTrash />
                         </button>
                       </div>
                     </td>
@@ -1390,7 +1478,7 @@ const Admisede = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -1398,19 +1486,33 @@ const Admisede = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-                aria-current={currentPage === page ? "page" : undefined}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -1418,11 +1520,20 @@ const Admisede = () => {
           >
             Siguiente
           </button>
+          
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
+          }}>
+            Página {currentPage} de {totalPages}
+          </div>
         </div>
       )}
 
-      {/* Estadísticas */}
-      {!loading && sedes.length > 0 && (
+      {/* Estadísticas rápidas */}
+      {!loading && tiposCabana.length > 0 && (
         <div style={{
           marginTop: '20px',
           display: 'grid',
@@ -1437,10 +1548,10 @@ const Admisede = () => {
             border: '1px solid #679750'
           }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedes.length}
+              {tiposCabana.length}
             </div>
             <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Sedes
+              Total Tipos
             </div>
           </div>
           
@@ -1452,25 +1563,25 @@ const Admisede = () => {
             border: '1px solid #679750'
           }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedes.filter(s => s.estado).length}
+              {tiposCabana.filter(t => t.estado).length}
             </div>
             <div style={{ fontSize: '14px', color: '#679750' }}>
-              Sedes Activas
+              Tipos Activos
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
+            backgroundColor: '#E8F5E8',
             padding: '15px',
             borderRadius: '10px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
+            border: '1px solid #679750'
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
-              {sedes.filter(s => !s.estado).length}
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {tiposCabana.filter(t => !t.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
-              Sedes Inactivas
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Tipos Inactivos
             </div>
           </div>
         </div>
@@ -1479,4 +1590,4 @@ const Admisede = () => {
   );
 };
 
-export default Admisede;
+export default TipoCabana;

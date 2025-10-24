@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaBox } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaBox, FaHome, FaCouch } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -50,7 +50,7 @@ const inputErrorStyle = {
 
 const yellowBlockedInputStyle = {
   ...inputStyle,
-  backgroundColor: "#fffde7", // Amarillo claro
+  backgroundColor: "#fffde7",
   color: "#bfa100",
   cursor: "not-allowed",
   border: "1.5px solid #ffe082"
@@ -165,7 +165,7 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -217,10 +217,7 @@ const warningValidationStyle = {
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
-  // Patrón para nombre de comodidad: debe contener al menos una letra
   nombreComodidades: /^(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_&()]+$/,
-  
-  // Patrón para descripción: permite más caracteres para descripciones detalladas
   descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/
 };
 
@@ -234,7 +231,7 @@ const VALIDATION_RULES = {
       required: "El nombre de la comodidad es obligatorio.",
       minLength: "El nombre debe tener al menos 2 caracteres.",
       maxLength: "El nombre no puede exceder los 100 caracteres.",
-      pattern: "El nombre contiene caracteres no permitidos o no tiene letras. Solo se permiten letras, números, espacios y los caracteres: - _ & ( )",
+      pattern: "El nombre contiene caracteres no permitidos o no tiene letras.",
       onlyNumbers: "El nombre no puede ser solo números."
     }
   },
@@ -255,12 +252,12 @@ const VALIDATION_RULES = {
     }
   },
   cantidad: {
-    min: 1,
+    min: 0, // Cambiado a 0 para permitir agotar stock
     max: 1000,
     required: true,
     errorMessages: {
       required: "La cantidad es obligatoria.",
-      min: "La cantidad mínima es 1.",
+      min: "La cantidad mínima es 0.",
       max: "La cantidad máxima es 1000.",
       invalid: "La cantidad debe ser un número entero válido."
     }
@@ -281,7 +278,9 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_COMODIDADES = "http://localhost:5255/api/Comodidades";
+const API_COMODIDADES = "http://localhost:5204/api/Comodidades";
+const API_CABANA_COMODIDADES = "http://localhost:5204/api/CabanaPorComodidades";
+const API_CABANAS = "http://localhost:5204/api/Cabana";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -311,34 +310,28 @@ const FormField = ({
     let filteredValue = value;
 
     if (name === 'nombreComodidades') {
-      // Aplicar patrón de validación para nombre
       if (value === "" || VALIDATION_PATTERNS.nombreComodidades.test(value)) {
         filteredValue = value;
       } else {
         return;
       }
     } else if (name === 'descripcion') {
-      // Aplicar patrón de validación para descripción
       if (value === "" || VALIDATION_PATTERNS.descripcion.test(value)) {
         filteredValue = value;
       } else {
         return;
       }
     } else if (name === 'cantidad') {
-      // Solo números enteros positivos
       filteredValue = value.replace(/[^0-9]/g, "");
       if (filteredValue && parseInt(filteredValue) > (max || 1000)) {
         filteredValue = max || "1000";
       }
     } else if (name === 'precio') {
-      // Solo números y punto decimal
       filteredValue = value.replace(/[^0-9.]/g, "");
-      // Permitir solo un punto decimal
       const parts = filteredValue.split('.');
       if (parts.length > 2) {
         filteredValue = parts[0] + '.' + parts.slice(1).join('');
       }
-      // Limitar a 2 decimales
       if (parts.length === 2 && parts[1].length > 2) {
         filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
       }
@@ -432,7 +425,6 @@ const FormField = ({
             value={value}
             onChange={handleFilteredInputChange}
             style={
-              // Si es fechaRegistro y está deshabilitado (edición), aplica el estilo amarillo bloqueado
               name === "fechaRegistro" && disabled
                 ? yellowBlockedInputStyle
                 : getInputStyle()
@@ -463,10 +455,12 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Furniture (Comodidades) CON FECHA ACTUAL Y BLOQUEO DE FECHAS ANTERIORES
+// COMPONENTE PRINCIPAL Furniture (Comodidades) CON SISTEMA DE DESCUENTO
 // ===============================================
 const Furniture = () => {
   const [comodidades, setComodidades] = useState([]);
+  const [cabanaComodidades, setCabanaComodidades] = useState([]);
+  const [cabanas, setCabanas] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -493,7 +487,7 @@ const Furniture = () => {
   const [newItem, setNewItem] = useState({
     nombreComodidades: "",
     descripcion: "",
-    fechaRegistro: getCurrentDate(), // Fecha actual por defecto
+    fechaRegistro: getCurrentDate(),
     cantidad: 1,
     precio: 0
   });
@@ -503,6 +497,8 @@ const Furniture = () => {
   // ===============================================
   useEffect(() => {
     fetchComodidades();
+    fetchCabanaComodidades();
+    fetchCabanas();
   }, []);
 
   // Validar formulario en tiempo real
@@ -587,6 +583,89 @@ const Furniture = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE LA API
+  // ===============================================
+  const fetchComodidades = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(API_COMODIDADES, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setComodidades(res.data);
+      } else {
+        throw new Error("Formato de datos inválido");
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener comodidades:", error);
+      handleApiError(error, "cargar las comodidades");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCabanaComodidades = async () => {
+    try {
+      const res = await axios.get(API_CABANA_COMODIDADES, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setCabanaComodidades(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener relaciones cabaña-comodidades:", error);
+    }
+  };
+
+  const fetchCabanas = async () => {
+    try {
+      const res = await axios.get(API_CABANAS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setCabanas(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener cabañas:", error);
+    }
+  };
+
+  // ===============================================
+  // FUNCIONES PARA EL SISTEMA DE DESCUENTO
+  // ===============================================
+  
+  // Función para obtener la cantidad disponible (total - usadas)
+  const getCantidadDisponible = (comodidadId) => {
+    const comodidad = comodidades.find(c => c.idComodidades === comodidadId);
+    if (!comodidad) return 0;
+    
+    const cantidadUsada = getCantidadUsada(comodidadId);
+    return Math.max(0, comodidad.cantidad - cantidadUsada);
+  };
+
+  // Función para obtener la cantidad usada en cabañas
+  const getCantidadUsada = (comodidadId) => {
+    const relaciones = cabanaComodidades.filter(cc => cc.idComodidades === comodidadId);
+    return relaciones.length; // Cada relación representa una cabaña que usa esta comodidad
+  };
+
+  // Función para verificar si una comodidad puede ser usada (tiene stock disponible)
+  const puedeUsarComodidad = (comodidadId) => {
+    return getCantidadDisponible(comodidadId) > 0;
+  };
+
+  // Función para obtener las cabañas que usan una comodidad
+  const getCabanasQueUsanComodidad = (comodidadId) => {
+    const relaciones = cabanaComodidades.filter(cc => cc.idComodidades === comodidadId);
+    return relaciones.map(relacion => {
+      const cabana = cabanas.find(c => c.idCabana === relacion.idCabana);
+      return cabana ? cabana.nombre : `Cabaña ${relacion.idCabana}`;
+    });
+  };
+
+  // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
   // ===============================================
   const validateField = (fieldName, value) => {
@@ -599,27 +678,21 @@ const Furniture = () => {
 
     const trimmedValue = value ? value.toString().trim() : "";
 
-    // Validación de campo requerido
     if (rules.required && !trimmedValue) {
       error = rules.errorMessages.required;
     }
-    // Validación de longitud mínima
     else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
       error = rules.errorMessages.minLength;
     }
-    // Validación de longitud máxima
     else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
       error = rules.errorMessages.maxLength;
     }
-    // Validación de patrón
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
-    // Validación extra: no solo números
     else if (fieldName === 'nombreComodidades' && /^\d+$/.test(trimmedValue)) {
       error = rules.errorMessages.onlyNumbers;
     }
-    // Validaciones numéricas
     else if (trimmedValue && (fieldName === 'cantidad' || fieldName === 'precio')) {
       const numericValue = fieldName === 'cantidad' ? parseInt(trimmedValue) : parseFloat(trimmedValue);
       
@@ -640,7 +713,6 @@ const Furniture = () => {
         }
       }
     }
-    // Validaciones de éxito y advertencia para otros campos
     else if (trimmedValue) {
       success = `${fieldName === 'nombreComodidades' ? 'Nombre' : fieldName === 'descripcion' ? 'Descripción' : 'Fecha'} válido.`;
       
@@ -651,7 +723,7 @@ const Furniture = () => {
       }
     }
 
-    // Verificación de duplicados para nombre (solo si no estamos editando la misma comodidad)
+    // Verificación de duplicados para nombre
     if (fieldName === 'nombreComodidades' && trimmedValue && !error) {
       const duplicate = comodidades.find(item => 
         item.nombreComodidades.toLowerCase() === trimmedValue.toLowerCase() && 
@@ -680,7 +752,6 @@ const Furniture = () => {
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
-      // Scroll al primer error
       setTimeout(() => {
         const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
         if (firstErrorField) {
@@ -690,34 +761,6 @@ const Furniture = () => {
     }
 
     return isValid;
-  };
-
-  // ===============================================
-  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
-  // ===============================================
-  const fetchComodidades = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(API_COMODIDADES, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setComodidades(res.data);
-      } else {
-        throw new Error("Formato de datos inválido");
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener comodidades:", error);
-      handleApiError(error, "cargar las comodidades");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleAddComodidad = async (e) => {
@@ -736,7 +779,6 @@ const Furniture = () => {
     setLoading(true);
     
     try {
-      // Preparar los datos para enviar al servidor
       const comodidadData = {
         nombreComodidades: newItem.nombreComodidades.trim(),
         descripcion: newItem.descripcion.trim(),
@@ -748,7 +790,6 @@ const Furniture = () => {
       console.log("📤 Enviando datos al servidor:", comodidadData);
 
       if (isEditing) {
-        // Para editar, incluir el ID en los datos
         const dataToUpdate = {
           idComodidades: parseInt(newItem.idComodidades),
           ...comodidadData
@@ -763,7 +804,6 @@ const Furniture = () => {
         
         displayAlert("Comodidad actualizada exitosamente.", "success");
       } else {
-        // Para crear nuevo
         await axios.post(API_COMODIDADES, comodidadData, {
           headers: { 
             'Content-Type': 'application/json',
@@ -787,20 +827,27 @@ const Furniture = () => {
 
   const confirmDelete = async () => {
     if (itemToDelete) {
+      // Verificar si la comodidad está siendo usada
+      const cantidadUsada = getCantidadUsada(itemToDelete.idComodidades);
+      if (cantidadUsada > 0) {
+        displayAlert(`No se puede eliminar la comodidad porque está siendo usada en ${cantidadUsada} cabaña(s).`, "error");
+        setItemToDelete(null);
+        setShowDeleteConfirm(false);
+        return;
+      }
+
       setLoading(true);
       try {
         await axios.delete(`${API_COMODIDADES}/${itemToDelete.idComodidades}`);
         displayAlert("Comodidad eliminada exitosamente.", "success");
         await fetchComodidades();
         
-        // Ajustar la página si es necesario
         if (paginatedItems.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         }
       } catch (error) {
         console.error("❌ Error al eliminar comodidad:", error);
         
-        // Manejo específico para error de integridad referencial
         if (error.response && error.response.status === 409) {
           displayAlert("No se puede eliminar la comodidad porque está siendo utilizada en cabañas.", "error");
         } else {
@@ -815,7 +862,7 @@ const Furniture = () => {
   };
 
   // ===============================================
-  // FUNCIONES AUXILIARES MEJORADAS
+  // FUNCIONES AUXILIARES
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
@@ -824,7 +871,7 @@ const Furniture = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -865,7 +912,7 @@ const Furniture = () => {
     setNewItem({
       nombreComodidades: "",
       descripcion: "",
-      fechaRegistro: getCurrentDate(), // Siempre fecha actual al cerrar/abrir
+      fechaRegistro: getCurrentDate(),
       cantidad: 1,
       precio: 0
     });
@@ -888,7 +935,6 @@ const Furniture = () => {
 
   const handleEdit = (item) => {
     try {
-      // Formatear la fecha correctamente para el input date
       let fechaRegistro = "";
       if (item.fechaRegistro) {
         if (item.fechaRegistro.includes('T')) {
@@ -897,7 +943,7 @@ const Furniture = () => {
           fechaRegistro = item.fechaRegistro;
         }
       } else {
-        fechaRegistro = getCurrentDate(); // Usar fecha actual si no hay fecha
+        fechaRegistro = getCurrentDate();
       }
 
       setNewItem({
@@ -921,6 +967,13 @@ const Furniture = () => {
   };
 
   const handleDeleteClick = (item) => {
+    // Verificar si la comodidad está siendo usada
+    const cantidadUsada = getCantidadUsada(item.idComodidades);
+    if (cantidadUsada > 0) {
+      displayAlert(`No se puede eliminar. Esta comodidad está siendo usada en ${cantidadUsada} cabaña(s).`, "warning");
+      return;
+    }
+    
     setItemToDelete(item);
     setShowDeleteConfirm(true);
   };
@@ -1053,7 +1106,7 @@ const Furniture = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Comodidades</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {comodidades.length} comodidades registradas • Valor total: {formatPrice(comodidades.reduce((sum, item) => sum + (item.precio * item.cantidad), 0))}
+            {comodidades.length} comodidades registradas • {comodidades.filter(c => getCantidadDisponible(c.idComodidades) === 0).length} agotadas
           </p>
         </div>
         <button
@@ -1066,7 +1119,7 @@ const Furniture = () => {
             setNewItem({
               nombreComodidades: "",
               descripcion: "",
-              fechaRegistro: getCurrentDate(), // Fecha actual al crear nueva comodidad
+              fechaRegistro: getCurrentDate(),
               cantidad: 1,
               precio: 0
             });
@@ -1185,15 +1238,15 @@ const Furniture = () => {
                     success={formSuccess.fechaRegistro}
                     warning={formWarnings.fechaRegistro}
                     required={true}
-                    disabled={loading || isEditing} // Deshabilitado en edición
-                    min={getCurrentDate()} // Fecha mínima = hoy
-                    max="2099-12-31" // Fecha máxima
+                    disabled={loading || isEditing}
+                    min={getCurrentDate()}
+                    max="2099-12-31"
                   />
                 </div>
                 
                 <div>
                   <FormField
-                    label="Cantidad"
+                    label="Cantidad Total"
                     name="cantidad"
                     type="number"
                     value={newItem.cantidad}
@@ -1214,7 +1267,7 @@ const Furniture = () => {
                     label={
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <FaDollarSign />
-                        Precio (COP)
+                        Precio Unitario (COP)
                       </div>
                     }
                     name="precio"
@@ -1344,8 +1397,37 @@ const Furniture = () => {
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Cantidad</div>
+                <div style={detailLabelStyle}>Cantidad Total</div>
                 <div style={detailValueStyle}>{currentItem.cantidad}</div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Cantidad Usada</div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    color: getCantidadUsada(currentItem.idComodidades) > 0 ? '#ff9800' : '#4caf50',
+                    fontWeight: 'bold'
+                  }}>
+                    {getCantidadUsada(currentItem.idComodidades)}
+                  </span>
+                </div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Cantidad Disponible</div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    color: getCantidadDisponible(currentItem.idComodidades) > 0 ? '#4caf50' : '#e57373',
+                    fontWeight: 'bold'
+                  }}>
+                    {getCantidadDisponible(currentItem.idComodidades)}
+                  </span>
+                  {getCantidadDisponible(currentItem.idComodidades) === 0 && (
+                    <span style={{ color: '#e57373', marginLeft: '10px', fontSize: '14px' }}>
+                      (AGOTADO)
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div style={detailItemStyle}>
@@ -1354,9 +1436,49 @@ const Furniture = () => {
               </div>
 
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Valor Total</div>
+                <div style={detailLabelStyle}>Valor Total en Stock</div>
                 <div style={{...detailValueStyle, fontWeight: 'bold', color: '#2E5939'}}>
                   {formatPrice(currentItem.precio * currentItem.cantidad)}
+                </div>
+              </div>
+
+              {/* Cabañas que usan esta comodidad */}
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaHome />
+                    Cabañas que usan esta comodidad
+                  </div>
+                </div>
+                <div style={detailValueStyle}>
+                  {getCabanasQueUsanComodidad(currentItem.idComodidades).length > 0 ? (
+                    <div style={{ 
+                      backgroundColor: "#F7F4EA", 
+                      padding: 15,
+                      borderRadius: 8,
+                      fontSize: 14,
+                      color: '#2E5939',
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      lineHeight: '1.5'
+                    }}>
+                      {getCabanasQueUsanComodidad(currentItem.idComodidades).map((cabana, index) => (
+                        <div key={index} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          marginBottom: '5px',
+                          padding: '5px'
+                        }}>
+                          <FaCouch size={12} color="#679750" />
+                          {cabana}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#999', fontStyle: 'italic' }}>
+                      Esta comodidad no está siendo usada en ninguna cabaña
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -1415,7 +1537,6 @@ const Furniture = () => {
               ¿Estás seguro de eliminar la comodidad "<strong>{itemToDelete.nombreComodidades}</strong>"?
             </p>
             
-            {/* Advertencia sobre valor */}
             <div style={{ 
               backgroundColor: '#fff3cd', 
               border: '1px solid #ffeaa7',
@@ -1425,10 +1546,10 @@ const Furniture = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                 <FaInfoCircle style={{ color: '#856404' }} />
-                <strong style={{ color: '#856404' }}>Valor a eliminar</strong>
+                <strong style={{ color: '#856404' }}>Información</strong>
               </div>
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Esta comodidad tiene un valor total de {formatPrice(itemToDelete.precio * itemToDelete.cantidad)}
+                Valor total: {formatPrice(itemToDelete.precio * itemToDelete.cantidad)}
               </p>
             </div>
 
@@ -1513,56 +1634,90 @@ const Furniture = () => {
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Comodidad</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Fecha Registro</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Cantidad</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Cantidad Total</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Usadas</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Disponibles</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Precio Unitario</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Valor Total</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {paginatedItems.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     {comodidades.length === 0 ? "No hay comodidades registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((item) => (
-                  <tr key={item.idComodidades} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{item.nombreComodidades}</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{formatDate(item.fechaRegistro)}</td>
-                    <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>{item.cantidad}</td>
-                    <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>{formatPrice(item.precio)}</td>
-                    <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold", color: '#2E5939' }}>
-                      {formatPrice(item.precio * item.cantidad)}
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                        <button
-                          onClick={() => handleView(item)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Ver Detalles"
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(item)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar Comodidad"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(item)}
-                          style={btnAccion("#fbe9e7", "#e57373")}
-                          title="Eliminar Comodidad"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                paginatedItems.map((item) => {
+                  const cantidadUsada = getCantidadUsada(item.idComodidades);
+                  const cantidadDisponible = getCantidadDisponible(item.idComodidades);
+                  const estaAgotada = cantidadDisponible === 0;
+                  
+                  return (
+                    <tr key={item.idComodidades} style={{ 
+                      borderBottom: "1px solid #eee",
+                      backgroundColor: estaAgotada ? '#fff8e1' : '#fff'
+                    }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {item.nombreComodidades}
+                          {estaAgotada && (
+                            <span style={{
+                              backgroundColor: '#ff9800',
+                              color: 'white',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '10px',
+                              fontWeight: 'bold'
+                            }}>
+                              AGOTADO
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>{formatDate(item.fechaRegistro)}</td>
+                      <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>{item.cantidad}</td>
+                      <td style={{ padding: "15px", textAlign: "center", color: cantidadUsada > 0 ? '#ff9800' : '#4caf50' }}>
+                        {cantidadUsada}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center", color: cantidadDisponible > 0 ? '#4caf50' : '#e57373', fontWeight: "bold" }}>
+                        {cantidadDisponible}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>{formatPrice(item.precio)}</td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => handleView(item)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(item)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar Comodidad"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(item)}
+                            style={{
+                              ...btnAccion("#fbe9e7", "#e57373"),
+                              opacity: cantidadUsada > 0 ? 0.5 : 1,
+                              cursor: cantidadUsada > 0 ? "not-allowed" : "pointer"
+                            }}
+                            title={cantidadUsada > 0 ? "No se puede eliminar - Está siendo usada" : "Eliminar Comodidad"}
+                            disabled={cantidadUsada > 0}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1599,6 +1754,76 @@ const Furniture = () => {
           >
             Siguiente
           </button>
+        </div>
+      )}
+
+      {/* Estadísticas */}
+      {!loading && comodidades.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {comodidades.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Comodidades
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {comodidades.filter(c => getCantidadDisponible(c.idComodidades) > 0).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Con Stock Disponible
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {comodidades.filter(c => getCantidadDisponible(c.idComodidades) === 0).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Agotadas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPrice(comodidades.reduce((sum, item) => sum + (item.precio * item.cantidad), 0))}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total en Stock
+            </div>
+          </div>
         </div>
       )}
     </div>

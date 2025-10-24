@@ -23,7 +23,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchSedes = async () => {
       try {
-        const response = await fetch("http://localhost:5255/api/reportes/sedes");
+        const response = await fetch("http://localhost:5204/api/reportes/sedes");
         const data = await response.json();
         setSedes(data);
         if (data.length > 0) {
@@ -44,7 +44,7 @@ const Dashboard = () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:5255/api/reportes/reservas/${sedeSeleccionada}/${filtro}`
+          `http://localhost:5204/api/reportes/reservas/${sedeSeleccionada}/${filtro}`
         );
 
         if (!response.ok) {

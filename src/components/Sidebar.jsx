@@ -19,7 +19,9 @@ import {
   FaTruck,
   FaShoppingCart,
   FaSignOutAlt,
-  FaUserCircle
+  FaUserCircle,
+  FaCalendarAlt,
+  FaCalendar
 } from "react-icons/fa";
 import "./Sidebar.css";
 
@@ -32,122 +34,140 @@ function Sidebar() {
   };
 
   return (
-    <div
+    <aside
       className="sidebar"
       style={{ display: "flex", flexDirection: "column", height: "100%" }}
+      aria-label="Barra lateral de navegación"
     >
       {/* Logo */}
-      <div className="logo">
-        <img src="/images/Logo.png" alt="Logo" />
+      <div className="logo" style={{ padding: "16px 12px" }}>
+        <img src="/images/Logo.png" alt="Logo" style={{ maxWidth: "100%" }} />
       </div>
 
       {/* Menú principal */}
-      <ul className="menu" style={{ flex: 1 }}>
-        {/* Dashboard */}
-        <li>
-          <Link to="/dashboard">
-            <FaTachometerAlt /> &nbsp; Dashboard
-          </Link>
-        </li>
+      <nav style={{ flex: 1 }}>
+        <ul className="menu" style={{ padding: 0, margin: 0 }}>
+          {/* Dashboard */}
+          <li>
+            <Link to="/dashboard" aria-label="Dashboard">
+              <FaTachometerAlt /> &nbsp; Dashboard
+            </Link>
+          </li>
 
-        {/* Configuración */}
-        <li>
-          <details>
-            <summary className="submenu-toggle">
-              <FaCogs /> &nbsp; Configuración
-            </summary>
-            <ul className="submenu">
-              <li>
-                <Link to="/roles">
-                  <FaUserShield /> &nbsp; Roles
-                </Link>
-              </li>
-              <li>
-                <Link to="/usuarios">
-                  <FaUsers /> &nbsp; Usuarios
-                </Link>
-              </li>
-            </ul>
-          </details>
-        </li>
+          {/* Configuración (PRIMERO) */}
+          <li>
+            <details>
+              <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
+                <FaCogs /> &nbsp; Configuración
+              </summary>
+              <ul className="submenu">
+                <li>
+                  <Link to="/roles">
+                    <FaUserShield /> &nbsp; Roles
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/usuarios">
+                    <FaUsers /> &nbsp; Usuarios
+                  </Link>
+                </li>
+              </ul>
+            </details>
+          </li>
 
-        {/* Reservas */}
-        <li>
-          <details>
-            <summary className="submenu-toggle">
-              <FaHotel /> &nbsp; Reservas
-            </summary>
-            <ul className="submenu">
-              <li>
-                <Link to="/reservas/sedes">
-                  <FaBuilding /> &nbsp; Sedes
-                </Link>
-              </li>
-              <li>
-                <Link to="/reservas/cabanas">
-                  <FaHome /> &nbsp; Cabañas
-                </Link>
-              </li>
-              <li>
-                <Link to="/reservas/muebles">
-                  <FaCouch /> &nbsp; Comodidades
-                </Link>
-              </li>
-              <li>
-                <Link to="/reservas/servicios">
-                  <FaConciergeBell /> &nbsp; Servicios
-                </Link>
-              </li>
-              <li>
-                <Link to="/reservas/paquetes">
-                  <FaBoxes /> &nbsp; Paquetes
-                </Link>
-              </li>
-              <li>
-                <Link to="/reservas/gestion-reservas">
-                  <FaClipboardList /> &nbsp; Reservas
-                </Link>
-              </li>
-            </ul>
-          </details>
-        </li>
+          {/* Reservas (SEGUNDO) - orden lógico interno */}
+          <li>
+            <details>
+              <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
+                <FaHotel /> &nbsp; Reservas
+              </summary>
+              <ul className="submenu">
+                <li>
+                  <Link to="/reservas/sedes">
+                    <FaBuilding /> &nbsp; Sedes
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/Tipocabana">
+                    <FaHome /> &nbsp; Tipo Cabañas
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/cabanas">
+                    <FaHome /> &nbsp; Cabañas
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/muebles">
+                    <FaCouch /> &nbsp; Comodidades
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/servicios">
+                    <FaConciergeBell /> &nbsp; Servicios
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/paquetes">
+                    <FaBoxes /> &nbsp; Paquetes
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/disponibilidad">
+                    <FaCalendarAlt /> &nbsp; Disponibilidad
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/temporada">
+                    <FaCalendar /> &nbsp; Temporada
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reservas/gestion-reservas">
+                    <FaClipboardList /> &nbsp; Reservas
+                  </Link>
+                </li>
+              </ul>
+            </details>
+          </li>
 
-        {/* Compras */}
-        <li>
-          <details>
-            <summary className="submenu-toggle">
-              <FaBoxOpen /> &nbsp; Compras
-            </summary>
-            <ul className="submenu">
-              <li>
-                <Link to="/compras/gestion-categoria-producto">
-                  <FaTags /> &nbsp; Categoría Producto
-                </Link>
-              </li>
-              <li>
-                <Link to="/compras/gestion-marca">
-                  <FaTrademark /> &nbsp; Marca
-                </Link>
-              </li>
-              <li>
-                <Link to="/compras/proveedores">
-                  <FaTruck /> &nbsp; Proveedores
-                </Link>
-              </li>
-              <li>
-                <Link to="/compras/gestion-productos">
-                  <FaBoxes /> &nbsp; Productos
-                </Link>
-              </li>
-              <li>
-                <Link to="/compras/compras">
-                  <FaShoppingCart /> &nbsp; Compras
-                </Link>
-              </li>
-            </ul>
-          </details>
-        </li>
-      </ul>
+          {/* Compras (TERCERO) */}
+          <li>
+            <details>
+              <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
+                <FaBoxOpen /> &nbsp; Compras
+              </summary>
+              <ul className="submenu">
+                <li>
+                  <Link to="/compras/gestion-categoria-producto">
+                    <FaTags /> &nbsp; Categoría Producto
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/compras/gestion-marca">
+                    <FaTrademark /> &nbsp; Marca
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/compras/proveedores">
+                    <FaTruck /> &nbsp; Proveedores
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/compras/gestion-productos">
+                    <FaBoxes /> &nbsp; Productos
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/compras/compras">
+                    <FaShoppingCart /> &nbsp; Compras
+                  </Link>
+                </li>
+              </ul>
+            </details>
+          </li>
+        </ul>
+      </nav>
 
       {/* Perfil Admin */}
       <div
@@ -160,6 +180,7 @@ function Sidebar() {
           alignItems: "center",
           gap: "10px"
         }}
+        aria-label="Perfil del usuario"
       >
         <FaUserCircle size={32} color="#333" />
         <div>
@@ -186,12 +207,13 @@ function Sidebar() {
             fontWeight: "bold",
             transition: "background-color 0.3s"
           }}
+          aria-label="Cerrar sesión"
         >
           <FaSignOutAlt style={{ marginRight: "8px" }} />
           Cerrar Sesión
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
 

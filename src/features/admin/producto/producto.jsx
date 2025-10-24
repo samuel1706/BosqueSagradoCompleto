@@ -1,9 +1,14 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaPlus, FaSearch, FaExclamationTriangle } from "react-icons/fa";
+import { 
+  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
+  FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox,
+  FaTag, FaDollarSign, FaHashtag, FaToggleOn, FaToggleOff,
+  FaSync, FaShoppingCart
+} from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS (Actualizados para coincidir con Cabins)
+// ESTILOS MEJORADOS (CONSISTENTES CON LOS OTROS MÓDULOS)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -15,9 +20,10 @@ const btnAccion = (bg, borderColor) => ({
   color: borderColor,
   fontWeight: "600",
   fontSize: "16px",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "5px",
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '5px',
   transition: "all 0.3s ease",
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
@@ -36,14 +42,9 @@ const inputStyle = {
   borderRadius: 8,
   backgroundColor: "#F7F4EA",
   color: "#2E5939",
+  boxSizing: 'border-box',
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-  boxSizing: 'border-box'
-};
-
-const inputErrorStyle = {
-  ...inputStyle,
-  border: "1px solid #e53935",
-  backgroundColor: "#fef7f7"
+  transition: "all 0.3s ease",
 };
 
 const navBtnStyle = (disabled) => ({
@@ -102,19 +103,58 @@ const modalContentStyle = {
   border: "2px solid #679750",
 };
 
+// Estilos mejorados para alertas
 const alertStyle = {
   position: 'fixed',
   top: 20,
   right: 20,
-  backgroundColor: '#2E5939',
-  color: 'white',
   padding: '15px 20px',
   borderRadius: '10px',
-  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
   zIndex: 10000,
   display: 'flex',
   alignItems: 'center',
-  gap: '10px'
+  gap: '12px',
+  fontWeight: '600',
+  fontSize: '16px',
+  minWidth: '300px',
+  maxWidth: '500px',
+  animation: 'slideInRight 0.3s ease-out',
+  borderLeft: '5px solid',
+  backdropFilter: 'blur(10px)',
+};
+
+const alertIconStyle = {
+  fontSize: '20px',
+  flexShrink: 0,
+};
+
+const alertSuccessStyle = {
+  ...alertStyle,
+  backgroundColor: '#d4edda',
+  color: '#155724',
+  borderLeftColor: '#28a745',
+};
+
+const alertErrorStyle = {
+  ...alertStyle,
+  backgroundColor: '#f8d7da',
+  color: '#721c24',
+  borderLeftColor: '#dc3545',
+};
+
+const alertWarningStyle = {
+  ...alertStyle,
+  backgroundColor: '#fff3cd',
+  color: '#856404',
+  borderLeftColor: '#ffc107',
+};
+
+const alertInfoStyle = {
+  ...alertStyle,
+  backgroundColor: '#d1ecf1',
+  color: '#0c5460',
+  borderLeftColor: '#17a2b8',
 };
 
 const detailsModalStyle = {
@@ -139,7 +179,7 @@ const detailItemStyle = {
 
 const detailLabelStyle = {
   fontWeight: "bold",
-  color: "#679750",
+  color: "#2E5939",
   marginBottom: 5,
   fontSize: "14px"
 };
@@ -150,154 +190,144 @@ const detailValueStyle = {
   fontWeight: "500"
 };
 
-const errorStyle = {
-  color: '#e53935',
-  fontSize: '12px',
-  marginTop: '4px',
-  display: 'block',
-  fontWeight: '500'
+const validationMessageStyle = {
+  fontSize: "0.8rem",
+  marginTop: "4px",
+  display: "flex",
+  alignItems: "center",
+  gap: "5px"
 };
 
-const warningStyle = {
-  color: '#ff9800',
-  fontSize: '12px',
-  marginTop: '4px',
-  display: 'block',
-  fontWeight: '500'
+const successValidationStyle = {
+  ...validationMessageStyle,
+  color: "#4caf50"
 };
+
+const errorValidationStyle = {
+  ...validationMessageStyle,
+  color: "#e57373"
+};
+
+const warningValidationStyle = {
+  ...validationMessageStyle,
+  color: "#ff9800"
+};
+
+const toggleButtonStyle = (active) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  padding: '10px 16px',
+  borderRadius: '25px',
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '14px',
+  transition: 'all 0.3s ease',
+  backgroundColor: active ? '#4caf50' : '#e57373',
+  color: 'white',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  minWidth: '140px'
+});
 
 // ===============================================
-// FUNCIONES DE VALIDACIÓN MEJORADAS PARA PRODUCTOS
+// VALIDACIONES Y PATRONES PARA PRODUCTOS
 // ===============================================
-const validateNombre = (nombre, productosExistentes = [], idActual = null) => {
-  if (!nombre || nombre.trim().length === 0) {
-    return { isValid: false, message: 'El nombre del producto es obligatorio' };
-  }
-
-  if (nombre.trim().length < 2) {
-    return { isValid: false, message: 'El nombre debe tener al menos 2 caracteres' };
-  }
-
-  if (nombre.trim().length > 100) {
-    return { isValid: false, message: 'El nombre no puede exceder los 100 caracteres' };
-  }
-
-  // Solo letras y espacios (sin números ni caracteres especiales)
-  const nombreRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-  if (!nombreRegex.test(nombre.trim())) {
-    return { 
-      isValid: false, 
-      message: 'El nombre solo puede contener letras y espacios. No se permiten números ni caracteres especiales.' 
-    };
-  }
-
-  // Validar unicidad (case insensitive)
-  const nombreNormalizado = nombre.trim().toLowerCase();
-  const existeProducto = productosExistentes.some(prod => 
-    prod.nombre.toLowerCase() === nombreNormalizado && 
-    prod.idProducto !== idActual
-  );
-
-  if (existeProducto) {
-    return { 
-      isValid: false, 
-      message: 'Ya existe un producto con este nombre' 
-    };
-  }
-
-  return { isValid: true, message: '' };
+const VALIDATION_PATTERNS = {
+  nombre: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&.,()]+$/,
 };
 
-const validatePrecio = (precio) => {
-  if (!precio || precio.toString().trim().length === 0) {
-    return { isValid: false, message: 'El precio es obligatorio' };
+const VALIDATION_RULES = {
+  nombre: {
+    minLength: 2,
+    maxLength: 100,
+    required: true,
+    pattern: VALIDATION_PATTERNS.nombre,
+    errorMessages: {
+      required: "El nombre del producto es obligatorio.",
+      minLength: "El nombre debe tener al menos 2 caracteres.",
+      maxLength: "El nombre no puede exceder los 100 caracteres.",
+      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, espacios y los caracteres: - _ & . , ( )"
+    }
+  },
+  precio: {
+    required: true,
+    min: 0,
+    max: 1000000000,
+    errorMessages: {
+      required: "El precio es obligatorio.",
+      min: "El precio debe ser mayor a 0.",
+      max: "El precio no puede exceder 1,000,000,000.",
+      invalid: "El precio debe ser un número válido con máximo 2 decimales."
+    }
+  },
+  cantidad: {
+    required: true,
+    min: 0,
+    max: 1000000,
+    errorMessages: {
+      required: "La cantidad es obligatoria.",
+      min: "La cantidad no puede ser negativa.",
+      max: "La cantidad no puede exceder 1,000,000 unidades.",
+      invalid: "La cantidad debe ser un número entero válido."
+    }
+  },
+  idCategoria: {
+    required: true,
+    errorMessages: {
+      required: "Debe seleccionar una categoría."
+    }
+  },
+  idMarca: {
+    required: true,
+    errorMessages: {
+      required: "Debe seleccionar una marca."
+    }
+  },
+  estado: {
+    required: true,
+    errorMessages: {
+      required: "El estado es obligatorio."
+    }
   }
-
-  const precioNum = parseFloat(precio);
-  if (isNaN(precioNum)) {
-    return { isValid: false, message: 'El precio debe ser un número válido' };
-  }
-
-  if (precioNum <= 0) {
-    return { isValid: false, message: 'El precio debe ser mayor a 0' };
-  }
-
-  if (precioNum > 1000000000) {
-    return { isValid: false, message: 'El precio no puede exceder 1,000,000,000' };
-  }
-
-  // Validar que no tenga más de 2 decimales
-  const decimalPart = precio.toString().split('.')[1];
-  if (decimalPart && decimalPart.length > 2) {
-    return { isValid: false, message: 'El precio no puede tener más de 2 decimales' };
-  }
-
-  return { isValid: true, message: '' };
-};
-
-const validateCantidad = (cantidad) => {
-  if (!cantidad || cantidad.toString().trim().length === 0) {
-    return { isValid: false, message: 'La cantidad es obligatoria' };
-  }
-
-  const cantidadNum = parseInt(cantidad);
-  if (isNaN(cantidadNum)) {
-    return { isValid: false, message: 'La cantidad debe ser un número entero válido' };
-  }
-
-  if (cantidadNum < 0) {
-    return { isValid: false, message: 'La cantidad no puede ser negativa' };
-  }
-
-  if (cantidadNum > 1000000) {
-    return { isValid: false, message: 'La cantidad no puede exceder 1,000,000 unidades' };
-  }
-
-  return { isValid: true, message: '' };
-};
-
-const validateCategoria = (idCategoria, categorias) => {
-  if (!idCategoria) {
-    return { isValid: false, message: 'Debe seleccionar una categoría' };
-  }
-
-  const categoriaExiste = categorias.some(cat => cat.idCategoria === parseInt(idCategoria));
-  if (!categoriaExiste) {
-    return { isValid: false, message: 'La categoría seleccionada no es válida' };
-  }
-
-  return { isValid: true, message: '' };
-};
-
-const validateMarca = (idMarca, marcas) => {
-  if (!idMarca) {
-    return { isValid: false, message: 'Debe seleccionar una marca' };
-  }
-
-  const marcaExiste = marcas.some(marca => marca.idMarca === parseInt(idMarca));
-  if (!marcaExiste) {
-    return { isValid: false, message: 'La marca seleccionada no es válida' };
-  }
-
-  return { isValid: true, message: '' };
 };
 
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PRODUCTOS = "http://localhost:5255/api/Productos";
-const API_CATEGORIAS = "http://localhost:5255/api/CategoriaProductos";
-const API_MARCAS = "http://localhost:5255/api/MarcaProducto";
-
+const API_PRODUCTOS = "http://localhost:5204/api/Productos";
+const API_CATEGORIAS = "http://localhost:5204/api/CategoriaProductos";
+const API_MARCAS = "http://localhost:5204/api/MarcaProducto";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField
+// COMPONENTE FormField PARA PRODUCTOS
 // ===============================================
-const FormField = ({ label, name, type = "text", value, onChange, error, warning, options = [], style = {}, required = true, disabled = false, maxLength, min, max, step }) => {
+const FormField = ({ 
+  label, 
+  name, 
+  type = "text", 
+  value, 
+  onChange, 
+  error, 
+  success,
+  warning,
+  options = [],
+  style = {}, 
+  required = true, 
+  disabled = false,
+  maxLength,
+  placeholder,
+  showCharCount = false,
+  min,
+  max,
+  step,
+  icon
+}) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
-      const placeholderOption = { value: "", label: "Selecciona", disabled: required };
+      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
       return [placeholderOption, ...options];
     }
     return options;
@@ -308,26 +338,65 @@ const FormField = ({ label, name, type = "text", value, onChange, error, warning
     let filteredValue = value;
 
     if (name === 'nombre') {
-      // Solo letras, números, espacios y caracteres básicos
-      filteredValue = value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_&.,()]/g, "");
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&.,()]/g, "");
     } else if (name === 'precio') {
-      // Solo números y punto decimal
       filteredValue = value.replace(/[^0-9.]/g, "");
-      // Solo permitir un punto decimal
       const parts = filteredValue.split('.');
       if (parts.length > 2) {
         filteredValue = parts[0] + '.' + parts.slice(1).join('');
       }
+      if (parts.length === 2 && parts[1].length > 2) {
+        filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
+      }
     } else if (name === 'cantidad') {
-      // Solo números
       filteredValue = value.replace(/[^0-9]/g, "");
-    }
-    
-    if (maxLength && filteredValue.length > maxLength) {
-      filteredValue = filteredValue.slice(0, maxLength);
+    } else {
+      filteredValue = value;
     }
     
     onChange({ target: { name, value: filteredValue } });
+  };
+
+  const getInputStyle = () => {
+    let borderColor = "#ccc";
+    if (error) borderColor = "#e57373";
+    else if (success) borderColor = "#4caf50";
+    else if (warning) borderColor = "#ff9800";
+
+    return {
+      ...inputStyle,
+      border: `1px solid ${borderColor}`,
+      borderLeft: `4px solid ${borderColor}`,
+      paddingLeft: icon ? '40px' : '12px'
+    };
+  };
+
+  const getValidationMessage = () => {
+    if (error) {
+      return (
+        <div style={errorValidationStyle}>
+          <FaExclamationTriangle size={12} />
+          {error}
+        </div>
+      );
+    }
+    if (success) {
+      return (
+        <div style={successValidationStyle}>
+          <FaCheck size={12} />
+          {success}
+        </div>
+      );
+    }
+    if (warning) {
+      return (
+        <div style={warningValidationStyle}>
+          <FaInfoCircle size={12} />
+          {warning}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -337,56 +406,90 @@ const FormField = ({ label, name, type = "text", value, onChange, error, warning
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
       {type === "select" ? (
-        <select
-          name={name}
-          value={value}
-          onChange={onChange}
-          style={{
-            ...inputStyle,
-            ...(error ? inputErrorStyle : {})
-          }}
-          required={required}
-          disabled={disabled}
-        >
-          {finalOptions.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
+        <div>
+          <div style={{ position: 'relative' }}>
+            {icon && (
+              <div style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#2E5939',
+                zIndex: 1
+              }}>
+                {icon}
+              </div>
+            )}
+            <select
+              name={name}
+              value={value}
+              onChange={onChange}
+              style={{
+                ...getInputStyle(),
+                paddingLeft: icon ? '40px' : '12px',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%232E5939' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 12px center',
+                backgroundSize: '12px'
+              }}
+              required={required}
+              disabled={disabled}
             >
-              {option.label}
-            </option>
-          ))}
-        </select>
+              {finalOptions.map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={option.disabled}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {getValidationMessage()}
+        </div>
       ) : (
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={handleFilteredInputChange}
-          style={{
-            ...inputStyle,
-            ...(error ? inputErrorStyle : {})
-          }}
-          required={required}
-          disabled={disabled}
-          maxLength={maxLength}
-          min={min}
-          max={max}
-          step={step}
-          placeholder={type === 'number' ? '0' : ''}
-        />
-      )}
-      {error && <span style={errorStyle}>{error}</span>}
-      {warning && !error && <span style={warningStyle}>{warning}</span>}
-      {maxLength && (
-        <div style={{ 
-          fontSize: '12px', 
-          color: error ? '#e53935' : '#679750', 
-          marginTop: '4px',
-          textAlign: 'right'
-        }}>
-          {value?.length || 0}/{maxLength} caracteres
+        <div>
+          <div style={{ position: 'relative' }}>
+            {icon && (
+              <div style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#2E5939',
+                zIndex: 1
+              }}>
+                {icon}
+              </div>
+            )}
+            <input
+              type={type}
+              name={name}
+              value={value}
+              onChange={handleFilteredInputChange}
+              style={getInputStyle()}
+              required={required}
+              disabled={disabled}
+              maxLength={maxLength}
+              placeholder={placeholder}
+              min={min}
+              max={max}
+              step={step}
+            />
+          </div>
+          {showCharCount && maxLength && (
+            <div style={{
+              fontSize: "0.75rem",
+              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+              textAlign: "right",
+              marginTop: "4px"
+            }}>
+              {value.length}/{maxLength} caracteres
+            </div>
+          )}
+          {getValidationMessage()}
         </div>
       )}
     </div>
@@ -394,7 +497,7 @@ const FormField = ({ label, name, type = "text", value, onChange, error, warning
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Productos (CON VALIDACIONES MEJORADAS)
+// COMPONENTE PRINCIPAL Productos MEJORADO
 // ===============================================
 const Productos = () => {
   const [productos, setProductos] = useState([]);
@@ -415,14 +518,18 @@ const Productos = () => {
   const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [loadingMarcas, setLoadingMarcas] = useState(false);
   const [error, setError] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [warnings, setWarnings] = useState({});
+  const [formErrors, setFormErrors] = useState({});
+  const [formSuccess, setFormSuccess] = useState({});
+  const [formWarnings, setFormWarnings] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estado inicial basado en la estructura de tu API
   const [newProducto, setNewProducto] = useState({
+    idProducto: 0,
     nombre: "",
     idCategoria: "",
     idMarca: "",
-    cantidad: 1,
+    cantidad: "1",
     precio: "",
     imagen: "nada",
     estado: true
@@ -437,136 +544,197 @@ const Productos = () => {
     fetchMarcas();
   }, []);
 
+  // Validar formulario en tiempo real
+  useEffect(() => {
+    if (showForm) {
+      validateField('nombre', newProducto.nombre);
+      validateField('precio', newProducto.precio);
+      validateField('cantidad', newProducto.cantidad);
+      validateField('idCategoria', newProducto.idCategoria);
+      validateField('idMarca', newProducto.idMarca);
+      validateField('estado', newProducto.estado);
+    }
+  }, [newProducto, showForm]);
+
+  // Efecto para agregar estilos de animación
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // ===============================================
+  // FUNCIONES DE ALERTAS MEJORADAS
+  // ===============================================
+  const displayAlert = (message, type = "success") => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+      setAlertMessage("");
+    }, 5000);
+  };
+
+  const getAlertIcon = (type) => {
+    switch (type) {
+      case "success":
+        return <FaCheck style={alertIconStyle} />;
+      case "error":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "warning":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "info":
+        return <FaInfoCircle style={alertIconStyle} />;
+      default:
+        return <FaInfoCircle style={alertIconStyle} />;
+    }
+  };
+
+  const getAlertStyle = (type) => {
+    switch (type) {
+      case "success":
+        return alertSuccessStyle;
+      case "error":
+        return alertErrorStyle;
+      case "warning":
+        return alertWarningStyle;
+      case "info":
+        return alertInfoStyle;
+      default:
+        return alertSuccessStyle;
+    }
+  };
+
   // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
   // ===============================================
-  const clearErrors = () => {
-    setErrors({});
-    setWarnings({});
-  };
+  const validateField = (fieldName, value) => {
+    const rules = VALIDATION_RULES[fieldName];
+    if (!rules) return true;
 
-  const validateField = (name, value) => {
-    const newErrors = { ...errors };
-    const newWarnings = { ...warnings };
+    let error = "";
+    let success = "";
+    let warning = "";
 
-    // Eliminar errores y advertencias previas del campo
-    delete newErrors[name];
-    delete newWarnings[name];
+    const trimmedValue = value ? value.toString().trim() : "";
 
-    switch (name) {
-      case 'nombre':
-        const nombreValidation = validateNombre(value, productos, isEditing ? newProducto.idProducto : null);
-        if (!nombreValidation.isValid) {
-          newErrors.nombre = nombreValidation.message;
-        } else {
-          // Advertencia para nombres muy similares
-          const nombreNormalizado = value.trim().toLowerCase();
-          const nombreSimilar = productos.find(prod => 
-            prod.nombre.toLowerCase().includes(nombreNormalizado) && 
-            prod.idProducto !== (isEditing ? newProducto.idProducto : null)
-          );
-          if (nombreSimilar) {
-            newWarnings.nombre = `Advertencia: Existe un producto similar: "${nombreSimilar.nombre}"`;
+    if (rules.required && !trimmedValue) {
+      error = rules.errorMessages.required;
+    }
+    else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
+      error = rules.errorMessages.minLength;
+    }
+    else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
+      error = rules.errorMessages.maxLength;
+    }
+    else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
+      error = rules.errorMessages.pattern;
+    }
+    else if (trimmedValue && (fieldName === 'precio' || fieldName === 'cantidad')) {
+      const numericValue = fieldName === 'precio' ? parseFloat(trimmedValue) : parseInt(trimmedValue);
+      
+      if (isNaN(numericValue)) {
+        error = rules.errorMessages.invalid;
+      } else if (rules.min !== undefined && numericValue < rules.min) {
+        error = rules.errorMessages.min;
+      } else if (rules.max !== undefined && numericValue > rules.max) {
+        error = rules.errorMessages.max;
+      } else {
+        success = `${fieldName === 'precio' ? 'Precio' : 'Cantidad'} válido.`;
+        
+        // Advertencias específicas
+        if (fieldName === 'precio') {
+          if (numericValue < 100) {
+            warning = "El precio parece muy bajo para un producto.";
+          } else if (numericValue > 100000) {
+            warning = "El precio parece muy alto. Verifique el valor.";
+          }
+        } else if (fieldName === 'cantidad') {
+          if (numericValue === 0) {
+            warning = "El producto quedará sin stock.";
+          } else if (numericValue > 1000) {
+            warning = "La cantidad parece muy alta. Verifique el valor.";
           }
         }
-        break;
-
-      case 'precio':
-        const precioValidation = validatePrecio(value);
-        if (!precioValidation.isValid) {
-          newErrors.precio = precioValidation.message;
-        } else {
-          const precioNum = parseFloat(value);
-          if (precioNum < 100) {
-            newWarnings.precio = 'El precio parece muy bajo para un producto';
-          } else if (precioNum > 100000) {
-            newWarnings.precio = 'El precio parece muy alto, verifica el valor';
-          }
-        }
-        break;
-
-      case 'cantidad':
-        const cantidadValidation = validateCantidad(value);
-        if (!cantidadValidation.isValid) {
-          newErrors.cantidad = cantidadValidation.message;
-        } else {
-          const cantidadNum = parseInt(value);
-          if (cantidadNum === 0) {
-            newWarnings.cantidad = 'El producto quedará sin stock';
-          } else if (cantidadNum > 1000) {
-            newWarnings.cantidad = 'La cantidad parece muy alta, verifica el valor';
-          }
-        }
-        break;
-
-      case 'idCategoria':
-        const categoriaValidation = validateCategoria(value, categorias);
-        if (!categoriaValidation.isValid) {
-          newErrors.idCategoria = categoriaValidation.message;
-        }
-        break;
-
-      case 'idMarca':
-        const marcaValidation = validateMarca(value, marcas);
-        if (!marcaValidation.isValid) {
-          newErrors.idMarca = marcaValidation.message;
-        }
-        break;
-
-      default:
-        break;
+      }
+    }
+    else if (fieldName === 'idCategoria' && !trimmedValue) {
+      error = rules.errorMessages.required;
+    }
+    else if (fieldName === 'idMarca' && !trimmedValue) {
+      error = rules.errorMessages.required;
+    }
+    else if (fieldName === 'estado') {
+      success = value ? "Producto activo" : "Producto inactivo";
+    }
+    else if (trimmedValue) {
+      success = "Campo válido.";
     }
 
-    setErrors(newErrors);
-    setWarnings(newWarnings);
+    // Verificación de duplicados para nombre
+    if (fieldName === 'nombre' && trimmedValue && !error) {
+      const duplicate = productos.find(prod => 
+        prod.nombre.toLowerCase() === trimmedValue.toLowerCase() && 
+        (!isEditing || prod.idProducto !== newProducto.idProducto)
+      );
+      if (duplicate) {
+        error = "Ya existe un producto con este nombre.";
+      }
+    }
+
+    setFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    setFormSuccess(prev => ({ ...prev, [fieldName]: success }));
+    setFormWarnings(prev => ({ ...prev, [fieldName]: warning }));
+
+    return !error;
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const nombreValid = validateField('nombre', newProducto.nombre);
+    const precioValid = validateField('precio', newProducto.precio);
+    const cantidadValid = validateField('cantidad', newProducto.cantidad);
+    const categoriaValid = validateField('idCategoria', newProducto.idCategoria);
+    const marcaValid = validateField('idMarca', newProducto.idMarca);
+    const estadoValid = validateField('estado', newProducto.estado);
 
-    // Validar todos los campos
-    const nombreValidation = validateNombre(
-      newProducto.nombre, 
-      productos, 
-      isEditing ? newProducto.idProducto : null
-    );
-    if (!nombreValidation.isValid) {
-      newErrors.nombre = nombreValidation.message;
+    const isValid = nombreValid && precioValid && cantidadValid && categoriaValid && marcaValid && estadoValid;
+    
+    if (!isValid) {
+      displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
     }
 
-    const precioValidation = validatePrecio(newProducto.precio);
-    if (!precioValidation.isValid) {
-      newErrors.precio = precioValidation.message;
-    }
-
-    const cantidadValidation = validateCantidad(newProducto.cantidad);
-    if (!cantidadValidation.isValid) {
-      newErrors.cantidad = cantidadValidation.message;
-    }
-
-    const categoriaValidation = validateCategoria(newProducto.idCategoria, categorias);
-    if (!categoriaValidation.isValid) {
-      newErrors.idCategoria = categoriaValidation.message;
-    }
-
-    const marcaValidation = validateMarca(newProducto.idMarca, marcas);
-    if (!marcaValidation.isValid) {
-      newErrors.idMarca = marcaValidation.message;
-    }
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   // ===============================================
-  // FUNCIONES DE LA API (MEJORADAS)
+  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
   // ===============================================
   const fetchProductos = async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("🔍 Conectando a la API de productos:", API_PRODUCTOS);
       const res = await axios.get(API_PRODUCTOS, {
         timeout: 10000,
         headers: {
@@ -574,8 +742,6 @@ const Productos = () => {
           'Content-Type': 'application/json'
         }
       });
-      
-      console.log("✅ Datos de productos recibidos:", res.data);
       
       if (Array.isArray(res.data)) {
         setProductos(res.data);
@@ -593,7 +759,6 @@ const Productos = () => {
   const fetchCategorias = async () => {
     setLoadingCategorias(true);
     try {
-      console.log("🔍 Conectando a la API de categorías:", API_CATEGORIAS);
       const res = await axios.get(API_CATEGORIAS, {
         timeout: 10000,
         headers: {
@@ -601,8 +766,6 @@ const Productos = () => {
           'Content-Type': 'application/json'
         }
       });
-      
-      console.log("✅ Datos de categorías recibidos:", res.data);
       
       if (Array.isArray(res.data)) {
         setCategorias(res.data);
@@ -618,7 +781,6 @@ const Productos = () => {
   const fetchMarcas = async () => {
     setLoadingMarcas(true);
     try {
-      console.log("🔍 Conectando a la API de marcas:", API_MARCAS);
       const res = await axios.get(API_MARCAS, {
         timeout: 10000,
         headers: {
@@ -626,8 +788,6 @@ const Productos = () => {
           'Content-Type': 'application/json'
         }
       });
-      
-      console.log("✅ Datos de marcas recibidos:", res.data);
       
       if (Array.isArray(res.data)) {
         setMarcas(res.data);
@@ -643,14 +803,20 @@ const Productos = () => {
   const handleAddProducto = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      displayAlert("Por favor, corrige los errores en el formulario", "error");
+    if (isSubmitting) {
+      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
       return;
     }
 
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     setLoading(true);
+    
     try {
-      // Preparar datos para el API
+      // Preparar datos según la estructura de tu API
       const productoData = {
         nombre: newProducto.nombre.trim(),
         idCategoria: parseInt(newProducto.idCategoria),
@@ -658,60 +824,33 @@ const Productos = () => {
         cantidad: parseInt(newProducto.cantidad),
         precio: parseFloat(newProducto.precio),
         imagen: newProducto.imagen,
-        estado: newProducto.estado === "true" || newProducto.estado === true
+        estado: newProducto.estado
       };
 
-      console.log("📤 Enviando datos al servidor:", productoData);
+      console.log("📤 Enviando datos:", productoData);
 
-      let response;
       if (isEditing) {
-        // Para editar, incluir el ID en los datos
-        const updateData = {
-          idProducto: parseInt(newProducto.idProducto),
-          ...productoData
-        };
-        console.log("🔄 Actualizando producto:", updateData);
-        response = await axios.put(`${API_PRODUCTOS}/${newProducto.idProducto}`, updateData, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
+        // Para edición, incluir el idProducto
+        productoData.idProducto = newProducto.idProducto;
+        await axios.put(`${API_PRODUCTOS}/${newProducto.idProducto}`, productoData, {
+          headers: { 'Content-Type': 'application/json' }
         });
-        displayAlert("Producto actualizado exitosamente.");
+        displayAlert("Producto actualizado exitosamente.", "success");
       } else {
-        // Para crear nuevo producto
-        console.log("➕ Creando nuevo producto:", productoData);
-        response = await axios.post(API_PRODUCTOS, productoData, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
+        await axios.post(API_PRODUCTOS, productoData, {
+          headers: { 'Content-Type': 'application/json' }
         });
-        displayAlert("Producto agregado exitosamente.");
+        displayAlert("Producto agregado exitosamente.", "success");
       }
       
-      console.log("✅ Respuesta del servidor:", response.data);
       await fetchProductos();
       closeForm();
     } catch (error) {
       console.error("❌ Error al guardar producto:", error);
-      
-      if (error.response) {
-        console.error("📋 Detalles del error:", {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-        
-        if (error.response.data && typeof error.response.data === 'object') {
-          const serverMessage = error.response.data.title || error.response.data.message || JSON.stringify(error.response.data);
-          displayAlert(`Error del servidor: ${serverMessage}`, "error");
-        }
-      }
-      
       handleApiError(error, isEditing ? "actualizar el producto" : "agregar el producto");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -720,7 +859,7 @@ const Productos = () => {
       setLoading(true);
       try {
         await axios.delete(`${API_PRODUCTOS}/${productoToDelete.idProducto}`);
-        displayAlert("Producto eliminado exitosamente.");
+        displayAlert("Producto eliminado exitosamente.", "success");
         await fetchProductos();
         
         // Ajustar la página si es necesario
@@ -728,7 +867,7 @@ const Productos = () => {
           setCurrentPage(currentPage - 1);
         }
       } catch (error) {
-        console.error("Error al eliminar producto:", error);
+        console.error("❌ Error al eliminar producto:", error);
         
         if (error.response && error.response.status === 409) {
           displayAlert("No se puede eliminar el producto porque tiene registros asociados.", "error");
@@ -743,114 +882,72 @@ const Productos = () => {
     }
   };
 
-  const toggleEstado = async (producto) => {
-    setLoading(true);
-    try {
-      const updatedProducto = { 
-        idProducto: producto.idProducto,
-        nombre: producto.nombre,
-        idCategoria: producto.idCategoria,
-        idMarca: producto.idMarca,
-        cantidad: producto.cantidad,
-        precio: producto.precio,
-        imagen: producto.imagen,
-        estado: !producto.estado 
-      };
-      
-      console.log("🔄 Cambiando estado del producto:", updatedProducto);
-      
-      await axios.put(`${API_PRODUCTOS}/${producto.idProducto}`, updatedProducto, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      
-      displayAlert(`Producto ${updatedProducto.estado ? 'activado' : 'desactivado'} exitosamente.`);
-      await fetchProductos();
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
-      handleApiError(error, "cambiar el estado del producto");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // ===============================================
   // FUNCIONES AUXILIARES MEJORADAS
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
+    let alertType = "error";
     
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
     } else if (error.response) {
-      const status = error.response.status;
-      switch (status) {
-        case 400:
-          errorMessage = "Datos inválidos enviados al servidor";
-          break;
-        case 404:
-          errorMessage = "Recurso no encontrado";
-          break;
-        case 409:
-          errorMessage = "Conflicto: El producto ya existe o tiene registros asociados";
-          break;
-        case 500:
-          errorMessage = "Error interno del servidor";
-          break;
-        default:
-          errorMessage = `Error ${status}: ${error.response.data?.message || 'Error del servidor'}`;
+      if (error.response.status === 400) {
+        errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
+      } else if (error.response.status === 404) {
+        errorMessage = "Recurso no encontrado.";
+      } else if (error.response.status === 409) {
+        errorMessage = "Conflicto: El producto está siendo utilizado y no puede ser eliminado.";
+        alertType = "warning";
+      } else if (error.response.status === 500) {
+        errorMessage = "Error interno del servidor.";
+      } else {
+        errorMessage = `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
       }
     } else if (error.request) {
       errorMessage = "No hay respuesta del servidor.";
-    } else if (error.message.includes('timeout')) {
-      errorMessage = "Tiempo de espera agotado. El servidor no respondió a tiempo.";
+    } else {
+      errorMessage = `Error inesperado: ${error.message}`;
     }
     
     setError(errorMessage);
-    displayAlert(errorMessage, "error");
+    displayAlert(errorMessage, alertType);
   };
 
-  const displayAlert = (message, type = "success") => {
-    setAlertMessage(message);
-    setAlertType(type);
-    setShowAlert(true);
-    setTimeout(() => {
-      setShowAlert(false);
-      setAlertMessage("");
-    }, 4000);
-  };
-
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    
     setNewProducto((prev) => ({
       ...prev,
       [name]: value
     }));
+  };
 
-    // Validar el campo en tiempo real después de un pequeño delay
-    setTimeout(() => {
-      validateField(name, value);
-    }, 300);
+  // Función para cambiar el estado con el botón toggle
+  const toggleEstado = () => {
+    setNewProducto(prev => ({
+      ...prev,
+      estado: !prev.estado
+    }));
   };
 
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
     setNewProducto({
+      idProducto: 0,
       nombre: "",
       idCategoria: "",
       idMarca: "",
-      cantidad: 1,
+      cantidad: "1",
       precio: "",
       imagen: "nada",
       estado: true
     });
-    clearErrors();
   };
 
   const closeDetailsModal = () => {
@@ -863,6 +960,26 @@ const Productos = () => {
     setShowDeleteConfirm(false);
   };
 
+  const toggleEstadoProducto = async (producto) => {
+    setLoading(true);
+    try {
+      const updatedProducto = { 
+        ...producto, 
+        estado: !producto.estado 
+      };
+      await axios.put(`${API_PRODUCTOS}/${producto.idProducto}`, updatedProducto, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      displayAlert(`Producto ${updatedProducto.estado ? 'activado' : 'desactivado'} exitosamente.`, "success");
+      await fetchProductos();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      handleApiError(error, "cambiar el estado");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleView = (producto) => {
     setSelectedProducto(producto);
     setShowDetails(true);
@@ -870,18 +987,16 @@ const Productos = () => {
 
   const handleEdit = (producto) => {
     setNewProducto({
-      idProducto: producto.idProducto,
-      nombre: producto.nombre || "",
-      idCategoria: producto.idCategoria ? producto.idCategoria.toString() : "",
-      idMarca: producto.idMarca ? producto.idMarca.toString() : "",
-      cantidad: producto.cantidad ? producto.cantidad.toString() : "1",
-      precio: producto.precio ? producto.precio.toString() : "",
-      imagen: producto.imagen || "nada",
+      ...producto,
+      cantidad: producto.cantidad.toString(),
+      precio: producto.precio.toString(),
       estado: producto.estado
     });
     setIsEditing(true);
     setShowForm(true);
-    clearErrors();
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
   };
 
   const handleDeleteClick = (producto) => {
@@ -927,22 +1042,40 @@ const Productos = () => {
   };
 
   // ===============================================
+  // FUNCIONES PARA FORMATEAR DATOS
+  // ===============================================
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
+  // ===============================================
   // RENDERIZADO
   // ===============================================
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
       
-      {/* Alerta */}
+      {/* Alerta Mejorada */}
       {showAlert && (
-        <div style={{
-          ...alertStyle,
-          backgroundColor: alertType === "error" ? '#e53935' : '#2E5939'
-        }}>
-          {alertType === "error" && <FaExclamationTriangle />}
-          <span>{alertMessage}</span>
+        <div style={getAlertStyle(alertType)}>
+          {getAlertIcon(alertType)}
+          <span style={{ flex: 1 }}>{alertMessage}</span>
           <button 
             onClick={() => setShowAlert(false)}
-            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'inherit', 
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center'
+            }}
           >
             <FaTimes />
           </button>
@@ -1001,49 +1134,75 @@ const Productos = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Productos</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {productos.length} productos registrados | {categorias.length} categorías | {marcas.length} marcas
+            {productos.length} productos registrados • 
+            {productos.filter(p => p.estado).length} activos • 
+            Valor total: {formatPrice(productos.reduce((sum, producto) => sum + (producto.precio * producto.cantidad), 0))}
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setIsEditing(false);
-            setNewProducto({
-              nombre: "",
-              idCategoria: categorias.length > 0 ? categorias[0].idCategoria.toString() : "",
-              idMarca: marcas.length > 0 ? marcas[0].idMarca.toString() : "",
-              cantidad: 1,
-              precio: "",
-              imagen: "nada",
-              estado: true
-            });
-            clearErrors();
-          }}
-          style={{
-            backgroundColor: "#2E5939",
-            color: "white",
-            padding: "12px 20px",
-            border: "none",
-            borderRadius: 10,
-            cursor: "pointer",
-            fontWeight: "600",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease",
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-            e.target.style.transform = "translateY(-2px)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#2E5939";
-            e.target.style.transform = "translateY(0)";
-          }}
-        >
-          <FaPlus /> Agregar Producto
-        </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            onClick={fetchProductos}
+            style={{
+              backgroundColor: "#679750",
+              color: "white",
+              padding: "10px 12px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+            title="Recargar productos"
+          >
+            <FaSync />
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              setFormErrors({});
+              setFormSuccess({});
+              setFormWarnings({});
+              setNewProducto({
+                idProducto: 0,
+                nombre: "",
+                idCategoria: categorias.length > 0 ? categorias[0].idCategoria.toString() : "",
+                idMarca: marcas.length > 0 ? marcas[0].idMarca.toString() : "",
+                cantidad: "1",
+                precio: "",
+                imagen: "nada",
+                estado: true
+              });
+            }}
+            style={{
+              backgroundColor: "#2E5939",
+              color: "white",
+              padding: "12px 20px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              transition: "all 0.3s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+              e.target.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#2E5939";
+              e.target.style.transform = "translateY(0)";
+            }}
+          >
+            <FaPlus /> Agregar Producto
+          </button>
+        </div>
       </div>
 
       {/* Barra de búsqueda */}
@@ -1077,10 +1236,10 @@ const Productos = () => {
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
-                {isEditing ? "Editar Producto" : "Agregar Nuevo Producto"}
+                {isEditing ? "Editar Producto" : "Nuevo Producto"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1091,107 +1250,231 @@ const Productos = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
+                disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
             
-            <form onSubmit={handleAddProducto} style={formContainerStyle}>
-              <FormField
-                label="Nombre del Producto"
-                name="nombre"
-                value={newProducto.nombre}
-                onChange={handleInputChange}
-                error={errors.nombre}
-                warning={warnings.nombre}
-                style={{ gridColumn: '1 / -1' }}
-                required={true}
-                maxLength={100}
-              />
-              
-              <FormField
-                label="Categoría"
-                name="idCategoria"
-                type="select"
-                value={newProducto.idCategoria}
-                onChange={handleInputChange}
-                error={errors.idCategoria}
-                warning={warnings.idCategoria}
-                options={categorias.map(cat => ({ 
-                  value: cat.idCategoria, 
-                  label: cat.categoria 
-                }))}
-                required={true}
-                disabled={loadingCategorias || loading}
-              />
-              
-              <FormField
-                label="Marca"
-                name="idMarca"
-                type="select"
-                value={newProducto.idMarca}
-                onChange={handleInputChange}
-                error={errors.idMarca}
-                warning={warnings.idMarca}
-                options={marcas.map(marca => ({ 
-                  value: marca.idMarca, 
-                  label: marca.nombre 
-                }))}
-                required={true}
-                disabled={loadingMarcas || loading}
-              />
-              
-              <FormField
-                label="Cantidad"
-                name="cantidad"
-                type="number"
-                value={newProducto.cantidad}
-                onChange={handleInputChange}
-                error={errors.cantidad}
-                warning={warnings.cantidad}
-                required={true}
-                min="0"
-                max="1000000"
-              />
-              
-              <FormField
-                label="Precio"
-                name="precio"
-                type="number"
-                value={newProducto.precio}
-                onChange={handleInputChange}
-                error={errors.precio}
-                warning={warnings.precio}
-                required={true}
-                min="0"
-                max="1000000000"
-                step="0.01"
-              />
+            <form onSubmit={handleAddProducto}>
+              <div style={formContainerStyle}>
+                <FormField
+                  label="Nombre del Producto"
+                  name="nombre"
+                  value={newProducto.nombre}
+                  onChange={handleChange}
+                  error={formErrors.nombre}
+                  success={formSuccess.nombre}
+                  warning={formWarnings.nombre}
+                  style={{ gridColumn: '1 / -1' }}
+                  required={true}
+                  disabled={loading}
+                  maxLength={VALIDATION_RULES.nombre.maxLength}
+                  showCharCount={true}
+                  placeholder="Ej: Arroz, Leche, Jabón, Detergente..."
+                  icon={<FaBox />}
+                />
 
-              <div style={{ display: "flex", justifyContent: "space-between", gridColumn: '1 / -1', marginTop: 20 }}>
+                <FormField
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaTag />
+                      Categoría
+                    </div>
+                  }
+                  name="idCategoria"
+                  type="select"
+                  value={newProducto.idCategoria}
+                  onChange={handleChange}
+                  error={formErrors.idCategoria}
+                  success={formSuccess.idCategoria}
+                  warning={formWarnings.idCategoria}
+                  required={true}
+                  disabled={loadingCategorias || loading}
+                  options={categorias.map(cat => ({ 
+                    value: cat.idCategoria, 
+                    label: cat.categoria 
+                  }))}
+                  icon={<FaTag />}
+                />
+
+                <FormField
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaShoppingCart />
+                      Marca
+                    </div>
+                  }
+                  name="idMarca"
+                  type="select"
+                  value={newProducto.idMarca}
+                  onChange={handleChange}
+                  error={formErrors.idMarca}
+                  success={formSuccess.idMarca}
+                  warning={formWarnings.idMarca}
+                  required={true}
+                  disabled={loadingMarcas || loading}
+                  options={marcas.map(marca => ({ 
+                    value: marca.idMarca, 
+                    label: marca.nombre 
+                  }))}
+                  icon={<FaShoppingCart />}
+                />
+
+                <FormField
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaHashtag />
+                      Cantidad
+                    </div>
+                  }
+                  name="cantidad"
+                  type="number"
+                  value={newProducto.cantidad}
+                  onChange={handleChange}
+                  error={formErrors.cantidad}
+                  success={formSuccess.cantidad}
+                  warning={formWarnings.cantidad}
+                  required={true}
+                  disabled={loading}
+                  min={VALIDATION_RULES.cantidad.min}
+                  max={VALIDATION_RULES.cantidad.max}
+                  placeholder="1"
+                  icon={<FaHashtag />}
+                />
+
+                <FormField
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaDollarSign />
+                      Precio (COP)
+                    </div>
+                  }
+                  name="precio"
+                  type="number"
+                  value={newProducto.precio}
+                  onChange={handleChange}
+                  error={formErrors.precio}
+                  success={formSuccess.precio}
+                  warning={formWarnings.precio}
+                  required={true}
+                  disabled={loading}
+                  min={VALIDATION_RULES.precio.min}
+                  max={VALIDATION_RULES.precio.max}
+                  step="0.01"
+                  placeholder="1000"
+                  icon={<FaDollarSign />}
+                />
+
+                {/* Botón Toggle para Estado - oculto en modo edición */}
+                {!isEditing && (
+                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
+                    <label style={labelStyle}>
+                      Estado del Producto
+                      <span style={{ color: "red" }}>*</span>
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                      <button
+                        type="button"
+                        onClick={toggleEstado}
+                        style={toggleButtonStyle(newProducto.estado)}
+                        disabled={loading}
+                      >
+                        {newProducto.estado ? (
+                          <>
+                            <FaToggleOn size={20} />
+                            <span>🟢 Activo</span>
+                          </>
+                        ) : (
+                          <>
+                            <FaToggleOff size={20} />
+                            <span>🔴 Inactivo</span>
+                          </>
+                        )}
+                      </button>
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newProducto.estado ? '#4caf50' : '#e57373',
+                        fontWeight: '500'
+                      }}>
+                        {newProducto.estado 
+                          ? 'El producto está activo y disponible para ventas' 
+                          : 'El producto está inactivo y no disponible para ventas'
+                        }
+                      </span>
+                    </div>
+                    {formErrors.estado && (
+                      <div style={errorValidationStyle}>
+                        <FaExclamationTriangle size={12} />
+                        {formErrors.estado}
+                      </div>
+                    )}
+                    {formSuccess.estado && (
+                      <div style={successValidationStyle}>
+                        <FaCheck size={12} />
+                        {formSuccess.estado}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* Resumen del producto */}
+              {newProducto.precio && newProducto.cantidad && (
+                <div style={{
+                  backgroundColor: '#E8F5E8',
+                  border: '1px solid #679750',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen del Producto</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
+                    <div>Precio unitario:</div>
+                    <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                      {formatPrice(parseFloat(newProducto.precio))}
+                    </div>
+                    
+                    <div>Cantidad:</div>
+                    <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                      {newProducto.cantidad} unidades
+                    </div>
+                    
+                    <div style={{ borderTop: '1px solid #ccc', paddingTop: '5px' }}>
+                      <strong>Valor total:</strong>
+                    </div>
+                    <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2E5939', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
+                      {formatPrice(parseFloat(newProducto.precio) * parseInt(newProducto.cantidad))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
                   type="submit"
-                  disabled={loading || Object.keys(errors).length > 0}
+                  disabled={loading || isSubmitting}
                   style={{
-                    backgroundColor: (loading || Object.keys(errors).length > 0) ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
                     color: "#fff",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || Object.keys(errors).length > 0) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
+                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
                   }}
                   onMouseOver={(e) => {
-                    if (!loading && Object.keys(errors).length === 0) {
+                    if (!loading && !isSubmitting) {
                       e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
                       e.target.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (!loading && Object.keys(errors).length === 0) {
+                    if (!loading && !isSubmitting) {
                       e.target.style.background = "#2E5939";
                       e.target.style.transform = "translateY(0)";
                     }
@@ -1202,15 +1485,16 @@ const Productos = () => {
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                   style={{
                     backgroundColor: "#ccc",
                     color: "#333",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: loading ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
+                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                   }}
                 >
@@ -1225,9 +1509,9 @@ const Productos = () => {
       {/* Modal de detalles */}
       {showDetails && selectedProducto && (
         <div style={modalOverlayStyle}>
-          <div style={detailsModalStyle}>
+          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles del Producto</h2>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Producto</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1237,7 +1521,6 @@ const Productos = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1250,35 +1533,62 @@ const Productos = () => {
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Nombre</div>
-                <div style={detailValueStyle}>{selectedProducto.nombre}</div>
+                <div style={detailLabelStyle}>Nombre del Producto</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaBox color="#679750" />
+                    {selectedProducto.nombre}
+                  </div>
+                </div>
               </div>
               
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Categoría</div>
-                <div style={detailValueStyle}>{getCategoriaNombre(selectedProducto.idCategoria)}</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaTag color="#679750" />
+                    {getCategoriaNombre(selectedProducto.idCategoria)}
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Marca</div>
-                <div style={detailValueStyle}>{getMarcaNombre(selectedProducto.idMarca)}</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaShoppingCart color="#679750" />
+                    {getMarcaNombre(selectedProducto.idMarca)}
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Cantidad</div>
-                <div style={detailValueStyle}>{selectedProducto.cantidad}</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaHashtag color="#679750" />
+                    {selectedProducto.cantidad} unidades
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Precio</div>
-                <div style={detailValueStyle}>${selectedProducto.precio?.toLocaleString('es-CO') || '0'}</div>
+                <div style={{ ...detailValueStyle, fontWeight: 'bold' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaDollarSign color="#679750" />
+                    {formatPrice(selectedProducto.precio)}
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Imagen</div>
-                <div style={detailValueStyle}>{selectedProducto.imagen || "No disponible"}</div>
+                <div style={detailLabelStyle}>Valor Total</div>
+                <div style={{ ...detailValueStyle, fontWeight: 'bold', color: '#679750' }}>
+                  {formatPrice(selectedProducto.precio * selectedProducto.cantidad)}
+                </div>
               </div>
-
+              
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
@@ -1302,16 +1612,6 @@ const Productos = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = "#2E5939";
-                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 Cerrar
@@ -1329,9 +1629,27 @@ const Productos = () => {
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
               ¿Estás seguro de eliminar el producto "<strong>{productoToDelete.nombre}</strong>"?
             </p>
-            <p style={{ marginBottom: 20, color: '#e57373', fontSize: '0.9rem' }}>
-              ⚠️ Nota: Si el producto tiene registros asociados, no podrá ser eliminado.
-            </p>
+            
+            {/* Advertencia sobre valor */}
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffeaa7',
+              borderRadius: '8px',
+              padding: '15px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <FaInfoCircle style={{ color: '#856404' }} />
+                <strong style={{ color: '#856404' }}>Producto a eliminar</strong>
+              </div>
+              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
+                Precio: {formatPrice(productoToDelete.precio)} | 
+                Cantidad: {productoToDelete.cantidad} | 
+                Categoría: {getCategoriaNombre(productoToDelete.idCategoria)} |
+                Marca: {getMarcaNombre(productoToDelete.idMarca)}
+              </p>
+            </div>
+
             <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
               <button
                 onClick={confirmDelete}
@@ -1416,6 +1734,7 @@ const Productos = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Marca</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Cantidad</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio</th>
+                <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Valor Total</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1423,26 +1742,62 @@ const Productos = () => {
             <tbody>
               {paginatedProductos.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {productos.length === 0 ? "No hay productos registrados" : "No se encontraron resultados"}
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaBox size={30} color="#679750" />
+                      {productos.length === 0 ? "No hay productos registrados" : "No se encontraron resultados"}
+                      {productos.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Producto
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedProductos.map((producto) => (
                   <tr key={producto.idProducto} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{producto.nombre}</td>
-                    <td style={{ padding: "15px" }}>{getCategoriaNombre(producto.idCategoria)}</td>
-                    <td style={{ padding: "15px" }}>{getMarcaNombre(producto.idMarca)}</td>
+                    <td style={{ padding: "15px", fontWeight: "500" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaBox color="#679750" />
+                        {producto.nombre}
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaTag color="#679750" />
+                        {getCategoriaNombre(producto.idCategoria)}
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaShoppingCart color="#679750" />
+                        {getMarcaNombre(producto.idMarca)}
+                      </div>
+                    </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>{producto.cantidad}</td>
-                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
-                      ${producto.precio?.toLocaleString('es-CO') || '0'}
+                    <td style={{ padding: "15px", textAlign: "right" }}>{formatPrice(producto.precio)}</td>
+                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
+                      {formatPrice(producto.precio * producto.cantidad)}
                     </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
-                        onClick={() => toggleEstado(producto)}
-                        disabled={loading}
+                        onClick={() => toggleEstadoProducto(producto)}
                         style={{
-                          cursor: loading ? "not-allowed" : "pointer",
+                          cursor: "pointer",
                           padding: "6px 12px",
                           borderRadius: "20px",
                           border: "none",
@@ -1452,35 +1807,32 @@ const Productos = () => {
                           fontSize: "12px",
                           minWidth: "80px"
                         }}
-                        title={producto.estado ? "Activo" : "Inactivo"}
                       >
                         {producto.estado ? "Activo" : "Inactivo"}
                       </button>
                     </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                        <button
-                          onClick={() => handleView(producto)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Ver Detalles"
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(producto)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar Producto"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(producto)}
-                          style={btnAccion("#fbe9e7", "#e57373")}
-                          title="Eliminar Producto"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleView(producto)}
+                        style={btnAccion("#F7F4EA", "#2E5939")}
+                        title="Ver Detalles"
+                      >
+                        <FaEye />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(producto)}
+                        style={btnAccion("#F7F4EA", "#2E5939")}
+                        title="Editar"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(producto)}
+                        style={btnAccion("#fbe9e7", "#e57373")}
+                        title="Eliminar"
+                      >
+                        <FaTrash />
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -1507,7 +1859,6 @@ const Productos = () => {
                 key={page}
                 onClick={() => goToPage(page)}
                 style={pageBtnStyle(currentPage === page)}
-                aria-current={currentPage === page ? "page" : undefined}
               >
                 {page}
               </button>
@@ -1520,6 +1871,76 @@ const Productos = () => {
           >
             Siguiente
           </button>
+        </div>
+      )}
+
+      {/* Estadísticas */}
+      {!loading && productos.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {productos.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Productos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {productos.filter(p => p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Productos Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {productos.reduce((sum, prod) => sum + prod.cantidad, 0)}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Unidades
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPrice(productos.reduce((sum, prod) => sum + (prod.precio * prod.cantidad), 0))}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total
+            </div>
+          </div>
         </div>
       )}
     </div>

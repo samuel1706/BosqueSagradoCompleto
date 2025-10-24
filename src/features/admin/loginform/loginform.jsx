@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye } from "react-icons/fa";
+import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye, FaCrown } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
@@ -77,6 +77,9 @@ const cabañasPorSede = {
   ]
 };
 
+// Combinar todas las cabañas para mostrar en el home
+const todasLasCabañas = Object.values(cabañasPorSede).flat();
+
 const paquetes = [
   {
     name: "Kit de Asado",
@@ -101,7 +104,9 @@ const paquetes = [
 // Función para hacer login usando el endpoint de la API
 const loginWithAPI = async (email, password) => {
   try {
-    const response = await fetch('http://localhost:5255/api/Usuarios/Login', {
+    console.log('🔐 Intentando login con:', { email, password });
+    
+    const response = await fetch('http://localhost:5204/api/Usuarios/Login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -112,86 +117,37 @@ const loginWithAPI = async (email, password) => {
       })
     });
 
+    console.log('📡 Respuesta del servidor:', response.status);
+
     if (!response.ok) {
       let errorMessage = 'Error en el login';
       try {
-        const errorData = await response.text();
-        if (errorData) {
-          errorMessage = errorData;
+        const errorData = await response.json();
+        if (errorData && errorData.mensaje) {
+          errorMessage = errorData.mensaje;
         }
       } catch (e) {
-        console.error('Error parsing error response:', e);
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error en login:', error);
-    throw error;
-  }
-};
-
-// Función para registrar usuario usando la API
-const registerWithAPI = async (userData) => {
-  try {
-    console.log('Enviando datos de registro:', userData);
-    
-    const response = await fetch('http://localhost:5255/api/Usuarios', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData)
-    });
-
-    console.log('Respuesta del servidor:', response.status, response.statusText);
-
-    if (!response.ok) {
-      let errorMessage = 'Error en el registro';
-      
-      try {
         const errorText = await response.text();
-        console.log('Error text:', errorText);
-        
-        if (errorText.includes('Microsoft')) {
-          if (errorText.includes('correo')) {
-            errorMessage = 'El correo electrónico ya está registrado';
-          } else if (errorText.includes('contraseña') || errorText.includes('password')) {
-            errorMessage = 'Error en la contraseña';
-          } else {
-            errorMessage = 'Error del servidor. Por favor, intenta más tarde.';
-          }
-        } else {
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.mensaje || errorData.message || errorText;
-          } catch {
-            errorMessage = errorText || 'Error desconocido';
-          }
+        if (errorText) {
+          errorMessage = errorText;
         }
-      } catch (e) {
-        console.error('Error procesando respuesta de error:', e);
-        errorMessage = `Error ${response.status}: ${response.statusText}`;
       }
-      
       throw new Error(errorMessage);
     }
 
     const result = await response.json();
-    console.log('Registro exitoso:', result);
+    console.log('✅ Login exitoso:', result);
     return result;
   } catch (error) {
-    console.error('Error en registro:', error);
+    console.error('❌ Error en login:', error);
     throw error;
   }
 };
 
-// Función para obtener usuario por correo
-const getUserByEmail = async (email) => {
+// Función para obtener todos los usuarios
+const getAllUsers = async () => {
   try {
-    const response = await fetch(`http://localhost:5255/api/Usuarios/ObtenerPorCorreo?correo=${encodeURIComponent(email)}`, {
+    const response = await fetch('http://localhost:5204/api/Usuarios', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -199,13 +155,66 @@ const getUserByEmail = async (email) => {
     });
 
     if (!response.ok) {
-      throw new Error('Error obteniendo usuario');
+      throw new Error('Error obteniendo usuarios');
     }
 
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('Error obteniendo usuario:', error);
+    console.error('Error obteniendo usuarios:', error);
+    throw error;
+  }
+};
+
+// Función para buscar usuario en la lista completa
+const findUserInList = async (email) => {
+  try {
+    const allUsers = await getAllUsers();
+    const user = allUsers.find(u => u.correo && u.correo.toLowerCase() === email.toLowerCase());
+    return user;
+  } catch (error) {
+    console.error('Error buscando usuario en lista:', error);
+    return null;
+  }
+};
+
+// Función para registrar usuario
+const registerWithAPI = async (userData) => {
+  try {
+    console.log('📝 Intentando registrar usuario:', userData);
+    
+    const response = await fetch('http://localhost:5204/api/Usuarios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData)
+    });
+
+    console.log('📡 Respuesta del registro:', response.status, response.statusText);
+
+    if (!response.ok) {
+      let errorMessage = 'Error en el registro';
+      try {
+        const errorText = await response.text();
+        if (errorText.includes('correo') || errorText.includes('duplicado')) {
+          errorMessage = 'El correo electrónico ya está registrado';
+        } else if (errorText.includes('18 años')) {
+          errorMessage = 'Debes ser mayor de 18 años para registrarte';
+        } else {
+          errorMessage = errorText || 'Error desconocido';
+        }
+      } catch (e) {
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    console.log('✅ Registro exitoso:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error en registro:', error);
     throw error;
   }
 };
@@ -226,8 +235,12 @@ function LoginRegister() {
   const [selectedSede, setSelectedSede] = useState(null);
 
   // Estados para registro
+  const [tipoDocumento, setTipoDocumento] = useState("Cédula de Ciudadanía");
+  const [numeroDocumento, setNumeroDocumento] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [celular, setCelular] = useState("");
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -239,14 +252,58 @@ function LoginRegister() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const showAlert = (title, text, icon) => {
+  // Opciones para tipo de documento
+  const tiposDocumento = [
+    "Cédula de Ciudadanía",
+    "Cédula de Extranjería",
+    "Pasaporte",
+    "Tarjeta de Identidad"
+  ];
+
+  const showAlert = (title, text, icon, timer = 3000) => {
     Swal.fire({
       title,
       text,
       icon,
+      timer,
+      timerProgressBar: true,
+      showConfirmButton: icon === 'error',
       confirmButtonColor: '#2E5939',
       background: '#fff',
-      color: '#2E3A30'
+      color: '#2E3A30',
+      customClass: {
+        popup: 'custom-swal-popup'
+      }
+    });
+  };
+
+  const showSuccessAlert = (title, text) => {
+    Swal.fire({
+      title,
+      text,
+      icon: 'success',
+      timer: 2000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      background: '#fff',
+      color: '#2E3A30',
+      customClass: {
+        popup: 'custom-swal-popup'
+      }
+    });
+  };
+
+  const showErrorAlert = (title, text) => {
+    Swal.fire({
+      title,
+      text,
+      icon: 'error',
+      confirmButtonColor: '#2E5939',
+      background: '#fff',
+      color: '#2E3A30',
+      customClass: {
+        popup: 'custom-swal-popup'
+      }
     });
   };
 
@@ -268,8 +325,13 @@ function LoginRegister() {
     setShowAboutUs(false);
     setShowCabins(false);
     setErrors({});
+    // Resetear todos los campos del formulario
+    setTipoDocumento("Cédula de Ciudadanía");
+    setNumeroDocumento("");
     setFirstName("");
     setLastName("");
+    setCelular("");
+    setFechaNacimiento("");
     setRegisterEmail("");
     setRegisterPassword("");
     setConfirmPassword("");
@@ -317,15 +379,11 @@ function LoginRegister() {
   };
 
   const nextSlide = () => {
-    setCarouselIndex((prev) => (prev + 1) % cabañas.length);
+    setCarouselIndex((prev) => (prev + 1) % todasLasCabañas.length);
   };
 
   const prevSlide = () => {
-    setCarouselIndex((prev) => (prev - 1 + cabañas.length) % cabañas.length);
-  };
-
-  const goToSlide = (index) => {
-    setCarouselIndex(index);
+    setCarouselIndex((prev) => (prev - 1 + todasLasCabañas.length) % todasLasCabañas.length);
   };
 
   const nextSedeSlide = () => {
@@ -336,23 +394,169 @@ function LoginRegister() {
     setSedeCarouselIndex((prev) => (prev - 1 + sedes.length) % sedes.length);
   };
 
-  const goToSedeSlide = (index) => {
-    setSedeCarouselIndex(index);
-  };
-
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   const isValidName = (name) => {
-    const nameRegex = /^[a-zA-Z\s]+$/;
+    const nameRegex = /^[a-zA-Z\sáéíóúÁÉÍÓÚñÑ]+$/;
     return nameRegex.test(name);
   };
 
+  const isValidDocumentNumber = (numero) => {
+    const docRegex = /^[a-zA-Z0-9]+$/;
+    return docRegex.test(numero);
+  };
+
+  const isValidPhone = (phone) => {
+    const phoneRegex = /^[0-9+]{10,15}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const isValidDate = (date) => {
+    if (!date) return false;
+    const selectedDate = new Date(date);
+    const today = new Date();
+    return selectedDate < today;
+  };
+
+  // FUNCIÓN DE LOGIN CORREGIDA Y SIMPLIFICADA
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // Validaciones básicas
+    if (!loginEmail || !loginPassword) {
+      showErrorAlert('Campos requeridos', 'Por favor ingresa tu correo electrónico y contraseña');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(loginEmail)) {
+      showErrorAlert('Correo inválido', 'Por favor ingresa un correo electrónico válido');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log('🚀 Iniciando proceso de login...');
+      
+      // 1. Primero intentamos hacer login con la API
+      const loginResult = await loginWithAPI(loginEmail, loginPassword);
+      
+      if (loginResult && loginResult.exito) {
+        console.log('✅ Login API exitoso, buscando datos del usuario...');
+        
+        // 2. Buscar el usuario en la lista completa para obtener todos los datos
+        const userFromList = await findUserInList(loginEmail);
+        
+        if (userFromList) {
+          console.log('👤 Usuario encontrado en lista:', userFromList);
+          
+          // Verificar si la cuenta está activa
+          if (!userFromList.estado) {
+            showErrorAlert('Cuenta inactiva', 'Tu cuenta está desactivada. Contacta al administrador.');
+            setIsLoading(false);
+            return;
+          }
+
+          // Crear objeto de usuario con todos los datos necesarios
+          const user = {
+            id: userFromList.idUsuario,
+            firstName: userFromList.nombre || '',
+            lastName: userFromList.apellido || '',
+            email: userFromList.correo || loginEmail,
+            role: userFromList.idRol || 1,
+            isVerified: true,
+            tipoDocumento: userFromList.tipoDocumento,
+            numeroDocumento: userFromList.numeroDocumento,
+            celular: userFromList.celular,
+            fechaNacimiento: userFromList.fechaNacimiento
+          };
+          
+          // Guardar en localStorage
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('userRole', user.role.toString());
+          localStorage.setItem('userEmail', user.email);
+          
+          // Mensaje de bienvenida personalizado
+          const welcomeMessage = user.role === 2 
+            ? `¡Bienvenido Administrador ${user.firstName}!` 
+            : `¡Bienvenido de nuevo ${user.firstName} ${user.lastName}!`;
+          
+          showSuccessAlert('Inicio de sesión exitoso', welcomeMessage);
+          
+          // Redirigir según el rol
+          setTimeout(() => {
+            if (user.role === 2) {
+              navigate("/admin-dashboard");
+            } else {
+              navigate("/dashboard");
+            }
+          }, 1500);
+          
+        } else {
+          // Si no encontramos el usuario en la lista, crear un objeto básico
+          console.log('⚠️ Usuario no encontrado en lista, creando objeto básico');
+          const user = {
+            firstName: loginEmail.split('@')[0],
+            email: loginEmail,
+            role: 1,
+            isVerified: true
+          };
+          
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('userRole', '1');
+          localStorage.setItem('userEmail', loginEmail);
+          
+          showSuccessAlert('Inicio de sesión exitoso', `¡Bienvenido de nuevo!`);
+          
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 1500);
+        }
+      } else {
+        // Si el login falla
+        showErrorAlert('Error en el login', loginResult?.mensaje || 'Credenciales incorrectas');
+      }
+    } catch (error) {
+      console.error('❌ Error durante el login:', error);
+      
+      // Manejo específico de errores
+      if (error.message.includes('No se pudo encontrar') || 
+          error.message.includes('no existe') || 
+          error.message.includes('no registrado')) {
+        showErrorAlert('Usuario no encontrado', 'No existe una cuenta con este correo electrónico.');
+      } else if (error.message.includes('contraseña') || 
+                 error.message.includes('credenciales') || 
+                 error.message.includes('clave') || 
+                 error.message.includes('Password')) {
+        showErrorAlert('Contraseña incorrecta', 'La contraseña ingresada es incorrecta.');
+      } else if (error.message.includes('inactivo') || 
+                 error.message.includes('desactivada')) {
+        showErrorAlert('Cuenta inactiva', 'Tu cuenta está desactivada. Contacta al administrador.');
+      } else if (error.message.includes('Código enviado')) {
+        showSuccessAlert('Código enviado', 'Se ha enviado un código de verificación a tu correo. Por favor verifica tu email.');
+      } else {
+        showErrorAlert('Error de conexión', error.message || 'No se pudo conectar con el servidor. Intenta más tarde.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función de registro
   const validateRegisterForm = () => {
     let newErrors = {};
     let isValid = true;
+
+    if (!numeroDocumento) {
+      newErrors.numeroDocumento = "El número de documento es obligatorio.";
+      isValid = false;
+    }
 
     if (!firstName) {
       newErrors.firstName = "El nombre es obligatorio.";
@@ -367,6 +571,22 @@ function LoginRegister() {
       isValid = false;
     } else if (!isValidName(lastName)) {
       newErrors.lastName = "El apellido solo debe contener letras y espacios.";
+      isValid = false;
+    }
+
+    if (!celular) {
+      newErrors.celular = "El número de celular es obligatorio.";
+      isValid = false;
+    } else if (!isValidPhone(celular)) {
+      newErrors.celular = "Formato de celular inválido. Debe contener 10-15 dígitos.";
+      isValid = false;
+    }
+
+    if (!fechaNacimiento) {
+      newErrors.fechaNacimiento = "La fecha de nacimiento es obligatoria.";
+      isValid = false;
+    } else if (!isValidDate(fechaNacimiento)) {
+      newErrors.fechaNacimiento = "La fecha de nacimiento debe ser una fecha válida en el pasado.";
       isValid = false;
     }
 
@@ -402,7 +622,7 @@ function LoginRegister() {
     e.preventDefault();
     
     if (!validateRegisterForm()) {
-      showAlert('Error', 'Por favor corrige los errores en el formulario', 'error');
+      showErrorAlert('Error en el formulario', 'Por favor corrige los errores marcados en el formulario');
       return;
     }
 
@@ -410,124 +630,31 @@ function LoginRegister() {
     
     try {
       const userData = {
+        tipoDocumento: tipoDocumento,
+        numeroDocumento: numeroDocumento.trim(),
         nombre: firstName.trim(),
         apellido: lastName.trim(),
+        celular: celular.trim(),
+        fechaNacimiento: fechaNacimiento,
         correo: registerEmail.trim(),
         contrasena: registerPassword,
         idRol: 1,
-        estado: true // Cambiado a true para que el usuario pueda acceder directamente
+        estado: true
       };
 
-      console.log('Intentando registrar usuario:', userData);
-      
       const result = await registerWithAPI(userData);
       
       if (result) {
-        showAlert('Registro exitoso', 'Usuario registrado correctamente. Ahora puedes iniciar sesión.', 'success');
+        showSuccessAlert('¡Registro exitoso!', 'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.');
         
-        // Obtener datos del usuario recién registrado
-        try {
-          const userData = await getUserByEmail(registerEmail);
-          
-          const user = {
-            id: userData.id,
-            firstName: userData.nombre || firstName,
-            lastName: userData.apellido || lastName,
-            email: userData.correo || registerEmail,
-            isVerified: true
-          };
-          
-          // Guardar en localStorage y redirigir directamente
-          localStorage.setItem('user', JSON.stringify(user));
-          localStorage.setItem('isAuthenticated', 'true');
-          
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 2000);
-          
-        } catch (userError) {
-          console.error('Error obteniendo datos del usuario:', userError);
-          // Si no podemos obtener los datos, usar los datos del formulario
-          const user = {
-            firstName: firstName,
-            lastName: lastName,
-            email: registerEmail,
-            isVerified: true
-          };
-          
-          localStorage.setItem('user', JSON.stringify(user));
-          localStorage.setItem('isAuthenticated', 'true');
-          
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 2000);
-        }
-      } else {
-        showAlert('Error', 'Error en el registro', 'error');
+        // Cambiar al formulario de login
+        setTimeout(() => {
+          handleShowLogin();
+        }, 2000);
       }
     } catch (error) {
       console.error('Error en registro:', error);
-      showAlert('Error', error.message || 'Error al registrar usuario. Verifica que el correo no esté ya registrado.', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    if (!loginEmail || !loginPassword) {
-      showAlert('Error', 'Por favor ingresa correo y contraseña', 'error');
-      setIsLoading(false);
-      return;
-    }
-
-    if (!isValidEmail(loginEmail)) {
-      showAlert('Error', 'Formato de correo electrónico inválido', 'error');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const result = await loginWithAPI(loginEmail, loginPassword);
-      
-      if (result) {
-        // Obtener datos completos del usuario
-        try {
-          const userData = await getUserByEmail(loginEmail);
-          
-          const user = {
-            id: userData.id,
-            firstName: userData.nombre || loginEmail.split('@')[0],
-            lastName: userData.apellido || '',
-            email: userData.correo || loginEmail,
-            isVerified: true
-          };
-          
-          localStorage.setItem('user', JSON.stringify(user));
-          localStorage.setItem('isAuthenticated', 'true');
-          
-          showAlert(
-            'Inicio de sesión exitoso',
-            `Bienvenido de nuevo ${user.firstName} ${user.lastName}`,
-            'success'
-          );
-          
-          setTimeout(() => {
-            navigate("/dashboard");
-          }, 1500);
-          
-        } catch (userError) {
-          console.error('Error obteniendo datos del usuario:', userError);
-          showAlert('Error', 'Error obteniendo información del usuario', 'error');
-        }
-      } else {
-        showAlert('Error', 'Credenciales incorrectas', 'error');
-      }
-    } catch (error) {
-      console.error('Error durante el login:', error);
-      showAlert('Error', error.message || 'Error del servidor. Intenta nuevamente.', 'error');
+      showErrorAlert('Error en el registro', error.message || 'No se pudo completar el registro. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -535,7 +662,17 @@ function LoginRegister() {
 
   const handleTextInputChange = (e, setter) => {
     const value = e.target.value;
-    setter(value.replace(/[^a-zA-Z\s]/g, ''));
+    setter(value.replace(/[^a-zA-Z\sáéíóúÁÉÍÓÚñÑ]/g, ''));
+  };
+
+  const handleDocumentNumberChange = (e) => {
+    const value = e.target.value;
+    setNumeroDocumento(value.replace(/[^a-zA-Z0-9]/g, ''));
+  };
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+    setCelular(value.replace(/[^0-9+]/g, ''));
   };
 
   return (
@@ -563,6 +700,7 @@ function LoginRegister() {
             fontSize: "1.8rem",
             color: "#E8F5E9",
             userSelect: "none",
+            marginLeft: "20px",
           }}
         >
           <img src="/images/Logo.png" alt="" width="35px" /> Bosque Sagrado
@@ -576,6 +714,7 @@ function LoginRegister() {
             padding: 0,
             flexWrap: "wrap",
             justifyContent: "center",
+            marginRight: "20px",
           }}
         >
           <li>
@@ -988,6 +1127,24 @@ function LoginRegister() {
           {/* LANDING PAGE CONTENT */}
           {!showForm && !showAboutUs && !showCabins && (
             <>
+              {/* HERO */}
+              <section
+                style={{
+                  textAlign: "center",
+                  marginTop: "2rem",
+                  marginBottom: "3rem",
+                  maxWidth: "700px",
+                  padding: "0 1rem",
+                }}
+              >
+                <h1 style={{ fontSize: "3rem", marginBottom: "0.5rem", color: "#2E5939" }}>
+                  Vive la naturaleza con lujo
+                </h1>
+                <p style={{ fontSize: "1.3rem", color: "#3E7E5C" }}>
+                  Descubre una experiencia única en nuestro glamping ecológico.
+                </p>
+              </section>
+
               {/* SECCIÓN NUESTRAS SEDES (CARRUSEL) */}
               <section
                 style={{
@@ -1125,22 +1282,62 @@ function LoginRegister() {
                 </div>
               </section>
 
-              {/* HERO */}
+              {/* SECCIÓN TODAS LAS CABINAS EN EL HOME */}
               <section
                 style={{
-                  textAlign: "center",
-                  marginTop: "2rem",
+                  width: "100%",
+                  maxWidth: "900px",
                   marginBottom: "3rem",
-                  maxWidth: "700px",
-                  padding: "0 1rem",
                 }}
               >
-                <h1 style={{ fontSize: "3rem", marginBottom: "0.5rem", color: "#2E5939" }}>
-                  Vive la naturaleza con lujo
-                </h1>
-                <p style={{ fontSize: "1.3rem", color: "#3E7E5C" }}>
-                  Descubre una experiencia única en nuestro glamping ecológico.
-                </p>
+                <h2 style={{ fontSize: "2rem", color: "#2E5939", textAlign: "center", marginBottom: "2rem" }}>
+                  Nuestras Cabañas
+                </h2>
+                <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1.5rem" }}>
+                  {todasLasCabañas.map((cabin, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        backgroundColor: "#3E7E5C",
+                        color: "#fff",
+                        borderRadius: "10px",
+                        overflow: "hidden",
+                        width: "calc(33.33% - 1rem)",
+                        minWidth: "250px",
+                        boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                        textAlign: "center",
+                      }}
+                    >
+                      <img src={cabin.img} alt={cabin.name} style={{ width: "100%", height: "200px", objectFit: "cover" }} />
+                      <div style={{ padding: "1.5rem" }}>
+                        <h3 style={{ margin: "0 0 0.5rem" }}>{cabin.name}</h3>
+                        <p style={{ fontSize: "0.9rem", lineHeight: "1.4", marginBottom: "1rem" }}>
+                          {cabin.description}
+                        </p>
+                        <p style={{ fontSize: "1rem", fontWeight: "bold", marginBottom: "1rem" }}>
+                          {cabin.price}
+                        </p>
+                        <button
+                          onClick={() => handleShowCabinDetails(cabin)}
+                          style={{
+                            backgroundColor: "#E8F5E9",
+                            color: "#2E5939",
+                            border: "none",
+                            padding: "0.8rem 1.5rem",
+                            borderRadius: "20px",
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                            transition: "background-color 0.3s, transform 0.2s",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                        >
+                          Ver más
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </section>
 
               {/* INFORMACIÓN SOBRE EL GLAMPING */}
@@ -1365,6 +1562,79 @@ function LoginRegister() {
                   </h3>
 
                   <div style={{ marginBottom: "1.5rem" }}>
+                    {/* Tipo de Documento */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: errors.tipoDocumento ? "0.5rem" : "1rem",
+                        border: errors.tipoDocumento ? "1px solid #e74c3c" : "1px solid #ddd",
+                        padding: "0.8rem",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <FaIdCard style={{ marginRight: "10px", color: "#3E7E5C" }} />
+                      <select
+                        value={tipoDocumento}
+                        onChange={(e) => setTipoDocumento(e.target.value)}
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          outline: "none",
+                          fontSize: "1rem",
+                          backgroundColor: "transparent",
+                          color: "#2E3A30",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {tiposDocumento.map((tipo) => (
+                          <option key={tipo} value={tipo}>
+                            {tipo}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {errors.tipoDocumento && (
+                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
+                        {errors.tipoDocumento}
+                      </p>
+                    )}
+
+                    {/* Número de Documento */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: errors.numeroDocumento ? "0.5rem" : "1rem",
+                        border: errors.numeroDocumento ? "1px solid #e74c3c" : "1px solid #ddd",
+                        padding: "0.8rem",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <FaIdCard style={{ marginRight: "10px", color: "#3E7E5C" }} />
+                      <input
+                        type="text"
+                        placeholder="Número de Documento"
+                        required
+                        value={numeroDocumento}
+                        onChange={handleDocumentNumberChange}
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          outline: "none",
+                          fontSize: "1rem",
+                          backgroundColor: "transparent",
+                          color: "#2E3A30",
+                        }}
+                      />
+                    </div>
+                    {errors.numeroDocumento && (
+                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
+                        {errors.numeroDocumento}
+                      </p>
+                    )}
+
+                    {/* Nombre */}
                     <div
                       style={{
                         display: "flex",
@@ -1398,6 +1668,7 @@ function LoginRegister() {
                       </p>
                     )}
 
+                    {/* Apellido */}
                     <div
                       style={{
                         display: "flex",
@@ -1431,6 +1702,74 @@ function LoginRegister() {
                       </p>
                     )}
 
+                    {/* Celular */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: errors.celular ? "0.5rem" : "1rem",
+                        border: errors.celular ? "1px solid #e74c3c" : "1px solid #ddd",
+                        padding: "0.8rem",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <FaPhone style={{ marginRight: "10px", color: "#3E7E5C" }} />
+                      <input
+                        type="text"
+                        placeholder="Número de Celular"
+                        required
+                        value={celular}
+                        onChange={handlePhoneChange}
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          outline: "none",
+                          fontSize: "1rem",
+                          backgroundColor: "transparent",
+                          color: "#2E3A30",
+                        }}
+                      />
+                    </div>
+                    {errors.celular && (
+                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
+                        {errors.celular}
+                      </p>
+                    )}
+
+                    {/* Fecha de Nacimiento */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: errors.fechaNacimiento ? "0.5rem" : "1rem",
+                        border: errors.fechaNacimiento ? "1px solid #e74c3c" : "1px solid #ddd",
+                        padding: "0.8rem",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <FaCalendarAlt style={{ marginRight: "10px", color: "#3E7E5C" }} />
+                      <input
+                        type="date"
+                        required
+                        value={fechaNacimiento}
+                        onChange={(e) => setFechaNacimiento(e.target.value)}
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          outline: "none",
+                          fontSize: "1rem",
+                          backgroundColor: "transparent",
+                          color: "#2E3A30",
+                        }}
+                      />
+                    </div>
+                    {errors.fechaNacimiento && (
+                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
+                        {errors.fechaNacimiento}
+                      </p>
+                    )}
+
+                    {/* Email */}
                     <div
                       style={{
                         display: "flex",
@@ -1464,6 +1803,7 @@ function LoginRegister() {
                       </p>
                     )}
 
+                    {/* Contraseña */}
                     <div
                       style={{
                         display: "flex",
@@ -1497,6 +1837,7 @@ function LoginRegister() {
                       </p>
                     )}
 
+                    {/* Confirmar Contraseña */}
                     <div
                       style={{
                         display: "flex",

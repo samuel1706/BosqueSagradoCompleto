@@ -1,9 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle } from "react-icons/fa";
+import { 
+  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
+  FaExclamationTriangle, FaCheck, FaInfoCircle, FaPhone,
+  FaEnvelope, FaMapMarkerAlt, FaIdCard, FaSync, FaBuilding
+} from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS ACTUALIZADOS (Coherentes con el sidebar)
+// ESTILOS MEJORADOS (COHERENTES CON EL DISEÑO ANTERIOR)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -39,12 +43,7 @@ const inputStyle = {
   color: "#2E5939",
   boxSizing: 'border-box',
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-};
-
-const inputErrorStyle = {
-  ...inputStyle,
-  border: "1px solid #e53935",
-  backgroundColor: "#fef7f7"
+  transition: "all 0.3s ease",
 };
 
 const navBtnStyle = (disabled) => ({
@@ -67,10 +66,6 @@ const pageBtnStyle = (active) => ({
   fontWeight: "600",
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
-
-const formFieldStyle = {
-  marginBottom: 12,
-};
 
 const formContainerStyle = {
   display: 'grid',
@@ -107,19 +102,58 @@ const modalContentStyle = {
   border: "2px solid #679750",
 };
 
+// Estilos mejorados para alertas
 const alertStyle = {
   position: 'fixed',
   top: 20,
   right: 20,
-  backgroundColor: '#2E5939',
-  color: 'white',
   padding: '15px 20px',
   borderRadius: '10px',
-  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
   zIndex: 10000,
   display: 'flex',
   alignItems: 'center',
-  gap: '10px'
+  gap: '12px',
+  fontWeight: '600',
+  fontSize: '16px',
+  minWidth: '300px',
+  maxWidth: '500px',
+  animation: 'slideInRight 0.3s ease-out',
+  borderLeft: '5px solid',
+  backdropFilter: 'blur(10px)',
+};
+
+const alertIconStyle = {
+  fontSize: '20px',
+  flexShrink: 0,
+};
+
+const alertSuccessStyle = {
+  ...alertStyle,
+  backgroundColor: '#d4edda',
+  color: '#155724',
+  borderLeftColor: '#28a745',
+};
+
+const alertErrorStyle = {
+  ...alertStyle,
+  backgroundColor: '#f8d7da',
+  color: '#721c24',
+  borderLeftColor: '#dc3545',
+};
+
+const alertWarningStyle = {
+  ...alertStyle,
+  backgroundColor: '#fff3cd',
+  color: '#856404',
+  borderLeftColor: '#ffc107',
+};
+
+const alertInfoStyle = {
+  ...alertStyle,
+  backgroundColor: '#d1ecf1',
+  color: '#0c5460',
+  borderLeftColor: '#17a2b8',
 };
 
 const detailsModalStyle = {
@@ -155,21 +189,46 @@ const detailValueStyle = {
   fontWeight: "500"
 };
 
-const errorStyle = {
-  color: '#e53935',
-  fontSize: '12px',
-  marginTop: '4px',
-  display: 'block',
-  fontWeight: '500'
+const validationMessageStyle = {
+  fontSize: "0.8rem",
+  marginTop: "4px",
+  display: "flex",
+  alignItems: "center",
+  gap: "5px"
 };
 
-const warningStyle = {
-  color: '#ff9800',
-  fontSize: '12px',
-  marginTop: '4px',
-  display: 'block',
-  fontWeight: '500'
+const successValidationStyle = {
+  ...validationMessageStyle,
+  color: "#4caf50"
 };
+
+const errorValidationStyle = {
+  ...validationMessageStyle,
+  color: "#e57373"
+};
+
+const warningValidationStyle = {
+  ...validationMessageStyle,
+  color: "#ff9800"
+};
+
+const toggleButtonStyle = (active) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  padding: '10px 16px',
+  borderRadius: '25px',
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '14px',
+  transition: 'all 0.3s ease',
+  backgroundColor: active ? '#4caf50' : '#e57373',
+  color: 'white',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  minWidth: '140px'
+});
 
 // ===============================================
 // FUNCIONES DE VALIDACIÓN MEJORADAS PARA PROVEEDORES
@@ -349,15 +408,32 @@ const validateTexto = (valor, campo, longitudMinima = 2, longitudMaxima = 50) =>
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PROVEEDORES = "http://localhost:5255/api/Proveedore";
-const API_PRODUCTOS = "http://localhost:5255/api/Productos";
+const API_PROVEEDORES = "http://localhost:5204/api/Proveedore";
+const API_PRODUCTOS = "http://localhost:5204/api/Productos";
 
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField
+// COMPONENTE FormField MEJORADO
 // ===============================================
-const FormField = ({ label, name, type = "text", value, onChange, error, warning, options = [], style = {}, required = true, disabled = false, maxLength }) => {
+const FormField = ({ 
+  label, 
+  name, 
+  type = "text", 
+  value, 
+  onChange, 
+  error, 
+  success,
+  warning,
+  options = [], 
+  style = {}, 
+  required = true, 
+  disabled = false,
+  maxLength,
+  placeholder,
+  showCharCount = false,
+  icon
+}) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
       const placeholderOption = { value: "", label: "Selecciona", disabled: required };
@@ -384,82 +460,132 @@ const FormField = ({ label, name, type = "text", value, onChange, error, warning
     onChange({ target: { name, value: filteredValue } });
   };
 
+  const getInputStyle = () => {
+    let borderColor = "#ccc";
+    if (error) borderColor = "#e57373";
+    else if (success) borderColor = "#4caf50";
+    else if (warning) borderColor = "#ff9800";
+
+    return {
+      ...inputStyle,
+      border: `1px solid ${borderColor}`,
+      borderLeft: `4px solid ${borderColor}`,
+      paddingLeft: icon ? '40px' : '12px'
+    };
+  };
+
+  const getValidationMessage = () => {
+    if (error) {
+      return (
+        <div style={errorValidationStyle}>
+          <FaExclamationTriangle size={12} />
+          {error}
+        </div>
+      );
+    }
+    if (success) {
+      return (
+        <div style={successValidationStyle}>
+          <FaCheck size={12} />
+          {success}
+        </div>
+      );
+    }
+    if (warning) {
+      return (
+        <div style={warningValidationStyle}>
+          <FaInfoCircle size={12} />
+          {warning}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div style={{ ...formFieldStyle, ...style }}>
+    <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      {type === "select" ? (
-        <select
-          name={name}
-          value={value}
-          onChange={onChange}
-          style={{
-            ...inputStyle,
-            ...(error ? inputErrorStyle : {})
-          }}
-          required={required}
-          disabled={disabled}
-        >
-          {finalOptions.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-            >
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : type === "textarea" ? (
-        <textarea
-          name={name}
-          value={value}
-          onChange={handleFilteredInputChange}
-          style={{
-            ...inputStyle,
-            minHeight: "60px",
-            resize: "vertical",
-            ...(error ? inputErrorStyle : {})
-          }}
-          required={required}
-          disabled={disabled}
-          maxLength={maxLength}
-        ></textarea>
-      ) : (
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={handleFilteredInputChange}
-          style={{
-            ...inputStyle,
-            ...(error ? inputErrorStyle : {})
-          }}
-          required={required}
-          disabled={disabled}
-          maxLength={maxLength}
-        />
-      )}
-      {error && <span style={errorStyle}>{error}</span>}
-      {warning && !error && <span style={warningStyle}>{warning}</span>}
-      {maxLength && (
-        <div style={{ 
-          fontSize: '12px', 
-          color: error ? '#e53935' : '#679750', 
-          marginTop: '4px',
-          textAlign: 'right'
-        }}>
-          {value?.length || 0}/{maxLength} caracteres
-        </div>
-      )}
+      <div style={{ position: 'relative' }}>
+        {icon && (
+          <div style={{
+            position: 'absolute',
+            left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#2E5939',
+            zIndex: 1
+          }}>
+            {icon}
+          </div>
+        )}
+        {type === "select" ? (
+          <select
+            name={name}
+            value={value}
+            onChange={onChange}
+            style={getInputStyle()}
+            required={required}
+            disabled={disabled}
+          >
+            {finalOptions.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : type === "textarea" ? (
+          <textarea
+            name={name}
+            value={value}
+            onChange={handleFilteredInputChange}
+            style={{
+              ...getInputStyle(),
+              minHeight: "80px",
+              resize: "vertical"
+            }}
+            required={required}
+            disabled={disabled}
+            maxLength={maxLength}
+            placeholder={placeholder}
+          ></textarea>
+        ) : (
+          <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={handleFilteredInputChange}
+            style={getInputStyle()}
+            required={required}
+            disabled={disabled}
+            maxLength={maxLength}
+            placeholder={placeholder}
+          />
+        )}
+        {showCharCount && maxLength && (
+          <div style={{
+            fontSize: "0.75rem",
+            color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+            textAlign: "right",
+            marginTop: "4px"
+          }}>
+            {value?.length || 0}/{maxLength} caracteres
+          </div>
+        )}
+      </div>
+      {getValidationMessage()}
     </div>
   );
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Admiprovee
+// COMPONENTE PRINCIPAL Admiprovee MEJORADO
 // ===============================================
 const Admiprovee = () => {
   const [proveedores, setProveedores] = useState([]);
@@ -476,8 +602,10 @@ const Admiprovee = () => {
   const [alertType, setAlertType] = useState("success");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [warnings, setWarnings] = useState({});
+  const [formErrors, setFormErrors] = useState({});
+  const [formSuccess, setFormSuccess] = useState({});
+  const [formWarnings, setFormWarnings] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [newProveedor, setNewProveedor] = useState({
     nombre: "",
@@ -499,154 +627,215 @@ const Admiprovee = () => {
     fetchProveedores();
   }, []);
 
+  // Validar formulario en tiempo real
+  useEffect(() => {
+    if (showForm) {
+      validateField('nombre', newProveedor.nombre);
+      validateField('celular', newProveedor.celular);
+      validateField('correo', newProveedor.correo);
+      validateField('numeroDocumento', newProveedor.numeroDocumento);
+      validateField('departamento', newProveedor.departamento);
+      validateField('ciudad', newProveedor.ciudad);
+      validateField('barrio', newProveedor.barrio);
+      validateField('direccion', newProveedor.direccion);
+    }
+  }, [newProveedor, showForm]);
+
+  // Efecto para agregar estilos de animación
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // ===============================================
+  // FUNCIONES DE ALERTAS MEJORADAS
+  // ===============================================
+  const displayAlert = (message, type = "success") => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+      setAlertMessage("");
+    }, 5000);
+  };
+
+  const getAlertIcon = (type) => {
+    switch (type) {
+      case "success":
+        return <FaCheck style={alertIconStyle} />;
+      case "error":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "warning":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "info":
+        return <FaInfoCircle style={alertIconStyle} />;
+      default:
+        return <FaInfoCircle style={alertIconStyle} />;
+    }
+  };
+
+  const getAlertStyle = (type) => {
+    switch (type) {
+      case "success":
+        return alertSuccessStyle;
+      case "error":
+        return alertErrorStyle;
+      case "warning":
+        return alertWarningStyle;
+      case "info":
+        return alertInfoStyle;
+      default:
+        return alertSuccessStyle;
+    }
+  };
+
   // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
   // ===============================================
-  const clearErrors = () => {
-    setErrors({});
-    setWarnings({});
-  };
+  const validateField = (fieldName, value) => {
+    let error = "";
+    let success = "";
+    let warning = "";
 
-  const validateField = (name, value) => {
-    const newErrors = { ...errors };
-    const newWarnings = { ...warnings };
+    const trimmedValue = value ? value.toString().trim() : "";
 
-    // Eliminar errores y advertencias previas del campo
-    delete newErrors[name];
-    delete newWarnings[name];
-
-    switch (name) {
+    switch (fieldName) {
       case 'nombre':
-        const nombreValidation = validateNombre(value, proveedores, isEditing ? newProveedor.idProveedor : null);
+        const nombreValidation = validateNombre(trimmedValue, proveedores, isEditing ? newProveedor.idProveedor : null);
         if (!nombreValidation.isValid) {
-          newErrors.nombre = nombreValidation.message;
+          error = nombreValidation.message;
+        } else if (trimmedValue) {
+          success = "Nombre válido.";
         }
         break;
 
       case 'celular':
-        const celularValidation = validateCelular(value);
+        const celularValidation = validateCelular(trimmedValue);
         if (!celularValidation.isValid) {
-          newErrors.celular = celularValidation.message;
+          error = celularValidation.message;
+        } else if (trimmedValue) {
+          success = "Celular válido.";
         }
         break;
 
       case 'correo':
-        const correoValidation = validateCorreo(value, proveedores, isEditing ? newProveedor.idProveedor : null);
+        const correoValidation = validateCorreo(trimmedValue, proveedores, isEditing ? newProveedor.idProveedor : null);
         if (!correoValidation.isValid) {
-          newErrors.correo = correoValidation.message;
+          error = correoValidation.message;
+        } else if (trimmedValue) {
+          success = "Correo válido.";
         }
         break;
 
       case 'numeroDocumento':
         const documentoValidation = validateNumeroDocumento(
-          value, 
+          trimmedValue, 
           newProveedor.tipoDocumento, 
           proveedores, 
           isEditing ? newProveedor.idProveedor : null
         );
         if (!documentoValidation.isValid) {
-          newErrors.numeroDocumento = documentoValidation.message;
+          error = documentoValidation.message;
+        } else if (trimmedValue) {
+          success = "Documento válido.";
         }
         break;
 
       case 'departamento':
-        const departamentoValidation = validateTexto(value, 'departamento', 2, 50);
+        const departamentoValidation = validateTexto(trimmedValue, 'departamento');
         if (!departamentoValidation.isValid) {
-          newErrors.departamento = departamentoValidation.message;
+          error = departamentoValidation.message;
+        } else if (trimmedValue) {
+          success = "Departamento válido.";
         }
         break;
 
       case 'ciudad':
-        const ciudadValidation = validateTexto(value, 'ciudad', 2, 50);
+        const ciudadValidation = validateTexto(trimmedValue, 'ciudad');
         if (!ciudadValidation.isValid) {
-          newErrors.ciudad = ciudadValidation.message;
+          error = ciudadValidation.message;
+        } else if (trimmedValue) {
+          success = "Ciudad válida.";
         }
         break;
 
       case 'barrio':
-        const barrioValidation = validateTexto(value, 'barrio', 2, 50);
+        const barrioValidation = validateTexto(trimmedValue, 'barrio');
         if (!barrioValidation.isValid) {
-          newErrors.barrio = barrioValidation.message;
+          error = barrioValidation.message;
+        } else if (trimmedValue) {
+          success = "Barrio válido.";
         }
         break;
 
       case 'direccion':
-        const direccionValidation = validateTexto(value, 'dirección', 5, 200);
+        const direccionValidation = validateTexto(trimmedValue, 'dirección', 5, 200);
         if (!direccionValidation.isValid) {
-          newErrors.direccion = direccionValidation.message;
-        } else if (value.trim().length < 10) {
-          newWarnings.direccion = 'Considera agregar más detalles para una mejor ubicación';
+          error = direccionValidation.message;
+        } else if (trimmedValue) {
+          success = "Dirección válida.";
+          if (trimmedValue.length < 15) {
+            warning = 'Considera agregar más detalles para una mejor ubicación';
+          }
         }
+        break;
+
+      case 'estado':
+        success = value ? "Proveedor activo" : "Proveedor inactivo";
         break;
 
       default:
         break;
     }
 
-    setErrors(newErrors);
-    setWarnings(newWarnings);
+    setFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    setFormSuccess(prev => ({ ...prev, [fieldName]: success }));
+    setFormWarnings(prev => ({ ...prev, [fieldName]: warning }));
+
+    return !error;
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const nombreValid = validateField('nombre', newProveedor.nombre);
+    const celularValid = validateField('celular', newProveedor.celular);
+    const correoValid = validateField('correo', newProveedor.correo);
+    const documentoValid = validateField('numeroDocumento', newProveedor.numeroDocumento);
+    const departamentoValid = validateField('departamento', newProveedor.departamento);
+    const ciudadValid = validateField('ciudad', newProveedor.ciudad);
+    const barrioValid = validateField('barrio', newProveedor.barrio);
+    const direccionValid = validateField('direccion', newProveedor.direccion);
 
-    // Validar todos los campos
-    const nombreValidation = validateNombre(
-      newProveedor.nombre, 
-      proveedores, 
-      isEditing ? newProveedor.idProveedor : null
-    );
-    if (!nombreValidation.isValid) {
-      newErrors.nombre = nombreValidation.message;
+    const isValid = nombreValid && celularValid && correoValid && documentoValid && 
+                   departamentoValid && ciudadValid && barrioValid && direccionValid;
+    
+    if (!isValid) {
+      displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
     }
 
-    const celularValidation = validateCelular(newProveedor.celular);
-    if (!celularValidation.isValid) {
-      newErrors.celular = celularValidation.message;
-    }
-
-    const correoValidation = validateCorreo(
-      newProveedor.correo, 
-      proveedores, 
-      isEditing ? newProveedor.idProveedor : null
-    );
-    if (!correoValidation.isValid) {
-      newErrors.correo = correoValidation.message;
-    }
-
-    const documentoValidation = validateNumeroDocumento(
-      newProveedor.numeroDocumento,
-      newProveedor.tipoDocumento,
-      proveedores,
-      isEditing ? newProveedor.idProveedor : null
-    );
-    if (!documentoValidation.isValid) {
-      newErrors.numeroDocumento = documentoValidation.message;
-    }
-
-    const departamentoValidation = validateTexto(newProveedor.departamento, 'departamento');
-    if (!departamentoValidation.isValid) {
-      newErrors.departamento = departamentoValidation.message;
-    }
-
-    const ciudadValidation = validateTexto(newProveedor.ciudad, 'ciudad');
-    if (!ciudadValidation.isValid) {
-      newErrors.ciudad = ciudadValidation.message;
-    }
-
-    const barrioValidation = validateTexto(newProveedor.barrio, 'barrio');
-    if (!barrioValidation.isValid) {
-      newErrors.barrio = barrioValidation.message;
-    }
-
-    const direccionValidation = validateTexto(newProveedor.direccion, 'dirección', 5, 200);
-    if (!direccionValidation.isValid) {
-      newErrors.direccion = direccionValidation.message;
-    }
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   // ===============================================
@@ -683,42 +872,42 @@ const Admiprovee = () => {
   const handleAddProveedor = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      displayAlert("Por favor, corrige los errores en el formulario", "error");
+    if (isSubmitting) {
+      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
       return;
     }
 
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     setLoading(true);
+    
     try {
       const proveedorData = {
         ...newProveedor,
         estado: newProveedor.estado === "true" || newProveedor.estado === true
       };
 
-      // Validación final antes de enviar
-      const finalValidation = validateForm();
-      if (!finalValidation) {
-        displayAlert("Por favor, corrige los errores en el formulario", "error");
-        setLoading(false);
-        return;
-      }
+      console.log("📤 Enviando datos:", proveedorData);
 
       if (isEditing) {
         await axios.put(`${API_PROVEEDORES}/${newProveedor.idProveedor}`, proveedorData, {
           headers: { 'Content-Type': 'application/json' }
         });
-        displayAlert("Proveedor actualizado exitosamente.");
+        displayAlert("Proveedor actualizado exitosamente.", "success");
       } else {
         await axios.post(API_PROVEEDORES, proveedorData, {
           headers: { 'Content-Type': 'application/json' }
         });
-        displayAlert("Proveedor agregado exitosamente.");
+        displayAlert("Proveedor agregado exitosamente.", "success");
       }
       
       await fetchProveedores();
       closeForm();
     } catch (error) {
-      console.error("Error al guardar proveedor:", error);
+      console.error("❌ Error al guardar proveedor:", error);
       
       // Manejar errores específicos de la API
       if (error.response && error.response.status === 409) {
@@ -728,6 +917,7 @@ const Admiprovee = () => {
       }
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -744,10 +934,10 @@ const Admiprovee = () => {
         }
 
         await axios.delete(`${API_PROVEEDORES}/${proveedorToDelete.idProveedor}`);
-        displayAlert("Proveedor eliminado exitosamente.");
+        displayAlert("Proveedor eliminado exitosamente.", "success");
         await fetchProveedores();
       } catch (error) {
-        console.error("Error al eliminar proveedor:", error);
+        console.error("❌ Error al eliminar proveedor:", error);
         
         if (error.response && error.response.status === 409) {
           displayAlert("No se puede eliminar el proveedor porque tiene productos asociados", "error");
@@ -767,66 +957,57 @@ const Admiprovee = () => {
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
+    let alertType = "error";
     
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5255";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
     } else if (error.response) {
-      const status = error.response.status;
-      switch (status) {
-        case 400:
-          errorMessage = "Datos inválidos enviados al servidor";
-          break;
-        case 404:
-          errorMessage = "Recurso no encontrado";
-          break;
-        case 409:
-          errorMessage = "Conflicto: El proveedor ya existe o tiene productos asociados";
-          break;
-        case 500:
-          errorMessage = "Error interno del servidor";
-          break;
-        default:
-          errorMessage = `Error ${status}: ${error.response.data?.message || 'Error del servidor'}`;
+      if (error.response.status === 400) {
+        errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
+      } else if (error.response.status === 404) {
+        errorMessage = "Recurso no encontrado.";
+      } else if (error.response.status === 409) {
+        errorMessage = "Conflicto: El proveedor ya existe o tiene productos asociados.";
+        alertType = "warning";
+      } else if (error.response.status === 500) {
+        errorMessage = "Error interno del servidor.";
+      } else {
+        errorMessage = `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
       }
     } else if (error.request) {
       errorMessage = "No hay respuesta del servidor.";
-    } else if (error.message.includes('timeout')) {
-      errorMessage = "Tiempo de espera agotado. El servidor no respondió a tiempo.";
+    } else {
+      errorMessage = `Error inesperado: ${error.message}`;
     }
     
     setError(errorMessage);
-    displayAlert(errorMessage, "error");
-  };
-
-  const displayAlert = (message, type = "success") => {
-    setAlertMessage(message);
-    setAlertType(type);
-    setShowAlert(true);
-    setTimeout(() => {
-      setShowAlert(false);
-      setAlertMessage("");
-    }, 4000);
+    displayAlert(errorMessage, alertType);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     setNewProveedor((prev) => ({
       ...prev,
       [name]: value
     }));
+  };
 
-    // Validar el campo en tiempo real después de un pequeño delay
-    setTimeout(() => {
-      validateField(name, value);
-    }, 300);
+  // Función para cambiar el estado con el botón toggle
+  const toggleEstado = () => {
+    setNewProveedor(prev => ({
+      ...prev,
+      estado: !prev.estado
+    }));
   };
 
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
     setNewProveedor({
       nombre: "",
       celular: "",
@@ -839,7 +1020,6 @@ const Admiprovee = () => {
       numeroDocumento: "",
       estado: true
     });
-    clearErrors();
   };
 
   const closeDetailsModal = () => {
@@ -852,12 +1032,14 @@ const Admiprovee = () => {
     setShowDeleteConfirm(false);
   };
 
-  const toggleEstado = async (proveedor) => {
+  const toggleEstadoProveedor = async (proveedor) => {
     setLoading(true);
     try {
       const updatedProveedor = { ...proveedor, estado: !proveedor.estado };
-      await axios.put(`${API_PROVEEDORES}/${proveedor.idProveedor}`, updatedProveedor);
-      displayAlert(`Proveedor ${updatedProveedor.estado ? 'activado' : 'desactivado'} exitosamente.`);
+      await axios.put(`${API_PROVEEDORES}/${proveedor.idProveedor}`, updatedProveedor, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      displayAlert(`Proveedor ${updatedProveedor.estado ? 'activado' : 'desactivado'} exitosamente.`, "success");
       await fetchProveedores();
     } catch (error) {
       console.error("Error al cambiar estado:", error);
@@ -897,11 +1079,13 @@ const Admiprovee = () => {
   const handleEdit = (proveedor) => {
     setNewProveedor({
       ...proveedor,
-      estado: proveedor.estado.toString()
+      estado: proveedor.estado
     });
     setIsEditing(true);
     setShowForm(true);
-    clearErrors();
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
   };
 
   const handleDeleteClick = (proveedor) => {
@@ -965,17 +1149,23 @@ const Admiprovee = () => {
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
       
-      {/* Alerta */}
+      {/* Alerta Mejorada */}
       {showAlert && (
-        <div style={{
-          ...alertStyle,
-          backgroundColor: alertType === "error" ? '#e53935' : '#2E5939'
-        }}>
-          {alertType === "error" && <FaExclamationTriangle />}
-          <span>{alertMessage}</span>
+        <div style={getAlertStyle(alertType)}>
+          {getAlertIcon(alertType)}
+          <span style={{ flex: 1 }}>{alertMessage}</span>
           <button 
             onClick={() => setShowAlert(false)}
-            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'inherit', 
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center'
+            }}
           >
             <FaTimes />
           </button>
@@ -1012,6 +1202,19 @@ const Admiprovee = () => {
             >
               Reintentar
             </button>
+            <button
+              onClick={() => setError(null)}
+              style={{
+                backgroundColor: '#6c757d',
+                color: 'white',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}
@@ -1021,52 +1224,76 @@ const Admiprovee = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Proveedores</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {proveedores.length} proveedores registrados
+            {proveedores.length} proveedores registrados • 
+            {proveedores.filter(p => p.estado).length} activos
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setIsEditing(false);
-            setNewProveedor({
-              nombre: "",
-              celular: "",
-              correo: "",
-              departamento: "",
-              ciudad: "",
-              barrio: "",
-              direccion: "",
-              tipoDocumento: "Cedula",
-              numeroDocumento: "",
-              estado: true
-            });
-            clearErrors();
-          }}
-          style={{
-            backgroundColor: "#2E5939",
-            color: "white",
-            padding: "12px 20px",
-            border: "none",
-            borderRadius: 10,
-            cursor: "pointer",
-            fontWeight: "600",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease",
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-            e.target.style.transform = "translateY(-2px)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#2E5939";
-            e.target.style.transform = "translateY(0)";
-          }}
-        >
-          <FaPlus /> Agregar Proveedor
-        </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            onClick={fetchProveedores}
+            style={{
+              backgroundColor: "#679750",
+              color: "white",
+              padding: "10px 12px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+            title="Recargar proveedores"
+          >
+            <FaSync />
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              setFormErrors({});
+              setFormSuccess({});
+              setFormWarnings({});
+              setNewProveedor({
+                nombre: "",
+                celular: "",
+                correo: "",
+                departamento: "",
+                ciudad: "",
+                barrio: "",
+                direccion: "",
+                tipoDocumento: "Cedula",
+                numeroDocumento: "",
+                estado: true
+              });
+            }}
+            style={{
+              backgroundColor: "#2E5939",
+              color: "white",
+              padding: "12px 20px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              transition: "all 0.3s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+              e.target.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#2E5939";
+              e.target.style.transform = "translateY(0)";
+            }}
+          >
+            <FaPlus /> Nuevo Proveedor
+          </button>
+        </div>
       </div>
 
       {/* Barra de búsqueda */}
@@ -1100,7 +1327,7 @@ const Admiprovee = () => {
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 700 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
                 {isEditing ? "Editar Proveedor" : "Nuevo Proveedor"}
@@ -1114,133 +1341,283 @@ const Admiprovee = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
             
-            <form onSubmit={handleAddProveedor} style={formContainerStyle}>
-              <FormField
-                label="Nombre del Proveedor"
-                name="nombre"
-                value={newProveedor.nombre}
-                onChange={handleChange}
-                error={errors.nombre}
-                warning={warnings.nombre}
-                style={{ gridColumn: '1 / -1' }}
-                required={true}
-                maxLength={100}
-              />
+            <form onSubmit={handleAddProveedor}>
+              <div style={formContainerStyle}>
+                <FormField
+                  label="Nombre del Proveedor"
+                  name="nombre"
+                  value={newProveedor.nombre}
+                  onChange={handleChange}
+                  error={formErrors.nombre}
+                  success={formSuccess.nombre}
+                  warning={formWarnings.nombre}
+                  style={{ gridColumn: '1 / -1' }}
+                  required={true}
+                  disabled={loading}
+                  maxLength={100}
+                  showCharCount={true}
+                  placeholder="Ingresa el nombre completo del proveedor..."
+                  icon={<FaBuilding />}
+                />
 
-              <FormField
-                label="Tipo de Documento"
-                name="tipoDocumento"
-                type="select"
-                value={newProveedor.tipoDocumento}
-                onChange={handleChange}
-                error={errors.tipoDocumento}
-                options={tipoDocumentoOptions}
-                required={true}
-              />
+                <FormField
+                  label="Tipo de Documento"
+                  name="tipoDocumento"
+                  type="select"
+                  value={newProveedor.tipoDocumento}
+                  onChange={handleChange}
+                  error={formErrors.tipoDocumento}
+                  success={formSuccess.tipoDocumento}
+                  options={tipoDocumentoOptions}
+                  required={true}
+                  disabled={loading}
+                  icon={<FaIdCard />}
+                />
 
-              <FormField
-                label="Número de Documento"
-                name="numeroDocumento"
-                value={newProveedor.numeroDocumento}
-                onChange={handleChange}
-                error={errors.numeroDocumento}
-                warning={warnings.numeroDocumento}
-                required={true}
-                disabled={isEditing}
-                maxLength={20}
-              />
+                <FormField
+                  label="Número de Documento"
+                  name="numeroDocumento"
+                  value={newProveedor.numeroDocumento}
+                  onChange={handleChange}
+                  error={formErrors.numeroDocumento}
+                  success={formSuccess.numeroDocumento}
+                  warning={formWarnings.numeroDocumento}
+                  required={true}
+                  disabled={loading || isEditing}
+                  maxLength={20}
+                  placeholder="Solo números"
+                  icon={<FaIdCard />}
+                />
 
-              <FormField
-                label="Celular"
-                name="celular"
-                type="tel"
-                value={newProveedor.celular}
-                onChange={handleChange}
-                error={errors.celular}
-                warning={warnings.celular}
-                required={true}
-                maxLength={10}
-              />
+                <FormField
+                  label="Celular"
+                  name="celular"
+                  type="tel"
+                  value={newProveedor.celular}
+                  onChange={handleChange}
+                  error={formErrors.celular}
+                  success={formSuccess.celular}
+                  warning={formWarnings.celular}
+                  required={true}
+                  disabled={loading}
+                  maxLength={10}
+                  placeholder="10 dígitos"
+                  icon={<FaPhone />}
+                />
 
-              <FormField
-                label="Correo Electrónico"
-                name="correo"
-                type="email"
-                value={newProveedor.correo}
-                onChange={handleChange}
-                error={errors.correo}
-                warning={warnings.correo}
-                style={{ gridColumn: '1 / -1' }}
-                required={true}
-                maxLength={100}
-              />
+                <FormField
+                  label="Correo Electrónico"
+                  name="correo"
+                  type="email"
+                  value={newProveedor.correo}
+                  onChange={handleChange}
+                  error={formErrors.correo}
+                  success={formSuccess.correo}
+                  warning={formWarnings.correo}
+                  style={{ gridColumn: '1 / -1' }}
+                  required={true}
+                  disabled={loading}
+                  maxLength={100}
+                  placeholder="ejemplo@correo.com"
+                  icon={<FaEnvelope />}
+                />
 
-              <FormField
-                label="Departamento"
-                name="departamento"
-                type="select"
-                value={newProveedor.departamento}
-                onChange={handleChange}
-                error={errors.departamento}
-                warning={warnings.departamento}
-                options={departamentoOptions}
-                required={true}
-              />
+                <FormField
+                  label="Departamento"
+                  name="departamento"
+                  type="select"
+                  value={newProveedor.departamento}
+                  onChange={handleChange}
+                  error={formErrors.departamento}
+                  success={formSuccess.departamento}
+                  warning={formWarnings.departamento}
+                  options={departamentoOptions}
+                  required={true}
+                  disabled={loading}
+                  icon={<FaMapMarkerAlt />}
+                />
 
-              <FormField
-                label="Ciudad"
-                name="ciudad"
-                value={newProveedor.ciudad}
-                onChange={handleChange}
-                error={errors.ciudad}
-                warning={warnings.ciudad}
-                required={true}
-                maxLength={50}
-              />
+                <FormField
+                  label="Ciudad"
+                  name="ciudad"
+                  value={newProveedor.ciudad}
+                  onChange={handleChange}
+                  error={formErrors.ciudad}
+                  success={formSuccess.ciudad}
+                  warning={formWarnings.ciudad}
+                  required={true}
+                  disabled={loading}
+                  maxLength={50}
+                  placeholder="Nombre de la ciudad"
+                  icon={<FaMapMarkerAlt />}
+                />
 
-              <FormField
-                label="Barrio"
-                name="barrio"
-                value={newProveedor.barrio}
-                onChange={handleChange}
-                error={errors.barrio}
-                warning={warnings.barrio}
-                required={true}
-                maxLength={50}
-              />
+                <FormField
+                  label="Barrio"
+                  name="barrio"
+                  value={newProveedor.barrio}
+                  onChange={handleChange}
+                  error={formErrors.barrio}
+                  success={formSuccess.barrio}
+                  warning={formWarnings.barrio}
+                  required={true}
+                  disabled={loading}
+                  maxLength={50}
+                  placeholder="Nombre del barrio"
+                  icon={<FaMapMarkerAlt />}
+                />
 
-              <FormField
-                label="Dirección"
-                name="direccion"
-                type="textarea"
-                value={newProveedor.direccion}
-                onChange={handleChange}
-                error={errors.direccion}
-                warning={warnings.direccion}
-                style={{ gridColumn: '1 / -1' }}
-                required={true}
-                maxLength={200}
-              />
+                <FormField
+                  label="Dirección Completa"
+                  name="direccion"
+                  type="textarea"
+                  value={newProveedor.direccion}
+                  onChange={handleChange}
+                  error={formErrors.direccion}
+                  success={formSuccess.direccion}
+                  warning={formWarnings.direccion}
+                  style={{ gridColumn: '1 / -1' }}
+                  required={true}
+                  disabled={loading}
+                  maxLength={200}
+                  showCharCount={true}
+                  placeholder="Ingresa la dirección completa con puntos de referencia..."
+                  icon={<FaMapMarkerAlt />}
+                />
 
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20, gridColumn: '1 / -1' }}>
+                {/* Botón Toggle para Estado - oculto en modo edición */}
+                {!isEditing && (
+                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
+                    <label style={labelStyle}>
+                      Estado del Proveedor
+                      <span style={{ color: "red" }}>*</span>
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                      <button
+                        type="button"
+                        onClick={toggleEstado}
+                        style={toggleButtonStyle(newProveedor.estado)}
+                        disabled={loading}
+                      >
+                        {newProveedor.estado ? (
+                          <>
+                            <FaCheck size={16} />
+                            <span>🟢 Activo</span>
+                          </>
+                        ) : (
+                          <>
+                            <FaTimes size={16} />
+                            <span>🔴 Inactivo</span>
+                          </>
+                        )}
+                      </button>
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newProveedor.estado ? '#4caf50' : '#e57373',
+                        fontWeight: '500'
+                      }}>
+                        {newProveedor.estado 
+                          ? 'El proveedor está activo y disponible para operaciones' 
+                          : 'El proveedor está inactivo y no disponible para operaciones'
+                        }
+                      </span>
+                    </div>
+                    {formErrors.estado && (
+                      <div style={errorValidationStyle}>
+                        <FaExclamationTriangle size={12} />
+                        {formErrors.estado}
+                      </div>
+                    )}
+                    {formSuccess.estado && (
+                      <div style={successValidationStyle}>
+                        <FaCheck size={12} />
+                        {formSuccess.estado}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* Resumen del proveedor */}
+              {(newProveedor.nombre || newProveedor.celular || newProveedor.correo) && (
+                <div style={{
+                  backgroundColor: '#E8F5E8',
+                  border: '1px solid #679750',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen del Proveedor</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
+                    {newProveedor.nombre && (
+                      <>
+                        <div>Nombre:</div>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold' }}>{newProveedor.nombre}</div>
+                      </>
+                    )}
+                    {newProveedor.celular && (
+                      <>
+                        <div>Celular:</div>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold' }}>{newProveedor.celular}</div>
+                      </>
+                    )}
+                    {newProveedor.correo && (
+                      <>
+                        <div>Correo:</div>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold' }}>{newProveedor.correo}</div>
+                      </>
+                    )}
+                    
+                    <div style={{ borderTop: '1px solid #ccc', paddingTop: '5px' }}>
+                      <strong>Estado:</strong>
+                    </div>
+                    <div style={{ 
+                      textAlign: 'right', 
+                      fontWeight: 'bold', 
+                      color: newProveedor.estado ? '#4caf50' : '#e57373', 
+                      borderTop: '1px solid #ccc', 
+                      paddingTop: '5px' 
+                    }}>
+                      {newProveedor.estado ? '🟢 Activo' : '🔴 Inactivo'}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
                   type="submit"
-                  disabled={loading || Object.keys(errors).length > 0}
+                  disabled={loading || isSubmitting || Object.keys(formErrors).length > 0}
                   style={{
-                    backgroundColor: (loading || Object.keys(errors).length > 0) ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting || Object.keys(formErrors).length > 0) ? "#ccc" : "#2E5939",
                     color: "#fff",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || Object.keys(errors).length > 0) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting || Object.keys(formErrors).length > 0) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    if (!loading && !isSubmitting && Object.keys(formErrors).length === 0) {
+                      e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                      e.target.style.transform = "translateY(-2px)";
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!loading && !isSubmitting && Object.keys(formErrors).length === 0) {
+                      e.target.style.background = "#2E5939";
+                      e.target.style.transform = "translateY(0)";
+                    }
                   }}
                 >
                   {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Proveedor
@@ -1248,16 +1625,17 @@ const Admiprovee = () => {
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                   style={{
                     backgroundColor: "#ccc",
                     color: "#333",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: loading ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     flex: 1,
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                   }}
                 >
                   Cancelar
@@ -1271,7 +1649,7 @@ const Admiprovee = () => {
       {/* Modal de detalles */}
       {showDetails && currentProveedor && (
         <div style={modalOverlayStyle}>
-          <div style={detailsModalStyle}>
+          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Proveedor</h2>
               <button
@@ -1295,13 +1673,23 @@ const Admiprovee = () => {
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Nombre</div>
-                <div style={detailValueStyle}>{currentProveedor.nombre}</div>
+                <div style={detailLabelStyle}>Nombre del Proveedor</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaBuilding color="#679750" />
+                    {currentProveedor.nombre}
+                  </div>
+                </div>
               </div>
-              
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Tipo de Documento</div>
-                <div style={detailValueStyle}>{currentProveedor.tipoDocumento}</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaIdCard color="#679750" />
+                    {currentProveedor.tipoDocumento}
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
@@ -1311,12 +1699,22 @@ const Admiprovee = () => {
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Celular</div>
-                <div style={detailValueStyle}>{currentProveedor.celular}</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaPhone color="#679750" />
+                    {currentProveedor.celular}
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Correo Electrónico</div>
-                <div style={detailValueStyle}>{currentProveedor.correo}</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaEnvelope color="#679750" />
+                    {currentProveedor.correo}
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
@@ -1336,7 +1734,12 @@ const Admiprovee = () => {
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Dirección</div>
-                <div style={detailValueStyle}>{currentProveedor.direccion}</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaMapMarkerAlt color="#679750" />
+                    {currentProveedor.direccion}
+                  </div>
+                </div>
               </div>
 
               <div style={detailItemStyle}>
@@ -1379,9 +1782,25 @@ const Admiprovee = () => {
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
               ¿Estás seguro de eliminar al proveedor "<strong>{proveedorToDelete.nombre}</strong>"?
             </p>
-            <p style={{ marginBottom: 20, fontSize: '0.9rem', color: '#e53935', fontStyle: 'italic' }}>
-              ⚠️ Esta acción no se puede deshacer
-            </p>
+            
+            {/* Advertencia sobre valor */}
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffeaa7',
+              borderRadius: '8px',
+              padding: '15px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <FaInfoCircle style={{ color: '#856404' }} />
+                <strong style={{ color: '#856404' }}>Proveedor a eliminar</strong>
+              </div>
+              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
+                Documento: {proveedorToDelete.tipoDocumento} {proveedorToDelete.numeroDocumento} | 
+                Estado: {proveedorToDelete.estado ? 'Activo' : 'Inactivo'}
+              </p>
+            </div>
+
             <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
               <button
                 onClick={confirmDelete}
@@ -1394,6 +1813,7 @@ const Admiprovee = () => {
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                 }}
               >
                 {loading ? "Eliminando..." : "Sí, Eliminar"}
@@ -1409,6 +1829,18 @@ const Admiprovee = () => {
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "#2E5939";
+                  }
                 }}
               >
                 Cancelar
@@ -1460,19 +1892,60 @@ const Admiprovee = () => {
               {paginatedProveedores.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {proveedores.length === 0 ? "No hay proveedores registrados" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {proveedores.length === 0 ? "No hay proveedores registrados" : "No se encontraron resultados"}
+                      {proveedores.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Proveedor
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedProveedores.map((proveedor) => (
                   <tr key={proveedor.idProveedor} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{proveedor.nombre}</td>
-                    <td style={{ padding: "15px" }}>{proveedor.correo}</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{proveedor.celular}</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{proveedor.ciudad}</td>
+                    <td style={{ padding: "15px", fontWeight: "500" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaBuilding color="#679750" />
+                        {proveedor.nombre}
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaEnvelope color="#679750" size={12} />
+                        {proveedor.correo}
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                        <FaPhone color="#679750" size={12} />
+                        {proveedor.celular}
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                        <FaMapMarkerAlt color="#679750" size={12} />
+                        {proveedor.ciudad}
+                      </div>
+                    </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
-                        onClick={() => toggleEstado(proveedor)}
+                        onClick={() => toggleEstadoProveedor(proveedor)}
                         style={{
                           cursor: "pointer",
                           padding: "6px 12px",
@@ -1548,6 +2021,76 @@ const Admiprovee = () => {
           >
             Siguiente
           </button>
+        </div>
+      )}
+
+      {/* Estadísticas */}
+      {!loading && proveedores.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {proveedores.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Proveedores
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {proveedores.filter(p => p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Proveedores Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {proveedores.filter(p => p.tipoDocumento === 'Cedula').length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Con Cédula
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {new Set(proveedores.map(p => p.ciudad)).size}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Ciudades
+            </div>
+          </div>
         </div>
       )}
     </div>
