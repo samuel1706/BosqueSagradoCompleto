@@ -1,13 +1,15 @@
+// src/components/Admiprovee.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { 
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaPhone,
-  FaEnvelope, FaMapMarkerAlt, FaIdCard, FaSync, FaBuilding
+  FaEnvelope, FaMapMarkerAlt, FaIdCard, FaSync, FaBuilding,
+  FaShoppingCart
 } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (COHERENTES CON EL DISEÑO ANTERIOR)
+// ESTILOS MEJORADOS (CONSISTENTES CON MARCA)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -149,20 +151,13 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
-const alertInfoStyle = {
-  ...alertStyle,
-  backgroundColor: '#d1ecf1',
-  color: '#0c5460',
-  borderLeftColor: '#17a2b8',
-};
-
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -212,209 +207,103 @@ const warningValidationStyle = {
   color: "#ff9800"
 };
 
-const toggleButtonStyle = (active) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  padding: '10px 16px',
-  borderRadius: '25px',
-  border: 'none',
-  cursor: 'pointer',
-  fontWeight: '600',
-  fontSize: '14px',
-  transition: 'all 0.3s ease',
-  backgroundColor: active ? '#4caf50' : '#e57373',
-  color: 'white',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-  minWidth: '140px'
-});
-
 // ===============================================
-// FUNCIONES DE VALIDACIÓN MEJORADAS PARA PROVEEDORES
+// VALIDACIONES Y PATRONES PARA PROVEEDORES
 // ===============================================
-const validateNombre = (nombre, proveedoresExistentes = [], idActual = null) => {
-  if (!nombre || nombre.trim().length === 0) {
-    return { isValid: false, message: 'El nombre del proveedor es obligatorio' };
+const VALIDATION_RULES = {
+  nombre: {
+    minLength: 2,
+    maxLength: 100,
+    required: true,
+    errorMessages: {
+      required: "El nombre del proveedor es obligatorio.",
+      minLength: "El nombre debe tener al menos 2 caracteres.",
+      maxLength: "El nombre no puede exceder los 100 caracteres.",
+      pattern: "El nombre solo puede contener letras y espacios."
+    }
+  },
+  celular: {
+    required: true,
+    pattern: /^\d{10}$/,
+    errorMessages: {
+      required: "El número de celular es obligatorio.",
+      pattern: "El celular debe tener exactamente 10 dígitos numéricos."
+    }
+  },
+  correo: {
+    required: true,
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    errorMessages: {
+      required: "El correo electrónico es obligatorio.",
+      pattern: "El formato del correo electrónico es inválido.",
+      maxLength: "El correo no puede exceder los 100 caracteres."
+    }
+  },
+  numeroDocumento: {
+    required: true,
+    pattern: /^\d+$/,
+    errorMessages: {
+      required: "El número de documento es obligatorio.",
+      pattern: "El número de documento solo debe contener dígitos."
+    }
+  },
+  departamento: {
+    required: true,
+    minLength: 2,
+    maxLength: 50,
+    errorMessages: {
+      required: "El departamento es obligatorio.",
+      minLength: "El departamento debe tener al menos 2 caracteres.",
+      maxLength: "El departamento no puede exceder los 50 caracteres."
+    }
+  },
+  ciudad: {
+    required: true,
+    minLength: 2,
+    maxLength: 50,
+    errorMessages: {
+      required: "La ciudad es obligatoria.",
+      minLength: "La ciudad debe tener al menos 2 caracteres.",
+      maxLength: "La ciudad no puede exceder los 50 caracteres."
+    }
+  },
+  barrio: {
+    required: true,
+    minLength: 2,
+    maxLength: 50,
+    errorMessages: {
+      required: "El barrio es obligatorio.",
+      minLength: "El barrio debe tener al menos 2 caracteres.",
+      maxLength: "El barrio no puede exceder los 50 caracteres."
+    }
+  },
+  direccion: {
+    required: true,
+    minLength: 5,
+    maxLength: 200,
+    errorMessages: {
+      required: "La dirección es obligatoria.",
+      minLength: "La dirección debe tener al menos 5 caracteres.",
+      maxLength: "La dirección no puede exceder los 200 caracteres."
+    }
+  },
+  estado: {
+    required: true,
+    errorMessages: {
+      required: "El estado es obligatorio."
+    }
   }
-
-  if (nombre.trim().length < 2) {
-    return { isValid: false, message: 'El nombre debe tener al menos 2 caracteres' };
-  }
-
-  if (nombre.trim().length > 100) {
-    return { isValid: false, message: 'El nombre no puede exceder los 100 caracteres' };
-  }
-
-  // Solo letras y espacios (sin caracteres especiales ni números)
-  const nombreRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-  if (!nombreRegex.test(nombre.trim())) {
-    return { 
-      isValid: false, 
-      message: 'El nombre solo puede contener letras y espacios. No se permiten números ni caracteres especiales.' 
-    };
-  }
-
-  // Validar unicidad
-  const nombreNormalizado = nombre.trim().toLowerCase();
-  const existeProveedor = proveedoresExistentes.some(prov => 
-    prov.nombre.toLowerCase() === nombreNormalizado && 
-    prov.idProveedor !== idActual
-  );
-
-  if (existeProveedor) {
-    return { 
-      isValid: false, 
-      message: 'Ya existe un proveedor con este nombre' 
-    };
-  }
-
-  return { isValid: true, message: '' };
-};
-
-const validateCelular = (celular) => {
-  if (!celular || celular.trim().length === 0) {
-    return { isValid: false, message: 'El número de celular es obligatorio' };
-  }
-
-  // Solo números, exactamente 10 dígitos
-  const celularRegex = /^\d{10}$/;
-  if (!celularRegex.test(celular.trim())) {
-    return { isValid: false, message: 'El celular debe tener exactamente 10 dígitos numéricos' };
-  }
-
-  // Validar que no empiece con 0 (opcional, dependiendo del país)
-  if (celular.trim().startsWith('0')) {
-    return { isValid: false, message: 'El celular no debe empezar con 0' };
-  }
-
-  return { isValid: true, message: '' };
-};
-
-const validateCorreo = (correo, proveedoresExistentes = [], idActual = null) => {
-  if (!correo || correo.trim().length === 0) {
-    return { isValid: false, message: 'El correo electrónico es obligatorio' };
-  }
-
-  // Validar formato de email
-  const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!correoRegex.test(correo.trim())) {
-    return { isValid: false, message: 'El formato del correo electrónico es inválido' };
-  }
-
-  // Validar longitud máxima
-  if (correo.trim().length > 100) {
-    return { isValid: false, message: 'El correo no puede exceder los 100 caracteres' };
-  }
-
-  // Validar unicidad
-  const correoNormalizado = correo.trim().toLowerCase();
-  const existeCorreo = proveedoresExistentes.some(prov => 
-    prov.correo.toLowerCase() === correoNormalizado && 
-    prov.idProveedor !== idActual
-  );
-
-  if (existeCorreo) {
-    return { 
-      isValid: false, 
-      message: 'Ya existe un proveedor con este correo electrónico' 
-    };
-  }
-
-  return { isValid: true, message: '' };
-};
-
-const validateNumeroDocumento = (numeroDocumento, tipoDocumento, proveedoresExistentes = [], idActual = null) => {
-  if (!numeroDocumento || numeroDocumento.trim().length === 0) {
-    return { isValid: false, message: 'El número de documento es obligatorio' };
-  }
-
-  // Solo números
-  const soloNumerosRegex = /^\d+$/;
-  if (!soloNumerosRegex.test(numeroDocumento.trim())) {
-    return { isValid: false, message: 'El número de documento solo debe contener dígitos' };
-  }
-
-  // Validar longitud según tipo de documento
-  let longitudMinima = 0;
-  let longitudMaxima = 0;
-  
-  switch (tipoDocumento) {
-    case 'Cedula':
-      longitudMinima = 8;
-      longitudMaxima = 10;
-      break;
-    case 'Pasaporte':
-      longitudMinima = 6;
-      longitudMaxima = 20;
-      break;
-    case 'CedulaExtranjeria':
-      longitudMinima = 6;
-      longitudMaxima = 15;
-      break;
-    default:
-      longitudMinima = 6;
-      longitudMaxima = 20;
-  }
-
-  if (numeroDocumento.trim().length < longitudMinima || numeroDocumento.trim().length > longitudMaxima) {
-    return { 
-      isValid: false, 
-      message: `El número de documento debe tener entre ${longitudMinima} y ${longitudMaxima} dígitos para ${tipoDocumento}` 
-    };
-  }
-
-  // Validar unicidad
-  const existeDocumento = proveedoresExistentes.some(prov => 
-    prov.numeroDocumento === numeroDocumento.trim() && 
-    prov.idProveedor !== idActual
-  );
-
-  if (existeDocumento) {
-    return { 
-      isValid: false, 
-      message: 'Ya existe un proveedor con este número de documento' 
-    };
-  }
-
-  return { isValid: true, message: '' };
-};
-
-const validateTexto = (valor, campo, longitudMinima = 2, longitudMaxima = 50) => {
-  if (!valor || valor.trim().length === 0) {
-    return { isValid: false, message: `El ${campo} es obligatorio` };
-  }
-
-  if (valor.trim().length < longitudMinima) {
-    return { isValid: false, message: `El ${campo} debe tener al menos ${longitudMinima} caracteres` };
-  }
-
-  if (valor.trim().length > longitudMaxima) {
-    return { isValid: false, message: `El ${campo} no puede exceder los ${longitudMaxima} caracteres` };
-  }
-
-  // Validar que no contenga caracteres especiales peligrosos
-  const textoRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_&.,()#/°]+$/;
-  if (!textoRegex.test(valor.trim())) {
-    return { 
-      isValid: false, 
-      message: `El ${campo} contiene caracteres no permitidos` 
-    };
-  }
-
-  return { isValid: true, message: '' };
 };
 
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PROVEEDORES = "http://localhost:5204/api/Proveedore";
-const API_PRODUCTOS = "http://localhost:5204/api/Productos";
-
-const ITEMS_PER_PAGE = 5;
+const API_PROVEEDORES = "http://localhost:5018/api/Proveedore";
+const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const ITEMS_PER_PAGE = 10;
 
 // ===============================================
-// COMPONENTE FormField MEJORADO
+// COMPONENTE FormField PARA PROVEEDORES
 // ===============================================
 const FormField = ({ 
   label, 
@@ -422,21 +311,23 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
-  options = [], 
+  options = [],
   style = {}, 
   required = true, 
   disabled = false,
   maxLength,
   placeholder,
   showCharCount = false,
+  touched = false,
   icon
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
-      const placeholderOption = { value: "", label: "Selecciona", disabled: required };
+      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
       return [placeholderOption, ...options];
     }
     return options;
@@ -448,8 +339,9 @@ const FormField = ({
 
     if (name === 'celular' || name === 'numeroDocumento') {
       filteredValue = value.replace(/[^0-9]/g, "");
-    } else if (name === 'nombre' || name === 'departamento' || name === 'ciudad' || name === 'barrio') {
-      // Solo letras, espacios y caracteres básicos
+    } else if (name === 'nombre') {
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    } else if (name === 'departamento' || name === 'ciudad' || name === 'barrio') {
       filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&.,()]/g, "");
     }
     
@@ -460,22 +352,27 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
       paddingLeft: icon ? '40px' : '12px'
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -483,7 +380,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -491,7 +388,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -526,6 +423,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={onChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled}
@@ -545,6 +443,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={{
               ...getInputStyle(),
               minHeight: "80px",
@@ -561,6 +460,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled}
@@ -571,7 +471,7 @@ const FormField = ({
         {showCharCount && maxLength && (
           <div style={{
             fontSize: "0.75rem",
-            color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+            color: value && value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
             textAlign: "right",
             marginTop: "4px"
           }}>
@@ -589,14 +489,15 @@ const FormField = ({
 // ===============================================
 const Admiprovee = () => {
   const [proveedores, setProveedores] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [currentProveedor, setCurrentProveedor] = useState(null);
+  const [selectedProveedor, setSelectedProveedor] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [proveedorToDelete, setProveedorToDelete] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState("success");
@@ -606,6 +507,7 @@ const Admiprovee = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
 
   const [newProveedor, setNewProveedor] = useState({
     nombre: "",
@@ -617,7 +519,7 @@ const Admiprovee = () => {
     direccion: "",
     tipoDocumento: "Cedula",
     numeroDocumento: "",
-    estado: true
+    estado: "true"
   });
 
   // ===============================================
@@ -625,23 +527,20 @@ const Admiprovee = () => {
   // ===============================================
   useEffect(() => {
     fetchProveedores();
+    fetchProductos();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombre', newProveedor.nombre);
-      validateField('celular', newProveedor.celular);
-      validateField('correo', newProveedor.correo);
-      validateField('numeroDocumento', newProveedor.numeroDocumento);
-      validateField('departamento', newProveedor.departamento);
-      validateField('ciudad', newProveedor.ciudad);
-      validateField('barrio', newProveedor.barrio);
-      validateField('direccion', newProveedor.direccion);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newProveedor[fieldName]);
+        }
+      });
     }
-  }, [newProveedor, showForm]);
+  }, [newProveedor, showForm, touchedFields]);
 
-  // Efecto para agregar estilos de animación
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -684,8 +583,6 @@ const Admiprovee = () => {
         return <FaExclamationTriangle style={alertIconStyle} />;
       case "warning":
         return <FaExclamationTriangle style={alertIconStyle} />;
-      case "info":
-        return <FaInfoCircle style={alertIconStyle} />;
       default:
         return <FaInfoCircle style={alertIconStyle} />;
     }
@@ -699,8 +596,6 @@ const Admiprovee = () => {
         return alertErrorStyle;
       case "warning":
         return alertWarningStyle;
-      case "info":
-        return alertInfoStyle;
       default:
         return alertSuccessStyle;
     }
@@ -710,99 +605,70 @@ const Admiprovee = () => {
   // FUNCIONES DE VALIDACIÓN MEJORADAS
   // ===============================================
   const validateField = (fieldName, value) => {
+    const rules = VALIDATION_RULES[fieldName];
+    if (!rules) return true;
+
     let error = "";
     let success = "";
     let warning = "";
 
     const trimmedValue = value ? value.toString().trim() : "";
 
-    switch (fieldName) {
-      case 'nombre':
-        const nombreValidation = validateNombre(trimmedValue, proveedores, isEditing ? newProveedor.idProveedor : null);
-        if (!nombreValidation.isValid) {
-          error = nombreValidation.message;
-        } else if (trimmedValue) {
-          success = "Nombre válido.";
+    if (rules.required && !trimmedValue) {
+      error = rules.errorMessages.required;
+    }
+    else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
+      error = rules.errorMessages.minLength;
+    }
+    else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
+      error = rules.errorMessages.maxLength;
+    }
+    else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
+      error = rules.errorMessages.pattern;
+    }
+    else if (fieldName === 'estado') {
+      success = value === "true" ? "Proveedor activo" : "Proveedor inactivo";
+    }
+    else if (trimmedValue) {
+      success = "Campo válido.";
+    }
+
+    // Verificación de duplicados para campos únicos
+    if ((fieldName === 'nombre' || fieldName === 'correo' || fieldName === 'numeroDocumento') && trimmedValue && !error) {
+      const duplicate = proveedores.find(prov => {
+        if (fieldName === 'nombre') {
+          return prov.nombre.toLowerCase() === trimmedValue.toLowerCase() && 
+                 (!isEditing || prov.idProveedor !== newProveedor.idProveedor);
+        } else if (fieldName === 'correo') {
+          return prov.correo.toLowerCase() === trimmedValue.toLowerCase() && 
+                 (!isEditing || prov.idProveedor !== newProveedor.idProveedor);
+        } else if (fieldName === 'numeroDocumento') {
+          return prov.numeroDocumento === trimmedValue && 
+                 (!isEditing || prov.idProveedor !== newProveedor.idProveedor);
         }
-        break;
-
-      case 'celular':
-        const celularValidation = validateCelular(trimmedValue);
-        if (!celularValidation.isValid) {
-          error = celularValidation.message;
-        } else if (trimmedValue) {
-          success = "Celular válido.";
+        return false;
+      });
+      
+      if (duplicate) {
+        if (fieldName === 'nombre') {
+          error = "Ya existe un proveedor con este nombre.";
+        } else if (fieldName === 'correo') {
+          error = "Ya existe un proveedor con este correo.";
+        } else if (fieldName === 'numeroDocumento') {
+          error = "Ya existe un proveedor con este número de documento.";
         }
-        break;
+      }
+    }
 
-      case 'correo':
-        const correoValidation = validateCorreo(trimmedValue, proveedores, isEditing ? newProveedor.idProveedor : null);
-        if (!correoValidation.isValid) {
-          error = correoValidation.message;
-        } else if (trimmedValue) {
-          success = "Correo válido.";
-        }
-        break;
+    // Advertencias específicas
+    if (fieldName === 'celular' && trimmedValue && !error) {
+      if (trimmedValue.startsWith('0')) {
+        warning = 'El celular no debe empezar con 0';
+      }
+    }
 
-      case 'numeroDocumento':
-        const documentoValidation = validateNumeroDocumento(
-          trimmedValue, 
-          newProveedor.tipoDocumento, 
-          proveedores, 
-          isEditing ? newProveedor.idProveedor : null
-        );
-        if (!documentoValidation.isValid) {
-          error = documentoValidation.message;
-        } else if (trimmedValue) {
-          success = "Documento válido.";
-        }
-        break;
-
-      case 'departamento':
-        const departamentoValidation = validateTexto(trimmedValue, 'departamento');
-        if (!departamentoValidation.isValid) {
-          error = departamentoValidation.message;
-        } else if (trimmedValue) {
-          success = "Departamento válido.";
-        }
-        break;
-
-      case 'ciudad':
-        const ciudadValidation = validateTexto(trimmedValue, 'ciudad');
-        if (!ciudadValidation.isValid) {
-          error = ciudadValidation.message;
-        } else if (trimmedValue) {
-          success = "Ciudad válida.";
-        }
-        break;
-
-      case 'barrio':
-        const barrioValidation = validateTexto(trimmedValue, 'barrio');
-        if (!barrioValidation.isValid) {
-          error = barrioValidation.message;
-        } else if (trimmedValue) {
-          success = "Barrio válido.";
-        }
-        break;
-
-      case 'direccion':
-        const direccionValidation = validateTexto(trimmedValue, 'dirección', 5, 200);
-        if (!direccionValidation.isValid) {
-          error = direccionValidation.message;
-        } else if (trimmedValue) {
-          success = "Dirección válida.";
-          if (trimmedValue.length < 15) {
-            warning = 'Considera agregar más detalles para una mejor ubicación';
-          }
-        }
-        break;
-
-      case 'estado':
-        success = value ? "Proveedor activo" : "Proveedor inactivo";
-        break;
-
-      default:
-        break;
+    if (fieldName === 'direccion' && trimmedValue && !error && trimmedValue.length < 15) {
+      warning = 'Considera agregar más detalles para una mejor ubicación';
     }
 
     setFormErrors(prev => ({ ...prev, [fieldName]: error }));
@@ -813,6 +679,20 @@ const Admiprovee = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombre: true,
+      celular: true,
+      correo: true,
+      numeroDocumento: true,
+      departamento: true,
+      ciudad: true,
+      barrio: true,
+      direccion: true,
+      estado: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombre', newProveedor.nombre);
     const celularValid = validateField('celular', newProveedor.celular);
     const correoValid = validateField('correo', newProveedor.correo);
@@ -821,9 +701,10 @@ const Admiprovee = () => {
     const ciudadValid = validateField('ciudad', newProveedor.ciudad);
     const barrioValid = validateField('barrio', newProveedor.barrio);
     const direccionValid = validateField('direccion', newProveedor.direccion);
+    const estadoValid = validateField('estado', newProveedor.estado);
 
     const isValid = nombreValid && celularValid && correoValid && documentoValid && 
-                   departamentoValid && ciudadValid && barrioValid && direccionValid;
+                   departamentoValid && ciudadValid && barrioValid && direccionValid && estadoValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -838,14 +719,21 @@ const Admiprovee = () => {
     return isValid;
   };
 
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
   // ===============================================
-  // FUNCIONES DE LA API MEJORADAS
+  // FUNCIONES DE LA API
   // ===============================================
   const fetchProveedores = async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("🔍 Conectando a la API de proveedores:", API_PROVEEDORES);
       const res = await axios.get(API_PROVEEDORES, {
         timeout: 10000,
         headers: {
@@ -853,8 +741,6 @@ const Admiprovee = () => {
           'Content-Type': 'application/json'
         }
       });
-      
-      console.log("✅ Datos de proveedores recibidos:", res.data);
       
       if (Array.isArray(res.data)) {
         setProveedores(res.data);
@@ -866,6 +752,17 @@ const Admiprovee = () => {
       handleApiError(error, "cargar los proveedores");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
     }
   };
 
@@ -886,13 +783,22 @@ const Admiprovee = () => {
     
     try {
       const proveedorData = {
-        ...newProveedor,
-        estado: newProveedor.estado === "true" || newProveedor.estado === true
+        nombre: newProveedor.nombre.trim(),
+        celular: newProveedor.celular.trim(),
+        correo: newProveedor.correo.trim(),
+        departamento: newProveedor.departamento.trim(),
+        ciudad: newProveedor.ciudad.trim(),
+        barrio: newProveedor.barrio.trim(),
+        direccion: newProveedor.direccion.trim(),
+        tipoDocumento: newProveedor.tipoDocumento,
+        numeroDocumento: newProveedor.numeroDocumento.trim(),
+        estado: newProveedor.estado === "true"
       };
 
       console.log("📤 Enviando datos:", proveedorData);
 
       if (isEditing) {
+        proveedorData.idProveedor = newProveedor.idProveedor;
         await axios.put(`${API_PROVEEDORES}/${newProveedor.idProveedor}`, proveedorData, {
           headers: { 'Content-Type': 'application/json' }
         });
@@ -908,13 +814,7 @@ const Admiprovee = () => {
       closeForm();
     } catch (error) {
       console.error("❌ Error al guardar proveedor:", error);
-      
-      // Manejar errores específicos de la API
-      if (error.response && error.response.status === 409) {
-        displayAlert("Ya existe un proveedor con estos datos (nombre, correo o documento)", "error");
-      } else {
-        handleApiError(error, isEditing ? "actualizar el proveedor" : "agregar el proveedor");
-      }
+      handleApiError(error, isEditing ? "actualizar el proveedor" : "agregar el proveedor");
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -940,7 +840,7 @@ const Admiprovee = () => {
         console.error("❌ Error al eliminar proveedor:", error);
         
         if (error.response && error.response.status === 409) {
-          displayAlert("No se puede eliminar el proveedor porque tiene productos asociados", "error");
+          displayAlert("No se puede eliminar el proveedor porque tiene productos asociados.", "error");
         } else {
           handleApiError(error, "eliminar el proveedor");
         }
@@ -962,14 +862,14 @@ const Admiprovee = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
       } else if (error.response.status === 404) {
         errorMessage = "Recurso no encontrado.";
       } else if (error.response.status === 409) {
-        errorMessage = "Conflicto: El proveedor ya existe o tiene productos asociados.";
+        errorMessage = "Conflicto: El proveedor está siendo utilizado y no puede ser eliminado.";
         alertType = "warning";
       } else if (error.response.status === 500) {
         errorMessage = "Error interno del servidor.";
@@ -994,12 +894,11 @@ const Admiprovee = () => {
     }));
   };
 
-  // Función para cambiar el estado con el botón toggle
-  const toggleEstado = () => {
-    setNewProveedor(prev => ({
-      ...prev,
-      estado: !prev.estado
-    }));
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newProveedor[name]);
   };
 
   const closeForm = () => {
@@ -1008,6 +907,7 @@ const Admiprovee = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setNewProveedor({
       nombre: "",
       celular: "",
@@ -1018,13 +918,13 @@ const Admiprovee = () => {
       direccion: "",
       tipoDocumento: "Cedula",
       numeroDocumento: "",
-      estado: true
+      estado: "true"
     });
   };
 
   const closeDetailsModal = () => {
     setShowDetails(false);
-    setCurrentProveedor(null);
+    setSelectedProveedor(null);
   };
 
   const cancelDelete = () => {
@@ -1035,7 +935,10 @@ const Admiprovee = () => {
   const toggleEstadoProveedor = async (proveedor) => {
     setLoading(true);
     try {
-      const updatedProveedor = { ...proveedor, estado: !proveedor.estado };
+      const updatedProveedor = { 
+        ...proveedor, 
+        estado: !proveedor.estado 
+      };
       await axios.put(`${API_PROVEEDORES}/${proveedor.idProveedor}`, updatedProveedor, {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -1052,52 +955,48 @@ const Admiprovee = () => {
   // Función mejorada para verificar si un proveedor tiene productos asociados
   const checkIfProveedorHasProducts = async (proveedorId) => {
     try {
-      // Buscar productos que pertenezcan a este proveedor
-      const response = await axios.get(`${API_PRODUCTOS}/proveedor/${proveedorId}`, {
-        timeout: 5000
-      });
-      
-      return response.data && Array.isArray(response.data) && response.data.length > 0;
+      const productosEnProveedor = productos.filter(producto => 
+        producto.idProveedor === proveedorId
+      );
+      return productosEnProveedor.length > 0;
     } catch (error) {
       console.error("Error al verificar productos:", error);
-      
-      // Si no se puede verificar, asumir que podría tener productos por seguridad
-      if (error.response && error.response.status === 404) {
-        // Si el endpoint no existe, usar un enfoque alternativo
-        return proveedores.find(prov => prov.idProveedor === proveedorId)?.productosCount > 0;
-      }
-      
       return true; // Por seguridad, asumir que tiene productos si hay error
     }
   };
 
+  // Función para contar productos por proveedor
+  const contarProductosPorProveedor = (proveedorId) => {
+    return productos.filter(producto => producto.idProveedor === proveedorId).length;
+  };
+
   const handleView = (proveedor) => {
-    setCurrentProveedor(proveedor);
+    setSelectedProveedor(proveedor);
     setShowDetails(true);
   };
 
   const handleEdit = (proveedor) => {
     setNewProveedor({
       ...proveedor,
-      estado: proveedor.estado
+      estado: proveedor.estado.toString()
     });
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (proveedor) => {
     // Validar si el proveedor tiene productos asociados antes de eliminar
-    checkIfProveedorHasProducts(proveedor.idProveedor).then(hasProducts => {
-      if (hasProducts) {
-        displayAlert("No se puede eliminar un proveedor que tiene productos asociados", "error");
-        return;
-      }
-      setProveedorToDelete(proveedor);
-      setShowDeleteConfirm(true);
-    });
+    const hasProducts = contarProductosPorProveedor(proveedor.idProveedor) > 0;
+    if (hasProducts) {
+      displayAlert("No se puede eliminar un proveedor que tiene productos asociados", "error");
+      return;
+    }
+    setProveedorToDelete(proveedor);
+    setShowDeleteConfirm(true);
   };
 
   // ===============================================
@@ -1224,30 +1123,11 @@ const Admiprovee = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Proveedores</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {proveedores.length} proveedores registrados • 
-            {proveedores.filter(p => p.estado).length} activos
+            {proveedores.length} proveedores registrados • {proveedores.filter(p => p.estado).length} activos
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button
-            onClick={fetchProveedores}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 12px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-            title="Recargar proveedores"
-          >
-            <FaSync />
-          </button>
+        
           <button
             onClick={() => {
               setShowForm(true);
@@ -1255,6 +1135,7 @@ const Admiprovee = () => {
               setFormErrors({});
               setFormSuccess({});
               setFormWarnings({});
+              setTouchedFields({});
               setNewProveedor({
                 nombre: "",
                 celular: "",
@@ -1265,7 +1146,7 @@ const Admiprovee = () => {
                 direccion: "",
                 tipoDocumento: "Cedula",
                 numeroDocumento: "",
-                estado: true
+                estado: "true"
               });
             }}
             style={{
@@ -1296,9 +1177,79 @@ const Admiprovee = () => {
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      {/* Estadísticas - IGUAL QUE MARCAS */}
+      {!loading && proveedores.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {proveedores.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Proveedores
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {proveedores.filter(p => p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Proveedores Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {proveedores.filter(p => !p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Proveedores Inactivos
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {new Set(proveedores.map(p => p.ciudad)).size}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Ciudades
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda - SIMPLIFICADA */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1319,9 +1270,6 @@ const Admiprovee = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredProveedores.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
@@ -1329,7 +1277,7 @@ const Admiprovee = () => {
         <div style={modalOverlayStyle}>
           <div style={{ ...modalContentStyle, maxWidth: 700 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>
                 {isEditing ? "Editar Proveedor" : "Nuevo Proveedor"}
               </h2>
               <button
@@ -1354,15 +1302,17 @@ const Admiprovee = () => {
                   name="nombre"
                   value={newProveedor.nombre}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.nombre}
                   success={formSuccess.nombre}
                   warning={formWarnings.nombre}
                   style={{ gridColumn: '1 / -1' }}
                   required={true}
                   disabled={loading}
-                  maxLength={100}
+                  maxLength={VALIDATION_RULES.nombre.maxLength}
                   showCharCount={true}
-                  placeholder="Ingresa el nombre completo del proveedor..."
+                  placeholder="Ej: Distribuidora ABC, Importaciones XYZ..."
+                  touched={touchedFields.nombre}
                   icon={<FaBuilding />}
                 />
 
@@ -1372,11 +1322,13 @@ const Admiprovee = () => {
                   type="select"
                   value={newProveedor.tipoDocumento}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.tipoDocumento}
                   success={formSuccess.tipoDocumento}
                   options={tipoDocumentoOptions}
                   required={true}
                   disabled={loading}
+                  touched={touchedFields.tipoDocumento}
                   icon={<FaIdCard />}
                 />
 
@@ -1385,6 +1337,7 @@ const Admiprovee = () => {
                   name="numeroDocumento"
                   value={newProveedor.numeroDocumento}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.numeroDocumento}
                   success={formSuccess.numeroDocumento}
                   warning={formWarnings.numeroDocumento}
@@ -1392,6 +1345,7 @@ const Admiprovee = () => {
                   disabled={loading || isEditing}
                   maxLength={20}
                   placeholder="Solo números"
+                  touched={touchedFields.numeroDocumento}
                   icon={<FaIdCard />}
                 />
 
@@ -1401,6 +1355,7 @@ const Admiprovee = () => {
                   type="tel"
                   value={newProveedor.celular}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.celular}
                   success={formSuccess.celular}
                   warning={formWarnings.celular}
@@ -1408,6 +1363,7 @@ const Admiprovee = () => {
                   disabled={loading}
                   maxLength={10}
                   placeholder="10 dígitos"
+                  touched={touchedFields.celular}
                   icon={<FaPhone />}
                 />
 
@@ -1417,6 +1373,7 @@ const Admiprovee = () => {
                   type="email"
                   value={newProveedor.correo}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.correo}
                   success={formSuccess.correo}
                   warning={formWarnings.correo}
@@ -1425,6 +1382,7 @@ const Admiprovee = () => {
                   disabled={loading}
                   maxLength={100}
                   placeholder="ejemplo@correo.com"
+                  touched={touchedFields.correo}
                   icon={<FaEnvelope />}
                 />
 
@@ -1434,12 +1392,14 @@ const Admiprovee = () => {
                   type="select"
                   value={newProveedor.departamento}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.departamento}
                   success={formSuccess.departamento}
                   warning={formWarnings.departamento}
                   options={departamentoOptions}
                   required={true}
                   disabled={loading}
+                  touched={touchedFields.departamento}
                   icon={<FaMapMarkerAlt />}
                 />
 
@@ -1448,6 +1408,7 @@ const Admiprovee = () => {
                   name="ciudad"
                   value={newProveedor.ciudad}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.ciudad}
                   success={formSuccess.ciudad}
                   warning={formWarnings.ciudad}
@@ -1455,6 +1416,7 @@ const Admiprovee = () => {
                   disabled={loading}
                   maxLength={50}
                   placeholder="Nombre de la ciudad"
+                  touched={touchedFields.ciudad}
                   icon={<FaMapMarkerAlt />}
                 />
 
@@ -1463,6 +1425,7 @@ const Admiprovee = () => {
                   name="barrio"
                   value={newProveedor.barrio}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.barrio}
                   success={formSuccess.barrio}
                   warning={formWarnings.barrio}
@@ -1470,6 +1433,7 @@ const Admiprovee = () => {
                   disabled={loading}
                   maxLength={50}
                   placeholder="Nombre del barrio"
+                  touched={touchedFields.barrio}
                   icon={<FaMapMarkerAlt />}
                 />
 
@@ -1479,6 +1443,7 @@ const Admiprovee = () => {
                   type="textarea"
                   value={newProveedor.direccion}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.direccion}
                   success={formSuccess.direccion}
                   warning={formWarnings.direccion}
@@ -1488,133 +1453,37 @@ const Admiprovee = () => {
                   maxLength={200}
                   showCharCount={true}
                   placeholder="Ingresa la dirección completa con puntos de referencia..."
+                  touched={touchedFields.direccion}
                   icon={<FaMapMarkerAlt />}
                 />
 
-                {/* Botón Toggle para Estado - oculto en modo edición */}
-                {!isEditing && (
-                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
-                    <label style={labelStyle}>
-                      Estado del Proveedor
-                      <span style={{ color: "red" }}>*</span>
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <button
-                        type="button"
-                        onClick={toggleEstado}
-                        style={toggleButtonStyle(newProveedor.estado)}
-                        disabled={loading}
-                      >
-                        {newProveedor.estado ? (
-                          <>
-                            <FaCheck size={16} />
-                            <span>🟢 Activo</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaTimes size={16} />
-                            <span>🔴 Inactivo</span>
-                          </>
-                        )}
-                      </button>
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newProveedor.estado ? '#4caf50' : '#e57373',
-                        fontWeight: '500'
-                      }}>
-                        {newProveedor.estado 
-                          ? 'El proveedor está activo y disponible para operaciones' 
-                          : 'El proveedor está inactivo y no disponible para operaciones'
-                        }
-                      </span>
-                    </div>
-                    {formErrors.estado && (
-                      <div style={errorValidationStyle}>
-                        <FaExclamationTriangle size={12} />
-                        {formErrors.estado}
-                      </div>
-                    )}
-                    {formSuccess.estado && (
-                      <div style={successValidationStyle}>
-                        <FaCheck size={12} />
-                        {formSuccess.estado}
-                      </div>
-                    )}
-                  </div>
-                )}
-
+                
               </div>
-
-              {/* Resumen del proveedor */}
-              {(newProveedor.nombre || newProveedor.celular || newProveedor.correo) && (
-                <div style={{
-                  backgroundColor: '#E8F5E8',
-                  border: '1px solid #679750',
-                  borderRadius: '8px',
-                  padding: '15px',
-                  marginBottom: '20px'
-                }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen del Proveedor</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
-                    {newProveedor.nombre && (
-                      <>
-                        <div>Nombre:</div>
-                        <div style={{ textAlign: 'right', fontWeight: 'bold' }}>{newProveedor.nombre}</div>
-                      </>
-                    )}
-                    {newProveedor.celular && (
-                      <>
-                        <div>Celular:</div>
-                        <div style={{ textAlign: 'right', fontWeight: 'bold' }}>{newProveedor.celular}</div>
-                      </>
-                    )}
-                    {newProveedor.correo && (
-                      <>
-                        <div>Correo:</div>
-                        <div style={{ textAlign: 'right', fontWeight: 'bold' }}>{newProveedor.correo}</div>
-                      </>
-                    )}
-                    
-                    <div style={{ borderTop: '1px solid #ccc', paddingTop: '5px' }}>
-                      <strong>Estado:</strong>
-                    </div>
-                    <div style={{ 
-                      textAlign: 'right', 
-                      fontWeight: 'bold', 
-                      color: newProveedor.estado ? '#4caf50' : '#e57373', 
-                      borderTop: '1px solid #ccc', 
-                      paddingTop: '5px' 
-                    }}>
-                      {newProveedor.estado ? '🟢 Activo' : '🔴 Inactivo'}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
                   type="submit"
-                  disabled={loading || isSubmitting || Object.keys(formErrors).length > 0}
+                  disabled={loading || isSubmitting}
                   style={{
-                    backgroundColor: (loading || isSubmitting || Object.keys(formErrors).length > 0) ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
                     color: "#fff",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || isSubmitting || Object.keys(formErrors).length > 0) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
                   }}
                   onMouseOver={(e) => {
-                    if (!loading && !isSubmitting && Object.keys(formErrors).length === 0) {
+                    if (!loading && !isSubmitting) {
                       e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
                       e.target.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (!loading && !isSubmitting && Object.keys(formErrors).length === 0) {
+                    if (!loading && !isSubmitting) {
                       e.target.style.background = "#2E5939";
                       e.target.style.transform = "translateY(0)";
                     }
@@ -1647,9 +1516,9 @@ const Admiprovee = () => {
       )}
 
       {/* Modal de detalles */}
-      {showDetails && currentProveedor && (
+      {showDetails && selectedProveedor && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Proveedor</h2>
               <button
@@ -1669,15 +1538,15 @@ const Admiprovee = () => {
             <div>
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>ID</div>
-                <div style={detailValueStyle}>#{currentProveedor.idProveedor}</div>
+                <div style={detailValueStyle}>#{selectedProveedor.idProveedor}</div>
               </div>
               
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Nombre del Proveedor</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaBuilding color="#679750" />
-                    {currentProveedor.nombre}
+                    {selectedProveedor.nombre}
                   </div>
                 </div>
               </div>
@@ -1685,24 +1554,24 @@ const Admiprovee = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Tipo de Documento</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaIdCard color="#679750" />
-                    {currentProveedor.tipoDocumento}
+                    {selectedProveedor.tipoDocumento}
                   </div>
                 </div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Número de Documento</div>
-                <div style={detailValueStyle}>{currentProveedor.numeroDocumento}</div>
+                <div style={detailValueStyle}>{selectedProveedor.numeroDocumento}</div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Celular</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaPhone color="#679750" />
-                    {currentProveedor.celular}
+                    {selectedProveedor.celular}
                   </div>
                 </div>
               </div>
@@ -1710,48 +1579,82 @@ const Admiprovee = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Correo Electrónico</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaEnvelope color="#679750" />
-                    {currentProveedor.correo}
+                    {selectedProveedor.correo}
                   </div>
                 </div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Departamento</div>
-                <div style={detailValueStyle}>{currentProveedor.departamento}</div>
+                <div style={detailValueStyle}>{selectedProveedor.departamento}</div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Ciudad</div>
-                <div style={detailValueStyle}>{currentProveedor.ciudad}</div>
+                <div style={detailValueStyle}>{selectedProveedor.ciudad}</div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Barrio</div>
-                <div style={detailValueStyle}>{currentProveedor.barrio}</div>
+                <div style={detailValueStyle}>{selectedProveedor.barrio}</div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Dirección</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaMapMarkerAlt color="#679750" />
-                    {currentProveedor.direccion}
+                    {selectedProveedor.direccion}
                   </div>
                 </div>
               </div>
 
               <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Productos Asociados</div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    backgroundColor: '#E8F5E8',
+                    color: '#2E5939',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {contarProductosPorProveedor(selectedProveedor.idProveedor)} productos
+                  </span>
+                </div>
+              </div>
+              
+              <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
                   ...detailValueStyle,
-                  color: currentProveedor.estado ? '#4caf50' : '#e57373',
+                  color: selectedProveedor.estado ? '#4caf50' : '#e57373',
                   fontWeight: 'bold'
                 }}>
-                  {currentProveedor.estado ? '🟢 Activo' : '🔴 Inactivo'}
+                  {selectedProveedor.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
+
+              {/* Información sobre productos */}
+              {contarProductosPorProveedor(selectedProveedor.idProveedor) > 0 && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>Información Importante</div>
+                  <div style={{
+                    ...detailValueStyle,
+                    color: '#ff9800',
+                    fontSize: '14px',
+                    backgroundColor: '#fff3cd',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ffeaa7'
+                  }}>
+                    ⚠️ Este proveedor tiene productos asociados. No se puede eliminar mientras tenga productos.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1777,43 +1680,41 @@ const Admiprovee = () => {
       {/* Modal de Confirmación de Eliminación */}
       {showDeleteConfirm && proveedorToDelete && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
-            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
-            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
-              ¿Estás seguro de eliminar al proveedor "<strong>{proveedorToDelete.nombre}</strong>"?
+          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 12, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 18, fontSize: '1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar de forma permanente al proveedor "<strong>{proveedorToDelete.nombre}</strong>"? Esta acción no se puede deshacer.
             </p>
-            
-            {/* Advertencia sobre valor */}
+
             <div style={{ 
-              backgroundColor: '#fff3cd', 
-              border: '1px solid #ffeaa7',
+              backgroundColor: '#ffecec', 
+              border: '1px solid #e57373',
               borderRadius: '8px',
-              padding: '15px',
-              marginBottom: '20px'
+              padding: '12px 15px',
+              marginBottom: '18px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <FaInfoCircle style={{ color: '#856404' }} />
-                <strong style={{ color: '#856404' }}>Proveedor a eliminar</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <FaInfoCircle style={{ color: '#e57373' }} />
+                <strong style={{ color: '#2E5939' }}>Atención</strong>
               </div>
-              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Documento: {proveedorToDelete.tipoDocumento} {proveedorToDelete.numeroDocumento} | 
-                Estado: {proveedorToDelete.estado ? 'Activo' : 'Inactivo'}
+              <p style={{ color: '#2E5939', margin: 0, fontSize: '0.9rem' }}>
+                Si el proveedor está asociado a productos, la eliminación será rechazada por el servidor y se mostrará el motivo.
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
                 style={{
-                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  backgroundColor: loading ? "#ccc" : "#e53935",
                   color: "white",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  fontWeight: "700",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                 }}
               >
                 {loading ? "Eliminando..." : "Sí, Eliminar"}
@@ -1824,23 +1725,11 @@ const Admiprovee = () => {
                 style={{
                   backgroundColor: loading ? "#ccc" : "#2E5939",
                   color: "#fff",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "#2E5939";
-                  }
                 }}
               >
                 Cancelar
@@ -1883,7 +1772,8 @@ const Admiprovee = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Proveedor</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Contacto</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Celular</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Ciudad</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Ubicación</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Productos</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1891,101 +1781,114 @@ const Admiprovee = () => {
             <tbody>
               {paginatedProveedores.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                      <FaInfoCircle size={30} color="#679750" />
-                      {proveedores.length === 0 ? "No hay proveedores registrados" : "No se encontraron resultados"}
-                      {proveedores.length === 0 && (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          style={{
-                            backgroundColor: "#2E5939",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: "600",
-                            marginTop: '10px'
-                          }}
-                        >
-                          <FaPlus style={{ marginRight: '5px' }} />
-                          Agregar Primer Proveedor
-                        </button>
-                      )}
-                    </div>
+                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    {proveedores.length === 0 ? "No hay proveedores registrados" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
-                paginatedProveedores.map((proveedor) => (
-                  <tr key={proveedor.idProveedor} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaBuilding color="#679750" />
-                        {proveedor.nombre}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaEnvelope color="#679750" size={12} />
-                        {proveedor.correo}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                        <FaPhone color="#679750" size={12} />
-                        {proveedor.celular}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                        <FaMapMarkerAlt color="#679750" size={12} />
-                        {proveedor.ciudad}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstadoProveedor(proveedor)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: proveedor.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px"
-                        }}
-                      >
-                        {proveedor.estado ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(proveedor)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(proveedor)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(proveedor)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                paginatedProveedores.map((proveedor) => {
+                  const productosCount = contarProductosPorProveedor(proveedor.idProveedor);
+                  return (
+                    <tr key={proveedor.idProveedor} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <FaBuilding color="#679750" />
+                          {proveedor.nombre}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FaEnvelope color="#679750" size={12} />
+                          {proveedor.correo}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                          <FaPhone color="#679750" size={12} />
+                          {proveedor.celular}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                          <FaMapMarkerAlt color="#679750" size={12} />
+                          {proveedor.ciudad}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <span style={{ 
+                          backgroundColor: productosCount > 0 ? '#E8F5E8' : '#F7F4EA',
+                          color: productosCount > 0 ? '#2E5939' : '#666',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>
+                          {productosCount} productos
+                        </span>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => toggleEstadoProveedor(proveedor)}
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: proveedor.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
+                          }}
+                        >
+                          {proveedor.estado ? "Activo" : "Inactivo"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                          <button
+                            onClick={() => handleView(proveedor)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(proveedor)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(proveedor); }}
+                            style={{
+                              ...btnAccion("#fbe9e7", "#e57373"),
+                              opacity: productosCount > 0 ? 0.5 : 1,
+                              cursor: productosCount > 0 ? "not-allowed" : "pointer"
+                            }}
+                            title={productosCount > 0 ? "No se puede eliminar - Tiene productos asociados" : "Eliminar"}
+                            disabled={productosCount > 0}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1994,7 +1897,7 @@ const Admiprovee = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -2002,18 +1905,33 @@ const Admiprovee = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -2021,75 +1939,14 @@ const Admiprovee = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && proveedores.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {proveedores.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Proveedores
-            </div>
-          </div>
           
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {proveedores.filter(p => p.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Proveedores Activos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {proveedores.filter(p => p.tipoDocumento === 'Cedula').length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Con Cédula
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {new Set(proveedores.map(p => p.ciudad)).size}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Ciudades
-            </div>
+            Página {currentPage} de {totalPages}
           </div>
         </div>
       )}

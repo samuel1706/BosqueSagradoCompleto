@@ -246,7 +246,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_TIPO_CABANA = "http://localhost:5204/api/TipoCabana";
+const API_TIPO_CABANA = "http://localhost:5018/api/TipoCabana";
 const ITEMS_PER_PAGE = 10;
 
 // ===============================================
@@ -267,7 +267,8 @@ const FormField = ({
   disabled = false,
   maxLength,
   placeholder,
-  showCharCount = false
+  showCharCount = false,
+  touched = false // Nuevo prop para controlar si el campo ha sido tocado
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
@@ -296,21 +297,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -318,7 +324,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -326,7 +332,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -421,7 +427,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL TipoCabana CORREGIDO
+// COMPONENTE PRINCIPAL TipoCabana CON DISTRIBUCIÓN MEJORADA
 // ===============================================
 const TipoCabana = () => {
   const [tiposCabana, setTiposCabana] = useState([]);
@@ -442,6 +448,7 @@ const TipoCabana = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({}); // Nuevo estado para campos tocados
 
   const [newTipoCabana, setNewTipoCabana] = useState({
     nombreTipoCabana: "",
@@ -456,13 +463,16 @@ const TipoCabana = () => {
     fetchTiposCabana();
   }, []);
 
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombreTipoCabana', newTipoCabana.nombreTipoCabana);
-      validateField('descripcion', newTipoCabana.descripcion);
-      validateField('estado', newTipoCabana.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newTipoCabana[fieldName]);
+        }
+      });
     }
-  }, [newTipoCabana, showForm]);
+  }, [newTipoCabana, showForm, touchedFields]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -582,6 +592,14 @@ const TipoCabana = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombreTipoCabana: true,
+      descripcion: true,
+      estado: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombreTipoCabana', newTipoCabana.nombreTipoCabana);
     const descripcionValid = validateField('descripcion', newTipoCabana.descripcion);
     const estadoValid = validateField('estado', newTipoCabana.estado);
@@ -601,20 +619,17 @@ const TipoCabana = () => {
     return isValid;
   };
 
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
   // ===============================================
   // FUNCIONES DE LA API CORREGIDAS
   // ===============================================
-  const checkApiAvailability = async () => {
-    try {
-      const response = await axios.get(API_TIPO_CABANA, { timeout: 5000 });
-      console.log("✅ API disponible:", response.status);
-      return true;
-    } catch (error) {
-      console.error("❌ API no disponible:", error.message);
-      return false;
-    }
-  };
-
   const fetchTiposCabana = async () => {
     setLoading(true);
     setError(null);
@@ -774,9 +789,9 @@ const TipoCabana = () => {
 
     if (axios.isAxiosError(error)) {
       if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-        errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en http://localhost:5204";
+        errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en http://localhost:5018";
       } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = "No se puede conectar al servidor. Verifica que esté ejecutándose en el puerto 5204";
+        errorMessage = "No se puede conectar al servidor. Verifica que esté ejecutándose en el puerto 5018";
       } else if (error.response) {
         // El servidor respondió con un código de error
         const status = error.response.status;
@@ -822,6 +837,13 @@ const TipoCabana = () => {
     }));
   };
 
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newTipoCabana[name]);
+  };
+
   const toggleEstado = async (tipoCabana) => {
     setLoading(true);
     try {
@@ -862,6 +884,7 @@ const TipoCabana = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({}); // Limpiar campos tocados al cerrar
     setNewTipoCabana({
       nombreTipoCabana: "",
       descripcion: "",
@@ -894,6 +917,7 @@ const TipoCabana = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({}); // Limpiar campos tocados al editar
   };
 
   const handleDeleteClick = (tipoCabana) => {
@@ -1032,6 +1056,7 @@ const TipoCabana = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
+            setTouchedFields({}); // Limpiar campos tocados al abrir
             setNewTipoCabana({
               nombreTipoCabana: "",
               descripcion: "",
@@ -1065,9 +1090,64 @@ const TipoCabana = () => {
         </button>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+      {/* Estadísticas - COLOCADAS ENTRE EL HEADER Y LA BARRA DE BÚSQUEDA */}
+      {!loading && tiposCabana.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {tiposCabana.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Tipos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {tiposCabana.filter(t => t.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Tipos Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {tiposCabana.filter(t => !t.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Tipos Inactivos
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda - SIMPLIFICADA */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1087,9 +1167,6 @@ const TipoCabana = () => {
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             }}
           />
-        </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredTiposCabana.length} resultados
         </div>
       </div>
 
@@ -1122,6 +1199,7 @@ const TipoCabana = () => {
                 name="nombreTipoCabana"
                 value={newTipoCabana.nombreTipoCabana}
                 onChange={handleChange}
+                onBlur={handleInputBlur} // Nuevo evento onBlur
                 error={formErrors.nombreTipoCabana}
                 success={formSuccess.nombreTipoCabana}
                 warning={formWarnings.nombreTipoCabana}
@@ -1130,6 +1208,7 @@ const TipoCabana = () => {
                 maxLength={VALIDATION_RULES.nombreTipoCabana.maxLength}
                 showCharCount={true}
                 placeholder="Ej: Lujo, Familiar, Económica, Premium..."
+                touched={touchedFields.nombreTipoCabana} // Pasar estado de tocado
               />
 
               <FormField
@@ -1138,6 +1217,7 @@ const TipoCabana = () => {
                 type="textarea"
                 value={newTipoCabana.descripcion}
                 onChange={handleChange}
+                onBlur={handleInputBlur} // Nuevo evento onBlur
                 error={formErrors.descripcion}
                 success={formSuccess.descripcion}
                 warning={formWarnings.descripcion}
@@ -1146,24 +1226,10 @@ const TipoCabana = () => {
                 maxLength={VALIDATION_RULES.descripcion.maxLength}
                 showCharCount={true}
                 placeholder="Descripción detallada del tipo de cabaña, características principales..."
+                touched={touchedFields.descripcion} // Pasar estado de tocado
               />
 
-              <FormField
-                label="Estado"
-                name="estado"
-                type="select"
-                value={newTipoCabana.estado}
-                onChange={handleChange}
-                error={formErrors.estado}
-                success={formSuccess.estado}
-                warning={formWarnings.estado}
-                options={[
-                  { value: "true", label: "🟢 Activo" },
-                  { value: "false", label: "🔴 Inactivo" }
-                ]}
-                required={true}
-                disabled={loading}
-              />
+              
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
@@ -1528,61 +1594,6 @@ const TipoCabana = () => {
             fontWeight: '500'
           }}>
             Página {currentPage} de {totalPages}
-          </div>
-        </div>
-      )}
-
-      {/* Estadísticas rápidas */}
-      {!loading && tiposCabana.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {tiposCabana.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Tipos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {tiposCabana.filter(t => t.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Tipos Activos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {tiposCabana.filter(t => !t.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Tipos Inactivos
-            </div>
           </div>
         </div>
       )}

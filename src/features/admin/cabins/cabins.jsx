@@ -1,10 +1,10 @@
 // src/components/Cabins.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaChair, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaUsers } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaChair, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaUsers, FaDollarSign } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS PARA ALERTAS
+// ESTILOS MEJORADOS (CONSISTENTES)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -49,6 +49,14 @@ const inputErrorStyle = {
   backgroundColor: "#fdf2f2",
 };
 
+const yellowBlockedInputStyle = {
+  ...inputStyle,
+  backgroundColor: "#fffde7",
+  color: "#bfa100",
+  cursor: "not-allowed",
+  border: "1.5px solid #ffe082"
+};
+
 const navBtnStyle = (disabled) => ({
   cursor: disabled ? "not-allowed" : "pointer",
   padding: "8px 12px",
@@ -89,7 +97,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 600,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -175,14 +183,12 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5,
-  fontSize: "14px"
+  marginBottom: 5
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939",
-  fontWeight: "500"
+  color: "#2E5939"
 };
 
 const comodidadTagStyle = {
@@ -289,10 +295,45 @@ const galleryImageStyle = {
 };
 
 // ===============================================
+// ESTILOS PARA FILTROS
+// ===============================================
+const filterContainerStyle = {
+  backgroundColor: '#fff',
+  padding: '20px',
+  borderRadius: '10px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  marginBottom: '20px',
+  border: '1px solid #E8F5E8'
+};
+
+const filterGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  gap: '15px',
+  alignItems: 'end'
+};
+
+const filterButtonStyle = {
+  backgroundColor: '#2E5939',
+  color: 'white',
+  padding: '10px 15px',
+  border: 'none',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  fontWeight: '600',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  transition: 'all 0.3s ease'
+};
+
+// ===============================================
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
   nombre: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+  descripcion: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s.,!?()-]+$/,
+  precio: /^\d+(\.\d{1,2})?$/
 };
 
 const VALIDATION_RULES = {
@@ -306,6 +347,31 @@ const VALIDATION_RULES = {
       minLength: "El nombre debe tener al menos 2 caracteres.",
       maxLength: "El nombre no puede exceder los 50 caracteres.",
       pattern: "El nombre solo puede contener letras y espacios."
+    }
+  },
+  descripcion: {
+    minLength: 10,
+    maxLength: 500,
+    required: true,
+    pattern: VALIDATION_PATTERNS.descripcion,
+    errorMessages: {
+      required: "La descripción es obligatoria.",
+      minLength: "La descripción debe tener al menos 10 caracteres.",
+      maxLength: "La descripción no puede exceder los 500 caracteres.",
+      pattern: "La descripción contiene caracteres no válidos."
+    }
+  },
+  precio: {
+    min: 0,
+    max: 10000,
+    required: true,
+    pattern: VALIDATION_PATTERNS.precio,
+    errorMessages: {
+      required: "El precio es obligatorio.",
+      min: "El precio no puede ser negativo.",
+      max: "El precio no puede exceder $10,000.",
+      pattern: "El precio debe ser un número válido (ej: 150.00)",
+      invalid: "El precio debe ser un número válido."
     }
   },
   idTipoCabana: {
@@ -342,19 +408,19 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_CABANAS = "http://localhost:5204/api/Cabana";
-const API_SEDES = "http://localhost:5204/api/Sede";
-const API_TEMPORADAS = "http://localhost:5204/api/Temporada";
-const API_TIPOS_CABANA = "http://localhost:5204/api/TipoCabana";
-const API_COMODIDADES = "http://localhost:5204/api/Comodidades";
-const API_CABANA_COMODIDADES = "http://localhost:5204/api/CabanaPorComodidades";
-const API_RESERVAS = "http://localhost:5204/api/Reserva";
-const API_IMAGENES = "http://localhost:5204/api/ImgCabana";
+const API_CABANAS = "http://localhost:5018/api/Cabanas";
+const API_SEDES = "http://localhost:5018/api/Sede";
+const API_TEMPORADAS = "http://localhost:5018/api/Temporada";
+const API_TIPOS_CABANA = "http://localhost:5018/api/TipoCabana";
+const API_COMODIDADES = "http://localhost:5018/api/Comodidades";
+const API_CABANA_COMODIDADES = "http://localhost:5018/api/CabanaPorComodidades";
+const API_RESERVAS = "http://localhost:5018/api/Reserva";
+const API_IMAGENES = "http://localhost:5018/api/ImgCabana";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField PARA CABAÑAS
+// COMPONENTE FormField MEJORADO
 // ===============================================
 const FormField = ({ 
   label, 
@@ -362,6 +428,7 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
@@ -374,15 +441,18 @@ const FormField = ({
   showCharCount = false,
   min,
   max,
-  step
+  step,
+  touched = false,
+  textarea = false,
+  rows = 4
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
-      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
+      const placeholderOption = { value: "", label: placeholder || "Seleccionar", disabled: required };
       return [placeholderOption, ...options];
     }
     return options;
-  }, [options, type, required]);
+  }, [options, type, required, placeholder]);
 
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -395,6 +465,21 @@ const FormField = ({
       if (filteredValue && parseInt(filteredValue) > (max || 20)) {
         filteredValue = max || "20";
       }
+    } else if (name === 'precio') {
+      // Permitir solo números y un punto decimal
+      filteredValue = value.replace(/[^0-9.]/g, "");
+      // Permitir solo un punto decimal
+      const parts = filteredValue.split('.');
+      if (parts.length > 2) {
+        filteredValue = parts[0] + '.' + parts.slice(1).join('');
+      }
+      // Limitar a 2 decimales
+      if (parts.length === 2 && parts[1].length > 2) {
+        filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
+      }
+    } else if (name === 'descripcion') {
+      // Permitir letras, números y caracteres básicos de puntuación
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s.,!?()-]/g, "");
     } else {
       filteredValue = value;
     }
@@ -402,21 +487,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -424,7 +514,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -432,7 +522,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -454,6 +544,7 @@ const FormField = ({
           name={name}
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           style={getInputStyle()}
           required={required}
           disabled={disabled}
@@ -468,6 +559,36 @@ const FormField = ({
             </option>
           ))}
         </select>
+      ) : textarea ? (
+        <div>
+          <textarea
+            name={name}
+            value={value}
+            onChange={handleFilteredInputChange}
+            onBlur={onBlur}
+            style={{
+              ...getInputStyle(),
+              minHeight: `${rows * 20}px`,
+              resize: 'vertical',
+              fontFamily: 'inherit'
+            }}
+            required={required}
+            disabled={disabled}
+            maxLength={maxLength}
+            placeholder={placeholder}
+            rows={rows}
+          />
+          {showCharCount && maxLength && (
+            <div style={{
+              fontSize: "0.75rem",
+              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+              textAlign: "right",
+              marginTop: "4px"
+            }}>
+              {value.length}/{maxLength} caracteres
+            </div>
+          )}
+        </div>
       ) : (
         <div>
           <input
@@ -475,6 +596,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled}
@@ -502,7 +624,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Cabins CORREGIDO
+// COMPONENTE PRINCIPAL Cabins MEJORADO
 // ===============================================
 const Cabins = () => {
   const [cabins, setCabins] = useState([]);
@@ -535,6 +657,20 @@ const Cabins = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
+
+  // ===============================================
+  // FILTROS MEJORADOS
+  // ===============================================
+  const [filters, setFilters] = useState({
+    sede: '',
+    tipo: '',
+    estado: '',
+    precioMin: '',
+    precioMax: '',
+    capacidadMin: '',
+    capacidadMax: ''
+  });
 
   const [newCabin, setNewCabin] = useState({
     nombre: "",
@@ -543,6 +679,8 @@ const Cabins = () => {
     idTemporada: "",
     idSede: "",
     capacidad: 2,
+    precio: "",
+    descripcion: "",
     comodidadesSeleccionadas: []
   });
 
@@ -562,16 +700,16 @@ const Cabins = () => {
     fetchImagenes();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombre', newCabin.nombre);
-      validateField('idTipoCabana', newCabin.idTipoCabana);
-      validateField('idSede', newCabin.idSede);
-      validateField('idTemporada', newCabin.idTemporada);
-      validateField('capacidad', newCabin.capacidad);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newCabin[fieldName]);
+        }
+      });
     }
-  }, [newCabin, showForm]);
+  }, [newCabin, showForm, touchedFields]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -641,98 +779,6 @@ const Cabins = () => {
       default:
         return alertSuccessStyle;
     }
-  };
-
-  // ===============================================
-  // FUNCIONES DE VALIDACIÓN MEJORADAS
-  // ===============================================
-  const validateField = (fieldName, value) => {
-    const rules = VALIDATION_RULES[fieldName];
-    if (!rules) return true;
-
-    let error = "";
-    let success = "";
-    let warning = "";
-
-    const trimmedValue = value ? value.toString().trim() : "";
-
-    if (rules.required && !trimmedValue) {
-      error = rules.errorMessages.required;
-    }
-    else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
-      error = rules.errorMessages.minLength;
-    }
-    else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
-      error = rules.errorMessages.maxLength;
-    }
-    else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
-      error = rules.errorMessages.pattern;
-    }
-    // Validaciones numéricas para capacidad
-    else if (fieldName === 'capacidad' && trimmedValue) {
-      const numericValue = parseInt(trimmedValue);
-      
-      if (isNaN(numericValue)) {
-        error = rules.errorMessages.invalid;
-      } else if (rules.min !== undefined && numericValue < rules.min) {
-        error = rules.errorMessages.min;
-      } else if (rules.max !== undefined && numericValue > rules.max) {
-        error = rules.errorMessages.max;
-      } else {
-        success = "Capacidad válida.";
-        
-        // Advertencias específicas
-        if (numericValue > 10) {
-          warning = "Esta cabaña tiene capacidad para muchas personas. Verifique que sea correcto.";
-        }
-      }
-    }
-    else if (trimmedValue) {
-      success = `${fieldName === 'nombre' ? 'Nombre' : fieldName === 'idTipoCabana' ? 'Tipo' : fieldName === 'idSede' ? 'Sede' : 'Temporada'} válido.`;
-      
-      if (fieldName === 'nombre' && trimmedValue.length > 30) {
-        warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
-      }
-    }
-
-    // Verificación de duplicados para nombre
-    if (fieldName === 'nombre' && trimmedValue && !error) {
-      const duplicate = cabins.find(cabin => 
-        cabin.nombre.toLowerCase() === trimmedValue.toLowerCase() && 
-        (!isEditing || cabin.idCabana !== newCabin.idCabana)
-      );
-      if (duplicate) {
-        error = "Ya existe una cabaña con este nombre.";
-      }
-    }
-
-    setFormErrors(prev => ({ ...prev, [fieldName]: error }));
-    setFormSuccess(prev => ({ ...prev, [fieldName]: success }));
-    setFormWarnings(prev => ({ ...prev, [fieldName]: warning }));
-
-    return !error;
-  };
-
-  const validateForm = () => {
-    const nombreValid = validateField('nombre', newCabin.nombre);
-    const tipoValid = validateField('idTipoCabana', newCabin.idTipoCabana);
-    const sedeValid = validateField('idSede', newCabin.idSede);
-    const temporadaValid = validateField('idTemporada', newCabin.idTemporada);
-    const capacidadValid = validateField('capacidad', newCabin.capacidad);
-
-    const isValid = nombreValid && tipoValid && sedeValid && temporadaValid && capacidadValid;
-    
-    if (!isValid) {
-      displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
-      setTimeout(() => {
-        const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
-        if (firstErrorField) {
-          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 100);
-    }
-
-    return isValid;
   };
 
   // ===============================================
@@ -863,6 +909,30 @@ const Cabins = () => {
     }
   };
 
+  // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS
+  // ===============================================
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      sede: '',
+      tipo: '',
+      estado: '',
+      precioMin: '',
+      precioMax: '',
+      capacidadMin: '',
+      capacidadMax: ''
+    });
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
   // Función para verificar si una cabaña tiene reservas activas
   const tieneReservasActivas = (cabanaId) => {
     return reservas.some(reserva => 
@@ -965,6 +1035,143 @@ const Cabins = () => {
     return imagenes.filter(img => img.idCabana === cabanaId);
   };
 
+  // ===============================================
+  // FUNCIONES DE VALIDACIÓN MEJORADAS
+  // ===============================================
+  const validateField = (fieldName, value) => {
+    const rules = VALIDATION_RULES[fieldName];
+    if (!rules) return true;
+
+    let error = "";
+    let success = "";
+    let warning = "";
+
+    const trimmedValue = value ? value.toString().trim() : "";
+
+    if (rules.required && !trimmedValue) {
+      error = rules.errorMessages.required;
+    }
+    else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
+      error = rules.errorMessages.minLength;
+    }
+    else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
+      error = rules.errorMessages.maxLength;
+    }
+    else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
+      error = rules.errorMessages.pattern;
+    }
+    // Validaciones numéricas para capacidad
+    else if (fieldName === 'capacidad' && trimmedValue) {
+      const numericValue = parseInt(trimmedValue);
+      
+      if (isNaN(numericValue)) {
+        error = rules.errorMessages.invalid;
+      } else if (rules.min !== undefined && numericValue < rules.min) {
+        error = rules.errorMessages.min;
+      } else if (rules.max !== undefined && numericValue > rules.max) {
+        error = rules.errorMessages.max;
+      } else {
+        success = "Capacidad válida.";
+        
+        // Advertencias específicas
+        if (numericValue > 10) {
+          warning = "Esta cabaña tiene capacidad para muchas personas. Verifique que sea correcto.";
+        }
+      }
+    }
+    // Validaciones numéricas para precio
+    else if (fieldName === 'precio' && trimmedValue) {
+      const numericValue = parseFloat(trimmedValue);
+      
+      if (isNaN(numericValue)) {
+        error = rules.errorMessages.invalid;
+      } else if (rules.min !== undefined && numericValue < rules.min) {
+        error = rules.errorMessages.min;
+      } else if (rules.max !== undefined && numericValue > rules.max) {
+        error = rules.errorMessages.max;
+      } else {
+        success = "Precio válido.";
+        
+        // Advertencias específicas
+        if (numericValue > 5000) {
+          warning = "Este precio es bastante alto. Verifique que sea correcto.";
+        } else if (numericValue < 50) {
+          warning = "Este precio es muy bajo. Verifique que sea correcto.";
+        }
+      }
+    }
+    else if (trimmedValue) {
+      success = `${fieldName === 'nombre' ? 'Nombre' : fieldName === 'idTipoCabana' ? 'Tipo' : fieldName === 'idSede' ? 'Sede' : fieldName === 'descripcion' ? 'Descripción' : fieldName === 'precio' ? 'Precio' : 'Temporada'} válido.`;
+      
+      if (fieldName === 'nombre' && trimmedValue.length > 30) {
+        warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
+      } else if (fieldName === 'descripcion' && trimmedValue.length > 300) {
+        warning = "La descripción es bastante larga. Considere hacerla más concisa.";
+      }
+    }
+
+    // Verificación de duplicados para nombre
+    if (fieldName === 'nombre' && trimmedValue && !error) {
+      const duplicate = cabins.find(cabin => 
+        cabin.nombre.toLowerCase() === trimmedValue.toLowerCase() && 
+        (!isEditing || cabin.idCabana !== newCabin.idCabana)
+      );
+      if (duplicate) {
+        error = "Ya existe una cabaña con este nombre.";
+      }
+    }
+
+    setFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    setFormSuccess(prev => ({ ...prev, [fieldName]: success }));
+    setFormWarnings(prev => ({ ...prev, [fieldName]: warning }));
+
+    return !error;
+  };
+
+  const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombre: true,
+      idTipoCabana: true,
+      idSede: true,
+      idTemporada: true,
+      capacidad: true,
+      precio: true,
+      descripcion: true
+    };
+    setTouchedFields(allFieldsTouched);
+
+    const nombreValid = validateField('nombre', newCabin.nombre);
+    const tipoValid = validateField('idTipoCabana', newCabin.idTipoCabana);
+    const sedeValid = validateField('idSede', newCabin.idSede);
+    const temporadaValid = validateField('idTemporada', newCabin.idTemporada);
+    const capacidadValid = validateField('capacidad', newCabin.capacidad);
+    const precioValid = validateField('precio', newCabin.precio);
+    const descripcionValid = validateField('descripcion', newCabin.descripcion);
+
+    const isValid = nombreValid && tipoValid && sedeValid && temporadaValid && capacidadValid && precioValid && descripcionValid;
+    
+    if (!isValid) {
+      displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+
+    return isValid;
+  };
+
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
   const handleAddCabin = async (e) => {
     e.preventDefault();
     
@@ -981,14 +1188,16 @@ const Cabins = () => {
     setLoading(true);
     
     try {
-      // CORRECCIÓN: Preparar datos según el modelo del backend
+      // Preparar datos según el modelo del backend
       const cabinData = {
         nombre: newCabin.nombre,
         idTipoCabana: parseInt(newCabin.idTipoCabana),
         estado: newCabin.estado,
         idTemporada: parseInt(newCabin.idTemporada),
         idSede: parseInt(newCabin.idSede),
-        capacidad: parseInt(newCabin.capacidad)
+        capacidad: parseInt(newCabin.capacidad),
+        precio: parseFloat(newCabin.precio),
+        descripcion: newCabin.descripcion
       };
 
       console.log("Enviando datos de cabaña:", cabinData);
@@ -996,7 +1205,7 @@ const Cabins = () => {
       let cabanaId;
 
       if (isEditing) {
-        // CORRECCIÓN: Incluir el ID en los datos para la edición
+        // Incluir el ID en los datos para la edición
         const updateData = {
           ...cabinData,
           idCabana: parseInt(newCabin.idCabana)
@@ -1090,6 +1299,10 @@ const Cabins = () => {
         await fetchCabins();
         await fetchCabanaComodidades();
         await fetchImagenes();
+        
+        if (paginatedCabins.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
       } catch (error) {
         console.error("Error al eliminar cabaña:", error);
         
@@ -1117,7 +1330,7 @@ const Cabins = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1149,6 +1362,13 @@ const Cabins = () => {
     }));
   };
 
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newCabin[name]);
+  };
+
   const handleComodidadChange = (comodidadId) => {
     setNewCabin(prev => {
       const comodidadesActuales = [...prev.comodidadesSeleccionadas];
@@ -1170,6 +1390,7 @@ const Cabins = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setImagenesSeleccionadas([]);
     setNewCabin({
       nombre: "",
@@ -1178,6 +1399,8 @@ const Cabins = () => {
       idTemporada: "",
       idSede: "",
       capacidad: 2,
+      precio: "",
+      descripcion: "",
       comodidadesSeleccionadas: []
     });
   };
@@ -1195,7 +1418,7 @@ const Cabins = () => {
   const toggleActive = async (cabin) => {
     setLoading(true);
     try {
-      // CORRECCIÓN: Enviar todos los campos requeridos según el modelo
+      // Enviar todos los campos requeridos según el modelo
       const updatedCabin = { 
         idCabana: cabin.idCabana,
         nombre: cabin.nombre,
@@ -1203,7 +1426,9 @@ const Cabins = () => {
         capacidad: cabin.capacidad,
         estado: !cabin.estado,
         idTemporada: cabin.idTemporada,
-        idSede: cabin.idSede
+        idSede: cabin.idSede,
+        precio: cabin.precio || 0,
+        descripcion: cabin.descripcion || ""
       };
       
       await axios.put(`${API_CABANAS}/${cabin.idCabana}`, updatedCabin, {
@@ -1227,7 +1452,7 @@ const Cabins = () => {
   const handleEdit = (cabin) => {
     console.log("Editando cabaña:", cabin);
     
-    // CORRECCIÓN: Cargar datos correctamente para edición
+    // Cargar datos correctamente para edición
     const comodidadesActuales = cabanaComodidades
       .filter(cc => cc.idCabana === cabin.idCabana)
       .map(cc => cc.idComodidades.toString());
@@ -1239,7 +1464,7 @@ const Cabins = () => {
       isNew: false
     }));
 
-    // CORRECCIÓN: Asegurar que todos los campos se carguen correctamente
+    // Asegurar que todos los campos se carguen correctamente
     setNewCabin({
       idCabana: cabin.idCabana,
       nombre: cabin.nombre || "",
@@ -1248,6 +1473,8 @@ const Cabins = () => {
       idTemporada: cabin.idTemporada ? cabin.idTemporada.toString() : "",
       idSede: cabin.idSede ? cabin.idSede.toString() : "",
       capacidad: cabin.capacidad || 2,
+      precio: cabin.precio ? cabin.precio.toString() : "",
+      descripcion: cabin.descripcion || "",
       comodidadesSeleccionadas: comodidadesActuales
     });
     
@@ -1257,6 +1484,7 @@ const Cabins = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (cabin) => {
@@ -1271,14 +1499,58 @@ const Cabins = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredCabins = useMemo(() => {
-    return cabins.filter(cabin =>
-      cabin.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (getTipoCabanaNombre(cabin.idTipoCabana)?.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  }, [cabins, searchTerm]);
+    let filtered = cabins;
+
+    // Filtro por término de búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(cabin =>
+        cabin.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (getTipoCabanaNombre(cabin.idTipoCabana)?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (cabin.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Filtro por sede
+    if (filters.sede) {
+      filtered = filtered.filter(cabin => cabin.idSede === parseInt(filters.sede));
+    }
+
+    // Filtro por tipo
+    if (filters.tipo) {
+      filtered = filtered.filter(cabin => cabin.idTipoCabana === parseInt(filters.tipo));
+    }
+
+    // Filtro por estado
+    if (filters.estado !== '') {
+      const estadoBool = filters.estado === 'true';
+      filtered = filtered.filter(cabin => cabin.estado === estadoBool);
+    }
+
+    // Filtro por precio mínimo
+    if (filters.precioMin) {
+      filtered = filtered.filter(cabin => cabin.precio >= parseFloat(filters.precioMin));
+    }
+
+    // Filtro por precio máximo
+    if (filters.precioMax) {
+      filtered = filtered.filter(cabin => cabin.precio <= parseFloat(filters.precioMax));
+    }
+
+    // Filtro por capacidad mínima
+    if (filters.capacidadMin) {
+      filtered = filtered.filter(cabin => cabin.capacidad >= parseInt(filters.capacidadMin));
+    }
+
+    // Filtro por capacidad máxima
+    if (filters.capacidadMax) {
+      filtered = filtered.filter(cabin => cabin.capacidad <= parseInt(filters.capacidadMax));
+    }
+
+    return filtered;
+  }, [cabins, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredCabins.length / ITEMS_PER_PAGE);
 
@@ -1315,6 +1587,13 @@ const Cabins = () => {
       const comodidad = comodidades.find(c => c.idComodidades === relacion.idComodidades);
       return comodidad ? comodidad.nombreComodidades : `Comodidad ${relacion.idComodidades}`;
     });
+  };
+
+  const formatPrecio = (precio) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(precio || 0);
   };
 
   // ===============================================
@@ -1398,7 +1677,7 @@ const Cabins = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Cabañas</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {cabins.length} cabañas registradas | {sedes.length} sedes | {temporadas.length} temporadas | {tiposCabana.length} tipos
+            {cabins.length} cabañas registradas • {cabins.filter(c => c.estado).length} activas
           </p>
         </div>
         <button
@@ -1408,6 +1687,7 @@ const Cabins = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
+            setTouchedFields({});
             setImagenesSeleccionadas([]);
             setNewCabin({
               nombre: "",
@@ -1416,6 +1696,8 @@ const Cabins = () => {
               idTemporada: "",
               idSede: "",
               capacidad: 2,
+              precio: "",
+              descripcion: "",
               comodidadesSeleccionadas: []
             });
           }}
@@ -1446,41 +1728,310 @@ const Cabins = () => {
         </button>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o tipo..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            }}
-          />
+      {/* Estadísticas */}
+      {!loading && cabins.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {cabins.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Cabañas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {cabins.filter(c => c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Cabañas Activas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {cabins.filter(c => !c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Cabañas Inactivas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#ffe0e0',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ff8a8a'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e57373' }}>
+              {cabins.filter(c => tieneReservasActivas(c.idCabana)).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#e57373' }}>
+              Con Reservas Activas
+            </div>
+          </div>
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredCabins.length} resultados
+      )}
+
+      {/* Barra de búsqueda y Filtros */}
+      <div style={filterContainerStyle}>
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ position: "relative", maxWidth: 500 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, tipo o descripción..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
         </div>
+
+        <div style={filterGridStyle}>
+          {/* Filtro por Sede */}
+          <div>
+            <label style={labelStyle}>Sede</label>
+            <select
+              value={filters.sede}
+              onChange={(e) => handleFilterChange('sede', e.target.value)}
+              style={inputStyle}
+            >
+              <option value="">Todas las sedes</option>
+              {sedes.map(sede => (
+                <option key={sede.idSede} value={sede.idSede}>
+                  {sede.nombreSede}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filtro por Tipo */}
+          <div>
+            <label style={labelStyle}>Tipo de Cabaña</label>
+            <select
+              value={filters.tipo}
+              onChange={(e) => handleFilterChange('tipo', e.target.value)}
+              style={inputStyle}
+            >
+              <option value="">Todos los tipos</option>
+              {tiposCabana.map(tipo => (
+                <option key={tipo.idTipoCabana} value={tipo.idTipoCabana}>
+                  {tipo.nombreTipoCabana}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filtro por Estado */}
+          <div>
+            <label style={labelStyle}>Estado</label>
+            <select
+              value={filters.estado}
+              onChange={(e) => handleFilterChange('estado', e.target.value)}
+              style={inputStyle}
+            >
+              <option value="">Todos los estados</option>
+              <option value="true">Activas</option>
+              <option value="false">Inactivas</option>
+            </select>
+          </div>
+
+          {/* Filtro por Precio Mínimo */}
+          <div>
+            <label style={labelStyle}>Precio Mínimo</label>
+            <div style={{ position: 'relative' }}>
+              <FaDollarSign style={{ 
+                position: "absolute", 
+                left: 12, 
+                top: "50%", 
+                transform: "translateY(-50%)", 
+                color: "#2E5939",
+                fontSize: '14px'
+              }} />
+              <input
+                type="number"
+                placeholder="0.00"
+                value={filters.precioMin}
+                onChange={(e) => handleFilterChange('precioMin', e.target.value)}
+                style={{
+                  ...inputStyle,
+                  paddingLeft: '30px'
+                }}
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          {/* Filtro por Precio Máximo */}
+          <div>
+            <label style={labelStyle}>Precio Máximo</label>
+            <div style={{ position: 'relative' }}>
+              <FaDollarSign style={{ 
+                position: "absolute", 
+                left: 12, 
+                top: "50%", 
+                transform: "translateY(-50%)", 
+                color: "#2E5939",
+                fontSize: '14px'
+              }} />
+              <input
+                type="number"
+                placeholder="10000.00"
+                value={filters.precioMax}
+                onChange={(e) => handleFilterChange('precioMax', e.target.value)}
+                style={{
+                  ...inputStyle,
+                  paddingLeft: '30px'
+                }}
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          {/* Filtro por Capacidad Mínima */}
+          <div>
+            <label style={labelStyle}>Capacidad Mínima</label>
+            <div style={{ position: 'relative' }}>
+              <FaUsers style={{ 
+                position: "absolute", 
+                left: 12, 
+                top: "50%", 
+                transform: "translateY(-50%)", 
+                color: "#2E5939",
+                fontSize: '14px'
+              }} />
+              <input
+                type="number"
+                placeholder="1"
+                value={filters.capacidadMin}
+                onChange={(e) => handleFilterChange('capacidadMin', e.target.value)}
+                style={{
+                  ...inputStyle,
+                  paddingLeft: '30px'
+                }}
+                min="1"
+                max="20"
+              />
+            </div>
+          </div>
+
+          {/* Filtro por Capacidad Máxima */}
+          <div>
+            <label style={labelStyle}>Capacidad Máxima</label>
+            <div style={{ position: 'relative' }}>
+              <FaUsers style={{ 
+                position: "absolute", 
+                left: 12, 
+                top: "50%", 
+                transform: "translateY(-50%)", 
+                color: "#2E5939",
+                fontSize: '14px'
+              }} />
+              <input
+                type="number"
+                placeholder="20"
+                value={filters.capacidadMax}
+                onChange={(e) => handleFilterChange('capacidadMax', e.target.value)}
+                style={{
+                  ...inputStyle,
+                  paddingLeft: '30px'
+                }}
+                min="1"
+                max="20"
+              />
+            </div>
+          </div>
+
+          {/* Botón Limpiar Filtros */}
+          <div>
+            <button
+              onClick={clearFilters}
+              style={{
+                ...filterButtonStyle,
+                backgroundColor: '#6c757d'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#5a6268';
+                e.target.style.transform = "translateY(-2px)";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = '#6c757d';
+                e.target.style.transform = "translateY(0)";
+              }}
+            >
+              <FaTimes /> Limpiar Filtros
+            </button>
+          </div>
+        </div>
+
+        {/* Mostrar filtros activos */}
+        {(filters.sede || filters.tipo || filters.estado !== '' || filters.precioMin || filters.precioMax || filters.capacidadMin || filters.capacidadMax) && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '10px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '8px',
+            fontSize: '14px',
+            color: '#2E5939'
+          }}>
+            <strong>Filtros activos:</strong> 
+            {filters.sede && ` Sede: ${getSedeNombre(parseInt(filters.sede))}`}
+            {filters.tipo && ` Tipo: ${getTipoCabanaNombre(parseInt(filters.tipo))}`}
+            {filters.estado !== '' && ` Estado: ${filters.estado === 'true' ? 'Activas' : 'Inactivas'}`}
+            {filters.precioMin && ` Precio mínimo: ${formatPrecio(parseFloat(filters.precioMin))}`}
+            {filters.precioMax && ` Precio máximo: ${formatPrecio(parseFloat(filters.precioMax))}`}
+            {filters.capacidadMin && ` Capacidad mínima: ${filters.capacidadMin} personas`}
+            {filters.capacidadMax && ` Capacidad máxima: ${filters.capacidadMax} personas`}
+          </div>
+        )}
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 700 }}>
+          <div style={{...modalContentStyle, maxWidth: 700}}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>
-                {isEditing ? "Editar Cabaña" : "Nueva Cabaña"}
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+                {isEditing ? "Editar Cabaña" : "Agregar Nueva Cabaña"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1491,6 +2042,7 @@ const Cabins = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
@@ -1498,36 +2050,33 @@ const Cabins = () => {
             </div>
             
             <form onSubmit={handleAddCabin}>
-              {/* Primera fila: Nombre */}
-              <FormField
-                label="Nombre de la Cabaña"
-                name="nombre"
-                value={newCabin.nombre}
-                onChange={handleInputChange}
-                error={formErrors.nombre}
-                success={formSuccess.nombre}
-                warning={formWarnings.nombre}
-                required={true}
-                disabled={loading}
-                maxLength={VALIDATION_RULES.nombre.maxLength}
-                showCharCount={true}
-                placeholder="Ej: Mykonos, Paraíso, Cabaña Familiar"
-              />
-
-              {/* Segunda fila: Tipo y Sede en grid */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gap: '15px', 
-                marginBottom: '15px',
-                alignItems: 'start'
-              }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Nombre de la Cabaña"
+                    name="nombre"
+                    value={newCabin.nombre}
+                    onChange={handleInputChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.nombre}
+                    success={formSuccess.nombre}
+                    warning={formWarnings.nombre}
+                    required={true}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.nombre.maxLength}
+                    showCharCount={true}
+                    placeholder="Ej: Mykonos, Paraíso, Cabaña Familiar"
+                    touched={touchedFields.nombre}
+                  />
+                </div>
+                
                 <FormField
                   label="Tipo de Cabaña"
                   name="idTipoCabana"
                   type="select"
                   value={newCabin.idTipoCabana}
                   onChange={handleInputChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.idTipoCabana}
                   success={formSuccess.idTipoCabana}
                   warning={formWarnings.idTipoCabana}
@@ -1537,6 +2086,8 @@ const Cabins = () => {
                   }))}
                   required={true}
                   disabled={loadingTiposCabana || tiposCabana.length === 0}
+                  placeholder="Selecciona un tipo"
+                  touched={touchedFields.idTipoCabana}
                 />
                 
                 <FormField
@@ -1545,6 +2096,7 @@ const Cabins = () => {
                   type="select"
                   value={newCabin.idSede}
                   onChange={handleInputChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.idSede}
                   success={formSuccess.idSede}
                   warning={formWarnings.idSede}
@@ -1554,23 +2106,17 @@ const Cabins = () => {
                   }))}
                   required={true}
                   disabled={loadingSedes || sedes.length === 0}
+                  placeholder="Selecciona una sede"
+                  touched={touchedFields.idSede}
                 />
-              </div>
 
-              {/* Tercera fila: Temporada y Capacidad in grid - MEJOR ORGANIZADO */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gap: '15px', 
-                marginBottom: '15px',
-                alignItems: 'start'
-              }}>
                 <FormField
                   label="Temporada"
                   name="idTemporada"
                   type="select"
                   value={newCabin.idTemporada}
                   onChange={handleInputChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.idTemporada}
                   success={formSuccess.idTemporada}
                   warning={formWarnings.idTemporada}
@@ -1580,69 +2126,114 @@ const Cabins = () => {
                   }))}
                   required={true}
                   disabled={loadingTemporadas || temporadas.length === 0}
+                  placeholder="Selecciona una temporada"
+                  touched={touchedFields.idTemporada}
                 />
 
-                {/* Campo de Capacidad Mejorado */}
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={labelStyle}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaUsers />
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        <span>Capacidad de Personas</span>
-                        <span style={{ color: "red" }}>*</span>
-                      </span>
+                <FormField
+                  label="Precio por Noche"
+                  name="precio"
+                  type="number"
+                  value={newCabin.precio}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  error={formErrors.precio}
+                  success={formSuccess.precio}
+                  warning={formWarnings.precio}
+                  required={true}
+                  disabled={loading}
+                  min={VALIDATION_RULES.precio.min}
+                  max={VALIDATION_RULES.precio.max}
+                  step="0.01"
+                  placeholder="Ej: 150.00, 299.99"
+                  touched={touchedFields.precio}
+                />
+
+                <div>
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={labelStyle}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaUsers />
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <span>Capacidad de Personas</span>
+                          <span style={{ color: "red" }}>*</span>
+                        </span>
+                      </div>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        name="capacidad"
+                        value={newCabin.capacidad}
+                        onChange={handleInputChange}
+                        onBlur={handleInputBlur}
+                        style={{
+                          ...inputStyle,
+                          border: `1px solid ${touchedFields.capacidad && formErrors.capacidad ? '#e57373' : touchedFields.capacidad && formSuccess.capacidad ? '#4caf50' : touchedFields.capacidad && formWarnings.capacidad ? '#ff9800' : '#ccc'}`,
+                          borderLeft: `4px solid ${touchedFields.capacidad && formErrors.capacidad ? '#e57373' : touchedFields.capacidad && formSuccess.capacidad ? '#4caf50' : touchedFields.capacidad && formWarnings.capacidad ? '#ff9800' : '#ccc'}`,
+                          paddingRight: '60px'
+                        }}
+                        required={true}
+                        disabled={loading}
+                        min={VALIDATION_RULES.capacidad.min}
+                        max={VALIDATION_RULES.capacidad.max}
+                        step="1"
+                        placeholder="Ej: 2, 4, 6..."
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: '#679750',
+                        fontWeight: '600',
+                        fontSize: '14px'
+                      }}>
+                        personas
+                      </div>
                     </div>
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="number"
-                      name="capacidad"
-                      value={newCabin.capacidad}
-                      onChange={handleInputChange}
-                      style={{
-                        ...inputStyle,
-                        border: `1px solid ${formErrors.capacidad ? '#e57373' : formSuccess.capacidad ? '#4caf50' : formWarnings.capacidad ? '#ff9800' : '#ccc'}`,
-                        borderLeft: `4px solid ${formErrors.capacidad ? '#e57373' : formSuccess.capacidad ? '#4caf50' : formWarnings.capacidad ? '#ff9800' : '#ccc'}`,
-                        paddingRight: '60px'
-                      }}
-                      required={true}
-                      disabled={loading}
-                      min={VALIDATION_RULES.capacidad.min}
-                      max={VALIDATION_RULES.capacidad.max}
-                      step="1"
-                      placeholder="Ej: 2, 4, 6..."
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#679750',
-                      fontWeight: '600',
-                      fontSize: '14px'
-                    }}>
-                      personas
-                    </div>
+                    {touchedFields.capacidad && formErrors.capacidad && (
+                      <div style={errorValidationStyle}>
+                        <FaExclamationTriangle size={12} />
+                        {formErrors.capacidad}
+                      </div>
+                    )}
+                    {touchedFields.capacidad && formSuccess.capacidad && !formErrors.capacidad && (
+                      <div style={successValidationStyle}>
+                        <FaCheck size={12} />
+                        {formSuccess.capacidad}
+                      </div>
+                    )}
+                    {touchedFields.capacidad && formWarnings.capacidad && !formErrors.capacidad && (
+                      <div style={warningValidationStyle}>
+                        <FaInfoCircle size={12} />
+                        {formWarnings.capacidad}
+                      </div>
+                    )}
                   </div>
-                  {formErrors.capacidad && (
-                    <div style={errorValidationStyle}>
-                      <FaExclamationTriangle size={12} />
-                      {formErrors.capacidad}
-                    </div>
-                  )}
-                  {formSuccess.capacidad && !formErrors.capacidad && (
-                    <div style={successValidationStyle}>
-                      <FaCheck size={12} />
-                      {formSuccess.capacidad}
-                    </div>
-                  )}
-                  {formWarnings.capacidad && !formErrors.capacidad && (
-                    <div style={warningValidationStyle}>
-                      <FaInfoCircle size={12} />
-                      {formWarnings.capacidad}
-                    </div>
-                  )}
                 </div>
+              </div>
+
+              {/* Descripción */}
+              <div style={{ marginBottom: '20px' }}>
+                <FormField
+                  label="Descripción de la Cabaña"
+                  name="descripcion"
+                  value={newCabin.descripcion}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  error={formErrors.descripcion}
+                  success={formSuccess.descripcion}
+                  warning={formWarnings.descripcion}
+                  required={true}
+                  disabled={loading}
+                  maxLength={VALIDATION_RULES.descripcion.maxLength}
+                  showCharCount={true}
+                  placeholder="Describe las características, ubicación, vistas y comodidades especiales de la cabaña..."
+                  touched={touchedFields.descripcion}
+                  textarea={true}
+                  rows={4}
+                />
               </div>
 
               {/* Gestión de Imágenes */}
@@ -1835,7 +2426,7 @@ const Cabins = () => {
                 >
                   {uploadingImages ? "Subiendo imágenes..." : 
                    loading ? "Guardando..." : 
-                   (isEditing ? "Actualizar" : "Guardar")} Cabaña
+                   (isEditing ? "Actualizar Cabaña" : "Guardar Cabaña")}
                 </button>
                 <button
                   type="button"
@@ -1861,14 +2452,12 @@ const Cabins = () => {
         </div>
       )}
 
- 
-
       {/* Modal de detalles */}
       {showDetails && currentCabin && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 800 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Cabaña</h2>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles de la Cabaña</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1878,6 +2467,7 @@ const Cabins = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1912,6 +2502,27 @@ const Cabins = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaDollarSign />
+                    Precio por Noche
+                  </div>
+                </div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    backgroundColor: '#E8F5E8',
+                    color: '#2E5939',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {formatPrecio(currentCabin.precio)}
+                  </span>
+                </div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FaUsers />
                     Capacidad
                   </div>
@@ -1927,6 +2538,24 @@ const Cabins = () => {
                   }}>
                     {currentCabin.capacidad || 2} persona(s)
                   </span>
+                </div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Descripción</div>
+                <div style={{
+                  ...detailValueStyle,
+                  lineHeight: '1.6',
+                  backgroundColor: '#F7F4EA',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  border: '1px solid #E8F5E8'
+                }}>
+                  {currentCabin.descripcion || (
+                    <span style={{ color: '#999', fontStyle: 'italic' }}>
+                      No hay descripción disponible para esta cabaña.
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1951,13 +2580,6 @@ const Cabins = () => {
                               e.target.src = 'https://via.placeholder.com/150x120/679750/FFFFFF?text=Imagen+No+Disponible';
                             }}
                           />
-                          <button
-                            onClick={() => deleteImage(imagen.idImagen)}
-                            style={imageRemoveButtonStyle}
-                            title="Eliminar imagen"
-                          >
-                            <FaTimes size={10} />
-                          </button>
                         </div>
                       ))}
                     </div>
@@ -2021,6 +2643,16 @@ const Cabins = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "#2E5939";
+                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 Cerrar
@@ -2067,7 +2699,7 @@ const Cabins = () => {
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
-                                   fontWeight: "600",
+                  fontWeight: "600",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                 }}
               >
@@ -2122,15 +2754,6 @@ const Cabins = () => {
             <div style={{ fontSize: '18px', marginBottom: '10px' }}>
               🔄 Cargando cabañas...
             </div>
-            <div style={{ 
-              width: '40px', 
-              height: '40px', 
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #2E5939',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto'
-            }}></div>
           </div>
         )}
 
@@ -2148,6 +2771,7 @@ const Cabins = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Tipo</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Sede</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Temporada</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Precio</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Capacidad</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Imágenes</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Comodidades</th>
@@ -2158,7 +2782,7 @@ const Cabins = () => {
             <tbody>
               {paginatedCabins.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
                       {cabins.length === 0 ? "No hay cabañas registradas" : "No se encontraron resultados"}
@@ -2209,6 +2833,9 @@ const Cabins = () => {
                     <td style={{ padding: "15px" }}>{getTipoCabanaNombre(cabin.idTipoCabana)}</td>
                     <td style={{ padding: "15px" }}>{getSedeNombre(cabin.idSede)}</td>
                     <td style={{ padding: "15px", textAlign: "center" }}>{getTemporadaNombre(cabin.idTemporada)}</td>
+                    <td style={{ padding: "15px", textAlign: "center", fontWeight: "600", color: "#2E5939" }}>
+                      {formatPrecio(cabin.precio)}
+                    </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
                         <FaUsers color="#679750" />
@@ -2270,39 +2897,52 @@ const Cabins = () => {
                           fontWeight: "600",
                           fontSize: "12px",
                           minWidth: "80px",
-                          opacity: loading ? 0.6 : 1
+                          opacity: loading ? 0.6 : 1,
+                          transition: "all 0.3s ease",
+                        }}
+                        onMouseOver={(e) => {
+                          if (!loading) {
+                            e.target.style.transform = "scale(1.05)";
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!loading) {
+                            e.target.style.transform = "scale(1)";
+                          }
                         }}
                       >
                         {cabin.estado ? "Activa" : "Inactiva"}
                       </button>
                     </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(cabin)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(cabin)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(cabin)}
-                        style={{
-                          ...btnAccion("#fbe9e7", "#e57373"),
-                          opacity: tieneReservasActivas(cabin.idCabana) ? 0.5 : 1,
-                          cursor: tieneReservasActivas(cabin.idCabana) ? "not-allowed" : "pointer"
-                        }}
-                        title={tieneReservasActivas(cabin.idCabana) ? "No se puede eliminar - Tiene reservas activas" : "Eliminar"}
-                        disabled={tieneReservasActivas(cabin.idCabana)}
-                      >
-                        <FaTrash />
-                      </button>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                        <button
+                          onClick={() => handleView(cabin)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Ver Detalles"
+                        >
+                          <FaEye />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(cabin)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Editar Cabaña"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(cabin)}
+                          style={{
+                            ...btnAccion("#fbe9e7", "#e57373"),
+                            opacity: tieneReservasActivas(cabin.idCabana) ? 0.5 : 1,
+                            cursor: tieneReservasActivas(cabin.idCabana) ? "not-allowed" : "pointer"
+                          }}
+                          title={tieneReservasActivas(cabin.idCabana) ? "No se puede eliminar - Tiene reservas activas" : "Eliminar Cabaña"}
+                          disabled={tieneReservasActivas(cabin.idCabana)}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -2314,7 +2954,7 @@ const Cabins = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -2322,33 +2962,19 @@ const Cabins = () => {
           >
             Anterior
           </button>
-          
-          <div style={{ display: "flex", gap: 5 }}>
-            {(() => {
-              const pages = [];
-              const maxVisiblePages = 5;
-              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-              
-              if (endPage - startPage + 1 < maxVisiblePages) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-              }
-              
-              for (let i = startPage; i <= endPage; i++) {
-                pages.push(
-                  <button
-                    key={i}
-                    onClick={() => goToPage(i)}
-                    style={pageBtnStyle(currentPage === i)}
-                  >
-                    {i}
-                  </button>
-                );
-              }
-              return pages;
-            })()}
-          </div>
-          
+          {[...Array(totalPages)].map((_, i) => {
+            const page = i + 1;
+            return (
+              <button
+                key={page}
+                onClick={() => goToPage(page)}
+                style={pageBtnStyle(currentPage === page)}
+                aria-current={currentPage === page ? "page" : undefined}
+              >
+                {page}
+              </button>
+            );
+          })}
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -2356,85 +2982,6 @@ const Cabins = () => {
           >
             Siguiente
           </button>
-          
-          <div style={{ 
-            color: '#2E5939', 
-            fontSize: '14px', 
-            marginLeft: '15px',
-            fontWeight: '500'
-          }}>
-            Página {currentPage} de {totalPages}
-          </div>
-        </div>
-      )}
-
-      {/* Estadísticas rápidas */}
-      {!loading && cabins.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {cabins.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Cabañas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {cabins.filter(c => c.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Cabañas Activas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {cabins.filter(c => !c.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Cabañas Inactivas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {cabins.filter(c => tieneReservasActivas(c.idCabana)).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Con Reservas Activas
-            </div>
-          </div>
         </div>
       )}
     </div>
@@ -2442,4 +2989,3 @@ const Cabins = () => {
 };
 
 export default Cabins;
-

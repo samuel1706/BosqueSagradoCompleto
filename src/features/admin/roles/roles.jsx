@@ -258,7 +258,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_ROLES = "http://localhost:5204/api/Rol";
+const API_ROLES = "http://localhost:5018/api/Rol";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -280,7 +280,8 @@ const FormField = ({
   maxLength,
   placeholder,
   showCharCount = false,
-  rows = 3
+  rows = 3,
+  touched = false // Nuevo prop para controlar si el campo ha sido tocado
 }) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -305,21 +306,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -327,7 +333,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -335,7 +341,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -461,6 +467,7 @@ const Rol = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({}); // Nuevo estado para campos tocados
 
   const [newItem, setNewItem] = useState({
     nombreRol: "",
@@ -475,14 +482,16 @@ const Rol = () => {
     fetchRoles();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombreRol', newItem.nombreRol);
-      validateField('descripcion', newItem.descripcion);
-      validateField('estado', newItem.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newItem[fieldName]);
+        }
+      });
     }
-  }, [newItem, showForm]);
+  }, [newItem, showForm, touchedFields]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -642,6 +651,14 @@ const Rol = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombreRol: true,
+      descripcion: true,
+      estado: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombreRol', newItem.nombreRol);
     const descripcionValid = validateField('descripcion', newItem.descripcion);
     const estadoValid = validateField('estado', newItem.estado);
@@ -659,6 +676,14 @@ const Rol = () => {
     }
 
     return isValid;
+  };
+
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
   };
 
   const handleAddRol = async (e) => {
@@ -781,7 +806,7 @@ const Rol = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -813,12 +838,20 @@ const Rol = () => {
     }));
   };
 
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newItem[name]);
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({}); // Limpiar campos tocados al cerrar
     setNewItem({
       nombreRol: "",
       descripcion: "",
@@ -854,6 +887,7 @@ const Rol = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({}); // Limpiar campos tocados al editar
   };
 
   const handleDeleteClick = (item) => {
@@ -973,6 +1007,7 @@ const Rol = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
+            setTouchedFields({}); // Limpiar campos tocados al abrir
             setNewItem({
               nombreRol: "",
               descripcion: "",
@@ -1006,9 +1041,64 @@ const Rol = () => {
         </button>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      {/* Estadísticas - COLOCADAS ENTRE EL HEADER Y LA BARRA DE BÚSQUEDA */}
+      {!loading && roles.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {roles.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Roles
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {roles.filter(r => r.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Roles Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {roles.filter(r => !r.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Roles Inactivos
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda - SIMPLIFICADA */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1028,9 +1118,6 @@ const Rol = () => {
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             }}
           />
-        </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredItems.length} resultados
         </div>
       </div>
 
@@ -1071,6 +1158,7 @@ const Rol = () => {
                     name="nombreRol"
                     value={newItem.nombreRol}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur} // Nuevo evento onBlur
                     error={formErrors.nombreRol}
                     success={formSuccess.nombreRol}
                     warning={formWarnings.nombreRol}
@@ -1079,6 +1167,7 @@ const Rol = () => {
                     maxLength={VALIDATION_RULES.nombreRol.maxLength}
                     showCharCount={true}
                     placeholder="Ej: Administrador, Empleado, Cliente..."
+                    touched={touchedFields.nombreRol} // Pasar estado de tocado
                   />
                 </div>
                 
@@ -1089,6 +1178,7 @@ const Rol = () => {
                     type="textarea"
                     value={newItem.descripcion}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur} // Nuevo evento onBlur
                     error={formErrors.descripcion}
                     success={formSuccess.descripcion}
                     warning={formWarnings.descripcion}
@@ -1098,6 +1188,7 @@ const Rol = () => {
                     showCharCount={true}
                     rows={4}
                     placeholder="Descripción de los permisos y funciones del rol..."
+                    touched={touchedFields.descripcion} // Pasar estado de tocado
                   />
                 </div>
 
@@ -1108,6 +1199,7 @@ const Rol = () => {
                     type="select"
                     value={newItem.estado}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur} // Nuevo evento onBlur
                     error={formErrors.estado}
                     success={formSuccess.estado}
                     warning={formWarnings.estado}
@@ -1117,6 +1209,7 @@ const Rol = () => {
                       { value: "true", label: "🟢 Activo" },
                       { value: "false", label: "🔴 Inactivo" }
                     ]}
+                    touched={touchedFields.estado} // Pasar estado de tocado
                   />
                 </div>
               </div>
@@ -1484,61 +1577,6 @@ const Rol = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && roles.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {roles.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Roles
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {roles.filter(r => r.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Roles Activos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
-              {roles.filter(r => !r.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
-              Roles Inactivos
-            </div>
-          </div>
         </div>
       )}
     </div>

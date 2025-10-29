@@ -17,8 +17,6 @@ import Compras from "./features/admin/compras/compras";
 import LoginRegister from "./features/admin/loginform/loginform";
 import Marca from "./features/admin/marca/marca";
 import Temporada from "./features/admin/Temporada/Temporada";
-
-// ✅ CORREGIR ESTAS IMPORTACIONES - Usar el casing exacto de tus archivos
 import TipoCabana from "./features/admin/TipoCabana/Tipocabana";
 import Disponibilidad from "./features/admin/Disponibilidad/Disponibilidad";
 

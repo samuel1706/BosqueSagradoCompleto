@@ -1,13 +1,14 @@
+// src/components/Marca.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { 
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaShoppingCart,
-  FaToggleOn, FaToggleOff, FaSync, FaTag
+  FaToggleOn, FaToggleOff, FaSync
 } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES CON LOS OTROS MÓDULOS)
+// ESTILOS MEJORADOS (CONSISTENTES CON TIPO CABAÑA)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -69,8 +70,8 @@ const pageBtnStyle = (active) => ({
 
 const formContainerStyle = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '15px 20px',
+  gridTemplateColumns: '1fr',
+  gap: '15px',
   padding: '0 10px'
 };
 
@@ -93,7 +94,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -149,20 +150,13 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
-const alertInfoStyle = {
-  ...alertStyle,
-  backgroundColor: '#d1ecf1',
-  color: '#0c5460',
-  borderLeftColor: '#17a2b8',
-};
-
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -212,24 +206,6 @@ const warningValidationStyle = {
   color: "#ff9800"
 };
 
-const toggleButtonStyle = (active) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  padding: '10px 16px',
-  borderRadius: '25px',
-  border: 'none',
-  cursor: 'pointer',
-  fontWeight: '600',
-  fontSize: '14px',
-  transition: 'all 0.3s ease',
-  backgroundColor: active ? '#4caf50' : '#e57373',
-  color: 'white',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-  minWidth: '140px'
-});
-
 // ===============================================
 // VALIDACIONES Y PATRONES PARA MARCAS
 // ===============================================
@@ -261,9 +237,9 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_MARCAS = "http://localhost:5204/api/MarcaProducto";
-const API_PRODUCTOS = "http://localhost:5204/api/Productos";
-const ITEMS_PER_PAGE = 5;
+const API_MARCAS = "http://localhost:5018/api/MarcaProducto";
+const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const ITEMS_PER_PAGE = 10;
 
 // ===============================================
 // COMPONENTE FormField PARA MARCAS
@@ -277,17 +253,23 @@ const FormField = ({
   error, 
   success,
   warning,
+  options = [],
   style = {}, 
   required = true, 
   disabled = false,
   maxLength,
   placeholder,
   showCharCount = false,
-  min,
-  max,
-  step,
-  icon
+  touched = false
 }) => {
+  const finalOptions = useMemo(() => {
+    if (type === "select") {
+      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
+      return [placeholderOption, ...options];
+    }
+    return options;
+  }, [options, type, required]);
+
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
@@ -301,22 +283,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
-      paddingLeft: icon ? '40px' : '12px'
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -324,7 +310,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -332,7 +318,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -349,19 +335,26 @@ const FormField = ({
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      <div style={{ position: 'relative' }}>
-        {icon && (
-          <div style={{
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#2E5939',
-            zIndex: 1
-          }}>
-            {icon}
-          </div>
-        )}
+      {type === "select" ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          style={getInputStyle()}
+          required={required}
+          disabled={disabled}
+        >
+          {finalOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
         <div>
           <input
             type={type}
@@ -373,9 +366,6 @@ const FormField = ({
             disabled={disabled}
             maxLength={maxLength}
             placeholder={placeholder}
-            min={min}
-            max={max}
-            step={step}
           />
           {showCharCount && maxLength && (
             <div style={{
@@ -388,7 +378,7 @@ const FormField = ({
             </div>
           )}
         </div>
-      </div>
+      )}
       {getValidationMessage()}
     </div>
   );
@@ -399,6 +389,7 @@ const FormField = ({
 // ===============================================
 const Marca = () => {
   const [marcas, setMarcas] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -416,12 +407,11 @@ const Marca = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
 
-  // Estado inicial basado en la estructura de tu API
   const [newMarca, setNewMarca] = useState({
-    idMarca: 0,
     nombre: "",
-    estado: true
+    estado: "true"
   });
 
   // ===============================================
@@ -429,17 +419,20 @@ const Marca = () => {
   // ===============================================
   useEffect(() => {
     fetchMarcas();
+    fetchProductos();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombre', newMarca.nombre);
-      validateField('estado', newMarca.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newMarca[fieldName]);
+        }
+      });
     }
-  }, [newMarca, showForm]);
+  }, [newMarca, showForm, touchedFields]);
 
-  // Efecto para agregar estilos de animación
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -482,8 +475,6 @@ const Marca = () => {
         return <FaExclamationTriangle style={alertIconStyle} />;
       case "warning":
         return <FaExclamationTriangle style={alertIconStyle} />;
-      case "info":
-        return <FaInfoCircle style={alertIconStyle} />;
       default:
         return <FaInfoCircle style={alertIconStyle} />;
     }
@@ -497,8 +488,6 @@ const Marca = () => {
         return alertErrorStyle;
       case "warning":
         return alertWarningStyle;
-      case "info":
-        return alertInfoStyle;
       default:
         return alertSuccessStyle;
     }
@@ -530,7 +519,7 @@ const Marca = () => {
       error = rules.errorMessages.pattern;
     }
     else if (fieldName === 'estado') {
-      success = value ? "Marca activa" : "Marca inactiva";
+      success = value === "true" ? "Marca activa" : "Marca inactiva";
     }
     else if (trimmedValue) {
       success = "Campo válido.";
@@ -579,6 +568,13 @@ const Marca = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombre: true,
+      estado: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombre', newMarca.nombre);
     const estadoValid = validateField('estado', newMarca.estado);
 
@@ -597,8 +593,16 @@ const Marca = () => {
     return isValid;
   };
 
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
   // ===============================================
-  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
+  // FUNCIONES DE LA API
   // ===============================================
   const fetchMarcas = async () => {
     setLoading(true);
@@ -625,6 +629,17 @@ const Marca = () => {
     }
   };
 
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
+    }
+  };
+
   const handleAddMarca = async (e) => {
     e.preventDefault();
     
@@ -641,16 +656,14 @@ const Marca = () => {
     setLoading(true);
     
     try {
-      // Preparar datos según la estructura de tu API
       const marcaData = {
         nombre: newMarca.nombre.trim(),
-        estado: newMarca.estado
+        estado: newMarca.estado === "true"
       };
 
       console.log("📤 Enviando datos:", marcaData);
 
       if (isEditing) {
-        // Para edición, incluir el idMarca
         marcaData.idMarca = newMarca.idMarca;
         await axios.put(`${API_MARCAS}/${newMarca.idMarca}`, marcaData, {
           headers: { 'Content-Type': 'application/json' }
@@ -715,7 +728,7 @@ const Marca = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -747,12 +760,11 @@ const Marca = () => {
     }));
   };
 
-  // Función para cambiar el estado con el botón toggle
-  const toggleEstado = () => {
-    setNewMarca(prev => ({
-      ...prev,
-      estado: !prev.estado
-    }));
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newMarca[name]);
   };
 
   const closeForm = () => {
@@ -761,10 +773,10 @@ const Marca = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setNewMarca({
-      idMarca: 0,
       nombre: "",
-      estado: true
+      estado: "true"
     });
   };
 
@@ -801,23 +813,19 @@ const Marca = () => {
   // Función mejorada para verificar si una marca tiene productos asociados
   const checkIfMarcaHasProducts = async (marcaId) => {
     try {
-      // Buscar productos que pertenezcan a esta marca
-      const response = await axios.get(`${API_PRODUCTOS}/marca/${marcaId}`, {
-        timeout: 5000
-      });
-      
-      return response.data && Array.isArray(response.data) && response.data.length > 0;
+      const productosEnMarca = productos.filter(producto => 
+        producto.idMarca === marcaId
+      );
+      return productosEnMarca.length > 0;
     } catch (error) {
       console.error("Error al verificar productos:", error);
-      
-      // Si no se puede verificar, asumir que podría tener productos por seguridad
-      if (error.response && error.response.status === 404) {
-        // Si el endpoint no existe, usar un enfoque alternativo
-        return marcas.find(marca => marca.idMarca === marcaId)?.productosCount > 0;
-      }
-      
       return true; // Por seguridad, asumir que tiene productos si hay error
     }
+  };
+
+  // Función para contar productos por marca
+  const contarProductosPorMarca = (marcaId) => {
+    return productos.filter(producto => producto.idMarca === marcaId).length;
   };
 
   const handleView = (marca) => {
@@ -828,25 +836,25 @@ const Marca = () => {
   const handleEdit = (marca) => {
     setNewMarca({
       ...marca,
-      estado: marca.estado
+      estado: marca.estado.toString()
     });
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (marca) => {
     // Validar si la marca tiene productos asociados antes de eliminar
-    checkIfMarcaHasProducts(marca.idMarca).then(hasProducts => {
-      if (hasProducts) {
-        displayAlert("No se puede eliminar una marca que tiene productos asociados", "error");
-        return;
-      }
-      setMarcaToDelete(marca);
-      setShowDeleteConfirm(true);
-    });
+    const hasProducts = contarProductosPorMarca(marca.idMarca) > 0;
+    if (hasProducts) {
+      displayAlert("No se puede eliminar una marca que tiene productos asociados", "error");
+      return;
+    }
+    setMarcaToDelete(marca);
+    setShowDeleteConfirm(true);
   };
 
   // ===============================================
@@ -950,30 +958,11 @@ const Marca = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Marcas</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {marcas.length} marcas registradas • 
-            {marcas.filter(m => m.estado).length} activas
+            {marcas.length} marcas registradas • {marcas.filter(m => m.estado).length} activas
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button
-            onClick={fetchMarcas}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 12px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-            title="Recargar marcas"
-          >
-            <FaSync />
-          </button>
+          
           <button
             onClick={() => {
               setShowForm(true);
@@ -981,10 +970,10 @@ const Marca = () => {
               setFormErrors({});
               setFormSuccess({});
               setFormWarnings({});
+              setTouchedFields({});
               setNewMarca({
-                idMarca: 0,
                 nombre: "",
-                estado: true
+                estado: "true"
               });
             }}
             style={{
@@ -1015,9 +1004,64 @@ const Marca = () => {
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      {/* Estadísticas - IGUAL QUE TIPO CABAÑA */}
+      {!loading && marcas.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {marcas.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Marcas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {marcas.filter(m => m.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Marcas Activas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {marcas.filter(m => !m.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Marcas Inactivas
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda - SIMPLIFICADA */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1038,17 +1082,14 @@ const Marca = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredMarcas.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
+          <div style={modalContentStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>
                 {isEditing ? "Editar Marca" : "Nueva Marca"}
               </h2>
               <button
@@ -1066,108 +1107,25 @@ const Marca = () => {
               </button>
             </div>
             
-            <form onSubmit={handleAddMarca}>
-              <div style={formContainerStyle}>
-                <FormField
-                  label="Nombre de la Marca"
-                  name="nombre"
-                  value={newMarca.nombre}
-                  onChange={handleChange}
-                  error={formErrors.nombre}
-                  success={formSuccess.nombre}
-                  warning={formWarnings.nombre}
-                  style={{ gridColumn: '1 / -1' }}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.nombre.maxLength}
-                  showCharCount={true}
-                  placeholder="Ej: Dove, Coca-Cola, Samsung, Nike, Adidas..."
-                  icon={<FaShoppingCart />}
-                />
+            <form onSubmit={handleAddMarca} style={formContainerStyle}>
+              <FormField
+                label="Nombre de la Marca"
+                name="nombre"
+                value={newMarca.nombre}
+                onChange={handleChange}
+                onBlur={handleInputBlur}
+                error={formErrors.nombre}
+                success={formSuccess.nombre}
+                warning={formWarnings.nombre}
+                required={true}
+                disabled={loading}
+                maxLength={VALIDATION_RULES.nombre.maxLength}
+                showCharCount={true}
+                placeholder="Ej: Dove, Coca-Cola, Samsung, Nike, Adidas..."
+                touched={touchedFields.nombre}
+              />
 
-                {/* Botón Toggle para Estado - oculto en modo edición */}
-                {!isEditing && (
-                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
-                    <label style={labelStyle}>
-                      Estado de la Marca
-                      <span style={{ color: "red" }}>*</span>
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <button
-                        type="button"
-                        onClick={toggleEstado}
-                        style={toggleButtonStyle(newMarca.estado)}
-                        disabled={loading}
-                      >
-                        {newMarca.estado ? (
-                          <>
-                            <FaToggleOn size={20} />
-                            <span>🟢 Activa</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaToggleOff size={20} />
-                            <span>🔴 Inactiva</span>
-                          </>
-                        )}
-                      </button>
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newMarca.estado ? '#4caf50' : '#e57373',
-                        fontWeight: '500'
-                      }}>
-                        {newMarca.estado 
-                          ? 'La marca está activa y disponible para productos' 
-                          : 'La marca está inactiva y no disponible para productos'
-                        }
-                      </span>
-                    </div>
-                    {formErrors.estado && (
-                      <div style={errorValidationStyle}>
-                        <FaExclamationTriangle size={12} />
-                        {formErrors.estado}
-                      </div>
-                    )}
-                    {formSuccess.estado && (
-                      <div style={successValidationStyle}>
-                        <FaCheck size={12} />
-                        {formSuccess.estado}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </div>
-
-              {/* Resumen de la marca */}
-              <div style={{
-                backgroundColor: '#E8F5E8',
-                border: '1px solid #679750',
-                borderRadius: '8px',
-                padding: '15px',
-                marginBottom: '20px'
-              }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen de la Marca</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
-                  <div>Nombre:</div>
-                  <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                    {newMarca.nombre || 'Sin nombre'}
-                  </div>
-                  
-                  <div style={{ borderTop: '1px solid #ccc', paddingTop: '5px' }}>
-                    <strong>Estado:</strong>
-                  </div>
-                  <div style={{ 
-                    textAlign: 'right', 
-                    fontWeight: 'bold', 
-                    color: newMarca.estado ? '#4caf50' : '#e57373', 
-                    borderTop: '1px solid #ccc', 
-                    paddingTop: '5px' 
-                  }}>
-                    {newMarca.estado ? '🟢 Activa' : '🔴 Inactiva'}
-                  </div>
-                </div>
-              </div>
+              
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
@@ -1227,7 +1185,7 @@ const Marca = () => {
       {/* Modal de detalles */}
       {showDetails && selectedMarca && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Marca</h2>
               <button
@@ -1253,10 +1211,26 @@ const Marca = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Nombre de la Marca</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaShoppingCart color="#679750" />
                     {selectedMarca.nombre}
                   </div>
+                </div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Productos Asociados</div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    backgroundColor: '#E8F5E8',
+                    color: '#2E5939',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {contarProductosPorMarca(selectedMarca.idMarca)} productos
+                  </span>
                 </div>
               </div>
               
@@ -1270,6 +1244,24 @@ const Marca = () => {
                   {selectedMarca.estado ? '🟢 Activa' : '🔴 Inactiva'}
                 </div>
               </div>
+
+              {/* Información sobre productos */}
+              {contarProductosPorMarca(selectedMarca.idMarca) > 0 && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>Información Importante</div>
+                  <div style={{
+                    ...detailValueStyle,
+                    color: '#ff9800',
+                    fontSize: '14px',
+                    backgroundColor: '#fff3cd',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ffeaa7'
+                  }}>
+                    ⚠️ Esta marca tiene productos asociados. No se puede eliminar mientras tenga productos.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1295,42 +1287,41 @@ const Marca = () => {
       {/* Modal de Confirmación de Eliminación */}
       {showDeleteConfirm && marcaToDelete && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
-            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
-            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
-              ¿Estás seguro de eliminar la marca "<strong>{marcaToDelete.nombre}</strong>"?
+          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 12, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 18, fontSize: '1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar de forma permanente la marca "<strong>{marcaToDelete.nombre}</strong>"? Esta acción no se puede deshacer.
             </p>
-            
-            {/* Advertencia sobre productos */}
+
             <div style={{ 
-              backgroundColor: '#fff3cd', 
-              border: '1px solid #ffeaa7',
+              backgroundColor: '#ffecec', 
+              border: '1px solid #e57373',
               borderRadius: '8px',
-              padding: '15px',
-              marginBottom: '20px'
+              padding: '12px 15px',
+              marginBottom: '18px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <FaInfoCircle style={{ color: '#856404' }} />
-                <strong style={{ color: '#856404' }}>Marca a eliminar</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <FaInfoCircle style={{ color: '#e57373' }} />
+                <strong style={{ color: '#2E5939' }}>Atención</strong>
               </div>
-              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Esta acción eliminará permanentemente la marca. No se puede eliminar si tiene productos asociados.
+              <p style={{ color: '#2E5939', margin: 0, fontSize: '0.9rem' }}>
+                Si la marca está asociada a productos, la eliminación será rechazada por el servidor y se mostrará el motivo.
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
                 style={{
-                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  backgroundColor: loading ? "#ccc" : "#e53935",
                   color: "white",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  fontWeight: "700",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                 }}
               >
                 {loading ? "Eliminando..." : "Sí, Eliminar"}
@@ -1341,23 +1332,11 @@ const Marca = () => {
                 style={{
                   backgroundColor: loading ? "#ccc" : "#2E5939",
                   color: "#fff",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "#2E5939";
-                  }
                 }}
               >
                 Cancelar
@@ -1398,6 +1377,7 @@ const Marca = () => {
             <thead>
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Marca</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Productos</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1405,83 +1385,96 @@ const Marca = () => {
             <tbody>
               {paginatedMarcas.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={3} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                      <FaShoppingCart size={30} color="#679750" />
-                      {marcas.length === 0 ? "No hay marcas registradas" : "No se encontraron resultados"}
-                      {marcas.length === 0 && (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          style={{
-                            backgroundColor: "#2E5939",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: "600",
-                            marginTop: '10px'
-                          }}
-                        >
-                          <FaPlus style={{ marginRight: '5px' }} />
-                          Agregar Primera Marca
-                        </button>
-                      )}
-                    </div>
+                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    {marcas.length === 0 ? "No hay marcas registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
-                paginatedMarcas.map((marca) => (
-                  <tr key={marca.idMarca} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaShoppingCart color="#679750" />
-                        {marca.nombre}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstadoMarca(marca)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: marca.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px"
-                        }}
-                      >
-                        {marca.estado ? "Activa" : "Inactiva"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(marca)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(marca)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(marca)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                paginatedMarcas.map((marca) => {
+                  const productosCount = contarProductosPorMarca(marca.idMarca);
+                  return (
+                    <tr key={marca.idMarca} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <FaShoppingCart color="#679750" />
+                          {marca.nombre}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <span style={{ 
+                          backgroundColor: productosCount > 0 ? '#E8F5E8' : '#F7F4EA',
+                          color: productosCount > 0 ? '#2E5939' : '#666',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>
+                          {productosCount} productos
+                        </span>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => toggleEstadoMarca(marca)}
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: marca.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
+                          }}
+                        >
+                          {marca.estado ? "Activa" : "Inactiva"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                          <button
+                            onClick={() => handleView(marca)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(marca)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(marca); }}
+                            style={{
+                              ...btnAccion("#fbe9e7", "#e57373"),
+                              opacity: productosCount > 0 ? 0.5 : 1,
+                              cursor: productosCount > 0 ? "not-allowed" : "pointer"
+                            }}
+                            title={productosCount > 0 ? "No se puede eliminar - Tiene productos asociados" : "Eliminar"}
+                            disabled={productosCount > 0}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1490,7 +1483,7 @@ const Marca = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -1498,18 +1491,33 @@ const Marca = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -1517,75 +1525,14 @@ const Marca = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && marcas.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {marcas.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Marcas
-            </div>
-          </div>
           
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {marcas.filter(m => m.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Marcas Activas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {marcas.filter(m => !m.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Marcas Inactivas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {Math.round(marcas.reduce((sum, marca) => sum + marca.nombre.length, 0) / marcas.length)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Prom. Caracteres
-            </div>
+            Página {currentPage} de {totalPages}
           </div>
         </div>
       )}

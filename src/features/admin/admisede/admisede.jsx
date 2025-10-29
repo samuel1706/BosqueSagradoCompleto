@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt, FaBox, FaList } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -42,20 +42,6 @@ const inputStyle = {
   transition: "all 0.3s ease",
 };
 
-const inputErrorStyle = {
-  ...inputStyle,
-  border: "2px solid #e74c3c",
-  backgroundColor: "#fdf2f2",
-};
-
-const yellowBlockedInputStyle = {
-  ...inputStyle,
-  backgroundColor: "#fffde7",
-  color: "#bfa100",
-  cursor: "not-allowed",
-  border: "1.5px solid #ffe082"
-};
-
 const navBtnStyle = (disabled) => ({
   cursor: disabled ? "not-allowed" : "pointer",
   padding: "8px 12px",
@@ -96,7 +82,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -165,7 +151,7 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -211,6 +197,37 @@ const errorValidationStyle = {
 const warningValidationStyle = {
   ...validationMessageStyle,
   color: "#ff9800"
+};
+
+// ===============================================
+// ESTILOS PARA SELECTORES MÚLTIPLES
+// ===============================================
+const selectorMultipleStyle = {
+  border: '1px solid #ccc',
+  borderRadius: '8px',
+  padding: '15px',
+  backgroundColor: '#F7F4EA',
+  marginBottom: '15px'
+};
+
+const selectorItemStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '8px',
+  marginBottom: '5px',
+  backgroundColor: 'white',
+  borderRadius: '5px',
+  border: '1px solid #e0e0e0'
+};
+
+const selectorListStyle = {
+  maxHeight: '200px',
+  overflowY: 'auto',
+  marginTop: '10px',
+  border: '1px solid #e0e0e0',
+  borderRadius: '5px',
+  padding: '10px'
 };
 
 // ===============================================
@@ -269,7 +286,9 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_SEDES = "http://localhost:5204/api/Sede";
+const API_SEDES = "http://localhost:5018/api/Sede";
+const API_PAQUETES = "http://localhost:5018/api/Paquetes";
+const API_SEDE_POR_PAQUETE = "http://localhost:5018/api/SedePorPaquete";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -290,7 +309,9 @@ const FormField = ({
   options = [],
   maxLength,
   placeholder,
-  showCharCount = false
+  showCharCount = false,
+  rows = 3,
+  touched = false
 }) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -317,21 +338,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -339,7 +365,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -347,7 +373,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -400,7 +426,7 @@ const FormField = ({
             onChange={handleFilteredInputChange}
             style={{
               ...getInputStyle(),
-              minHeight: "80px",
+              minHeight: `${rows * 20}px`,
               resize: "vertical",
               fontFamily: "inherit"
             }}
@@ -408,6 +434,7 @@ const FormField = ({
             disabled={disabled}
             maxLength={maxLength}
             placeholder={placeholder}
+            rows={rows}
           />
           {showCharCount && maxLength && (
             <div style={{
@@ -451,15 +478,82 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Admisede CON ESTILOS MEJORADOS
+// COMPONENTE PARA SELECTOR MÚLTIPLE DE PAQUETES
+// ===============================================
+const SelectorPaquetes = ({ 
+  paquetes, 
+  paquetesSeleccionados, 
+  onTogglePaquete 
+}) => {
+  return (
+    <div style={selectorMultipleStyle}>
+      <label style={labelStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FaBox />
+          Paquetes Disponibles en esta Sede
+        </div>
+      </label>
+      
+      <div style={selectorListStyle}>
+        {paquetes.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#679750', padding: '10px' }}>
+            No hay paquetes disponibles
+          </div>
+        ) : (
+          paquetes.map(paquete => (
+            <div key={paquete.idPaquete} style={selectorItemStyle}>
+              <input
+                type="checkbox"
+                checked={paquetesSeleccionados.some(sel => sel.idPaquete === paquete.idPaquete)}
+                onChange={() => onTogglePaquete(paquete)}
+                style={{ cursor: 'pointer' }}
+              />
+              <span style={{ flex: 1 }}>
+                {paquete.nombrePaquete}
+                <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                  ({formatPrice(paquete.precioPaquete)})
+                </span>
+              </span>
+              <span style={{
+                fontSize: '0.7rem',
+                padding: '2px 6px',
+                borderRadius: '10px',
+                backgroundColor: paquete.estado ? '#4caf50' : '#e57373',
+                color: 'white'
+              }}>
+                {paquete.estado ? 'Activo' : 'Inactivo'}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+      
+      {paquetesSeleccionados.length > 0 && (
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ fontSize: '0.8rem', color: '#2E5939', marginBottom: '5px' }}>
+            Paquetes seleccionados: {paquetesSeleccionados.length}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===============================================
+// COMPONENTE PRINCIPAL Admisede CON GESTIÓN DE PAQUETES
 // ===============================================
 const Admisede = () => {
   const [sedes, setSedes] = useState([]);
+  const [paquetes, setPaquetes] = useState([]);
+  const [sedePorPaquete, setSedePorPaquete] = useState([]);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -470,6 +564,10 @@ const Admisede = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
+
+  // Estados para selección múltiple de paquetes
+  const [paquetesSeleccionados, setPaquetesSeleccionados] = useState([]);
 
   const [newItem, setNewItem] = useState({
     nombreSede: "",
@@ -483,17 +581,20 @@ const Admisede = () => {
   // ===============================================
   useEffect(() => {
     fetchSedes();
+    fetchPaquetes();
+    fetchSedePorPaquete();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombreSede', newItem.nombreSede);
-      validateField('ubicacionSede', newItem.ubicacionSede);
-      validateField('celular', newItem.celular);
-      validateField('estado', newItem.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newItem[fieldName]);
+        }
+      });
     }
-  }, [newItem, showForm]);
+  }, [newItem, showForm, touchedFields]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -508,11 +609,6 @@ const Admisede = () => {
           transform: translateX(0);
           opacity: 1;
         }
-      }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(style);
@@ -572,25 +668,40 @@ const Admisede = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(API_SEDES, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setSedes(res.data);
-      } else {
-        throw new Error("Formato de datos inválido");
-      }
+      const res = await axios.get(API_SEDES);
+      setSedes(res.data);
     } catch (error) {
       console.error("❌ Error al obtener sedes:", error);
       handleApiError(error, "cargar las sedes");
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPaquetes = async () => {
+    try {
+      const res = await axios.get(API_PAQUETES);
+      setPaquetes(res.data);
+    } catch (error) {
+      console.error("❌ Error al obtener paquetes:", error);
+    }
+  };
+
+  const fetchSedePorPaquete = async () => {
+    try {
+      const res = await axios.get(API_SEDE_POR_PAQUETE);
+      setSedePorPaquete(res.data);
+    } catch (error) {
+      console.error("❌ Error al obtener relaciones sede-paquete:", error);
+    }
+  };
+
+  // Obtener paquetes asociados a una sede
+  const getPaquetesDeLaSede = (idSede) => {
+    const relaciones = sedePorPaquete.filter(sp => sp.idSede === idSede);
+    return relaciones.map(rel => 
+      paquetes.find(p => p.idPaquete === rel.idPaquete)
+    ).filter(paquete => paquete !== undefined);
   };
 
   // ===============================================
@@ -633,7 +744,6 @@ const Admisede = () => {
       } else if (fieldName === 'ubicacionSede' && trimmedValue.length < 20) {
         warning = "La ubicación es breve. Sea más específico para mejor ubicación.";
       } else if (fieldName === 'celular') {
-        // Validar que el celular empiece con 3
         if (!trimmedValue.startsWith('3')) {
           warning = "Los números celulares en Colombia generalmente empiezan con 3.";
         }
@@ -668,6 +778,15 @@ const Admisede = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombreSede: true,
+      ubicacionSede: true,
+      celular: true,
+      estado: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombreSede', newItem.nombreSede);
     const ubicacionValid = validateField('ubicacionSede', newItem.ubicacionSede);
     const celularValid = validateField('celular', newItem.celular);
@@ -688,6 +807,31 @@ const Admisede = () => {
     return isValid;
   };
 
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
+  // ===============================================
+  // FUNCIONES PARA SELECTORES MÚLTIPLES
+  // ===============================================
+  const togglePaquete = (paquete) => {
+    setPaquetesSeleccionados(prev => {
+      const exists = prev.some(p => p.idPaquete === paquete.idPaquete);
+      if (exists) {
+        return prev.filter(p => p.idPaquete !== paquete.idPaquete);
+      } else {
+        return [...prev, paquete];
+      }
+    });
+  };
+
+  // ===============================================
+  // FUNCIONES CRUD PARA SEDES
+  // ===============================================
   const handleAddSede = async (e) => {
     e.preventDefault();
     
@@ -704,6 +848,7 @@ const Admisede = () => {
     setLoading(true);
     
     try {
+      // Preparar datos de la sede
       const sedeData = {
         nombreSede: newItem.nombreSede.trim(),
         ubicacionSede: newItem.ubicacionSede.trim(),
@@ -711,34 +856,26 @@ const Admisede = () => {
         estado: newItem.estado === "true" || newItem.estado === true
       };
 
-      console.log("📤 Enviando datos al servidor:", sedeData);
+      let idSedeCreada;
 
       if (isEditing) {
-        const dataToUpdate = {
-          idSede: parseInt(newItem.idSede),
-          ...sedeData
-        };
-        
-        await axios.put(`${API_SEDES}/${newItem.idSede}`, dataToUpdate, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-        
+        // Editar sede existente
+        sedeData.idSede = parseInt(newItem.idSede);
+        await axios.put(`${API_SEDES}/${newItem.idSede}`, sedeData);
+        idSedeCreada = newItem.idSede;
         displayAlert("Sede actualizada exitosamente.", "success");
       } else {
-        await axios.post(API_SEDES, sedeData, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-        
+        // Crear nueva sede
+        const response = await axios.post(API_SEDES, sedeData);
+        idSedeCreada = response.data.idSede;
         displayAlert("Sede agregada exitosamente.", "success");
       }
-      
+
+      // Guardar relaciones con paquetes
+      await guardarRelacionesPaquetes(idSedeCreada);
+
       await fetchSedes();
+      await fetchSedePorPaquete();
       closeForm();
     } catch (error) {
       console.error("❌ Error al guardar sede:", error);
@@ -746,6 +883,80 @@ const Admisede = () => {
     } finally {
       setLoading(false);
       setIsSubmitting(false);
+    }
+  };
+
+  const guardarRelacionesPaquetes = async (idSede) => {
+    // Eliminar relaciones existentes si estamos editando
+    if (isEditing) {
+      const relacionesExistentes = sedePorPaquete.filter(sp => sp.idSede === idSede);
+      for (const relacion of relacionesExistentes) {
+        await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+      }
+    }
+
+    // Crear nuevas relaciones
+    for (const paquete of paquetesSeleccionados) {
+      await axios.post(API_SEDE_POR_PAQUETE, {
+        idSede: idSede,
+        idPaquete: paquete.idPaquete
+      });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (itemToDelete) {
+      setLoading(true);
+      try {
+        // Primero eliminar las relaciones con paquetes
+        const relacionesPaquetes = sedePorPaquete.filter(sp => sp.idSede === itemToDelete.idSede);
+        for (const relacion of relacionesPaquetes) {
+          await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+        }
+
+        // Luego eliminar la sede
+        await axios.delete(`${API_SEDES}/${itemToDelete.idSede}`);
+        displayAlert("Sede eliminada exitosamente.", "success");
+        
+        await fetchSedes();
+        await fetchSedePorPaquete();
+        
+        if (paginatedItems.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } catch (error) {
+        console.error("❌ Error al eliminar sede:", error);
+        
+        if (error.response && error.response.status === 409) {
+          displayAlert("No se puede eliminar la sede porque tiene datos asociados.", "error");
+        } else {
+          handleApiError(error, "eliminar la sede");
+        }
+      } finally {
+        setLoading(false);
+        setItemToDelete(null);
+        setShowDeleteConfirm(false);
+      }
+    }
+  };
+
+  const toggleEstado = async (sede) => {
+    setLoading(true);
+    try {
+      const updatedSede = { 
+        ...sede, 
+        estado: !sede.estado 
+      };
+      
+      await axios.put(`${API_SEDES}/${sede.idSede}`, updatedSede);
+      
+      displayAlert(`Sede ${updatedSede.estado ? 'activada' : 'desactivada'} exitosamente.`, "success");
+      await fetchSedes();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      handleApiError(error, "cambiar el estado de la sede");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -759,14 +970,14 @@ const Admisede = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
       } else if (error.response.status === 404) {
         errorMessage = "Recurso no encontrado.";
       } else if (error.response.status === 409) {
-        errorMessage = "Conflicto: Ya existe una sede con estos datos.";
+        errorMessage = "Conflicto: La sede tiene datos asociados y no puede ser eliminada.";
         alertType = "warning";
       } else if (error.response.status === 500) {
         errorMessage = "Error interno del servidor.";
@@ -791,12 +1002,21 @@ const Admisede = () => {
     }));
   };
 
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newItem[name]);
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
+    setPaquetesSeleccionados([]);
     setNewItem({
       nombreSede: "",
       ubicacionSede: "",
@@ -810,12 +1030,17 @@ const Admisede = () => {
     setCurrentItem(null);
   };
 
+  const cancelDelete = () => {
+    setItemToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
   const handleView = (item) => {
     setCurrentItem(item);
     setShowDetails(true);
   };
 
-  const handleEdit = (item) => {
+  const handleEdit = async (item) => {
     setNewItem({
       idSede: item.idSede,
       nombreSede: item.nombreSede || "",
@@ -823,32 +1048,22 @@ const Admisede = () => {
       celular: item.celular || "",
       estado: item.estado.toString()
     });
+
+    // Cargar paquetes asociados
+    const paquetesAsociados = getPaquetesDeLaSede(item.idSede);
+    setPaquetesSeleccionados(paquetesAsociados);
     
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
-  const toggleEstado = async (sede) => {
-    setLoading(true);
-    try {
-      const updatedSede = { 
-        ...sede, 
-        estado: !sede.estado 
-      };
-      await axios.put(`${API_SEDES}/${sede.idSede}`, updatedSede, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      displayAlert(`Sede ${updatedSede.estado ? 'activada' : 'desactivada'} exitosamente.`, "success");
-      await fetchSedes();
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
-      handleApiError(error, "cambiar el estado");
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteClick = (item) => {
+    setItemToDelete(item);
+    setShowDeleteConfirm(true);
   };
 
   // ===============================================
@@ -871,6 +1086,18 @@ const Admisede = () => {
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // ===============================================
+  // FUNCIONES PARA FORMATEAR DATOS
+  // ===============================================
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price);
   };
 
   // ===============================================
@@ -919,7 +1146,11 @@ const Admisede = () => {
           <p>{error}</p>
           <div style={{ marginTop: '10px' }}>
             <button
-              onClick={fetchSedes}
+              onClick={() => {
+                fetchSedes();
+                fetchPaquetes();
+                fetchSedePorPaquete();
+              }}
               style={{
                 backgroundColor: '#2E5939',
                 color: 'white',
@@ -964,6 +1195,8 @@ const Admisede = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
+            setTouchedFields({});
+            setPaquetesSeleccionados([]);
             setNewItem({
               nombreSede: "",
               ubicacionSede: "",
@@ -998,9 +1231,79 @@ const Admisede = () => {
         </button>
       </div>
 
+      {/* Estadísticas */}
+      {!loading && sedes.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {sedes.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Sedes
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {sedes.filter(s => s.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Sedes Activas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {sedes.filter(s => !s.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Sedes Inactivas
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {sedePorPaquete.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Relaciones Activas
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1021,15 +1324,12 @@ const Admisede = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredItems.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 800 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
                 {isEditing ? "Editar Sede" : "Agregar Nueva Sede"}
@@ -1058,6 +1358,7 @@ const Admisede = () => {
                     name="nombreSede"
                     value={newItem.nombreSede}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.nombreSede}
                     success={formSuccess.nombreSede}
                     warning={formWarnings.nombreSede}
@@ -1066,6 +1367,7 @@ const Admisede = () => {
                     maxLength={VALIDATION_RULES.nombreSede.maxLength}
                     showCharCount={true}
                     placeholder="Ej: Sede Principal, Sede Norte..."
+                    touched={touchedFields.nombreSede}
                   />
                 </div>
                 
@@ -1081,6 +1383,7 @@ const Admisede = () => {
                     type="textarea"
                     value={newItem.ubicacionSede}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.ubicacionSede}
                     success={formSuccess.ubicacionSede}
                     warning={formWarnings.ubicacionSede}
@@ -1088,7 +1391,9 @@ const Admisede = () => {
                     disabled={loading}
                     maxLength={VALIDATION_RULES.ubicacionSede.maxLength}
                     showCharCount={true}
+                    rows={4}
                     placeholder="Ej: Calle 123 #45-67, Barrio El Poblado, Medellín..."
+                    touched={touchedFields.ubicacionSede}
                   />
                 </div>
                 
@@ -1099,6 +1404,7 @@ const Admisede = () => {
                     type="tel"
                     value={newItem.celular}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.celular}
                     success={formSuccess.celular}
                     warning={formWarnings.celular}
@@ -1106,25 +1412,18 @@ const Admisede = () => {
                     disabled={loading}
                     maxLength={VALIDATION_RULES.celular.exactLength}
                     placeholder="10 dígitos, comenzando con 3"
+                    touched={touchedFields.celular}
                   />
                 </div>
 
-                <div>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newItem.estado}
-                    onChange={handleInputChange}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "🟢 Activa" },
-                      { value: "false", label: "🔴 Inactiva" }
-                    ]}
+                
+
+                {/* Selector de Paquetes */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <SelectorPaquetes
+                    paquetes={paquetes.filter(p => p.estado)}
+                    paquetesSeleccionados={paquetesSeleccionados}
+                    onTogglePaquete={togglePaquete}
                   />
                 </div>
               </div>
@@ -1241,6 +1540,32 @@ const Admisede = () => {
                 <div style={detailValueStyle}>{currentItem.celular}</div>
               </div>
 
+              {/* Paquetes asociados */}
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaBox />
+                    Paquetes Disponibles ({getPaquetesDeLaSede(currentItem.idSede).length})
+                  </div>
+                </div>
+                <div style={detailValueStyle}>
+                  {getPaquetesDeLaSede(currentItem.idSede).length > 0 ? (
+                    <div style={selectorListStyle}>
+                      {getPaquetesDeLaSede(currentItem.idSede).map(paquete => (
+                        <div key={paquete.idPaquete} style={selectorItemStyle}>
+                          <span>{paquete.nombrePaquete}</span>
+                          <span style={{ color: '#679750', fontSize: '0.8rem' }}>
+                            {formatPrice(paquete.precioPaquete)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#679750' }}>No hay paquetes asociados</span>
+                  )}
+                </div>
+              </div>
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
@@ -1283,6 +1608,81 @@ const Admisede = () => {
         </div>
       )}
 
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteConfirm && itemToDelete && (
+        <div style={modalOverlayStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar la sede "<strong>{itemToDelete.nombreSede}</strong>"?
+            </p>
+            
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffeaa7',
+              borderRadius: '8px',
+              padding: '15px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <FaInfoCircle style={{ color: '#856404' }} />
+                <strong style={{ color: '#856404' }}>Información</strong>
+              </div>
+              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
+                Estado: {itemToDelete.estado ? 'Activa' : 'Inactiva'} | 
+                Paquetes asociados: {getPaquetesDeLaSede(itemToDelete.idSede).length}
+              </p>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+              <button
+                onClick={confirmDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  color: "white",
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                }}
+              >
+                {loading ? "Eliminando..." : "Sí, Eliminar"}
+              </button>
+              <button
+                onClick={cancelDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#2E5939",
+                  color: "#fff",
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "#2E5939";
+                  }
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Contenido principal */}
       <div style={{
         backgroundColor: '#fff',
@@ -1316,6 +1716,7 @@ const Admisede = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Nombre</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Ubicación</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Celular</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Paquetes</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1323,65 +1724,84 @@ const Admisede = () => {
             <tbody>
               {paginatedItems.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     {sedes.length === 0 ? "No hay sedes registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((item) => (
-                  <tr key={item.idSede} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{item.nombreSede}</td>
-                    <td style={{ padding: "15px" }}>
-                      {item.ubicacionSede?.length > 50 
-                        ? `${item.ubicacionSede.substring(0, 50)}...` 
-                        : item.ubicacionSede}
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{item.celular}</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstado(item)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: item.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px",
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.transform = "scale(1.05)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.transform = "scale(1)";
-                        }}
-                      >
-                        {item.estado ? "Activa" : "Inactiva"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                paginatedItems.map((item) => {
+                  const paquetesAsociados = getPaquetesDeLaSede(item.idSede);
+                  
+                  return (
+                    <tr key={item.idSede} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>{item.nombreSede}</td>
+                      <td style={{ padding: "15px" }}>
+                        {item.ubicacionSede?.length > 50 
+                          ? `${item.ubicacionSede.substring(0, 50)}...` 
+                          : item.ubicacionSede}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>{item.celular}</td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ fontWeight: 'bold' }}>{paquetesAsociados.length}</span>
+                          <span style={{ fontSize: '12px', color: '#679750' }}>
+                            paquetes
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
                         <button
-                          onClick={() => handleView(item)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Ver Detalles"
+                          onClick={() => toggleEstado(item)}
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: item.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px",
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            e.target.style.transform = "scale(1.05)";
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.transform = "scale(1)";
+                          }}
                         >
-                          <FaEye />
+                          {item.estado ? "Activa" : "Inactiva"}
                         </button>
-                        <button
-                          onClick={() => handleEdit(item)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar Sede"
-                        >
-                          <FaEdit />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => handleView(item)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(item)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar Sede"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(item)}
+                            style={btnAccion("#fbe9e7", "#e57373")}
+                            title="Eliminar Sede"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1418,61 +1838,6 @@ const Admisede = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && sedes.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedes.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Sedes
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedes.filter(s => s.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Sedes Activas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
-              {sedes.filter(s => !s.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
-              Sedes Inactivas
-            </div>
-          </div>
         </div>
       )}
     </div>

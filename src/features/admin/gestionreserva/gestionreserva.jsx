@@ -171,11 +171,11 @@ const detailValueStyle = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_BASE_URL = "http://localhost:5204/api";
+const API_BASE_URL = "http://localhost:5018/api";
 const API_RESERVAS = `${API_BASE_URL}/Reserva`;
-const API_CABANAS = `${API_BASE_URL}/Cabana`;
+const API_CABANAS = `${API_BASE_URL}/Cabanas`;
 const API_SEDES = `${API_BASE_URL}/Sede`;
-const API_PAQUETES = `${API_BASE_URL}/Paquete`;
+const API_PAQUETES = `${API_BASE_URL}/Paquetes`;
 const API_ESTADOS = `${API_BASE_URL}/EstadosReserva`;
 const API_USUARIOS = `${API_BASE_URL}/Usuarios`;
 const API_METODOS_PAGO = `${API_BASE_URL}/metodopago`;
@@ -607,7 +607,7 @@ const GestionReserva = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "❌ Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "❌ No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "❌ No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       errorMessage = `❌ Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
     } else if (error.request) {

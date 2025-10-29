@@ -1,5 +1,5 @@
 // src/components/Users.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaUser, FaUserShield, FaPhone, FaEnvelope, FaIdCard, FaCalendar, FaLock, FaSync } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaUser, FaUserShield, FaPhone, FaEnvelope, FaIdCard, FaCalendar, FaLock, FaSync, FaFilter } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 
@@ -47,6 +47,12 @@ const inputErrorStyle = {
   ...inputStyle,
   border: "2px solid #e74c3c",
   backgroundColor: "#fdf2f2",
+};
+
+const inputSuccessStyle = {
+  ...inputStyle,
+  border: "2px solid #4caf50",
+  backgroundColor: "#f1f8e9",
 };
 
 const navBtnStyle = (disabled) => ({
@@ -340,8 +346,8 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_USUARIOS = "http://localhost:5204/api/Usuarios";
-const API_ROLES = "http://localhost:5204/api/Rol";
+const API_USUARIOS = "http://localhost:5018/api/Usuarios";
+const API_ROLES = "http://localhost:5018/api/Rol";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -373,6 +379,7 @@ const FormField = ({
   maxLength,
   placeholder,
   showCharCount = false,
+  showValidation = true, // Nueva prop para controlar cuándo mostrar validación
   ...props
 }) => {
   const finalOptions = useMemo(() => {
@@ -399,19 +406,17 @@ const FormField = ({
   };
 
   const getInputStyle = () => {
-    let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
-
-    return {
-      ...inputStyle,
-      border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`
-    };
+    if (error && showValidation) {
+      return inputErrorStyle;
+    } else if (success && showValidation) {
+      return inputSuccessStyle;
+    }
+    return inputStyle;
   };
 
   const getValidationMessage = () => {
+    if (!showValidation) return null;
+    
     if (error) {
       return (
         <div style={errorValidationStyle}>
@@ -526,6 +531,8 @@ const Users = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("all");
+  const [showValidation, setShowValidation] = useState(false); // Controla cuándo mostrar validación
 
   const [newUser, setNewUser] = useState({
     tipoDocumento: "Cédula de Ciudadanía",
@@ -549,9 +556,9 @@ const Users = () => {
     fetchRoles();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo cuando showValidation es true
   useEffect(() => {
-    if (showForm) {
+    if (showForm && showValidation) {
       validateField('tipoDocumento', newUser.tipoDocumento);
       validateField('numeroDocumento', newUser.numeroDocumento);
       validateField('nombre', newUser.nombre);
@@ -566,7 +573,7 @@ const Users = () => {
         validateField('confirmPassword', newUser.confirmPassword);
       }
     }
-  }, [newUser, showForm, isEditing]);
+  }, [newUser, showForm, isEditing, showValidation]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -840,7 +847,7 @@ const Users = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -874,6 +881,9 @@ const Users = () => {
       displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
       return;
     }
+
+    // Activar validación visual al enviar el formulario
+    setShowValidation(true);
 
     if (!validateForm()) {
       return;
@@ -969,6 +979,11 @@ const Users = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    // Activar validación visual cuando el usuario comienza a escribir
+    if (!showValidation && value.trim() !== '') {
+      setShowValidation(true);
+    }
   };
 
   const closeForm = () => {
@@ -977,6 +992,7 @@ const Users = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setShowValidation(false); // Resetear validación visual al cerrar
     setNewUser({
       tipoDocumento: "Cédula de Ciudadanía",
       numeroDocumento: "",
@@ -1052,6 +1068,7 @@ const Users = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setShowValidation(true); // Activar validación visual en edición
   };
 
   const handleDeleteClick = (user) => {
@@ -1063,14 +1080,21 @@ const Users = () => {
   // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
   const filteredUsers = useMemo(() => {
-    return users.filter(user =>
+    let filtered = users.filter(user =>
       user.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.correo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.numeroDocumento?.includes(searchTerm) ||
       getRoleName(user.idRol)?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [users, searchTerm]);
+
+    // Filtro por rol
+    if (selectedRole !== "all") {
+      filtered = filtered.filter(user => user.idRol === parseInt(selectedRole));
+    }
+
+    return filtered;
+  }, [users, searchTerm, selectedRole]);
 
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
@@ -1097,6 +1121,34 @@ const Users = () => {
   };
 
   const passwordStrength = getPasswordStrength(newUser.contrasena);
+
+  // ===============================================
+  // CÁLCULO DE ESTADÍSTICAS
+  // ===============================================
+  const stats = useMemo(() => {
+    const totalUsers = users.length;
+    const activeUsers = users.filter(u => u.estado).length;
+    const inactiveUsers = users.filter(u => !u.estado).length;
+    
+    // Estadísticas por rol
+    const roleStats = roles.map(role => {
+      const count = users.filter(user => user.idRol === role.idRol).length;
+      return {
+        idRol: role.idRol,
+        nombreRol: role.nombreRol,
+        count: count,
+        percentage: totalUsers > 0 ? ((count / totalUsers) * 100).toFixed(1) : 0
+      };
+    }).sort((a, b) => b.count - a.count);
+
+    return {
+      totalUsers,
+      activeUsers,
+      inactiveUsers,
+      roleStats,
+      totalRoles: roles.length
+    };
+  }, [users, roles]);
 
   // ===============================================
   // RENDERIZADO
@@ -1184,40 +1236,13 @@ const Users = () => {
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button
-            onClick={fetchUsers}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 15px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: "all 0.3s ease",
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-              e.target.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#679750";
-              e.target.style.transform = "translateY(0)";
-            }}
-            title="Recargar usuarios"
-          >
-            <FaSync /> Actualizar
-          </button>
-          <button
             onClick={() => {
               setShowForm(true);
               setIsEditing(false);
               setFormErrors({});
               setFormSuccess({});
               setFormWarnings({});
+              setShowValidation(false); // No mostrar validación inicialmente
               setNewUser({
                 tipoDocumento: "Cédula de Ciudadanía",
                 numeroDocumento: "",
@@ -1260,8 +1285,96 @@ const Users = () => {
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
+      {/* Estadísticas rápidas - MOVIDAS ARRIBA */}
+      {!loading && users.length > 0 && (
+        <div style={{
+          marginBottom: '25px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {stats.totalUsers}
+            </div>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
+              Total Usuarios
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {stats.activeUsers}
+            </div>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
+              Usuarios Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {stats.inactiveUsers}
+            </div>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
+              Usuarios Inactivos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {stats.totalRoles}
+            </div>
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Roles Disponibles
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda y filtros */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '15px', 
+        marginBottom: '20px', 
+        alignItems: 'center',
+        flexWrap: 'wrap'
+      }}>
         <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
@@ -1283,9 +1396,40 @@ const Users = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredUsers.length} resultados
+
+        {/* Filtro por rol */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 20 }}>
+          <FaFilter style={{ color: '#2E5939' }} />
+          <select
+            value={selectedRole}
+            onChange={(e) => {
+              setSelectedRole(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              backgroundColor: "#F7F4EA",
+              color: "#2E5939",
+              minWidth: '150px',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="all">Todos los roles</option>
+            {roles.map(role => (
+              <option key={role.idRol} value={role.idRol}>
+                {role.nombreRol}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {selectedRole !== "all" && (
+          <div style={{ color: '#679750', fontSize: '14px', whiteSpace: 'nowrap', fontWeight: '600' }}>
+            • {getRoleName(parseInt(selectedRole))}
+          </div>
+        )}
       </div>
 
       {/* Formulario de agregar/editar */}
@@ -1328,6 +1472,7 @@ const Users = () => {
                     options={TIPO_DOCUMENTO_OPTIONS}
                     required={true}
                     disabled={loading}
+                    showValidation={showValidation}
                   />
                   
                   <FormField
@@ -1343,6 +1488,7 @@ const Users = () => {
                     maxLength={12}
                     placeholder="Solo números"
                     showCharCount={true}
+                    showValidation={showValidation}
                   />
                   
                   <FormField
@@ -1359,6 +1505,7 @@ const Users = () => {
                     showCharCount={true}
                     placeholder="Ej: María, Carlos"
                     style={{ gridColumn: '1 / 2' }}
+                    showValidation={showValidation}
                   />
                   
                   <FormField
@@ -1375,6 +1522,7 @@ const Users = () => {
                     showCharCount={true}
                     placeholder="Ej: González, Rodríguez"
                     style={{ gridColumn: '2 / 3' }}
+                    showValidation={showValidation}
                   />
                 </div>
               </div>
@@ -1395,6 +1543,7 @@ const Users = () => {
                     disabled={loading}
                     maxLength={10}
                     placeholder="10 dígitos"
+                    showValidation={showValidation}
                   />
 
                   <FormField
@@ -1408,6 +1557,7 @@ const Users = () => {
                     warning={formWarnings.fechaNacimiento}
                     required={true}
                     disabled={loading}
+                    showValidation={showValidation}
                   />
 
                   <FormField
@@ -1424,6 +1574,7 @@ const Users = () => {
                     maxLength={100}
                     placeholder="usuario@ejemplo.com"
                     style={{ gridColumn: '1 / 2' }}
+                    showValidation={showValidation}
                   />
 
                   <FormField
@@ -1442,6 +1593,7 @@ const Users = () => {
                     required={true}
                     disabled={loadingRoles || roles.length === 0}
                     style={{ gridColumn: '2 / 3' }}
+                    showValidation={showValidation}
                   />
                 </div>
               </div>
@@ -1465,6 +1617,7 @@ const Users = () => {
                       disabled={loading}
                       minLength="8"
                       placeholder="Mínimo 8 caracteres"
+                      showValidation={showValidation}
                     />
                     {newUser.contrasena && (
                       <div style={passwordStrengthStyle}>
@@ -1491,6 +1644,7 @@ const Users = () => {
                       required={!isEditing}
                       disabled={loading}
                       placeholder="Repetir contraseña"
+                      showValidation={showValidation}
                     />
 
                     {isEditing && (
@@ -1559,7 +1713,7 @@ const Users = () => {
                   }}
                 >
                   {loading ? "Guardando..." : 
-                   (isEditing ? "Actualizar" : "Guardar")} Usuario
+                   (isEditing ? "Actualizar Usuario" : "Guardar Usuario")}
                 </button>
                 <button
                   type="button"
@@ -1833,6 +1987,11 @@ const Users = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
                       {users.length === 0 ? "No hay usuarios registrados" : "No se encontraron resultados"}
+                      {selectedRole !== "all" && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtrado por rol: {getRoleName(parseInt(selectedRole))}
+                        </div>
+                      )}
                       {users.length === 0 && (
                         <button
                           onClick={() => setShowForm(true)}
@@ -1985,76 +2144,6 @@ const Users = () => {
             fontWeight: '500'
           }}>
             Página {currentPage} de {totalPages}
-          </div>
-        </div>
-      )}
-
-      {/* Estadísticas rápidas */}
-      {!loading && users.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {users.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Usuarios
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {users.filter(u => u.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Usuarios Activos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {users.filter(u => !u.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Usuarios Inactivos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {roles.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Roles Disponibles
-            </div>
           </div>
         </div>
       )}

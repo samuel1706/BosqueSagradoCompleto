@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaClock, FaTag } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaClock, FaTag, FaImage, FaUpload, FaCamera, FaBox, FaBuilding, FaGift, FaClipboardList } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS
+// ESTILOS MEJORADOS (CONSISTENTES)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -48,6 +48,14 @@ const inputErrorStyle = {
   backgroundColor: "#fdf2f2",
 };
 
+const yellowBlockedInputStyle = {
+  ...inputStyle,
+  backgroundColor: "#fffde7",
+  color: "#bfa100",
+  cursor: "not-allowed",
+  border: "1.5px solid #ffe082"
+};
+
 const navBtnStyle = (disabled) => ({
   cursor: disabled ? "not-allowed" : "pointer",
   padding: "8px 12px",
@@ -88,7 +96,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 600,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -174,14 +182,12 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5,
-  fontSize: "14px"
+  marginBottom: 5
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939",
-  fontWeight: "500"
+  color: "#2E5939"
 };
 
 const validationMessageStyle = {
@@ -208,12 +214,79 @@ const warningValidationStyle = {
 };
 
 // ===============================================
+// ESTILOS PARA IMÁGENES
+// ===============================================
+const imageUploadStyle = {
+  border: '2px dashed #679750',
+  borderRadius: '10px',
+  padding: '20px',
+  textAlign: 'center',
+  backgroundColor: '#F7F4EA',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  marginBottom: '15px'
+};
+
+const imagePreviewContainerStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+  gap: '10px',
+  marginTop: '15px'
+};
+
+const imagePreviewStyle = {
+  position: 'relative',
+  borderRadius: '8px',
+  overflow: 'hidden',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+const imageStyle = {
+  width: '100%',
+  height: '100px',
+  objectFit: 'cover',
+  display: 'block'
+};
+
+const imageRemoveButtonStyle = {
+  position: 'absolute',
+  top: '5px',
+  right: '5px',
+  background: 'rgba(229, 115, 115, 0.9)',
+  color: 'white',
+  border: 'none',
+  borderRadius: '50%',
+  width: '24px',
+  height: '24px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '12px'
+};
+
+const imageGalleryStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+  gap: '15px',
+  marginTop: '15px'
+};
+
+const galleryImageStyle = {
+  width: '100%',
+  height: '120px',
+  objectFit: 'cover',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+// ===============================================
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
   nombreServicio: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]+$/,
   descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/,
-  duracion: /^[0-9]+$/
+  imagen: /^[a-zA-Z0-9\-_\.\/:]+$/ // Patrón básico para URLs de imágenes
 };
 
 const VALIDATION_RULES = {
@@ -232,7 +305,7 @@ const VALIDATION_RULES = {
   descripcion: {
     minLength: 10,
     maxLength: 500,
-    required: false, // Cambiado a false ya que la API permite null
+    required: false,
     pattern: VALIDATION_PATTERNS.descripcion,
     errorMessages: {
       minLength: "La descripción debe tener al menos 10 caracteres.",
@@ -251,22 +324,13 @@ const VALIDATION_RULES = {
       invalid: "El precio debe ser un valor numérico válido."
     }
   },
-  duracion: {
-    min: 15,
-    max: 480,
-    required: false, // Cambiado a false ya que no está en la API
-    pattern: VALIDATION_PATTERNS.duracion,
+  imagen: {
+    maxLength: 500,
+    required: false,
+    pattern: VALIDATION_PATTERNS.imagen,
     errorMessages: {
-      min: "La duración mínima es 15 minutos.",
-      max: "La duración máxima es 480 minutos (8 horas).",
-      pattern: "La duración debe ser un número entero válido.",
-      invalid: "La duración debe ser un número entero válido."
-    }
-  },
-  categoria: {
-    required: false, // Cambiado a false ya que no está en la API
-    errorMessages: {
-      required: "La categoría es obligatoria."
+      maxLength: "La URL de la imagen no puede exceder los 500 caracteres.",
+      pattern: "La URL de la imagen contiene caracteres no válidos."
     }
   },
   estado: {
@@ -280,21 +344,19 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_SERVICIOS = "http://localhost:5204/api/Servicios";
+const API_SERVICIOS = "http://localhost:5018/api/Servicios";
+const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5018/api/ProductoPorServicio";
+const API_SEDES_POR_SERVICIO = "http://localhost:5018/api/SedesPorServicio";
+const API_SERVICIOS_POR_PAQUETE = "http://localhost:5018/api/ServicioPorPaquete";
+const API_SERVICIOS_RESERVA = "http://localhost:5018/api/ServiciosReserva";
+const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const API_SEDES = "http://localhost:5018/api/Sedes";
+const API_PAQUETES = "http://localhost:5018/api/Paquetes";
+const API_RESERVAS = "http://localhost:5018/api/Reservas";
 const ITEMS_PER_PAGE = 5;
 
-// Categorías predefinidas para servicios
-const CATEGORIAS_SERVICIOS = [
-  { value: "spa", label: "💆 Spa y Bienestar" },
-  { value: "gastronomia", label: "🍽️ Gastronomía" },
-  { value: "aventura", label: "🏞️ Aventura y Deporte" },
-  { value: "cultural", label: "🎭 Cultural y Entretenimiento" },
-  { value: "transporte", label: "🚗 Transporte" },
-  { value: "otros", label: "📦 Otros Servicios" }
-];
-
 // ===============================================
-// COMPONENTE FormField PARA SERVICIOS
+// COMPONENTE FormField MEJORADO
 // ===============================================
 const FormField = ({ 
   label, 
@@ -302,6 +364,7 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
@@ -314,15 +377,16 @@ const FormField = ({
   showCharCount = false,
   min,
   max,
-  step
+  step,
+  touched = false
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
-      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
+      const placeholderOption = { value: "", label: placeholder || "Seleccionar", disabled: required };
       return [placeholderOption, ...options];
     }
     return options;
-  }, [options, type, required]);
+  }, [options, type, required, placeholder]);
 
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -345,10 +409,11 @@ const FormField = ({
       if (parts.length === 2 && parts[1].length > 2) {
         filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
       }
-    } else if (name === 'duracion') {
-      filteredValue = value.replace(/[^0-9]/g, "");
-      if (filteredValue && parseInt(filteredValue) > (max || 480)) {
-        filteredValue = max || "480";
+    } else if (name === 'imagen') {
+      if (value === "" || VALIDATION_PATTERNS.imagen.test(value)) {
+        filteredValue = value;
+      } else {
+        return;
       }
     } else {
       filteredValue = value;
@@ -357,21 +422,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -379,7 +449,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -387,7 +457,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -402,13 +472,14 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}>*</span>}
+        {required && <span style={{ color: "red" }}></span>}
       </label>
       {type === "select" ? (
         <select
           name={name}
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           style={getInputStyle()}
           required={required}
           disabled={disabled}
@@ -429,6 +500,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={{
               ...getInputStyle(),
               minHeight: "80px",
@@ -458,6 +530,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled}
@@ -489,6 +562,14 @@ const FormField = ({
 // ===============================================
 const Gestiservi = () => {
   const [servicios, setServicios] = useState([]);
+  const [productosPorServicio, setProductosPorServicio] = useState([]);
+  const [sedesPorServicio, setSedesPorServicio] = useState([]);
+  const [serviciosPorPaquete, setServiciosPorPaquete] = useState([]);
+  const [serviciosReserva, setServiciosReserva] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [sedes, setSedes] = useState([]);
+  const [paquetes, setPaquetes] = useState([]);
+  const [reservas, setReservas] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -506,13 +587,16 @@ const Gestiservi = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [filterCategoria, setFilterCategoria] = useState("");
+  const [touchedFields, setTouchedFields] = useState({});
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Estado inicial basado en la estructura de tu API
   const [newServicio, setNewServicio] = useState({
     idServicio: 0,
     nombreServicio: "",
     precioServicio: "",
+    imagen: "",
     descripcion: "",
     estado: true
   });
@@ -522,17 +606,26 @@ const Gestiservi = () => {
   // ===============================================
   useEffect(() => {
     fetchServicios();
+    fetchProductosPorServicio();
+    fetchSedesPorServicio();
+    fetchServiciosPorPaquete();
+    fetchServiciosReserva();
+    fetchProductos();
+    fetchSedes();
+    fetchPaquetes();
+    fetchReservas();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombreServicio', newServicio.nombreServicio);
-      validateField('descripcion', newServicio.descripcion);
-      validateField('precioServicio', newServicio.precioServicio);
-      validateField('estado', newServicio.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newServicio[fieldName]);
+        }
+      });
     }
-  }, [newServicio, showForm]);
+  }, [newServicio, showForm, touchedFields]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -651,7 +744,7 @@ const Gestiservi = () => {
       success = value ? "Servicio activo" : "Servicio inactivo";
     }
     else if (trimmedValue) {
-      success = `${fieldName === 'nombreServicio' ? 'Nombre' : fieldName === 'descripcion' ? 'Descripción' : 'Categoría'} válido.`;
+      success = `${fieldName === 'nombreServicio' ? 'Nombre' : fieldName === 'descripcion' ? 'Descripción' : fieldName === 'imagen' ? 'Imagen' : 'Campo'} válido.`;
       
       if (fieldName === 'nombreServicio' && trimmedValue.length > 50) {
         warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
@@ -659,6 +752,8 @@ const Gestiservi = () => {
         warning = "La descripción es muy larga. Considere ser más conciso.";
       } else if (fieldName === 'descripcion' && trimmedValue.length < 20 && trimmedValue.length > 0) {
         warning = "La descripción es muy breve. Sea más descriptivo.";
+      } else if (fieldName === 'imagen' && !trimmedValue.startsWith('http')) {
+        warning = "La URL de la imagen debería comenzar con http:// o https://";
       }
     }
 
@@ -681,14 +776,25 @@ const Gestiservi = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombreServicio: true,
+      precioServicio: true,
+      estado: true,
+      descripcion: true,
+      imagen: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombreServicio', newServicio.nombreServicio);
     const precioValid = validateField('precioServicio', newServicio.precioServicio);
     const estadoValid = validateField('estado', newServicio.estado);
 
-    // La descripción es opcional según la API
+    // La descripción e imagen son opcionales según la API
     const descripcionValid = !newServicio.descripcion || validateField('descripcion', newServicio.descripcion);
+    const imagenValid = !newServicio.imagen || validateField('imagen', newServicio.imagen);
 
-    const isValid = nombreValid && precioValid && estadoValid && descripcionValid;
+    const isValid = nombreValid && precioValid && estadoValid && descripcionValid && imagenValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -701,6 +807,63 @@ const Gestiservi = () => {
     }
 
     return isValid;
+  };
+
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
+  // ===============================================
+  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // ===============================================
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      displayAlert("La imagen es demasiado grande. El tamaño máximo es 5MB.", "error");
+      return;
+    }
+
+    // Crear URL para previsualización
+    const imageUrl = URL.createObjectURL(file);
+    setImagenSeleccionada({
+      file,
+      preview: imageUrl,
+      isNew: true
+    });
+
+    // También actualizar el campo de imagen en el formulario
+    setNewServicio(prev => ({
+      ...prev,
+      imagen: imageUrl // URL temporal para previsualización
+    }));
+
+    e.target.value = ''; // Reset input
+  };
+
+  const removeImage = () => {
+    if (imagenSeleccionada && imagenSeleccionada.isNew) {
+      URL.revokeObjectURL(imagenSeleccionada.preview);
+    }
+    setImagenSeleccionada(null);
+    setNewServicio(prev => ({
+      ...prev,
+      imagen: ""
+    }));
   };
 
   // ===============================================
@@ -731,6 +894,122 @@ const Gestiservi = () => {
     }
   };
 
+  const fetchProductosPorServicio = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS_POR_SERVICIO, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setProductosPorServicio(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener productos por servicio:", error);
+    }
+  };
+
+  const fetchSedesPorServicio = async () => {
+    try {
+      const res = await axios.get(API_SEDES_POR_SERVICIO, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setSedesPorServicio(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener sedes por servicio:", error);
+    }
+  };
+
+  const fetchServiciosPorPaquete = async () => {
+    try {
+      const res = await axios.get(API_SERVICIOS_POR_PAQUETE, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setServiciosPorPaquete(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener servicios por paquete:", error);
+    }
+  };
+
+  const fetchServiciosReserva = async () => {
+    try {
+      const res = await axios.get(API_SERVICIOS_RESERVA, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setServiciosReserva(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener servicios reserva:", error);
+    }
+  };
+
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
+    }
+  };
+
+  const fetchSedes = async () => {
+    try {
+      const res = await axios.get(API_SEDES, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setSedes(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener sedes:", error);
+    }
+  };
+
+  const fetchPaquetes = async () => {
+    try {
+      const res = await axios.get(API_PAQUETES, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setPaquetes(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener paquetes:", error);
+    }
+  };
+
+  const fetchReservas = async () => {
+    try {
+      const res = await axios.get(API_RESERVAS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setReservas(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener reservas:", error);
+    }
+  };
+
   const handleAddServicio = async (e) => {
     e.preventDefault();
     
@@ -751,6 +1030,7 @@ const Gestiservi = () => {
       const servicioData = {
         nombreServicio: newServicio.nombreServicio.trim(),
         precioServicio: parseFloat(newServicio.precioServicio),
+        imagen: newServicio.imagen?.trim() || null, // La API permite null
         descripcion: newServicio.descripcion?.trim() || null, // La API permite null
         estado: newServicio.estado === "true" || newServicio.estado === true
       };
@@ -786,9 +1066,21 @@ const Gestiservi = () => {
     if (servicioToDelete) {
       setLoading(true);
       try {
+        // Verificar si el servicio tiene relaciones antes de eliminar
+        const hasRelations = await checkIfServicioHasRelations(servicioToDelete.idServicio);
+        if (hasRelations) {
+          displayAlert("No se puede eliminar el servicio porque tiene productos, sedes, paquetes o reservas asociadas.", "error");
+          setLoading(false);
+          return;
+        }
+
         await axios.delete(`${API_SERVICIOS}/${servicioToDelete.idServicio}`);
         displayAlert("Servicio eliminado exitosamente.", "success");
         await fetchServicios();
+        
+        if (paginatedServicios.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
       } catch (error) {
         console.error("❌ Error al eliminar servicio:", error);
         
@@ -815,7 +1107,7 @@ const Gestiservi = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -839,12 +1131,87 @@ const Gestiservi = () => {
     displayAlert(errorMessage, alertType);
   };
 
+  // Función para verificar si un servicio tiene relaciones
+  const checkIfServicioHasRelations = async (servicioId) => {
+    try {
+      const productosAsociados = productosPorServicio.filter(
+        rel => rel.idServicio === servicioId
+      );
+      const sedesAsociadas = sedesPorServicio.filter(
+        rel => rel.idServicio === servicioId
+      );
+      const paquetesAsociados = serviciosPorPaquete.filter(
+        rel => rel.idServicio === servicioId
+      );
+      const reservasAsociadas = serviciosReserva.filter(
+        rel => rel.idServicio === servicioId
+      );
+
+      return productosAsociados.length > 0 || 
+             sedesAsociadas.length > 0 || 
+             paquetesAsociados.length > 0 || 
+             reservasAsociadas.length > 0;
+    } catch (error) {
+      console.error("Error al verificar relaciones:", error);
+      return true; // Por seguridad, asumir que tiene relaciones si hay error
+    }
+  };
+
+  // Funciones para contar relaciones
+  const contarProductosPorServicio = (servicioId) => {
+    return productosPorServicio.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  const contarSedesPorServicio = (servicioId) => {
+    return sedesPorServicio.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  const contarPaquetesPorServicio = (servicioId) => {
+    return serviciosPorPaquete.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  const contarReservasPorServicio = (servicioId) => {
+    return serviciosReserva.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  // Funciones para obtener nombres
+  const getProductoNombre = (idProducto) => {
+    if (!idProducto) return "Sin producto";
+    const producto = productos.find(p => p.idProducto === idProducto);
+    return producto ? producto.nombre : `Producto ${idProducto}`;
+  };
+
+  const getSedeNombre = (idSede) => {
+    if (!idSede) return "Sin sede";
+    const sede = sedes.find(s => s.idSede === idSede);
+    return sede ? sede.nombre : `Sede ${idSede}`;
+  };
+
+  const getPaqueteNombre = (idPaquete) => {
+    if (!idPaquete) return "Sin paquete";
+    const paquete = paquetes.find(p => p.idPaquete === idPaquete);
+    return paquete ? paquete.nombre : `Paquete ${idPaquete}`;
+  };
+
+  const getReservaNombre = (idReserva) => {
+    if (!idReserva) return "Sin reserva";
+    const reserva = reservas.find(r => r.idReserva === idReserva);
+    return reserva ? `Reserva #${reserva.idReserva}` : `Reserva ${idReserva}`;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewServicio((prev) => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newServicio[name]);
   };
 
   const toggleEstado = async (servicio) => {
@@ -873,10 +1240,13 @@ const Gestiservi = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
+    setImagenSeleccionada(null);
     setNewServicio({
       idServicio: 0,
       nombreServicio: "",
       precioServicio: "",
+      imagen: "",
       descripcion: "",
       estado: true
     });
@@ -901,17 +1271,39 @@ const Gestiservi = () => {
     setNewServicio({
       ...servicio,
       precioServicio: servicio.precioServicio.toString(),
+      imagen: servicio.imagen || "", // Manejar null
       descripcion: servicio.descripcion || "", // Manejar null
       estado: servicio.estado ? "true" : "false"
     });
+
+    // Cargar imagen existente si hay una
+    if (servicio.imagen) {
+      setImagenSeleccionada({
+        preview: servicio.imagen,
+        isNew: false
+      });
+    }
+
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (servicio) => {
+    // Validar si el servicio tiene relaciones antes de eliminar
+    const hasRelations = 
+      contarProductosPorServicio(servicio.idServicio) > 0 ||
+      contarSedesPorServicio(servicio.idServicio) > 0 ||
+      contarPaquetesPorServicio(servicio.idServicio) > 0 ||
+      contarReservasPorServicio(servicio.idServicio) > 0;
+
+    if (hasRelations) {
+      displayAlert("No se puede eliminar un servicio que tiene productos, sedes, paquetes o reservas asociadas", "error");
+      return;
+    }
     setServicioToDelete(servicio);
     setShowDeleteConfirm(true);
   };
@@ -920,17 +1312,11 @@ const Gestiservi = () => {
   // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
   const filteredServicios = useMemo(() => {
-    let filtered = servicios.filter(servicio =>
+    return servicios.filter(servicio =>
       servicio.nombreServicio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (servicio.descripcion && servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-
-    if (filterCategoria) {
-      filtered = filtered.filter(servicio => servicio.categoria === filterCategoria);
-    }
-
-    return filtered;
-  }, [servicios, searchTerm, filterCategoria]);
+  }, [servicios, searchTerm]);
 
   const totalPages = Math.ceil(filteredServicios.length / ITEMS_PER_PAGE);
 
@@ -1041,9 +1427,7 @@ const Gestiservi = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Servicios</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {servicios.length} servicios registrados • 
-            {servicios.filter(s => s.estado).length} activos • 
-            Valor total: {formatPrice(servicios.reduce((sum, servicio) => sum + servicio.precioServicio, 0))}
+            {servicios.length} servicios registrados • {servicios.filter(s => s.estado).length} activos
           </p>
         </div>
         <button
@@ -1053,10 +1437,13 @@ const Gestiservi = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
+            setTouchedFields({});
+            setImagenSeleccionada(null);
             setNewServicio({
               idServicio: 0,
               nombreServicio: "",
               precioServicio: "",
+              imagen: "",
               descripcion: "",
               estado: true
             });
@@ -1088,9 +1475,79 @@ const Gestiservi = () => {
         </button>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+      {/* Estadísticas */}
+      {!loading && servicios.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {servicios.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Servicios
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {servicios.filter(s => s.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Servicios Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {servicios.filter(s => !s.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Servicios Inactivos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPrice(servicios.reduce((sum, servicio) => sum + servicio.precioServicio, 0))}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1111,19 +1568,15 @@ const Gestiservi = () => {
             }}
           />
         </div>
-
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredServicios.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
+          <div style={modalContentStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
-                {isEditing ? "Editar Servicio" : "Nuevo Servicio"}
+                {isEditing ? "Editar Servicio" : "Agregar Nuevo Servicio"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1134,6 +1587,7 @@ const Gestiservi = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
@@ -1141,76 +1595,192 @@ const Gestiservi = () => {
             </div>
             
             <form onSubmit={handleAddServicio}>
-              <div style={{ marginBottom: '20px' }}>
-                <FormField
-                  label="Nombre del Servicio"
-                  name="nombreServicio"
-                  value={newServicio.nombreServicio}
-                  onChange={handleChange}
-                  error={formErrors.nombreServicio}
-                  success={formSuccess.nombreServicio}
-                  warning={formWarnings.nombreServicio}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.nombreServicio.maxLength}
-                  showCharCount={true}
-                  placeholder="Ej: Masaje Relajante, Spa Completo, Caminata Ecológica..."
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Nombre del Servicio"
+                    name="nombreServicio"
+                    value={newServicio.nombreServicio}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.nombreServicio}
+                    success={formSuccess.nombreServicio}
+                    warning={formWarnings.nombreServicio}
+                    required={true}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.nombreServicio.maxLength}
+                    showCharCount={true}
+                    placeholder="Ej: Masaje Relajante, Spa Completo, Caminata Ecológica..."
+                    touched={touchedFields.nombreServicio}
+                  />
+                </div>
 
-                <FormField
-                  label={
+                <div>
+                  <FormField
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaDollarSign />
+                        Precio (COP)
+                      </div>
+                    }
+                    name="precioServicio"
+                    type="number"
+                    value={newServicio.precioServicio}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.precioServicio}
+                    success={formSuccess.precioServicio}
+                    warning={formWarnings.precioServicio}
+                    required={true}
+                    disabled={loading}
+                    min={VALIDATION_RULES.precioServicio.min}
+                    max={VALIDATION_RULES.precioServicio.max}
+                    step="100"
+                    placeholder="1000"
+                    touched={touchedFields.precioServicio}
+                  />
+                </div>
+
+                
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaDollarSign />
-                      Precio (COP)
+                      <FaImage />
+                      Imagen del Servicio
+                      <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                        (Opcional)
+                      </span>
                     </div>
-                  }
-                  name="precioServicio"
-                  type="number"
-                  value={newServicio.precioServicio}
-                  onChange={handleChange}
-                  error={formErrors.precioServicio}
-                  success={formSuccess.precioServicio}
-                  warning={formWarnings.precioServicio}
-                  required={true}
-                  disabled={loading}
-                  min={VALIDATION_RULES.precioServicio.min}
-                  max={VALIDATION_RULES.precioServicio.max}
-                  step="100"
-                  placeholder="1000"
-                />
+                  </label>
+                  
+                  {/* Área de subida de imagen */}
+                  <div 
+                    style={imageUploadStyle}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#E8F5E8';
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#F7F4EA';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#F7F4EA';
+                      handleImageUpload({ target: { files: e.dataTransfer.files } });
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                      id="image-upload"
+                    />
+                    <label 
+                      htmlFor="image-upload"
+                      style={{ 
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      <FaUpload size={30} color="#679750" />
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#2E5939', marginBottom: '5px' }}>
+                          Haz clic o arrastra una imagen aquí
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#679750' }}>
+                          Formatos: JPEG, PNG, GIF, WebP (Máx. 5MB)
+                        </div>
+                      </div>
+                    </label>
+                  </div>
 
-                <FormField
-                  label="Estado"
-                  name="estado"
-                  type="select"
-                  value={newServicio.estado}
-                  onChange={handleChange}
-                  error={formErrors.estado}
-                  success={formSuccess.estado}
-                  warning={formWarnings.estado}
-                  options={[
-                    { value: "true", label: "🟢 Activo" },
-                    { value: "false", label: "🔴 Inactivo" }
-                  ]}
-                  required={true}
-                  disabled={loading}
-                />
+                  {/* Campo para URL de imagen */}
+                  <FormField
+                    label="URL de la Imagen"
+                    name="imagen"
+                    value={newServicio.imagen}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.imagen}
+                    success={formSuccess.imagen}
+                    warning={formWarnings.imagen}
+                    required={false}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.imagen.maxLength}
+                    showCharCount={true}
+                    placeholder="https://ejemplo.com/imagen-servicio.jpg"
+                    touched={touchedFields.imagen}
+                  />
 
-                <FormField
-                  label="Descripción"
-                  name="descripcion"
-                  type="textarea"
-                  value={newServicio.descripcion}
-                  onChange={handleChange}
-                  error={formErrors.descripcion}
-                  success={formSuccess.descripcion}
-                  warning={formWarnings.descripcion}
-                  required={false} // Opcional según la API
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.descripcion.maxLength}
-                  showCharCount={true}
-                  placeholder="Descripción detallada del servicio (opcional)..."
-                />
+                  {/* Previsualización de imagen */}
+                  {(imagenSeleccionada || newServicio.imagen) && (
+                    <div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginBottom: '10px'
+                      }}>
+                        <span style={{ fontWeight: '600', color: '#2E5939' }}>
+                          Vista previa
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          style={{
+                            background: '#e57373',
+                            color: 'white',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Eliminar imagen
+                        </button>
+                      </div>
+                      <div style={imagePreviewContainerStyle}>
+                        <div style={imagePreviewStyle}>
+                          <img 
+                            src={imagenSeleccionada ? imagenSeleccionada.preview : newServicio.imagen} 
+                            alt="Preview del servicio"
+                            style={imageStyle}
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/150x100/679750/FFFFFF?text=Imagen+No+Disponible';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Descripción"
+                    name="descripcion"
+                    type="textarea"
+                    value={newServicio.descripcion}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.descripcion}
+                    success={formSuccess.descripcion}
+                    warning={formWarnings.descripcion}
+                    required={false}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.descripcion.maxLength}
+                    showCharCount={true}
+                    placeholder="Descripción detallada del servicio (opcional)..."
+                    touched={touchedFields.descripcion}
+                  />
+                </div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
@@ -1225,9 +1795,9 @@ const Gestiservi = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
+                    flex: 1
                   }}
                   onMouseOver={(e) => {
                     if (!loading && !isSubmitting) {
@@ -1242,7 +1812,7 @@ const Gestiservi = () => {
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Servicio
+                  {loading ? "Guardando..." : (isEditing ? "Actualizar Servicio" : "Guardar Servicio")}
                 </button>
                 <button
                   type="button"
@@ -1256,8 +1826,8 @@ const Gestiservi = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    flex: 1
                   }}
                 >
                   Cancelar
@@ -1271,9 +1841,9 @@ const Gestiservi = () => {
       {/* Modal de detalles */}
       {showDetails && selectedServicio && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Servicio</h2>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles del Servicio</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1283,6 +1853,7 @@ const Gestiservi = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1306,6 +1877,34 @@ const Gestiservi = () => {
                 </div>
               </div>
 
+              {/* Imagen del servicio */}
+              {selectedServicio.imagen && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaImage />
+                      Imagen del Servicio
+                    </div>
+                  </div>
+                  <div style={detailValueStyle}>
+                    <div style={imagePreviewStyle}>
+                      <img 
+                        src={selectedServicio.imagen} 
+                        alt={selectedServicio.nombreServicio}
+                        style={{
+                          ...galleryImageStyle,
+                          width: '100%',
+                          maxWidth: '300px'
+                        }}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/300x200/679750/FFFFFF?text=Imagen+No+Disponible';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Descripción</div>
                 <div style={{ 
@@ -1322,6 +1921,72 @@ const Gestiservi = () => {
                 </div>
               </div>
 
+              {/* Relaciones del servicio */}
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Relaciones del Servicio</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+                  <div style={{ 
+                    backgroundColor: '#E8F5E8',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+                      <FaBox color="#679750" />
+                      <span style={{ fontWeight: 'bold' }}>Productos</span>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+                      {contarProductosPorServicio(selectedServicio.idServicio)}
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    backgroundColor: '#E8F5E8',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+                      <FaBuilding color="#679750" />
+                      <span style={{ fontWeight: 'bold' }}>Sedes</span>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+                      {contarSedesPorServicio(selectedServicio.idServicio)}
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    backgroundColor: '#E8F5E8',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+                      <FaGift color="#679750" />
+                      <span style={{ fontWeight: 'bold' }}>Paquetes</span>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+                      {contarPaquetesPorServicio(selectedServicio.idServicio)}
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    backgroundColor: '#E8F5E8',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+                      <FaClipboardList color="#679750" />
+                      <span style={{ fontWeight: 'bold' }}>Reservas</span>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+                      {contarReservasPorServicio(selectedServicio.idServicio)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
@@ -1332,6 +1997,27 @@ const Gestiservi = () => {
                   {selectedServicio.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
+
+              {/* Información sobre relaciones */}
+              {(contarProductosPorServicio(selectedServicio.idServicio) > 0 || 
+                contarSedesPorServicio(selectedServicio.idServicio) > 0 || 
+                contarPaquetesPorServicio(selectedServicio.idServicio) > 0 || 
+                contarReservasPorServicio(selectedServicio.idServicio) > 0) && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>Información Importante</div>
+                  <div style={{
+                    ...detailValueStyle,
+                    color: '#ff9800',
+                    fontSize: '14px',
+                    backgroundColor: '#fff3cd',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ffeaa7'
+                  }}>
+                    ⚠️ Este servicio tiene relaciones asociadas. No se puede eliminar mientras tenga productos, sedes, paquetes o reservas vinculadas.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1345,6 +2031,16 @@ const Gestiservi = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "#2E5939";
+                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 Cerrar
@@ -1376,7 +2072,11 @@ const Gestiservi = () => {
               </div>
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
                 Precio: {formatPrice(servicioToDelete.precioServicio)} | 
-                Estado: {servicioToDelete.estado ? 'Activo' : 'Inactivo'}
+                Estado: {servicioToDelete.estado ? 'Activo' : 'Inactivo'} |
+                Productos: {contarProductosPorServicio(servicioToDelete.idServicio)} |
+                Sedes: {contarSedesPorServicio(servicioToDelete.idServicio)} |
+                Paquetes: {contarPaquetesPorServicio(servicioToDelete.idServicio)} |
+                Reservas: {contarReservasPorServicio(servicioToDelete.idServicio)}
               </p>
             </div>
 
@@ -1461,6 +2161,7 @@ const Gestiservi = () => {
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Servicio</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Relaciones</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1468,7 +2169,7 @@ const Gestiservi = () => {
             <tbody>
               {paginatedServicios.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
                       {servicios.length === 0 ? "No hay servicios registrados" : "No se encontraron resultados"}
@@ -1494,64 +2195,138 @@ const Gestiservi = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedServicios.map((servicio) => (
-                  <tr key={servicio.idServicio} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>
-                      <div>
-                        <div style={{ fontWeight: "600", marginBottom: "5px" }}>
-                          {servicio.nombreServicio}
+                paginatedServicios.map((servicio) => {
+                  const productosCount = contarProductosPorServicio(servicio.idServicio);
+                  const sedesCount = contarSedesPorServicio(servicio.idServicio);
+                  const paquetesCount = contarPaquetesPorServicio(servicio.idServicio);
+                  const reservasCount = contarReservasPorServicio(servicio.idServicio);
+                  const totalRelations = productosCount + sedesCount + paquetesCount + reservasCount;
+                  
+                  return (
+                    <tr key={servicio.idServicio} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                          {servicio.imagen && (
+                            <div style={{
+                              width: '50px',
+                              height: '50px',
+                              borderRadius: '8px',
+                              overflow: 'hidden',
+                              flexShrink: 0
+                            }}>
+                              <img 
+                                src={servicio.imagen} 
+                                alt={servicio.nombreServicio}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                                onError={(e) => {
+                                  e.target.src = 'https://via.placeholder.com/50x50/679750/FFFFFF?text=S';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+                              {servicio.nombreServicio}
+                            </div>
+                            <div style={{ fontSize: "13px", color: "#679750", lineHeight: "1.3" }}>
+                              {formatDescripcion(servicio.descripcion)}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: "13px", color: "#679750", lineHeight: "1.3" }}>
-                          {formatDescripcion(servicio.descripcion)}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
+                        {formatPrice(servicio.precioServicio)}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                          <span style={{ 
+                            backgroundColor: totalRelations > 0 ? '#E8F5E8' : '#F7F4EA',
+                            color: totalRelations > 0 ? '#2E5939' : '#666',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}>
+                            {totalRelations} relaciones
+                          </span>
+                          {totalRelations > 0 && (
+                            <div style={{ fontSize: '10px', color: '#679750', display: 'flex', gap: '6px' }}>
+                              <span title="Productos">🟢P: {productosCount}</span>
+                              <span title="Sedes">🔵S: {sedesCount}</span>
+                              <span title="Paquetes">🟡Paq: {paquetesCount}</span>
+                              <span title="Reservas">🔴R: {reservasCount}</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
-                      {formatPrice(servicio.precioServicio)}
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstado(servicio)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: servicio.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px"
-                        }}
-                      >
-                        {servicio.estado ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(servicio)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(servicio)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(servicio)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => toggleEstado(servicio)}
+                          disabled={loading}
+                          style={{
+                            cursor: loading ? "not-allowed" : "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: servicio.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
+                          }}
+                        >
+                          {servicio.estado ? "Activo" : "Inactivo"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => handleView(servicio)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(servicio)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar Servicio"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(servicio); }}
+                            style={{
+                              ...btnAccion("#fbe9e7", "#e57373"),
+                              opacity: totalRelations > 0 ? 0.5 : 1,
+                              cursor: totalRelations > 0 ? "not-allowed" : "pointer"
+                            }}
+                            title={totalRelations > 0 ? "No se puede eliminar - Tiene relaciones asociadas" : "Eliminar Servicio"}
+                            disabled={totalRelations > 0}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1575,6 +2350,7 @@ const Gestiservi = () => {
                 key={page}
                 onClick={() => goToPage(page)}
                 style={pageBtnStyle(currentPage === page)}
+                aria-current={currentPage === page ? "page" : undefined}
               >
                 {page}
               </button>
@@ -1587,76 +2363,6 @@ const Gestiservi = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && servicios.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {servicios.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Servicios
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {servicios.filter(s => s.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Servicios Activos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {servicios.filter(s => !s.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Servicios Inactivos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPrice(servicios.reduce((sum, servicio) => sum + servicio.precioServicio, 0))}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Valor Total
-            </div>
-          </div>
         </div>
       )}
     </div>

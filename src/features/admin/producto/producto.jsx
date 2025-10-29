@@ -296,9 +296,10 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PRODUCTOS = "http://localhost:5204/api/Productos";
-const API_CATEGORIAS = "http://localhost:5204/api/CategoriaProductos";
-const API_MARCAS = "http://localhost:5204/api/MarcaProducto";
+const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const API_CATEGORIAS = "http://localhost:5018/api/CategoriaProductos";
+const API_MARCAS = "http://localhost:5018/api/MarcaProducto";
+const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5018/api/ProductoPorServicio";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -503,6 +504,7 @@ const Productos = () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [marcas, setMarcas] = useState([]);
+  const [productosPorServicio, setProductosPorServicio] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -542,6 +544,7 @@ const Productos = () => {
     fetchProductos();
     fetchCategorias();
     fetchMarcas();
+    fetchProductosPorServicio();
   }, []);
 
   // Validar formulario en tiempo real
@@ -800,6 +803,24 @@ const Productos = () => {
     }
   };
 
+  const fetchProductosPorServicio = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS_POR_SERVICIO, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setProductosPorServicio(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener productos por servicio:", error);
+    }
+  };
+
   const handleAddProducto = async (e) => {
     e.preventDefault();
     
@@ -858,6 +879,14 @@ const Productos = () => {
     if (productoToDelete) {
       setLoading(true);
       try {
+        // Verificar si el producto tiene servicios asociados
+        const hasServices = await checkIfProductoHasServices(productoToDelete.idProducto);
+        if (hasServices) {
+          displayAlert("No se puede eliminar el producto porque tiene servicios asociados.", "error");
+          setLoading(false);
+          return;
+        }
+
         await axios.delete(`${API_PRODUCTOS}/${productoToDelete.idProducto}`);
         displayAlert("Producto eliminado exitosamente.", "success");
         await fetchProductos();
@@ -892,7 +921,7 @@ const Productos = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -914,6 +943,24 @@ const Productos = () => {
     
     setError(errorMessage);
     displayAlert(errorMessage, alertType);
+  };
+
+  // Función para verificar si un producto tiene servicios asociados
+  const checkIfProductoHasServices = async (productoId) => {
+    try {
+      const serviciosAsociados = productosPorServicio.filter(
+        rel => rel.idProducto === productoId
+      );
+      return serviciosAsociados.length > 0;
+    } catch (error) {
+      console.error("Error al verificar servicios:", error);
+      return true; // Por seguridad, asumir que tiene servicios si hay error
+    }
+  };
+
+  // Función para contar servicios por producto
+  const contarServiciosPorProducto = (productoId) => {
+    return productosPorServicio.filter(rel => rel.idProducto === productoId).length;
   };
 
   const handleChange = (e) => {
@@ -1000,6 +1047,12 @@ const Productos = () => {
   };
 
   const handleDeleteClick = (producto) => {
+    // Validar si el producto tiene servicios asociados antes de eliminar
+    const hasServices = contarServiciosPorProducto(producto.idProducto) > 0;
+    if (hasServices) {
+      displayAlert("No se puede eliminar un producto que tiene servicios asociados", "error");
+      return;
+    }
     setProductoToDelete(producto);
     setShowDeleteConfirm(true);
   };
@@ -1588,6 +1641,22 @@ const Productos = () => {
                   {formatPrice(selectedProducto.precio * selectedProducto.cantidad)}
                 </div>
               </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Servicios Asociados</div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    backgroundColor: '#E8F5E8',
+                    color: '#2E5939',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {contarServiciosPorProducto(selectedProducto.idProducto)} servicios
+                  </span>
+                </div>
+              </div>
               
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
@@ -1599,6 +1668,24 @@ const Productos = () => {
                   {selectedProducto.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
+
+              {/* Información sobre servicios */}
+              {contarServiciosPorProducto(selectedProducto.idProducto) > 0 && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>Información Importante</div>
+                  <div style={{
+                    ...detailValueStyle,
+                    color: '#ff9800',
+                    fontSize: '14px',
+                    backgroundColor: '#fff3cd',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ffeaa7'
+                  }}>
+                    ⚠️ Este producto tiene servicios asociados. No se puede eliminar mientras tenga servicios.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1646,7 +1733,8 @@ const Productos = () => {
                 Precio: {formatPrice(productoToDelete.precio)} | 
                 Cantidad: {productoToDelete.cantidad} | 
                 Categoría: {getCategoriaNombre(productoToDelete.idCategoria)} |
-                Marca: {getMarcaNombre(productoToDelete.idMarca)}
+                Marca: {getMarcaNombre(productoToDelete.idMarca)} |
+                Servicios: {contarServiciosPorProducto(productoToDelete.idProducto)}
               </p>
             </div>
 
@@ -1735,6 +1823,7 @@ const Productos = () => {
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Cantidad</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Valor Total</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Servicios</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1742,7 +1831,7 @@ const Productos = () => {
             <tbody>
               {paginatedProductos.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaBox size={30} color="#679750" />
                       {productos.length === 0 ? "No hay productos registrados" : "No se encontraron resultados"}
@@ -1768,74 +1857,94 @@ const Productos = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedProductos.map((producto) => (
-                  <tr key={producto.idProducto} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaBox color="#679750" />
-                        {producto.nombre}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaTag color="#679750" />
-                        {getCategoriaNombre(producto.idCategoria)}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaShoppingCart color="#679750" />
-                        {getMarcaNombre(producto.idMarca)}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{producto.cantidad}</td>
-                    <td style={{ padding: "15px", textAlign: "right" }}>{formatPrice(producto.precio)}</td>
-                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
-                      {formatPrice(producto.precio * producto.cantidad)}
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstadoProducto(producto)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: producto.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px"
-                        }}
-                      >
-                        {producto.estado ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(producto)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(producto)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(producto)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                paginatedProductos.map((producto) => {
+                  const serviciosCount = contarServiciosPorProducto(producto.idProducto);
+                  return (
+                    <tr key={producto.idProducto} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FaBox color="#679750" />
+                          {producto.nombre}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FaTag color="#679750" />
+                          {getCategoriaNombre(producto.idCategoria)}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FaShoppingCart color="#679750" />
+                          {getMarcaNombre(producto.idMarca)}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>{producto.cantidad}</td>
+                      <td style={{ padding: "15px", textAlign: "right" }}>{formatPrice(producto.precio)}</td>
+                      <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
+                        {formatPrice(producto.precio * producto.cantidad)}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <span style={{ 
+                          backgroundColor: serviciosCount > 0 ? '#E8F5E8' : '#F7F4EA',
+                          color: serviciosCount > 0 ? '#2E5939' : '#666',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>
+                          {serviciosCount} servicios
+                        </span>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => toggleEstadoProducto(producto)}
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: producto.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px"
+                          }}
+                        >
+                          {producto.estado ? "Activo" : "Inactivo"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => handleView(producto)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Ver Detalles"
+                        >
+                          <FaEye />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(producto)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Editar"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(producto); }}
+                          style={{
+                            ...btnAccion("#fbe9e7", "#e57373"),
+                            opacity: serviciosCount > 0 ? 0.5 : 1,
+                            cursor: serviciosCount > 0 ? "not-allowed" : "pointer"
+                          }}
+                          title={serviciosCount > 0 ? "No se puede eliminar - Tiene servicios asociados" : "Eliminar"}
+                          disabled={serviciosCount > 0}
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

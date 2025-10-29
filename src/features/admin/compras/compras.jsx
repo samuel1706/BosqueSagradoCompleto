@@ -1,10 +1,16 @@
+// src/components/AdminCompras.jsx
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaPlus, FaMinus, FaFilePdf, FaTimes, FaAsterisk, FaSearch, FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox, FaShoppingCart, FaDollarSign, FaHome, FaUser, FaSync, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import { 
+  FaEye, FaEdit, FaTrash, FaPlus, FaMinus, FaFilePdf, FaTimes, 
+  FaSearch, FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox, 
+  FaShoppingCart, FaDollarSign, FaUser, FaSync, FaToggleOn, 
+  FaToggleOff, FaFileAlt
+} from "react-icons/fa";
 import { usePDF } from 'react-to-pdf';
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES CON COMODIDADES)
+// ESTILOS MEJORADOS (CONSISTENTES CON EL SISTEMA)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -41,20 +47,6 @@ const inputStyle = {
   boxSizing: 'border-box',
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
   transition: "all 0.3s ease",
-};
-
-const inputErrorStyle = {
-  ...inputStyle,
-  border: "2px solid #e74c3c",
-  backgroundColor: "#fdf2f2",
-};
-
-const yellowBlockedInputStyle = {
-  ...inputStyle,
-  backgroundColor: "#fffde7",
-  color: "#bfa100",
-  cursor: "not-allowed",
-  border: "1.5px solid #ffe082"
 };
 
 const navBtnStyle = (disabled) => ({
@@ -153,13 +145,6 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
-const alertInfoStyle = {
-  ...alertStyle,
-  backgroundColor: '#d1ecf1',
-  color: '#0c5460',
-  borderLeftColor: '#17a2b8',
-};
-
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
@@ -183,12 +168,14 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5
+  marginBottom: 5,
+  fontSize: "14px"
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939"
+  color: "#2E5939",
+  fontWeight: "500"
 };
 
 const validationMessageStyle = {
@@ -212,10 +199,6 @@ const errorValidationStyle = {
 const warningValidationStyle = {
   ...validationMessageStyle,
   color: "#ff9800"
-};
-
-const formFieldStyle = {
-  marginBottom: 15,
 };
 
 const productsSectionStyle = {
@@ -376,12 +359,12 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_COMPRAS = "http://localhost:5204/api/Compras";
-const API_PROVEEDORES = "http://localhost:5204/api/Proveedore";
-const API_PRODUCTOS = "http://localhost:5204/api/Productos";
-const API_DETALLE_COMPRAS = "http://localhost:5204/api/DetalleCompras";
+const API_COMPRAS = "http://localhost:5018/api/Compras";
+const API_PROVEEDORES = "http://localhost:5018/api/Proveedore";
+const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const API_DETALLE_COMPRAS = "http://localhost:5018/api/DetalleCompras";
 const IVA_RATE = 0.19;
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 // ===============================================
 // COMPONENTE FormField MEJORADO
@@ -468,7 +451,7 @@ const FormField = ({
 
   const finalOptions = useMemo(() => {
     if (type === "select") {
-      const placeholderOption = { value: "", label: placeholder || "Selecciona", disabled: required };
+      const placeholderOption = { value: "", label: placeholder || "Seleccionar", disabled: required };
       return [placeholderOption, ...options];
     }
     return options;
@@ -512,28 +495,13 @@ const FormField = ({
               </option>
             ))}
           </select>
-        ) : type === "textarea" ? (
-          <textarea
-            name={name}
-            value={value}
-            onChange={onChange}
-            style={{
-              ...getInputStyle(),
-              minHeight: "80px",
-              resize: "vertical",
-              fontFamily: "inherit"
-            }}
-            required={required}
-            disabled={disabled || readOnly}
-            placeholder={placeholder}
-          />
         ) : (
           <input
             type={type}
             name={name}
             value={value}
             onChange={(name === 'cantidad' || name === 'precioUnitario') ? handleFilteredInputChange : onChange}
-            style={readOnly ? yellowBlockedInputStyle : getInputStyle()}
+            style={getInputStyle()}
             required={required}
             disabled={disabled || readOnly}
             placeholder={placeholder}
@@ -550,7 +518,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL AdminCompras CON ESTILO MEJORADO
+// COMPONENTE PRINCIPAL AdminCompras CORREGIDO
 // ===============================================
 const AdminCompras = () => {
   const [compras, setCompras] = useState([]);
@@ -564,10 +532,7 @@ const AdminCompras = () => {
   const [newCompra, setNewCompra] = useState({
     idProveedor: "",
     metodoPago: "Transferencia",
-    estado: true,
-    subtotal: 0,
-    iva: 0,
-    total: 0
+    estado: true
   });
   const [productosCompra, setProductosCompra] = useState([]);
   const [formErrors, setFormErrors] = useState({});
@@ -582,13 +547,11 @@ const AdminCompras = () => {
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState("success");
   const [loading, setLoading] = useState(false);
-  const [loadingProveedores, setLoadingProveedores] = useState(false);
-  const [loadingProductos, setLoadingProductos] = useState(false);
   const [error, setError] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
   
-  const pdfRef = useRef();
   const { toPDF, targetRef } = usePDF({filename: `compra_${selectedCompra?.idCompra || 'nueva'}.pdf`});
 
   // ===============================================
@@ -601,15 +564,22 @@ const AdminCompras = () => {
     fetchDetalleCompras();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('idProveedor', newCompra.idProveedor);
-      validateField('metodoPago', newCompra.metodoPago);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newCompra[fieldName]);
+        }
+      });
     }
-  }, [newCompra, showForm]);
+  }, [newCompra, showForm, touchedFields]);
 
-  // Efecto para agregar estilos de animación
+  // Calcular totales cuando cambian los productos
+  useEffect(() => {
+    calcularTotales();
+  }, [productosCompra]);
+
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -622,11 +592,6 @@ const AdminCompras = () => {
           transform: translateX(0);
           opacity: 1;
         }
-      }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(style);
@@ -657,8 +622,6 @@ const AdminCompras = () => {
         return <FaExclamationTriangle style={alertIconStyle} />;
       case "warning":
         return <FaExclamationTriangle style={alertIconStyle} />;
-      case "info":
-        return <FaInfoCircle style={alertIconStyle} />;
       default:
         return <FaInfoCircle style={alertIconStyle} />;
     }
@@ -672,15 +635,13 @@ const AdminCompras = () => {
         return alertErrorStyle;
       case "warning":
         return alertWarningStyle;
-      case "info":
-        return alertInfoStyle;
       default:
         return alertSuccessStyle;
     }
   };
 
   // ===============================================
-  // FUNCIONES DE LA API
+  // FUNCIONES DE LA API CORREGIDAS
   // ===============================================
   const fetchCompras = async () => {
     setLoading(true);
@@ -708,7 +669,6 @@ const AdminCompras = () => {
   };
 
   const fetchProveedores = async () => {
-    setLoadingProveedores(true);
     try {
       const res = await axios.get(API_PROVEEDORES, {
         timeout: 10000
@@ -716,20 +676,14 @@ const AdminCompras = () => {
       
       if (Array.isArray(res.data)) {
         setProveedores(res.data);
-        if (res.data.length > 0 && !newCompra.idProveedor) {
-          setNewCompra(prev => ({ ...prev, idProveedor: res.data[0].idProveedor.toString() }));
-        }
       }
     } catch (error) {
       console.error("❌ Error al obtener proveedores:", error);
       handleApiError(error, "cargar los proveedores");
-    } finally {
-      setLoadingProveedores(false);
     }
   };
 
   const fetchProductos = async () => {
-    setLoadingProductos(true);
     try {
       const res = await axios.get(API_PRODUCTOS, {
         timeout: 10000
@@ -741,8 +695,6 @@ const AdminCompras = () => {
     } catch (error) {
       console.error("❌ Error al obtener productos:", error);
       handleApiError(error, "cargar los productos");
-    } finally {
-      setLoadingProductos(false);
     }
   };
 
@@ -826,6 +778,13 @@ const AdminCompras = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      idProveedor: true,
+      metodoPago: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const proveedorValid = validateField('idProveedor', newCompra.idProveedor);
     const metodoPagoValid = validateField('metodoPago', newCompra.metodoPago);
 
@@ -859,6 +818,14 @@ const AdminCompras = () => {
     return isValid;
   };
 
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
   const handleAddCompra = async (e) => {
     e.preventDefault();
     
@@ -875,86 +842,76 @@ const AdminCompras = () => {
     setLoading(true);
     
     try {
+      // Calcular totales finales
+      const { subtotal, iva, total } = calcularTotales();
+
       const compraData = {
-        ...newCompra,
         idProveedor: parseInt(newCompra.idProveedor),
-        subtotal: parseFloat(newCompra.subtotal),
-        iva: parseFloat(newCompra.iva),
-        total: parseFloat(newCompra.total)
+        metodoPago: newCompra.metodoPago,
+        estado: newCompra.estado,
+        subtotal: subtotal,
+        iva: iva,
+        total: total
       };
+
+      console.log("📤 Enviando datos de compra:", compraData);
 
       let compraId;
 
       if (isEditing) {
+        // Actualizar compra existente
         await axios.put(`${API_COMPRAS}/${newCompra.idCompra}`, compraData, {
           headers: { 'Content-Type': 'application/json' }
         });
         compraId = newCompra.idCompra;
         
+        // Eliminar detalles existentes y crear nuevos
         try {
-          const detallesExistentes = detalleCompras.filter(dc => dc.idCompra === compraId);
+          const detallesExistentes = await fetchDetalleComprasByCompraId(compraId);
           for (const detalle of detallesExistentes) {
             await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
           }
-          
-          for (const producto of productosCompra) {
-            const subtotal = parseFloat(producto.subtotal);
-            const iva = subtotal * IVA_RATE;
-            const total = subtotal + iva;
-            
-            const detalleData = {
-              idCompra: compraId,
-              idProducto: parseInt(producto.idProducto),
-              cantidad: parseInt(producto.cantidad),
-              subtotal: subtotal,
-              iva: iva,
-              total: total
-            };
-            await axios.post(API_DETALLE_COMPRAS, detalleData, {
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
         } catch (error) {
-          console.warn("No se pudo actualizar los detalles de la compra:", error);
+          console.warn("No se pudieron eliminar los detalles existentes:", error);
         }
         
         displayAlert("Compra actualizada exitosamente.", "success");
       } else {
+        // Crear nueva compra
         const response = await axios.post(API_COMPRAS, compraData, {
           headers: { 'Content-Type': 'application/json' }
         });
         compraId = response.data.idCompra;
-        
-        try {
-          for (const producto of productosCompra) {
-            const subtotal = parseFloat(producto.subtotal);
-            const iva = subtotal * IVA_RATE;
-            const total = subtotal + iva;
-            
-            const detalleData = {
-              idCompra: compraId,
-              idProducto: parseInt(producto.idProducto),
-              cantidad: parseInt(producto.cantidad),
-              subtotal: subtotal,
-              iva: iva,
-              total: total
-            };
-            await axios.post(API_DETALLE_COMPRAS, detalleData, {
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
-        } catch (error) {
-          console.warn("No se pudieron agregar los detalles a la compra:", error);
-        }
-        
         displayAlert("Compra agregada exitosamente.", "success");
+      }
+
+      // Crear detalles de compra
+      for (const producto of productosCompra) {
+        const subtotalProducto = parseFloat(producto.subtotal);
+        const ivaProducto = subtotalProducto * IVA_RATE;
+        const totalProducto = subtotalProducto + ivaProducto;
+        
+        const detalleData = {
+          idCompra: compraId,
+          idProducto: parseInt(producto.idProducto),
+          cantidad: parseInt(producto.cantidad),
+          subtotal: subtotalProducto,
+          iva: ivaProducto,
+          total: totalProducto
+        };
+
+        console.log("📤 Enviando detalle:", detalleData);
+
+        await axios.post(API_DETALLE_COMPRAS, detalleData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
 
       await fetchCompras();
       await fetchDetalleCompras();
       closeForm();
     } catch (error) {
-      console.error("Error al guardar compra:", error);
+      console.error("❌ Error al guardar compra:", error);
       handleApiError(error, isEditing ? "actualizar la compra" : "agregar la compra");
     } finally {
       setLoading(false);
@@ -966,8 +923,9 @@ const AdminCompras = () => {
     if (compraToDelete) {
       setLoading(true);
       try {
+        // Primero eliminar los detalles de compra
         try {
-          const detallesAsociados = detalleCompras.filter(dc => dc.idCompra === compraToDelete.idCompra);
+          const detallesAsociados = await fetchDetalleComprasByCompraId(compraToDelete.idCompra);
           for (const detalle of detallesAsociados) {
             await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
           }
@@ -975,6 +933,7 @@ const AdminCompras = () => {
           console.warn("No se pudieron eliminar los detalles de la compra:", error);
         }
         
+        // Luego eliminar la compra
         await axios.delete(`${API_COMPRAS}/${compraToDelete.idCompra}`);
         displayAlert("Compra eliminada exitosamente.", "success");
         
@@ -985,7 +944,7 @@ const AdminCompras = () => {
           setCurrentPage(currentPage - 1);
         }
       } catch (error) {
-        console.error("Error al eliminar compra:", error);
+        console.error("❌ Error al eliminar compra:", error);
         handleApiError(error, "eliminar la compra");
       } finally {
         setLoading(false);
@@ -1005,7 +964,7 @@ const AdminCompras = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1029,12 +988,19 @@ const AdminCompras = () => {
     displayAlert(errorMessage, alertType);
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setNewCompra((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
+  };
+
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newCompra[name]);
   };
 
   // Función para cambiar el estado con el botón toggle
@@ -1051,13 +1017,11 @@ const AdminCompras = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setNewCompra({
       idProveedor: proveedores.length > 0 ? proveedores[0].idProveedor.toString() : "",
       metodoPago: "Transferencia",
-      estado: true,
-      subtotal: 0,
-      iva: 0,
-      total: 0
+      estado: true
     });
     setProductosCompra([]);
   };
@@ -1073,7 +1037,6 @@ const AdminCompras = () => {
     setShowDeleteConfirm(false);
   };
 
-  // FUNCIÓN CORREGIDA PARA CAMBIAR ESTADO
   const toggleEstadoCompra = async (compra) => {
     setLoading(true);
     try {
@@ -1120,6 +1083,7 @@ const AdminCompras = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (compra) => {
@@ -1168,7 +1132,6 @@ const AdminCompras = () => {
     const nuevosProductos = [...productosCompra];
     nuevosProductos.splice(index, 1);
     setProductosCompra(nuevosProductos);
-    calcularTotales(nuevosProductos);
   };
 
   const handleProductoChange = (index, field, value) => {
@@ -1191,20 +1154,14 @@ const AdminCompras = () => {
     }
     
     setProductosCompra(nuevosProductos);
-    calcularTotales(nuevosProductos);
   };
 
-  const calcularTotales = (productosArray = productosCompra) => {
-    const subtotal = productosArray.reduce((sum, producto) => sum + (parseFloat(producto.subtotal) || 0), 0);
+  const calcularTotales = () => {
+    const subtotal = productosCompra.reduce((sum, producto) => sum + (parseFloat(producto.subtotal) || 0), 0);
     const iva = subtotal * IVA_RATE;
     const total = subtotal + iva;
     
-    setNewCompra(prev => ({
-      ...prev,
-      subtotal: subtotal,
-      iva: iva,
-      total: total
-    }));
+    return { subtotal, iva, total };
   };
 
   // ===============================================
@@ -1215,23 +1172,12 @@ const AdminCompras = () => {
     return producto ? producto.nombre : `Producto ${idProducto}`;
   };
 
-  const getProductoInfo = (idProducto) => {
-    const producto = productos.find(p => p.idProducto === idProducto);
-    return producto || {
-      nombre: `Producto ${idProducto}`,
-      descripcion: "N/A",
-      precio: 0,
-      stock: 0,
-      categoria: "N/A"
-    };
-  };
-
   const getProductosDeCompra = (idCompra) => {
     const detalles = detalleCompras.filter(dc => dc.idCompra === idCompra);
     return detalles.map(detalle => {
-      const producto = getProductoInfo(detalle.idProducto);
+      const producto = productos.find(p => p.idProducto === detalle.idProducto);
       return {
-        ...producto,
+        nombre: producto ? producto.nombre : `Producto ${detalle.idProducto}`,
         cantidad: detalle.cantidad,
         precioUnitario: detalle.subtotal / detalle.cantidad,
         subtotal: detalle.subtotal
@@ -1330,9 +1276,9 @@ const AdminCompras = () => {
         
         <div style={{ marginBottom: '30px' }}>
           <h3 style={{ color: '#2E5939', marginBottom: '10px' }}>Proveedor</h3>
-          <p><strong>Nombre:</strong> {proveedor.nombre || 'Desconocido'}</p>
-          <p><strong>Contacto:</strong> {proveedor.celular || 'N/A'}</p>
-          <p><strong>Email:</strong> {proveedor.correo || 'N/A'}</p>
+          <p><strong>Nombre:</strong> {proveedor.nombre}</p>
+          <p><strong>Contacto:</strong> {proveedor.celular}</p>
+          <p><strong>Email:</strong> {proveedor.correo}</p>
           <p><strong>Documento:</strong> {proveedor.tipoDocumento} {proveedor.numeroDocumento}</p>
           <p><strong>Dirección:</strong> {proveedor.direccion}, {proveedor.ciudad}, {proveedor.departamento}</p>
         </div>
@@ -1390,6 +1336,9 @@ const AdminCompras = () => {
       </div>
     );
   };
+
+  // Calcular totales para mostrar en el formulario
+  const { subtotal, iva, total } = calcularTotales();
 
   // ===============================================
   // RENDERIZADO
@@ -1472,29 +1421,11 @@ const AdminCompras = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Compras</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {compras.length} compras registradas • {proveedores.length} proveedores • {productos.length} productos
+            {compras.length} compras registradas • {compras.filter(c => c.estado).length} activas
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button
-            onClick={fetchCompras}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 12px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-            title="Recargar compras"
-          >
-            <FaSync />
-          </button>
+          
           <button
             onClick={() => {
               setShowForm(true);
@@ -1502,13 +1433,11 @@ const AdminCompras = () => {
               setFormErrors({});
               setFormSuccess({});
               setFormWarnings({});
+              setTouchedFields({});
               setNewCompra({
                 idProveedor: proveedores.length > 0 ? proveedores[0].idProveedor.toString() : "",
                 metodoPago: "Transferencia",
-                estado: true,
-                subtotal: 0,
-                iva: 0,
-                total: 0
+                estado: true
               });
               setProductosCompra([]);
             }}
@@ -1540,9 +1469,79 @@ const AdminCompras = () => {
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      {/* Estadísticas - IGUAL QUE MARCAS Y PROVEEDORES */}
+      {!loading && compras.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {compras.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Compras
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {compras.filter(c => c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Compras Activas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {compras.filter(c => !c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Compras Inactivas
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              ${compras.reduce((sum, compra) => sum + compra.total, 0).toLocaleString('es-CO')}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda - SIMPLIFICADA */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1563,17 +1562,14 @@ const AdminCompras = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredCompras.length} resultados
-        </div>
       </div>
 
-      {/* Formulario de agregar/editar - MEJORADO Y ORGANIZADO */}
+      {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
           <div style={{...modalContentStyle, maxWidth: '900px'}}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>
                 {isEditing ? "Editar Compra" : "Nueva Compra"}
               </h2>
               <button
@@ -1585,7 +1581,6 @@ const AdminCompras = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
@@ -1593,116 +1588,54 @@ const AdminCompras = () => {
             </div>
             
             <form onSubmit={handleAddCompra}>
-              {/* Sección de Información Básica */}
               <div style={{ 
-                backgroundColor: 'rgba(46, 89, 57, 0.05)', 
-                padding: '20px', 
-                borderRadius: '10px',
-                marginBottom: '20px',
-                border: '1px solid rgba(46, 89, 57, 0.1)'
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '15px 20px',
+                padding: '0 10px'
               }}>
-                <h3 style={{ margin: '0 0 15px 0', color: "#2E5939", display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FaInfoCircle />
-                  Información Básica
-                </h3>
+                <FormField
+                  label="Proveedor"
+                  name="idProveedor"
+                  type="select"
+                  value={newCompra.idProveedor}
+                  onChange={handleChange}
+                  onBlur={handleInputBlur}
+                  error={formErrors.idProveedor}
+                  success={formSuccess.idProveedor}
+                  warning={formWarnings.idProveedor}
+                  required={true}
+                  disabled={loading || proveedores.length === 0}
+                  options={proveedores.map(proveedor => ({
+                    value: proveedor.idProveedor,
+                    label: `${proveedor.nombre} - ${proveedor.celular}`
+                  }))}
+                  placeholder="Seleccionar proveedor"
+                  touched={touchedFields.idProveedor}
+                  icon={<FaUser />}
+                />
+
+                <FormField
+                  label="Método de Pago"
+                  name="metodoPago"
+                  type="select"
+                  value={newCompra.metodoPago}
+                  onChange={handleChange}
+                  onBlur={handleInputBlur}
+                  error={formErrors.metodoPago}
+                  success={formSuccess.metodoPago}
+                  warning={formWarnings.metodoPago}
+                  required={true}
+                  options={metodoPagoOptions}
+                  touched={touchedFields.metodoPago}
+                  icon={<FaDollarSign />}
+                />
+
+                {/* Botón Toggle para Estado */}
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px' }}>
-                  <FormField
-                    label={
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaUser />
-                        Proveedor
-                      </div>
-                    }
-                    name="idProveedor"
-                    type="select"
-                    value={newCompra.idProveedor}
-                    onChange={handleInputChange}
-                    error={formErrors.idProveedor}
-                    success={formSuccess.idProveedor}
-                    warning={formWarnings.idProveedor}
-                    required={true}
-                    disabled={loadingProveedores || proveedores.length === 0}
-                    options={proveedores.map(proveedor => ({
-                      value: proveedor.idProveedor,
-                      label: `${proveedor.nombre} - ${proveedor.celular}`
-                    }))}
-                    placeholder="Seleccionar proveedor"
-                    icon={<FaUser />}
-                  />
-
-                  <FormField
-                    label={
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaDollarSign />
-                        Método de Pago
-                      </div>
-                    }
-                    name="metodoPago"
-                    type="select"
-                    value={newCompra.metodoPago}
-                    onChange={handleInputChange}
-                    error={formErrors.metodoPago}
-                    success={formSuccess.metodoPago}
-                    warning={formWarnings.metodoPago}
-                    required={true}
-                    options={metodoPagoOptions}
-                    icon={<FaDollarSign />}
-                  />
-
-                  {/* Botón Toggle para Estado */}
-                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
-                    <label style={labelStyle}>
-                      Estado de la Compra
-                      <span style={{ color: "red" }}>*</span>
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <button
-                        type="button"
-                        onClick={toggleEstado}
-                        style={toggleButtonStyle(newCompra.estado)}
-                        disabled={loading}
-                      >
-                        {newCompra.estado ? (
-                          <>
-                            <FaToggleOn size={20} />
-                            <span>🟢 Activa</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaToggleOff size={20} />
-                            <span>🔴 Inactiva</span>
-                          </>
-                        )}
-                      </button>
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newCompra.estado ? '#4caf50' : '#e57373',
-                        fontWeight: '500'
-                      }}>
-                        {newCompra.estado 
-                          ? 'La compra está activa y disponible en el sistema' 
-                          : 'La compra está inactiva y no disponible en el sistema'
-                        }
-                      </span>
-                    </div>
-                    {formErrors.estado && (
-                      <div style={errorValidationStyle}>
-                        <FaExclamationTriangle size={12} />
-                        {formErrors.estado}
-                      </div>
-                    )}
-                    {formSuccess.estado && (
-                      <div style={successValidationStyle}>
-                        <FaCheck size={12} />
-                        {formSuccess.estado}
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
 
-              {/* Sección de Productos - MEJORADA */}
+              {/* Sección de Productos */}
               <div style={productsSectionStyle}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                   <h3 style={{ margin: 0, color: "#2E5939" }}>
@@ -1773,10 +1706,7 @@ const AdminCompras = () => {
                         <select
                           value={producto.idProducto}
                           onChange={(e) => handleProductoChange(index, 'idProducto', e.target.value)}
-                          style={{
-                            ...inputStyle,
-                            border: formErrors[`producto_${index}_id`] ? "1px solid #e57373" : "1px solid #ccc"
-                          }}
+                          style={inputStyle}
                         >
                           {productos.map(prod => (
                             <option key={prod.idProducto} value={prod.idProducto}>
@@ -1788,20 +1718,14 @@ const AdminCompras = () => {
                           type="text"
                           value={producto.cantidad}
                           onChange={(e) => handleProductoChange(index, 'cantidad', e.target.value)}
-                          style={{
-                            ...inputStyle,
-                            border: formErrors[`producto_${index}_cantidad`] ? "1px solid #e57373" : "1px solid #ccc"
-                          }}
+                          style={inputStyle}
                           placeholder="Cantidad"
                         />
                         <input
                           type="text"
                           value={producto.precioUnitario}
                           onChange={(e) => handleProductoChange(index, 'precioUnitario', e.target.value)}
-                          style={{
-                            ...inputStyle,
-                            border: formErrors[`producto_${index}_precio`] ? "1px solid #e57373" : "1px solid #ccc"
-                          }}
+                          style={inputStyle}
                           placeholder="Precio"
                         />
                         <div style={{
@@ -1841,11 +1765,11 @@ const AdminCompras = () => {
               <div style={totalSummaryStyle}>
                 <div style={totalLineStyle}>
                   <span style={totalLabelStyle}>Subtotal:</span>
-                  <span style={totalValueStyle}>${newCompra.subtotal.toLocaleString('es-CO')}</span>
+                  <span style={totalValueStyle}>${subtotal.toLocaleString('es-CO')}</span>
                 </div>
                 <div style={totalLineStyle}>
                   <span style={totalLabelStyle}>IVA (19%):</span>
-                  <span style={totalValueStyle}>${newCompra.iva.toLocaleString('es-CO')}</span>
+                  <span style={totalValueStyle}>${iva.toLocaleString('es-CO')}</span>
                 </div>
                 <div style={totalLineStyle}>
                   <span style={{ ...totalLabelStyle, fontSize: '1.2em' }}>Total:</span>
@@ -1856,7 +1780,7 @@ const AdminCompras = () => {
                     color: 'white',
                     border: '2px solid #2E5939'
                   }}>
-                    ${newCompra.total.toLocaleString('es-CO')}
+                    ${total.toLocaleString('es-CO')}
                   </span>
                 </div>
               </div>
@@ -1921,7 +1845,7 @@ const AdminCompras = () => {
         <div style={modalOverlayStyle}>
           <div style={{...detailsModalStyle, maxWidth: '700px'}}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles de la Compra #{selectedCompra.idCompra}</h2>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Compra #{selectedCompra.idCompra}</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1931,7 +1855,6 @@ const AdminCompras = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
-                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1939,45 +1862,18 @@ const AdminCompras = () => {
             
             <div>
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaUser />
-                    Proveedor
-                  </div>
-                </div>
+                <div style={detailLabelStyle}>Proveedor</div>
                 <div style={detailValueStyle}>{getProveedorNombre(selectedCompra.idProveedor)}</div>
               </div>
-              
-              {/* Información detallada del proveedor */}
-              {(() => {
-                const proveedorInfo = getProveedorInfo(selectedCompra.idProveedor);
-                return (
-                  <>
-                    <div style={detailItemStyle}>
-                      <div style={detailLabelStyle}>Contacto Proveedor</div>
-                      <div style={detailValueStyle}>{proveedorInfo.celular}</div>
-                    </div>
-                    <div style={detailItemStyle}>
-                      <div style={detailLabelStyle}>Email Proveedor</div>
-                      <div style={detailValueStyle}>{proveedorInfo.correo}</div>
-                    </div>
-                  </>
-                );
-              })()}
               
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Método de Pago</div>
                 <div style={detailValueStyle}>{selectedCompra.metodoPago}</div>
               </div>
 
-              {/* Productos de la compra - MEJORADO */}
+              {/* Productos de la compra */}
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaBox />
-                    Productos ({selectedDetalleCompras.length})
-                  </div>
-                </div>
+                <div style={detailLabelStyle}>Productos ({selectedDetalleCompras.length})</div>
                 <div style={detailValueStyle}>
                   {selectedDetalleCompras.length > 0 ? (
                     <div style={{ marginTop: '10px' }}>
@@ -2093,41 +1989,41 @@ const AdminCompras = () => {
       {/* Modal de Confirmación de Eliminación */}
       {showDeleteConfirm && compraToDelete && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
-            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
-            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
-              ¿Estás seguro de eliminar la compra del proveedor "<strong>{getProveedorNombre(compraToDelete.idProveedor)}</strong>"?
+          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 12, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 18, fontSize: '1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar de forma permanente la compra del proveedor "<strong>{getProveedorNombre(compraToDelete.idProveedor)}</strong>"? Esta acción no se puede deshacer.
             </p>
-            
+
             <div style={{ 
-              backgroundColor: '#fff3cd', 
-              border: '1px solid #ffeaa7',
+              backgroundColor: '#ffecec', 
+              border: '1px solid #e57373',
               borderRadius: '8px',
-              padding: '15px',
-              marginBottom: '20px'
+              padding: '12px 15px',
+              marginBottom: '18px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <FaInfoCircle style={{ color: '#856404' }} />
-                <strong style={{ color: '#856404' }}>Información</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <FaInfoCircle style={{ color: '#e57373' }} />
+                <strong style={{ color: '#2E5939' }}>Atención</strong>
               </div>
-              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Total: ${compraToDelete.total.toLocaleString('es-CO')} | Productos: {getProductosDeCompra(compraToDelete.idCompra).length}
+              <p style={{ color: '#2E5939', margin: 0, fontSize: '0.9rem' }}>
+                Se eliminarán todos los productos asociados a esta compra.
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
                 style={{
-                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  backgroundColor: loading ? "#ccc" : "#e53935",
                   color: "white",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  fontWeight: "700",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                 }}
               >
                 {loading ? "Eliminando..." : "Sí, Eliminar"}
@@ -2138,23 +2034,11 @@ const AdminCompras = () => {
                 style={{
                   backgroundColor: loading ? "#ccc" : "#2E5939",
                   color: "#fff",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "#2E5939";
-                  }
                 }}
               >
                 Cancelar
@@ -2235,7 +2119,7 @@ const AdminCompras = () => {
           </div>
         )}
 
-        {/* Tabla - ACTUALIZADA CON NOMBRES DE PRODUCTOS */}
+        {/* Tabla */}
         {!loading && (
           <table style={{
             width: "100%",
@@ -2257,33 +2141,11 @@ const AdminCompras = () => {
               {paginatedCompras.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                      <FaBox size={30} color="#679750" />
-                      {compras.length === 0 ? "No hay compras registradas" : "No se encontraron resultados"}
-                      {compras.length === 0 && (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          style={{
-                            backgroundColor: "#2E5939",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: "600",
-                            marginTop: '10px'
-                          }}
-                        >
-                          <FaPlus style={{ marginRight: '5px' }} />
-                          Agregar Primera Compra
-                        </button>
-                      )}
-                    </div>
+                    {compras.length === 0 ? "No hay compras registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
                 paginatedCompras.map((compra) => {
-                  const productosCompra = getProductosDeCompra(compra.idCompra);
                   const nombresProductos = getNombresProductosCompra(compra.idCompra);
                   
                   return (
@@ -2297,20 +2159,6 @@ const AdminCompras = () => {
                           <div style={{ marginBottom: '5px', fontWeight: '500' }}>
                             {nombresProductos}
                           </div>
-                          {productosCompra.length > 0 && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                              {productosCompra.slice(0, 3).map((producto, index) => (
-                                <span key={index} style={productChipStyle}>
-                                  {producto.cantidad}x {producto.nombre}
-                                </span>
-                              ))}
-                              {productosCompra.length > 3 && (
-                                <span style={productChipStyle}>
-                                  +{productosCompra.length - 3} más
-                                </span>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </td>
                       <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
@@ -2329,20 +2177,25 @@ const AdminCompras = () => {
                             fontWeight: "600",
                             fontSize: "12px",
                             minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
                             transition: "all 0.3s ease",
                           }}
                           onMouseOver={(e) => {
-                            e.target.style.transform = "scale(1.05)";
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
                           }}
                           onMouseOut={(e) => {
-                            e.target.style.transform = "scale(1)";
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
                           }}
                         >
                           {compra.estado ? "Activa" : "Inactiva"}
                         </button>
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
                           <button
                             onClick={() => handleView(compra)}
                             style={btnAccion("#F7F4EA", "#2E5939")}
@@ -2366,7 +2219,7 @@ const AdminCompras = () => {
                           </button>
                           <button
                             onClick={() => handleOpenPdfModal(compra)}
-                            style={btnAccion("#cfe2f3", "#2E5939")}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
                             title="Exportar PDF"
                           >
                             <FaFilePdf />
@@ -2384,7 +2237,7 @@ const AdminCompras = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -2392,19 +2245,33 @@ const AdminCompras = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-                aria-current={currentPage === page ? "page" : undefined}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -2412,75 +2279,14 @@ const AdminCompras = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && compras.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {compras.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Compras
-            </div>
-          </div>
           
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {compras.filter(c => c.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Compras Activas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {productos.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Productos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              ${compras.reduce((sum, compra) => sum + compra.total, 0).toLocaleString('es-CO')}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Valor Total Compras
-            </div>
+            Página {currentPage} de {totalPages}
           </div>
         </div>
       )}

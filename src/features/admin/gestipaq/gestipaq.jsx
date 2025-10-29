@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaConciergeBell, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaImage, FaUpload, FaCamera, FaConciergeBell, FaMapMarkerAlt, FaList, FaHotel } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS
+// ESTILOS MEJORADOS (CONSISTENTES CON SERVICIOS)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -63,17 +63,6 @@ const pageBtnStyle = (active) => ({
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
 
-const formFieldStyle = {
-  marginBottom: 12,
-};
-
-const formContainerStyle = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '15px 20px',
-  padding: '0 10px'
-};
-
 const modalOverlayStyle = {
   position: "fixed",
   top: 0,
@@ -93,7 +82,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -162,7 +151,7 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -179,14 +168,12 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5,
-  fontSize: "14px"
+  marginBottom: 5
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939",
-  fontWeight: "500"
+  color: "#2E5939"
 };
 
 const validationMessageStyle = {
@@ -212,29 +199,72 @@ const warningValidationStyle = {
   color: "#ff9800"
 };
 
-const toggleButtonStyle = (active) => ({
+// ===============================================
+// ESTILOS PARA IMÁGENES
+// ===============================================
+const imageUploadStyle = {
+  border: '2px dashed #679750',
+  borderRadius: '10px',
+  padding: '20px',
+  textAlign: 'center',
+  backgroundColor: '#F7F4EA',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  marginBottom: '15px'
+};
+
+const imagePreviewStyle = {
+  position: 'relative',
+  borderRadius: '8px',
+  overflow: 'hidden',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  maxWidth: '200px'
+};
+
+const imageStyle = {
+  width: '100%',
+  height: '120px',
+  objectFit: 'cover',
+  display: 'block'
+};
+
+// ===============================================
+// ESTILOS PARA SELECTORES MÚLTIPLES
+// ===============================================
+const selectorMultipleStyle = {
+  border: '1px solid #ccc',
+  borderRadius: '8px',
+  padding: '15px',
+  backgroundColor: '#F7F4EA',
+  marginBottom: '15px'
+};
+
+const selectorItemStyle = {
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  padding: '10px 16px',
-  borderRadius: '25px',
-  border: 'none',
-  cursor: 'pointer',
-  fontWeight: '600',
-  fontSize: '14px',
-  transition: 'all 0.3s ease',
-  backgroundColor: active ? '#4caf50' : '#e57373',
-  color: 'white',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-  minWidth: '140px'
-});
+  gap: '10px',
+  padding: '8px',
+  marginBottom: '5px',
+  backgroundColor: 'white',
+  borderRadius: '5px',
+  border: '1px solid #e0e0e0'
+};
+
+const selectorListStyle = {
+  maxHeight: '200px',
+  overflowY: 'auto',
+  marginTop: '10px',
+  border: '1px solid #e0e0e0',
+  borderRadius: '5px',
+  padding: '10px'
+};
 
 // ===============================================
 // VALIDACIONES Y PATRONES PARA PAQUETES
 // ===============================================
 const VALIDATION_PATTERNS = {
   nombrePaquete: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]+$/,
+  imagen: /^[a-zA-Z0-9\-_\.\/:]+$/
 };
 
 const VALIDATION_RULES = {
@@ -294,6 +324,15 @@ const VALIDATION_RULES = {
       invalid: "El descuento debe ser un valor numérico válido."
     }
   },
+  imagen: {
+    maxLength: 500,
+    required: false,
+    pattern: VALIDATION_PATTERNS.imagen,
+    errorMessages: {
+      maxLength: "La URL de la imagen no puede exceder los 500 caracteres.",
+      pattern: "La URL de la imagen contiene caracteres no válidos."
+    }
+  },
   estado: {
     required: true,
     errorMessages: {
@@ -305,11 +344,15 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PAQUETES = "http://localhost:5204/api/Paquete";
+const API_PAQUETES = "http://localhost:5018/api/Paquetes";
+const API_SERVICIOS = "http://localhost:5018/api/Servicios";
+const API_SEDES = "http://localhost:5018/api/Sedes";
+const API_SERVICIO_POR_PAQUETE = "http://localhost:5018/api/ServicioPorPaquete";
+const API_SEDE_POR_PAQUETE = "http://localhost:5018/api/SedePorPaquete";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField PARA PAQUETES
+// COMPONENTE FormField MEJORADO
 // ===============================================
 const FormField = ({ 
   label, 
@@ -317,9 +360,11 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
+  options = [],
   style = {}, 
   required = true, 
   disabled = false,
@@ -329,8 +374,17 @@ const FormField = ({
   min,
   max,
   step,
+  touched = false,
   icon
 }) => {
+  const finalOptions = useMemo(() => {
+    if (type === "select") {
+      const placeholderOption = { value: "", label: placeholder || "Seleccionar", disabled: required };
+      return [placeholderOption, ...options];
+    }
+    return options;
+  }, [options, type, required, placeholder]);
+
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
@@ -346,6 +400,12 @@ const FormField = ({
       if (name === 'precioPaquete' && parts.length === 2 && parts[1].length > 2) {
         filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
       }
+    } else if (name === 'imagen') {
+      if (value === "" || VALIDATION_PATTERNS.imagen.test(value)) {
+        filteredValue = value;
+      } else {
+        return;
+      }
     } else {
       filteredValue = value;
     }
@@ -353,22 +413,27 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
       paddingLeft: icon ? '40px' : '12px'
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -376,7 +441,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -384,7 +449,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -401,47 +466,138 @@ const FormField = ({
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      <div style={{ position: 'relative' }}>
-        {icon && (
-          <div style={{
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#2E5939',
-            zIndex: 1
-          }}>
-            {icon}
-          </div>
-        )}
-        <div>
-          <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={handleFilteredInputChange}
-            style={getInputStyle()}
-            required={required}
-            disabled={disabled}
-            maxLength={maxLength}
-            placeholder={placeholder}
-            min={min}
-            max={max}
-            step={step}
-          />
-          {showCharCount && maxLength && (
+      {type === "select" ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          style={getInputStyle()}
+          required={required}
+          disabled={disabled}
+        >
+          {finalOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div style={{ position: 'relative' }}>
+          {icon && (
             <div style={{
-              fontSize: "0.75rem",
-              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
-              textAlign: "right",
-              marginTop: "4px"
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#2E5939',
+              zIndex: 1
             }}>
-              {value.length}/{maxLength} caracteres
+              {icon}
             </div>
           )}
+          <div>
+            <input
+              type={type}
+              name={name}
+              value={value}
+              onChange={handleFilteredInputChange}
+              onBlur={onBlur}
+              style={getInputStyle()}
+              required={required}
+              disabled={disabled}
+              maxLength={maxLength}
+              placeholder={placeholder}
+              min={min}
+              max={max}
+              step={step}
+            />
+            {showCharCount && maxLength && (
+              <div style={{
+                fontSize: "0.75rem",
+                color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+                textAlign: "right",
+                marginTop: "4px"
+              }}>
+                {value.length}/{maxLength} caracteres
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       {getValidationMessage()}
+    </div>
+  );
+};
+
+// ===============================================
+// COMPONENTE PARA SELECTOR MÚLTIPLE
+// ===============================================
+const SelectorMultiple = ({ 
+  titulo, 
+  items, 
+  itemsSeleccionados, 
+  onToggleItem, 
+  icon 
+}) => {
+  return (
+    <div style={selectorMultipleStyle}>
+      <label style={labelStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {icon}
+          {titulo}
+        </div>
+      </label>
+      
+      <div style={selectorListStyle}>
+        {items.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#679750', padding: '10px' }}>
+            No hay elementos disponibles
+          </div>
+        ) : (
+          items.map(item => (
+            <div key={item.id} style={selectorItemStyle}>
+              <input
+                type="checkbox"
+                checked={itemsSeleccionados.some(sel => sel.id === item.id)}
+                onChange={() => onToggleItem(item)}
+                style={{ cursor: 'pointer' }}
+              />
+              <span style={{ flex: 1 }}>
+                {item.nombre || item.nombreServicio || item.nombreSede}
+                {item.precioServicio && (
+                  <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                    ({formatPrice(item.precioServicio)})
+                  </span>
+                )}
+              </span>
+              {item.estado !== undefined && (
+                <span style={{
+                  fontSize: '0.7rem',
+                  padding: '2px 6px',
+                  borderRadius: '10px',
+                  backgroundColor: item.estado ? '#4caf50' : '#e57373',
+                  color: 'white'
+                }}>
+                  {item.estado ? 'Activo' : 'Inactivo'}
+                </span>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+      
+      {itemsSeleccionados.length > 0 && (
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ fontSize: '0.8rem', color: '#2E5939', marginBottom: '5px' }}>
+            Seleccionados: {itemsSeleccionados.length}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -451,13 +607,18 @@ const FormField = ({
 // ===============================================
 const Gestipaq = () => {
   const [paquetes, setPaquetes] = useState([]);
+  const [servicios, setServicios] = useState([]);
+  const [sedes, setSedes] = useState([]);
+  const [serviciosPorPaquete, setServiciosPorPaquete] = useState([]);
+  const [sedesPorPaquete, setSedesPorPaquete] = useState([]);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [selectedPaquete, setSelectedPaquete] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [packageToDelete, setPackageToDelete] = useState(null);
+  const [paqueteToDelete, setPaqueteToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
@@ -468,15 +629,22 @@ const Gestipaq = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
+
+  // Estados para selección múltiple
+  const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
+  const [sedesSeleccionadas, setSedesSeleccionadas] = useState([]);
 
   // Estado inicial basado en la estructura de tu API
-  const [newPackage, setNewPackage] = useState({
+  const [newPaquete, setNewPaquete] = useState({
     idPaquete: 0,
     nombrePaquete: "",
     precioPaquete: "",
     personas: "2",
     dias: "1",
     descuento: "0",
+    imagen: "",
     estado: true
   });
 
@@ -485,19 +653,22 @@ const Gestipaq = () => {
   // ===============================================
   useEffect(() => {
     fetchPaquetes();
+    fetchServicios();
+    fetchSedes();
+    fetchServiciosPorPaquete();
+    fetchSedesPorPaquete();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombrePaquete', newPackage.nombrePaquete);
-      validateField('precioPaquete', newPackage.precioPaquete);
-      validateField('personas', newPackage.personas);
-      validateField('dias', newPackage.dias);
-      validateField('descuento', newPackage.descuento);
-      validateField('estado', newPackage.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newPaquete[fieldName]);
+        }
+      });
     }
-  }, [newPackage, showForm]);
+  }, [newPaquete, showForm, touchedFields]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -565,6 +736,75 @@ const Gestipaq = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE LA API
+  // ===============================================
+  const fetchPaquetes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(API_PAQUETES);
+      setPaquetes(res.data);
+    } catch (error) {
+      console.error("❌ Error al obtener paquetes:", error);
+      handleApiError(error, "cargar los paquetes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchServicios = async () => {
+    try {
+      const res = await axios.get(API_SERVICIOS);
+      setServicios(res.data);
+    } catch (error) {
+      console.error("❌ Error al obtener servicios:", error);
+    }
+  };
+
+  const fetchSedes = async () => {
+    try {
+      const res = await axios.get(API_SEDES);
+      setSedes(res.data);
+    } catch (error) {
+      console.error("❌ Error al obtener sedes:", error);
+    }
+  };
+
+  const fetchServiciosPorPaquete = async () => {
+    try {
+      const res = await axios.get(API_SERVICIO_POR_PAQUETE);
+      setServiciosPorPaquete(res.data);
+    } catch (error) {
+      console.error("❌ Error al obtener servicios por paquete:", error);
+    }
+  };
+
+  const fetchSedesPorPaquete = async () => {
+    try {
+      const res = await axios.get(API_SEDE_POR_PAQUETE);
+      setSedesPorPaquete(res.data);
+    } catch (error) {
+      console.error("❌ Error al obtener sedes por paquete:", error);
+    }
+  };
+
+  // Obtener servicios asociados a un paquete
+  const getServiciosDelPaquete = (idPaquete) => {
+    const relaciones = serviciosPorPaquete.filter(sp => sp.idPaquete === idPaquete);
+    return relaciones.map(rel => 
+      servicios.find(s => s.idServicio === rel.idServicio)
+    ).filter(servicio => servicio !== undefined);
+  };
+
+  // Obtener sedes asociadas a un paquete
+  const getSedesDelPaquete = (idPaquete) => {
+    const relaciones = sedesPorPaquete.filter(sp => sp.idPaquete === idPaquete);
+    return relaciones.map(rel => 
+      sedes.find(s => s.idSede === rel.idSede)
+    ).filter(sede => sede !== undefined);
+  };
+
+  // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
   // ===============================================
   const validateField = (fieldName, value) => {
@@ -619,14 +859,20 @@ const Gestipaq = () => {
       success = value ? "Paquete activo" : "Paquete inactivo";
     }
     else if (trimmedValue) {
-      success = "Campo válido.";
+      success = `${fieldName === 'nombrePaquete' ? 'Nombre' : fieldName === 'imagen' ? 'Imagen' : 'Campo'} válido.`;
+      
+      if (fieldName === 'nombrePaquete' && trimmedValue.length > 50) {
+        warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
+      } else if (fieldName === 'imagen' && !trimmedValue.startsWith('http')) {
+        warning = "La URL de la imagen debería comenzar con http:// o https://";
+      }
     }
 
     // Verificación de duplicados para nombre
     if (fieldName === 'nombrePaquete' && trimmedValue && !error) {
       const duplicate = paquetes.find(paquete => 
         paquete.nombrePaquete.toLowerCase() === trimmedValue.toLowerCase() && 
-        (!isEditing || paquete.idPaquete !== newPackage.idPaquete)
+        (!isEditing || paquete.idPaquete !== newPaquete.idPaquete)
       );
       if (duplicate) {
         error = "Ya existe un paquete con este nombre.";
@@ -641,14 +887,29 @@ const Gestipaq = () => {
   };
 
   const validateForm = () => {
-    const nombreValid = validateField('nombrePaquete', newPackage.nombrePaquete);
-    const precioValid = validateField('precioPaquete', newPackage.precioPaquete);
-    const personasValid = validateField('personas', newPackage.personas);
-    const diasValid = validateField('dias', newPackage.dias);
-    const descuentoValid = validateField('descuento', newPackage.descuento);
-    const estadoValid = validateField('estado', newPackage.estado);
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombrePaquete: true,
+      precioPaquete: true,
+      personas: true,
+      dias: true,
+      descuento: true,
+      estado: true,
+      imagen: true
+    };
+    setTouchedFields(allFieldsTouched);
 
-    const isValid = nombreValid && precioValid && personasValid && diasValid && descuentoValid && estadoValid;
+    const nombreValid = validateField('nombrePaquete', newPaquete.nombrePaquete);
+    const precioValid = validateField('precioPaquete', newPaquete.precioPaquete);
+    const personasValid = validateField('personas', newPaquete.personas);
+    const diasValid = validateField('dias', newPaquete.dias);
+    const descuentoValid = validateField('descuento', newPaquete.descuento);
+    const estadoValid = validateField('estado', newPaquete.estado);
+
+    // La imagen es opcional según la API
+    const imagenValid = !newPaquete.imagen || validateField('imagen', newPaquete.imagen);
+
+    const isValid = nombreValid && precioValid && personasValid && diasValid && descuentoValid && estadoValid && imagenValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -663,35 +924,92 @@ const Gestipaq = () => {
     return isValid;
   };
 
-  // ===============================================
-  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
-  // ===============================================
-  const fetchPaquetes = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(API_PAQUETES, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setPaquetes(res.data);
-      } else {
-        throw new Error("Formato de datos inválido");
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener paquetes:", error);
-      handleApiError(error, "cargar los paquetes");
-    } finally {
-      setLoading(false);
-    }
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
   };
 
-  const handleAddPackage = async (e) => {
+  // ===============================================
+  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // ===============================================
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      displayAlert("La imagen es demasiado grande. El tamaño máximo es 5MB.", "error");
+      return;
+    }
+
+    // Crear URL para previsualización
+    const imageUrl = URL.createObjectURL(file);
+    setImagenSeleccionada({
+      file,
+      preview: imageUrl,
+      isNew: true
+    });
+
+    // También actualizar el campo de imagen en el formulario
+    setNewPaquete(prev => ({
+      ...prev,
+      imagen: imageUrl // URL temporal para previsualización
+    }));
+
+    e.target.value = ''; // Reset input
+  };
+
+  const removeImage = () => {
+    if (imagenSeleccionada && imagenSeleccionada.isNew) {
+      URL.revokeObjectURL(imagenSeleccionada.preview);
+    }
+    setImagenSeleccionada(null);
+    setNewPaquete(prev => ({
+      ...prev,
+      imagen: ""
+    }));
+  };
+
+  // ===============================================
+  // FUNCIONES PARA SELECTORES MÚLTIPLES
+  // ===============================================
+  const toggleServicio = (servicio) => {
+    setServiciosSeleccionados(prev => {
+      const exists = prev.some(s => s.idServicio === servicio.idServicio);
+      if (exists) {
+        return prev.filter(s => s.idServicio !== servicio.idServicio);
+      } else {
+        return [...prev, servicio];
+      }
+    });
+  };
+
+  const toggleSede = (sede) => {
+    setSedesSeleccionadas(prev => {
+      const exists = prev.some(s => s.idSede === sede.idSede);
+      if (exists) {
+        return prev.filter(s => s.idSede !== sede.idSede);
+      } else {
+        return [...prev, sede];
+      }
+    });
+  };
+
+  // ===============================================
+  // FUNCIONES CRUD PARA PAQUETES
+  // ===============================================
+  const handleAddPaquete = async (e) => {
     e.preventDefault();
     
     if (isSubmitting) {
@@ -707,33 +1025,41 @@ const Gestipaq = () => {
     setLoading(true);
     
     try {
-      // Preparar datos según la estructura de tu API
-      const packageData = {
-        nombrePaquete: newPackage.nombrePaquete.trim(),
-        precioPaquete: parseFloat(newPackage.precioPaquete),
-        personas: parseInt(newPackage.personas),
-        dias: parseInt(newPackage.dias),
-        descuento: parseFloat(newPackage.descuento),
-        estado: newPackage.estado
+      // Preparar datos del paquete
+      const paqueteData = {
+        nombrePaquete: newPaquete.nombrePaquete.trim(),
+        precioPaquete: parseFloat(newPaquete.precioPaquete),
+        personas: parseInt(newPaquete.personas),
+        dias: parseInt(newPaquete.dias),
+        descuento: parseFloat(newPaquete.descuento),
+        imagen: newPaquete.imagen?.trim() || null,
+        estado: newPaquete.estado === "true" || newPaquete.estado === true
       };
 
-      console.log("📤 Enviando datos:", packageData);
+      let idPaqueteCreado;
 
       if (isEditing) {
-        // Para edición, incluir el idPaquete
-        packageData.idPaquete = newPackage.idPaquete;
-        await axios.put(`${API_PAQUETES}/${newPackage.idPaquete}`, packageData, {
-          headers: { 'Content-Type': 'application/json' }
-        });
+        // Editar paquete existente
+        paqueteData.idPaquete = newPaquete.idPaquete;
+        await axios.put(`${API_PAQUETES}/${newPaquete.idPaquete}`, paqueteData);
+        idPaqueteCreado = newPaquete.idPaquete;
         displayAlert("Paquete actualizado exitosamente.", "success");
       } else {
-        await axios.post(API_PAQUETES, packageData, {
-          headers: { 'Content-Type': 'application/json' }
-        });
+        // Crear nuevo paquete
+        const response = await axios.post(API_PAQUETES, paqueteData);
+        idPaqueteCreado = response.data.idPaquete;
         displayAlert("Paquete agregado exitosamente.", "success");
       }
+
+      // Guardar relaciones con servicios
+      await guardarRelacionesServicios(idPaqueteCreado);
       
+      // Guardar relaciones con sedes
+      await guardarRelacionesSedes(idPaqueteCreado);
+
       await fetchPaquetes();
+      await fetchServiciosPorPaquete();
+      await fetchSedesPorPaquete();
       closeForm();
     } catch (error) {
       console.error("❌ Error al guardar paquete:", error);
@@ -744,13 +1070,68 @@ const Gestipaq = () => {
     }
   };
 
+  const guardarRelacionesServicios = async (idPaquete) => {
+    // Eliminar relaciones existentes si estamos editando
+    if (isEditing) {
+      const relacionesExistentes = serviciosPorPaquete.filter(sp => sp.idPaquete === idPaquete);
+      for (const relacion of relacionesExistentes) {
+        await axios.delete(`${API_SERVICIO_POR_PAQUETE}/${relacion.idServicioPaquete}`);
+      }
+    }
+
+    // Crear nuevas relaciones
+    for (const servicio of serviciosSeleccionados) {
+      await axios.post(API_SERVICIO_POR_PAQUETE, {
+        idServicio: servicio.idServicio,
+        idPaquete: idPaquete
+      });
+    }
+  };
+
+  const guardarRelacionesSedes = async (idPaquete) => {
+    // Eliminar relaciones existentes si estamos editando
+    if (isEditing) {
+      const relacionesExistentes = sedesPorPaquete.filter(sp => sp.idPaquete === idPaquete);
+      for (const relacion of relacionesExistentes) {
+        await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+      }
+    }
+
+    // Crear nuevas relaciones
+    for (const sede of sedesSeleccionadas) {
+      await axios.post(API_SEDE_POR_PAQUETE, {
+        idSede: sede.idSede,
+        idPaquete: idPaquete
+      });
+    }
+  };
+
   const confirmDelete = async () => {
-    if (packageToDelete) {
+    if (paqueteToDelete) {
       setLoading(true);
       try {
-        await axios.delete(`${API_PAQUETES}/${packageToDelete.idPaquete}`);
+        // Primero eliminar las relaciones
+        const relacionesServicios = serviciosPorPaquete.filter(sp => sp.idPaquete === paqueteToDelete.idPaquete);
+        for (const relacion of relacionesServicios) {
+          await axios.delete(`${API_SERVICIO_POR_PAQUETE}/${relacion.idServicioPaquete}`);
+        }
+
+        const relacionesSedes = sedesPorPaquete.filter(sp => sp.idPaquete === paqueteToDelete.idPaquete);
+        for (const relacion of relacionesSedes) {
+          await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+        }
+
+        // Luego eliminar el paquete
+        await axios.delete(`${API_PAQUETES}/${paqueteToDelete.idPaquete}`);
         displayAlert("Paquete eliminado exitosamente.", "success");
+        
         await fetchPaquetes();
+        await fetchServiciosPorPaquete();
+        await fetchSedesPorPaquete();
+        
+        if (paginatedPaquetes.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
       } catch (error) {
         console.error("❌ Error al eliminar paquete:", error);
         
@@ -761,7 +1142,7 @@ const Gestipaq = () => {
         }
       } finally {
         setLoading(false);
-        setPackageToDelete(null);
+        setPaqueteToDelete(null);
         setShowDeleteConfirm(false);
       }
     }
@@ -777,7 +1158,7 @@ const Gestipaq = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -803,58 +1184,28 @@ const Gestipaq = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewPackage((prev) => ({
+    setNewPaquete((prev) => ({
       ...prev,
       [name]: value
     }));
   };
 
-  // Función para cambiar el estado con el botón toggle
-  const toggleEstado = () => {
-    setNewPackage(prev => ({
-      ...prev,
-      estado: !prev.estado
-    }));
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newPaquete[name]);
   };
 
-  const closeForm = () => {
-    setShowForm(false);
-    setIsEditing(false);
-    setFormErrors({});
-    setFormSuccess({});
-    setFormWarnings({});
-    setNewPackage({
-      idPaquete: 0,
-      nombrePaquete: "",
-      precioPaquete: "",
-      personas: "2",
-      dias: "1",
-      descuento: "0",
-      estado: true
-    });
-  };
-
-  const closeDetailsModal = () => {
-    setShowDetails(false);
-    setSelectedPackage(null);
-  };
-
-  const cancelDelete = () => {
-    setPackageToDelete(null);
-    setShowDeleteConfirm(false);
-  };
-
-  const toggleEstadoPaquete = async (paquete) => {
+  const toggleEstado = async (paquete) => {
     setLoading(true);
     try {
-      const updatedPackage = { 
+      const updatedPaquete = { 
         ...paquete, 
         estado: !paquete.estado 
       };
-      await axios.put(`${API_PAQUETES}/${paquete.idPaquete}`, updatedPackage, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      displayAlert(`Paquete ${updatedPackage.estado ? 'activado' : 'desactivado'} exitosamente.`, "success");
+      await axios.put(`${API_PAQUETES}/${paquete.idPaquete}`, updatedPaquete);
+      displayAlert(`Paquete ${updatedPaquete.estado ? 'activado' : 'desactivado'} exitosamente.`, "success");
       await fetchPaquetes();
     } catch (error) {
       console.error("Error al cambiar estado:", error);
@@ -864,29 +1215,80 @@ const Gestipaq = () => {
     }
   };
 
+  const closeForm = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
+    setTouchedFields({});
+    setImagenSeleccionada(null);
+    setServiciosSeleccionados([]);
+    setSedesSeleccionadas([]);
+    setNewPaquete({
+      idPaquete: 0,
+      nombrePaquete: "",
+      precioPaquete: "",
+      personas: "2",
+      dias: "1",
+      descuento: "0",
+      imagen: "",
+      estado: true
+    });
+  };
+
+  const closeDetailsModal = () => {
+    setShowDetails(false);
+    setSelectedPaquete(null);
+  };
+
+  const cancelDelete = () => {
+    setPaqueteToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
   const handleView = (paquete) => {
-    setSelectedPackage(paquete);
+    setSelectedPaquete(paquete);
     setShowDetails(true);
   };
 
-  const handleEdit = (paquete) => {
-    setNewPackage({
+  const handleEdit = async (paquete) => {
+    setNewPaquete({
       ...paquete,
       precioPaquete: paquete.precioPaquete.toString(),
       personas: paquete.personas.toString(),
       dias: paquete.dias.toString(),
       descuento: paquete.descuento.toString(),
-      estado: paquete.estado
+      imagen: paquete.imagen || "",
+      estado: paquete.estado ? "true" : "false"
     });
+
+    // Cargar imagen existente si hay una
+    if (paquete.imagen) {
+      setImagenSeleccionada({
+        preview: paquete.imagen,
+        isNew: false
+      });
+    }
+
+    // Cargar servicios asociados
+    const serviciosAsociados = getServiciosDelPaquete(paquete.idPaquete);
+    setServiciosSeleccionados(serviciosAsociados);
+
+    // Cargar sedes asociadas
+    const sedesAsociadas = getSedesDelPaquete(paquete.idPaquete);
+    setSedesSeleccionadas(sedesAsociadas);
+
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (paquete) => {
-    setPackageToDelete(paquete);
+    setPaqueteToDelete(paquete);
     setShowDeleteConfirm(true);
   };
 
@@ -972,9 +1374,15 @@ const Gestipaq = () => {
           <p>{error}</p>
           <div style={{ marginTop: '10px' }}>
             <button
-              onClick={fetchPaquetes}
+              onClick={() => {
+                fetchPaquetes();
+                fetchServicios();
+                fetchSedes();
+                fetchServiciosPorPaquete();
+                fetchSedesPorPaquete();
+              }}
               style={{
-                backgroundColor: '#2E5939',
+                backgroundColor: "#2E5939",
                 color: 'white',
                 padding: '8px 16px',
                 border: 'none',
@@ -1007,9 +1415,7 @@ const Gestipaq = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Paquetes</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {paquetes.length} paquetes registrados • 
-            {paquetes.filter(p => p.estado).length} activos • 
-            Valor total: {formatPrice(paquetes.reduce((sum, paquete) => sum + paquete.precioPaquete, 0))}
+            {paquetes.length} paquetes registrados • {paquetes.filter(p => p.estado).length} activos
           </p>
         </div>
         <button
@@ -1019,13 +1425,18 @@ const Gestipaq = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
-            setNewPackage({
+            setTouchedFields({});
+            setImagenSeleccionada(null);
+            setServiciosSeleccionados([]);
+            setSedesSeleccionadas([]);
+            setNewPaquete({
               idPaquete: 0,
               nombrePaquete: "",
               precioPaquete: "",
               personas: "2",
               dias: "1",
               descuento: "0",
+              imagen: "",
               estado: true
             });
           }}
@@ -1057,8 +1468,8 @@ const Gestipaq = () => {
       </div>
 
       {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1079,18 +1490,15 @@ const Gestipaq = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredPaquetes.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
+          <div style={{ ...modalContentStyle, maxWidth: 900 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
-                {isEditing ? "Editar Paquete" : "Nuevo Paquete"}
+                {isEditing ? "Editar Paquete" : "Agregar Nuevo Paquete"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1101,177 +1509,284 @@ const Gestipaq = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
             
-            <form onSubmit={handleAddPackage}>
-              <div style={formContainerStyle}>
-                <FormField
-                  label="Nombre del Paquete"
-                  name="nombrePaquete"
-                  value={newPackage.nombrePaquete}
-                  onChange={handleChange}
-                  error={formErrors.nombrePaquete}
-                  success={formSuccess.nombrePaquete}
-                  warning={formWarnings.nombrePaquete}
-                  style={{ gridColumn: '1 / -1' }}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.nombrePaquete.maxLength}
-                  showCharCount={true}
-                  placeholder="Ej: Paquete Romántico, Aventura Familiar, Relax Total..."
-                />
+            <form onSubmit={handleAddPaquete}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Nombre del Paquete"
+                    name="nombrePaquete"
+                    value={newPaquete.nombrePaquete}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.nombrePaquete}
+                    success={formSuccess.nombrePaquete}
+                    warning={formWarnings.nombrePaquete}
+                    required={true}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.nombrePaquete.maxLength}
+                    showCharCount={true}
+                    placeholder="Ej: Paquete Romántico, Aventura Familiar, Relax Total..."
+                    touched={touchedFields.nombrePaquete}
+                  />
+                </div>
 
-                <FormField
-                  label={
+                <div>
+                  <FormField
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaDollarSign />
+                        Precio Base (COP)
+                      </div>
+                    }
+                    name="precioPaquete"
+                    type="number"
+                    value={newPaquete.precioPaquete}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.precioPaquete}
+                    success={formSuccess.precioPaquete}
+                    warning={formWarnings.precioPaquete}
+                    required={true}
+                    disabled={loading}
+                    min={VALIDATION_RULES.precioPaquete.min}
+                    max={VALIDATION_RULES.precioPaquete.max}
+                    step="1000"
+                    placeholder="1000"
+                    touched={touchedFields.precioPaquete}
+                    icon={<FaDollarSign />}
+                  />
+                </div>
+
+                <div>
+                  <FormField
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaUsers />
+                        Personas
+                      </div>
+                    }
+                    name="personas"
+                    type="number"
+                    value={newPaquete.personas}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.personas}
+                    success={formSuccess.personas}
+                    warning={formWarnings.personas}
+                    required={true}
+                    disabled={loading}
+                    min={VALIDATION_RULES.personas.min}
+                    max={VALIDATION_RULES.personas.max}
+                    placeholder="2"
+                    touched={touchedFields.personas}
+                    icon={<FaUsers />}
+                  />
+                </div>
+
+                <div>
+                  <FormField
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaCalendarDay />
+                        Días
+                      </div>
+                    }
+                    name="dias"
+                    type="number"
+                    value={newPaquete.dias}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.dias}
+                    success={formSuccess.dias}
+                    warning={formWarnings.dias}
+                    required={true}
+                    disabled={loading}
+                    min={VALIDATION_RULES.dias.min}
+                    max={VALIDATION_RULES.dias.max}
+                    placeholder="1"
+                    touched={touchedFields.dias}
+                    icon={<FaCalendarDay />}
+                  />
+                </div>
+
+                <div>
+                  <FormField
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaTag />
+                        Descuento (%)
+                      </div>
+                    }
+                    name="descuento"
+                    type="number"
+                    value={newPaquete.descuento}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.descuento}
+                    success={formSuccess.descuento}
+                    warning={formWarnings.descuento}
+                    required={true}
+                    disabled={loading}
+                    min={VALIDATION_RULES.descuento.min}
+                    max={VALIDATION_RULES.descuento.max}
+                    step="0.1"
+                    placeholder="0"
+                    touched={touchedFields.descuento}
+                    icon={<FaTag />}
+                  />
+                </div>
+
+                
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaDollarSign />
-                      Precio Base (COP)
-                    </div>
-                  }
-                  name="precioPaquete"
-                  type="number"
-                  value={newPackage.precioPaquete}
-                  onChange={handleChange}
-                  error={formErrors.precioPaquete}
-                  success={formSuccess.precioPaquete}
-                  warning={formWarnings.precioPaquete}
-                  required={true}
-                  disabled={loading}
-                  min={VALIDATION_RULES.precioPaquete.min}
-                  max={VALIDATION_RULES.precioPaquete.max}
-                  step="1000"
-                  placeholder="1000"
-                  icon={<FaDollarSign />}
-                />
-
-                <FormField
-                  label={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaUsers />
-                      Número de Personas
-                    </div>
-                  }
-                  name="personas"
-                  type="number"
-                  value={newPackage.personas}
-                  onChange={handleChange}
-                  error={formErrors.personas}
-                  success={formSuccess.personas}
-                  warning={formWarnings.personas}
-                  required={true}
-                  disabled={loading}
-                  min={VALIDATION_RULES.personas.min}
-                  max={VALIDATION_RULES.personas.max}
-                  placeholder="2"
-                  icon={<FaUsers />}
-                />
-
-                <FormField
-                  label={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaCalendarDay />
-                      Días de Duración
-                    </div>
-                  }
-                  name="dias"
-                  type="number"
-                  value={newPackage.dias}
-                  onChange={handleChange}
-                  error={formErrors.dias}
-                  success={formSuccess.dias}
-                  warning={formWarnings.dias}
-                  required={true}
-                  disabled={loading}
-                  min={VALIDATION_RULES.dias.min}
-                  max={VALIDATION_RULES.dias.max}
-                  placeholder="1"
-                  icon={<FaCalendarDay />}
-                />
-
-                <FormField
-                  label={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaTag />
-                      Descuento (%)
-                    </div>
-                  }
-                  name="descuento"
-                  type="number"
-                  value={newPackage.descuento}
-                  onChange={handleChange}
-                  error={formErrors.descuento}
-                  success={formSuccess.descuento}
-                  warning={formWarnings.descuento}
-                  style={{ gridColumn: '1 / -1' }}
-                  required={true}
-                  disabled={loading}
-                  min={VALIDATION_RULES.descuento.min}
-                  max={VALIDATION_RULES.descuento.max}
-                  step="0.1"
-                  placeholder="0"
-                  icon={<FaTag />}
-                />
-
-                {/* Botón Toggle para Estado - oculto en modo edición */}
-                {!isEditing && (
-                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
-                    <label style={labelStyle}>
-                      Estado del Paquete
-                      <span style={{ color: "red" }}>*</span>
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <button
-                        type="button"
-                        onClick={toggleEstado}
-                        style={toggleButtonStyle(newPackage.estado)}
-                        disabled={loading}
-                      >
-                        {newPackage.estado ? (
-                          <>
-                            <FaToggleOn size={20} />
-                            <span>🟢 Activo</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaToggleOff size={20} />
-                            <span>🔴 Inactivo</span>
-                          </>
-                        )}
-                      </button>
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newPackage.estado ? '#4caf50' : '#e57373',
-                        fontWeight: '500'
-                      }}>
-                        {newPackage.estado 
-                          ? 'El paquete está activo y disponible para reservas' 
-                          : 'El paquete está inactivo y no disponible para reservas'
-                        }
+                      <FaImage />
+                      Imagen del Paquete
+                      <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                        (Opcional)
                       </span>
                     </div>
-                    {formErrors.estado && (
-                      <div style={errorValidationStyle}>
-                        <FaExclamationTriangle size={12} />
-                        {formErrors.estado}
+                  </label>
+                  
+                  {/* Área de subida de imagen */}
+                  <div 
+                    style={imageUploadStyle}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#E8F5E8';
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#F7F4EA';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#F7F4EA';
+                      handleImageUpload({ target: { files: e.dataTransfer.files } });
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                      id="image-upload"
+                    />
+                    <label 
+                      htmlFor="image-upload"
+                      style={{ 
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      <FaUpload size={30} color="#679750" />
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#2E5939', marginBottom: '5px' }}>
+                          Haz clic o arrastra una imagen aquí
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#679750' }}>
+                          Formatos: JPEG, PNG, GIF, WebP (Máx. 5MB)
+                        </div>
                       </div>
-                    )}
-                    {formSuccess.estado && (
-                      <div style={successValidationStyle}>
-                        <FaCheck size={12} />
-                        {formSuccess.estado}
-                      </div>
-                    )}
+                    </label>
                   </div>
-                )}
 
+                  {/* Campo para URL de imagen */}
+                  <FormField
+                    label="URL de la Imagen"
+                    name="imagen"
+                    value={newPaquete.imagen}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.imagen}
+                    success={formSuccess.imagen}
+                    warning={formWarnings.imagen}
+                    required={false}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.imagen.maxLength}
+                    showCharCount={true}
+                    placeholder="https://ejemplo.com/imagen-paquete.jpg"
+                    touched={touchedFields.imagen}
+                  />
+
+                  {/* Previsualización de imagen */}
+                  {(imagenSeleccionada || newPaquete.imagen) && (
+                    <div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginBottom: '10px'
+                      }}>
+                        <span style={{ fontWeight: '600', color: '#2E5939' }}>
+                          Vista previa
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          style={{
+                            background: '#e57373',
+                            color: 'white',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Eliminar imagen
+                        </button>
+                      </div>
+                      <div style={imagePreviewStyle}>
+                        <img 
+                          src={imagenSeleccionada ? imagenSeleccionada.preview : newPaquete.imagen} 
+                          alt="Preview del paquete"
+                          style={imageStyle}
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/200x120/679750/FFFFFF?text=Imagen+No+Disponible';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Selector de Servicios */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <SelectorMultiple
+                    titulo="Servicios Incluidos"
+                    items={servicios.filter(s => s.estado)}
+                    itemsSeleccionados={serviciosSeleccionados}
+                    onToggleItem={toggleServicio}
+                    icon={<FaConciergeBell />}
+                  />
+                </div>
+
+                {/* Selector de Sedes */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <SelectorMultiple
+                    titulo="Sedes Disponibles"
+                    items={sedes.filter(s => s.estado)}
+                    itemsSeleccionados={sedesSeleccionadas}
+                    onToggleItem={toggleSede}
+                    icon={<FaMapMarkerAlt />}
+                  />
+                </div>
               </div>
 
               {/* Resumen del paquete */}
-              {newPackage.precioPaquete && (
+              {newPaquete.precioPaquete && (
                 <div style={{
                   backgroundColor: '#E8F5E8',
                   border: '1px solid #679750',
@@ -1283,21 +1798,33 @@ const Gestipaq = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
                     <div>Precio base:</div>
                     <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                      {formatPrice(parseFloat(newPackage.precioPaquete))}
+                      {formatPrice(parseFloat(newPaquete.precioPaquete))}
                     </div>
                     
-                    {newPackage.descuento > 0 && (
+                    <div>Personas:</div>
+                    <div style={{ textAlign: 'right' }}>{newPaquete.personas}</div>
+                    
+                    <div>Días:</div>
+                    <div style={{ textAlign: 'right' }}>{newPaquete.dias}</div>
+
+                    <div>Servicios incluidos:</div>
+                    <div style={{ textAlign: 'right' }}>{serviciosSeleccionados.length}</div>
+
+                    <div>Sedes disponibles:</div>
+                    <div style={{ textAlign: 'right' }}>{sedesSeleccionadas.length}</div>
+                    
+                    {newPaquete.descuento > 0 && (
                       <>
-                        <div>Descuento ({newPackage.descuento}%):</div>
+                        <div>Descuento ({newPaquete.descuento}%):</div>
                         <div style={{ textAlign: 'right', color: '#e57373' }}>
-                          -{formatPrice(parseFloat(newPackage.precioPaquete) * parseFloat(newPackage.descuento) / 100)}
+                          -{formatPrice(parseFloat(newPaquete.precioPaquete) * parseFloat(newPaquete.descuento) / 100)}
                         </div>
                         
                         <div style={{ borderTop: '1px solid #ccc', paddingTop: '5px' }}>
                           <strong>Precio final:</strong>
                         </div>
                         <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2E5939', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
-                          {formatPrice(calcularPrecioConDescuento(parseFloat(newPackage.precioPaquete), parseFloat(newPackage.descuento)))}
+                          {formatPrice(calcularPrecioConDescuento(parseFloat(newPaquete.precioPaquete), parseFloat(newPaquete.descuento)))}
                         </div>
                       </>
                     )}
@@ -1305,7 +1832,7 @@ const Gestipaq = () => {
                 </div>
               )}
 
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
@@ -1317,9 +1844,9 @@ const Gestipaq = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
+                    flex: 1
                   }}
                   onMouseOver={(e) => {
                     if (!loading && !isSubmitting) {
@@ -1334,7 +1861,7 @@ const Gestipaq = () => {
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Paquete
+                  {loading ? "Guardando..." : (isEditing ? "Actualizar Paquete" : "Guardar Paquete")}
                 </button>
                 <button
                   type="button"
@@ -1348,8 +1875,8 @@ const Gestipaq = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    flex: 1
                   }}
                 >
                   Cancelar
@@ -1361,11 +1888,11 @@ const Gestipaq = () => {
       )}
 
       {/* Modal de detalles */}
-      {showDetails && selectedPackage && (
+      {showDetails && selectedPaquete && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Paquete</h2>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles del Paquete</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1375,6 +1902,7 @@ const Gestipaq = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1383,49 +1911,125 @@ const Gestipaq = () => {
             <div>
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>ID</div>
-                <div style={detailValueStyle}>#{selectedPackage.idPaquete}</div>
+                <div style={detailValueStyle}>#{selectedPaquete.idPaquete}</div>
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Nombre del Paquete</div>
-                <div style={detailValueStyle}>{selectedPackage.nombrePaquete}</div>
+                <div style={detailLabelStyle}>Nombre</div>
+                <div style={detailValueStyle}>{selectedPaquete.nombrePaquete}</div>
               </div>
-              
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Precio Base</div>
-                <div style={detailValueStyle}>{formatPrice(selectedPackage.precioPaquete)}</div>
+                <div style={detailValueStyle}>{formatPrice(selectedPaquete.precioPaquete)}</div>
               </div>
-              
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Personas</div>
-                <div style={detailValueStyle}>{selectedPackage.personas}</div>
+                <div style={detailValueStyle}>{selectedPaquete.personas}</div>
               </div>
-              
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Días</div>
-                <div style={detailValueStyle}>{selectedPackage.dias}</div>
+                <div style={detailValueStyle}>{selectedPaquete.dias}</div>
               </div>
-              
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Descuento</div>
-                <div style={detailValueStyle}>{selectedPackage.descuento}%</div>
+                <div style={detailValueStyle}>{selectedPaquete.descuento}%</div>
               </div>
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Precio Final</div>
                 <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750'}}>
-                  {formatPrice(calcularPrecioConDescuento(selectedPackage.precioPaquete, selectedPackage.descuento))}
+                  {formatPrice(calcularPrecioConDescuento(selectedPaquete.precioPaquete, selectedPaquete.descuento))}
                 </div>
               </div>
-              
+
+              {/* Servicios asociados */}
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaConciergeBell />
+                    Servicios Incluidos ({getServiciosDelPaquete(selectedPaquete.idPaquete).length})
+                  </div>
+                </div>
+                <div style={detailValueStyle}>
+                  {getServiciosDelPaquete(selectedPaquete.idPaquete).length > 0 ? (
+                    <div style={selectorListStyle}>
+                      {getServiciosDelPaquete(selectedPaquete.idPaquete).map(servicio => (
+                        <div key={servicio.idServicio} style={selectorItemStyle}>
+                          <span>{servicio.nombreServicio}</span>
+                          <span style={{ color: '#679750', fontSize: '0.8rem' }}>
+                            {formatPrice(servicio.precioServicio)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#679750' }}>No hay servicios asociados</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Sedes asociadas */}
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaMapMarkerAlt />
+                    Sedes Disponibles ({getSedesDelPaquete(selectedPaquete.idPaquete).length})
+                  </div>
+                </div>
+                <div style={detailValueStyle}>
+                  {getSedesDelPaquete(selectedPaquete.idPaquete).length > 0 ? (
+                    <div style={selectorListStyle}>
+                      {getSedesDelPaquete(selectedPaquete.idPaquete).map(sede => (
+                        <div key={sede.idSede} style={selectorItemStyle}>
+                          <span>{sede.nombreSede}</span>
+                          <span style={{ color: '#679750', fontSize: '0.8rem' }}>
+                            {sede.ubicacion}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#679750' }}>No hay sedes asociadas</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Imagen del paquete */}
+              {selectedPaquete.imagen && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaImage />
+                      Imagen del Paquete
+                    </div>
+                  </div>
+                  <div style={detailValueStyle}>
+                    <div style={imagePreviewStyle}>
+                      <img 
+                        src={selectedPaquete.imagen} 
+                        alt={selectedPaquete.nombrePaquete}
+                        style={imageStyle}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/200x120/679750/FFFFFF?text=Imagen+No+Disponible';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
                   ...detailValueStyle,
-                  color: selectedPackage.estado ? '#4caf50' : '#e57373',
+                  color: selectedPaquete.estado ? '#4caf50' : '#e57373',
                   fontWeight: 'bold'
                 }}>
-                  {selectedPackage.estado ? '🟢 Activo' : '🔴 Inactivo'}
+                  {selectedPaquete.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
             </div>
@@ -1441,6 +2045,16 @@ const Gestipaq = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "#2E5939";
+                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 Cerrar
@@ -1451,15 +2065,14 @@ const Gestipaq = () => {
       )}
 
       {/* Modal de Confirmación de Eliminación */}
-      {showDeleteConfirm && packageToDelete && (
+      {showDeleteConfirm && paqueteToDelete && (
         <div style={modalOverlayStyle}>
           <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
             <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
-              ¿Estás seguro de eliminar el paquete "<strong>{packageToDelete.nombrePaquete}</strong>"?
+              ¿Estás seguro de eliminar el paquete "<strong>{paqueteToDelete.nombrePaquete}</strong>"?
             </p>
             
-            {/* Advertencia sobre valor */}
             <div style={{ 
               backgroundColor: '#fff3cd', 
               border: '1px solid #ffeaa7',
@@ -1472,10 +2085,10 @@ const Gestipaq = () => {
                 <strong style={{ color: '#856404' }}>Paquete a eliminar</strong>
               </div>
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Precio: {formatPrice(packageToDelete.precioPaquete)} | 
-                Personas: {packageToDelete.personas} | 
-                Días: {packageToDelete.dias} |
-                Descuento: {packageToDelete.descuento}%
+                Precio: {formatPrice(paqueteToDelete.precioPaquete)} | 
+                Personas: {paqueteToDelete.personas} | 
+                Días: {paqueteToDelete.dias} | 
+                Estado: {paqueteToDelete.estado ? 'Activo' : 'Inactivo'}
               </p>
             </div>
 
@@ -1561,9 +2174,8 @@ const Gestipaq = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Paquete</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio Base</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio Final</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Personas</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Días</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Descuento</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Servicios</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Sedes</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1571,7 +2183,7 @@ const Gestipaq = () => {
             <tbody>
               {paginatedPaquetes.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
                       {paquetes.length === 0 ? "No hay paquetes registrados" : "No se encontraron resultados"}
@@ -1597,59 +2209,128 @@ const Gestipaq = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedPaquetes.map((paquete) => (
-                  <tr key={paquete.idPaquete} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>{paquete.nombrePaquete}</td>
-                    <td style={{ padding: "15px", textAlign: "right" }}>{formatPrice(paquete.precioPaquete)}</td>
-                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
-                      {formatPrice(calcularPrecioConDescuento(paquete.precioPaquete, paquete.descuento))}
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{paquete.personas}</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{paquete.dias}</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>{paquete.descuento}%</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstadoPaquete(paquete)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: paquete.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px"
-                        }}
-                      >
-                        {paquete.estado ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(paquete)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(paquete)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(paquete)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                paginatedPaquetes.map((paquete) => {
+                  const serviciosAsociados = getServiciosDelPaquete(paquete.idPaquete);
+                  const sedesAsociadas = getSedesDelPaquete(paquete.idPaquete);
+                  
+                  return (
+                    <tr key={paquete.idPaquete} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                          {paquete.imagen && (
+                            <div style={{
+                              width: '50px',
+                              height: '50px',
+                              borderRadius: '8px',
+                              overflow: 'hidden',
+                              flexShrink: 0
+                            }}>
+                              <img 
+                                src={paquete.imagen} 
+                                alt={paquete.nombrePaquete}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                                onError={(e) => {
+                                  e.target.src = 'https://via.placeholder.com/50x50/679750/FFFFFF?text=P';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+                              {paquete.nombrePaquete}
+                            </div>
+                            <div style={{ fontSize: "13px", color: "#679750" }}>
+                              {paquete.personas} personas • {paquete.dias} días
+                              {paquete.descuento > 0 && ` • ${paquete.descuento}% desc.`}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "right" }}>
+                        {formatPrice(paquete.precioPaquete)}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
+                        {formatPrice(calcularPrecioConDescuento(paquete.precioPaquete, paquete.descuento))}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ fontWeight: 'bold' }}>{serviciosAsociados.length}</span>
+                          <span style={{ fontSize: '12px', color: '#679750' }}>
+                            servicios
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ fontWeight: 'bold' }}>{sedesAsociadas.length}</span>
+                          <span style={{ fontSize: '12px', color: '#679750' }}>
+                            sedes
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => toggleEstado(paquete)}
+                          disabled={loading}
+                          style={{
+                            cursor: loading ? "not-allowed" : "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: paquete.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
+                          }}
+                        >
+                          {paquete.estado ? "Activo" : "Inactivo"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => handleView(paquete)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(paquete)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar Paquete"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(paquete)}
+                            style={btnAccion("#fbe9e7", "#e57373")}
+                            title="Eliminar Paquete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1673,6 +2354,7 @@ const Gestipaq = () => {
                 key={page}
                 onClick={() => goToPage(page)}
                 style={pageBtnStyle(currentPage === page)}
+                aria-current={currentPage === page ? "page" : undefined}
               >
                 {page}
               </button>
@@ -1685,76 +2367,6 @@ const Gestipaq = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && paquetes.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {paquetes.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Paquetes
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {paquetes.filter(p => p.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Paquetes Activos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {paquetes.filter(p => p.descuento > 0).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Con Descuento
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPrice(paquetes.reduce((sum, paquete) => sum + paquete.precioPaquete, 0))}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Valor Total
-            </div>
-          </div>
         </div>
       )}
     </div>

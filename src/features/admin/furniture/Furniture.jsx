@@ -3,7 +3,7 @@ import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangl
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS
+// ESTILOS MEJORADOS (CONSISTENTES)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -278,13 +278,13 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_COMODIDADES = "http://localhost:5204/api/Comodidades";
-const API_CABANA_COMODIDADES = "http://localhost:5204/api/CabanaPorComodidades";
-const API_CABANAS = "http://localhost:5204/api/Cabana";
+const API_COMODIDADES = "http://localhost:5018/api/Comodidades";
+const API_CABANA_COMODIDADES = "http://localhost:5018/api/CabanaPorComodidades";
+const API_CABANAS = "http://localhost:5018/api/Cabanas";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField PARA COMODIDADES
+// COMPONENTE FormField MEJORADO
 // ===============================================
 const FormField = ({ 
   label, 
@@ -292,6 +292,7 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
@@ -303,7 +304,8 @@ const FormField = ({
   showCharCount = false,
   min,
   max,
-  step
+  step,
+  touched = false
 }) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -342,21 +344,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -364,7 +371,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -372,7 +379,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -395,6 +402,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={{
               ...getInputStyle(),
               minHeight: "80px",
@@ -424,6 +432,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={
               name === "fechaRegistro" && disabled
                 ? yellowBlockedInputStyle
@@ -455,7 +464,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Furniture (Comodidades) CON SISTEMA DE DESCUENTO
+// COMPONENTE PRINCIPAL Furniture (Comodidades) MEJORADO
 // ===============================================
 const Furniture = () => {
   const [comodidades, setComodidades] = useState([]);
@@ -478,6 +487,7 @@ const Furniture = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
 
   // Función para obtener la fecha actual en formato YYYY-MM-DD
   const getCurrentDate = () => {
@@ -501,16 +511,16 @@ const Furniture = () => {
     fetchCabanas();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombreComodidades', newItem.nombreComodidades);
-      validateField('descripcion', newItem.descripcion);
-      validateField('fechaRegistro', newItem.fechaRegistro);
-      validateField('cantidad', newItem.cantidad);
-      validateField('precio', newItem.precio);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newItem[fieldName]);
+        }
+      });
     }
-  }, [newItem, showForm]);
+  }, [newItem, showForm, touchedFields]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -633,7 +643,7 @@ const Furniture = () => {
   };
 
   // ===============================================
-  // FUNCIONES PARA EL SISTEMA DE DESCUENTO
+  // FUNCIONES PARA EL SISTEMA DE STOCK
   // ===============================================
   
   // Función para obtener la cantidad disponible (total - usadas)
@@ -742,6 +752,16 @@ const Furniture = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombreComodidades: true,
+      descripcion: true,
+      fechaRegistro: true,
+      cantidad: true,
+      precio: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombreComodidades', newItem.nombreComodidades);
     const descripcionValid = validateField('descripcion', newItem.descripcion);
     const fechaValid = validateField('fechaRegistro', newItem.fechaRegistro);
@@ -761,6 +781,14 @@ const Furniture = () => {
     }
 
     return isValid;
+  };
+
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
   };
 
   const handleAddComodidad = async (e) => {
@@ -871,7 +899,7 @@ const Furniture = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -903,12 +931,20 @@ const Furniture = () => {
     }));
   };
 
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newItem[name]);
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setNewItem({
       nombreComodidades: "",
       descripcion: "",
@@ -960,6 +996,7 @@ const Furniture = () => {
       setFormErrors({});
       setFormSuccess({});
       setFormWarnings({});
+      setTouchedFields({});
     } catch (error) {
       console.error("❌ Error al cargar datos para edición:", error);
       displayAlert("Error al cargar los datos para edición", "error");
@@ -1116,6 +1153,7 @@ const Furniture = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
+            setTouchedFields({});
             setNewItem({
               nombreComodidades: "",
               descripcion: "",
@@ -1151,9 +1189,79 @@ const Furniture = () => {
         </button>
       </div>
 
+      {/* Estadísticas */}
+      {!loading && comodidades.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {comodidades.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Comodidades
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {comodidades.filter(c => getCantidadDisponible(c.idComodidades) > 0).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Con Stock Disponible
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {comodidades.filter(c => getCantidadDisponible(c.idComodidades) === 0).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Agotadas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPrice(comodidades.reduce((sum, item) => sum + (item.precio * item.cantidad), 0))}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total en Stock
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1173,9 +1281,6 @@ const Furniture = () => {
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             }}
           />
-        </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredItems.length} resultados
         </div>
       </div>
 
@@ -1216,6 +1321,7 @@ const Furniture = () => {
                     name="nombreComodidades"
                     value={newItem.nombreComodidades}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.nombreComodidades}
                     success={formSuccess.nombreComodidades}
                     warning={formWarnings.nombreComodidades}
@@ -1224,6 +1330,7 @@ const Furniture = () => {
                     maxLength={VALIDATION_RULES.nombreComodidades.maxLength}
                     showCharCount={true}
                     placeholder="Ej: TV, WiFi, Aire Acondicionado..."
+                    touched={touchedFields.nombreComodidades}
                   />
                 </div>
                 
@@ -1234,6 +1341,7 @@ const Furniture = () => {
                     type="date"
                     value={newItem.fechaRegistro}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.fechaRegistro}
                     success={formSuccess.fechaRegistro}
                     warning={formWarnings.fechaRegistro}
@@ -1241,6 +1349,7 @@ const Furniture = () => {
                     disabled={loading || isEditing}
                     min={getCurrentDate()}
                     max="2099-12-31"
+                    touched={touchedFields.fechaRegistro}
                   />
                 </div>
                 
@@ -1251,6 +1360,7 @@ const Furniture = () => {
                     type="number"
                     value={newItem.cantidad}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.cantidad}
                     success={formSuccess.cantidad}
                     warning={formWarnings.cantidad}
@@ -1259,6 +1369,7 @@ const Furniture = () => {
                     min={VALIDATION_RULES.cantidad.min}
                     max={VALIDATION_RULES.cantidad.max}
                     step="1"
+                    touched={touchedFields.cantidad}
                   />
                 </div>
 
@@ -1274,6 +1385,7 @@ const Furniture = () => {
                     type="number"
                     value={newItem.precio}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.precio}
                     success={formSuccess.precio}
                     warning={formWarnings.precio}
@@ -1282,6 +1394,7 @@ const Furniture = () => {
                     min={VALIDATION_RULES.precio.min}
                     max={VALIDATION_RULES.precio.max}
                     step="0.01"
+                    touched={touchedFields.precio}
                   />
                 </div>
 
@@ -1292,6 +1405,7 @@ const Furniture = () => {
                     type="textarea"
                     value={newItem.descripcion}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     error={formErrors.descripcion}
                     success={formSuccess.descripcion}
                     warning={formWarnings.descripcion}
@@ -1300,6 +1414,7 @@ const Furniture = () => {
                     maxLength={VALIDATION_RULES.descripcion.maxLength}
                     showCharCount={true}
                     placeholder="Descripción detallada de la comodidad..."
+                    touched={touchedFields.descripcion}
                   />
                 </div>
               </div>
@@ -1754,76 +1869,6 @@ const Furniture = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && comodidades.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {comodidades.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Comodidades
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {comodidades.filter(c => getCantidadDisponible(c.idComodidades) > 0).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Con Stock Disponible
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
-              {comodidades.filter(c => getCantidadDisponible(c.idComodidades) === 0).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
-              Agotadas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPrice(comodidades.reduce((sum, item) => sum + (item.precio * item.cantidad), 0))}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Valor Total en Stock
-            </div>
-          </div>
         </div>
       )}
     </div>

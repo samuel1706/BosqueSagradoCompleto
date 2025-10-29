@@ -1,3 +1,4 @@
+// src/components/CategoriaProducto.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { 
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
@@ -7,7 +8,7 @@ import {
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES CON LOS OTROS MÓDULOS)
+// ESTILOS MEJORADOS (CONSISTENTES CON TIPO CABAÑA)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -69,8 +70,8 @@ const pageBtnStyle = (active) => ({
 
 const formContainerStyle = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '15px 20px',
+  gridTemplateColumns: '1fr',
+  gap: '15px',
   padding: '0 10px'
 };
 
@@ -93,7 +94,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -149,20 +150,13 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
-const alertInfoStyle = {
-  ...alertStyle,
-  backgroundColor: '#d1ecf1',
-  color: '#0c5460',
-  borderLeftColor: '#17a2b8',
-};
-
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -212,24 +206,6 @@ const warningValidationStyle = {
   color: "#ff9800"
 };
 
-const toggleButtonStyle = (active) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  padding: '10px 16px',
-  borderRadius: '25px',
-  border: 'none',
-  cursor: 'pointer',
-  fontWeight: '600',
-  fontSize: '14px',
-  transition: 'all 0.3s ease',
-  backgroundColor: active ? '#4caf50' : '#e57373',
-  color: 'white',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-  minWidth: '140px'
-});
-
 // ===============================================
 // VALIDACIONES Y PATRONES
 // ===============================================
@@ -272,9 +248,9 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_CATEGORIAS = "http://localhost:5204/api/CategoriaProductos";
-const API_PRODUCTOS = "http://localhost:5204/api/Productos";
-const ITEMS_PER_PAGE = 5;
+const API_CATEGORIAS = "http://localhost:5018/api/CategoriaProductos";
+const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const ITEMS_PER_PAGE = 10;
 
 // ===============================================
 // COMPONENTE FormField PARA CATEGORÍAS
@@ -288,18 +264,23 @@ const FormField = ({
   error, 
   success,
   warning,
+  options = [],
   style = {}, 
   required = true, 
   disabled = false,
   maxLength,
   placeholder,
   showCharCount = false,
-  min,
-  max,
-  step,
-  icon,
-  textarea = false
+  touched = false
 }) => {
+  const finalOptions = useMemo(() => {
+    if (type === "select") {
+      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
+      return [placeholderOption, ...options];
+    }
+    return options;
+  }, [options, type, required]);
+
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
@@ -313,32 +294,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
-    const baseStyle = {
+    return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
-      paddingLeft: icon ? '40px' : '12px'
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
-
-    if (textarea) {
-      return {
-        ...baseStyle,
-        minHeight: '80px',
-        resize: 'vertical'
-      };
-    }
-
-    return baseStyle;
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -346,7 +321,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -354,7 +329,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -371,47 +346,42 @@ const FormField = ({
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      <div style={{ position: 'relative' }}>
-        {icon && (
-          <div style={{
-            position: 'absolute',
-            left: '12px',
-            top: textarea ? '12px' : '50%',
-            transform: textarea ? 'none' : 'translateY(-50%)',
-            color: '#2E5939',
-            zIndex: 1
-          }}>
-            {icon}
-          </div>
-        )}
+      {type === "select" ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          style={getInputStyle()}
+          required={required}
+          disabled={disabled}
+        >
+          {finalOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : type === "textarea" ? (
         <div>
-          {textarea ? (
-            <textarea
-              name={name}
-              value={value}
-              onChange={handleFilteredInputChange}
-              style={getInputStyle()}
-              required={required}
-              disabled={disabled}
-              maxLength={maxLength}
-              placeholder={placeholder}
-            />
-          ) : (
-            <input
-              type={type}
-              name={name}
-              value={value}
-              onChange={handleFilteredInputChange}
-              style={getInputStyle()}
-              required={required}
-              disabled={disabled}
-              maxLength={maxLength}
-              placeholder={placeholder}
-              min={min}
-              max={max}
-              step={step}
-            />
-          )}
+          <textarea
+            name={name}
+            value={value}
+            onChange={handleFilteredInputChange}
+            style={{
+              ...getInputStyle(),
+              minHeight: "80px",
+              resize: "vertical",
+              fontFamily: "inherit"
+            }}
+            required={required}
+            disabled={disabled}
+            maxLength={maxLength}
+            placeholder={placeholder}
+          />
           {showCharCount && maxLength && (
             <div style={{
               fontSize: "0.75rem",
@@ -423,7 +393,31 @@ const FormField = ({
             </div>
           )}
         </div>
-      </div>
+      ) : (
+        <div>
+          <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={handleFilteredInputChange}
+            style={getInputStyle()}
+            required={required}
+            disabled={disabled}
+            maxLength={maxLength}
+            placeholder={placeholder}
+          />
+          {showCharCount && maxLength && (
+            <div style={{
+              fontSize: "0.75rem",
+              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+              textAlign: "right",
+              marginTop: "4px"
+            }}>
+              {value.length}/{maxLength} caracteres
+            </div>
+          )}
+        </div>
+      )}
       {getValidationMessage()}
     </div>
   );
@@ -434,6 +428,7 @@ const FormField = ({
 // ===============================================
 const CategoriaProducto = () => {
   const [categorias, setCategorias] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -451,13 +446,12 @@ const CategoriaProducto = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
 
-  // Estado inicial basado en la estructura de tu API
   const [newCategoria, setNewCategoria] = useState({
-    idCategoria: 0,
     categoria: "",
     descripcion: "",
-    estado: true
+    estado: "true"
   });
 
   // ===============================================
@@ -465,18 +459,20 @@ const CategoriaProducto = () => {
   // ===============================================
   useEffect(() => {
     fetchCategorias();
+    fetchProductos();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('categoria', newCategoria.categoria);
-      validateField('descripcion', newCategoria.descripcion);
-      validateField('estado', newCategoria.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newCategoria[fieldName]);
+        }
+      });
     }
-  }, [newCategoria, showForm]);
+  }, [newCategoria, showForm, touchedFields]);
 
-  // Efecto para agregar estilos de animación
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -519,8 +515,6 @@ const CategoriaProducto = () => {
         return <FaExclamationTriangle style={alertIconStyle} />;
       case "warning":
         return <FaExclamationTriangle style={alertIconStyle} />;
-      case "info":
-        return <FaInfoCircle style={alertIconStyle} />;
       default:
         return <FaInfoCircle style={alertIconStyle} />;
     }
@@ -534,8 +528,6 @@ const CategoriaProducto = () => {
         return alertErrorStyle;
       case "warning":
         return alertWarningStyle;
-      case "info":
-        return alertInfoStyle;
       default:
         return alertSuccessStyle;
     }
@@ -567,13 +559,20 @@ const CategoriaProducto = () => {
       error = rules.errorMessages.pattern;
     }
     else if (fieldName === 'estado') {
-      success = value ? "Categoría activa" : "Categoría inactiva";
+      success = value === "true" ? "Categoría activa" : "Categoría inactiva";
     }
     else if (trimmedValue) {
-      success = "Campo válido.";
+      success = `${fieldName === 'categoria' ? 'Nombre' : 'Descripción'} válido.`;
+      
+      if (fieldName === 'categoria' && trimmedValue.length > 30) {
+        warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
+      } else if (fieldName === 'descripcion' && trimmedValue.length > 150) {
+        warning = "La descripción es muy larga. Considere ser más conciso.";
+      } else if (fieldName === 'descripcion' && trimmedValue.length < 15) {
+        warning = "La descripción es muy breve. Sea más descriptivo.";
+      }
     }
 
-    // Verificación de duplicados para nombre
     if (fieldName === 'categoria' && trimmedValue && !error) {
       const duplicate = categorias.find(cat => 
         cat.categoria.toLowerCase() === trimmedValue.toLowerCase() && 
@@ -581,25 +580,6 @@ const CategoriaProducto = () => {
       );
       if (duplicate) {
         error = "Ya existe una categoría con este nombre.";
-      }
-    }
-
-    // Advertencias específicas
-    if (fieldName === 'descripcion' && trimmedValue && !error) {
-      if (trimmedValue.length < 15) {
-        warning = "Considera agregar más detalles para una mejor descripción.";
-      } else if (trimmedValue.split(/\s+/).length < 3) {
-        warning = "La descripción podría ser más descriptiva.";
-      }
-    }
-
-    if (fieldName === 'categoria' && trimmedValue && !error) {
-      const categoriaSimilar = categorias.find(cat => 
-        cat.categoria.toLowerCase().includes(trimmedValue.toLowerCase()) && 
-        cat.idCategoria !== (isEditing ? newCategoria.idCategoria : null)
-      );
-      if (categoriaSimilar) {
-        warning = `Existe una categoría similar: "${categoriaSimilar.categoria}"`;
       }
     }
 
@@ -611,6 +591,14 @@ const CategoriaProducto = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      categoria: true,
+      descripcion: true,
+      estado: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const categoriaValid = validateField('categoria', newCategoria.categoria);
     const descripcionValid = validateField('descripcion', newCategoria.descripcion);
     const estadoValid = validateField('estado', newCategoria.estado);
@@ -630,8 +618,16 @@ const CategoriaProducto = () => {
     return isValid;
   };
 
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
   // ===============================================
-  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
+  // FUNCIONES DE LA API
   // ===============================================
   const fetchCategorias = async () => {
     setLoading(true);
@@ -658,6 +654,17 @@ const CategoriaProducto = () => {
     }
   };
 
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
+    }
+  };
+
   const handleAddCategoria = async (e) => {
     e.preventDefault();
     
@@ -674,17 +681,15 @@ const CategoriaProducto = () => {
     setLoading(true);
     
     try {
-      // Preparar datos según la estructura de tu API
       const categoriaData = {
         categoria: newCategoria.categoria.trim(),
         descripcion: newCategoria.descripcion.trim(),
-        estado: newCategoria.estado
+        estado: newCategoria.estado === "true"
       };
 
       console.log("📤 Enviando datos:", categoriaData);
 
       if (isEditing) {
-        // Para edición, incluir el idCategoria
         categoriaData.idCategoria = newCategoria.idCategoria;
         await axios.put(`${API_CATEGORIAS}/${newCategoria.idCategoria}`, categoriaData, {
           headers: { 'Content-Type': 'application/json' }
@@ -749,7 +754,7 @@ const CategoriaProducto = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5204";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -781,12 +786,11 @@ const CategoriaProducto = () => {
     }));
   };
 
-  // Función para cambiar el estado con el botón toggle
-  const toggleEstado = () => {
-    setNewCategoria(prev => ({
-      ...prev,
-      estado: !prev.estado
-    }));
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newCategoria[name]);
   };
 
   const closeForm = () => {
@@ -795,11 +799,11 @@ const CategoriaProducto = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setNewCategoria({
-      idCategoria: 0,
       categoria: "",
       descripcion: "",
-      estado: true
+      estado: "true"
     });
   };
 
@@ -845,23 +849,19 @@ const CategoriaProducto = () => {
   // Función mejorada para verificar si una categoría tiene productos asociados
   const checkIfCategoriaHasProducts = async (categoriaId) => {
     try {
-      // Buscar productos que pertenezcan a esta categoría
-      const response = await axios.get(`${API_PRODUCTOS}/categoria/${categoriaId}`, {
-        timeout: 5000
-      });
-      
-      return response.data && Array.isArray(response.data) && response.data.length > 0;
+      const productosEnCategoria = productos.filter(producto => 
+        producto.idCategoria === categoriaId
+      );
+      return productosEnCategoria.length > 0;
     } catch (error) {
       console.error("Error al verificar productos:", error);
-      
-      // Si no se puede verificar, asumir que podría tener productos por seguridad
-      if (error.response && error.response.status === 404) {
-        // Si el endpoint no existe, usar un enfoque alternativo
-        return categorias.find(cat => cat.idCategoria === categoriaId)?.productosCount > 0;
-      }
-      
       return true; // Por seguridad, asumir que tiene productos si hay error
     }
+  };
+
+  // Función para contar productos por categoría
+  const contarProductosPorCategoria = (categoriaId) => {
+    return productos.filter(producto => producto.idCategoria === categoriaId).length;
   };
 
   const handleView = (categoria) => {
@@ -872,25 +872,25 @@ const CategoriaProducto = () => {
   const handleEdit = (categoria) => {
     setNewCategoria({
       ...categoria,
-      estado: categoria.estado
+      estado: categoria.estado.toString()
     });
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (categoria) => {
     // Validar si la categoría tiene productos asociados antes de eliminar
-    checkIfCategoriaHasProducts(categoria.idCategoria).then(hasProducts => {
-      if (hasProducts) {
-        displayAlert("No se puede eliminar una categoría que tiene productos asociados", "error");
-        return;
-      }
-      setCategoriaToDelete(categoria);
-      setShowDeleteConfirm(true);
-    });
+    const hasProducts = contarProductosPorCategoria(categoria.idCategoria) > 0;
+    if (hasProducts) {
+      displayAlert("No se puede eliminar una categoría que tiene productos asociados", "error");
+      return;
+    }
+    setCategoriaToDelete(categoria);
+    setShowDeleteConfirm(true);
   };
 
   // ===============================================
@@ -995,79 +995,114 @@ const CategoriaProducto = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Categorías de Producto</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {categorias.length} categorías registradas • 
-            {categorias.filter(c => c.estado).length} activas
+            {categorias.length} categorías registradas • {categorias.filter(c => c.estado).length} activas
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button
-            onClick={fetchCategorias}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 12px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-            title="Recargar categorías"
-          >
-            <FaSync />
-          </button>
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setIsEditing(false);
-              setFormErrors({});
-              setFormSuccess({});
-              setFormWarnings({});
-              setNewCategoria({
-                idCategoria: 0,
-                categoria: "",
-                descripcion: "",
-                estado: true
-              });
-            }}
-            style={{
-              backgroundColor: "#2E5939",
-              color: "white",
-              padding: "12px 20px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              transition: "all 0.3s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-              e.target.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#2E5939";
-              e.target.style.transform = "translateY(0)";
-            }}
-          >
-            <FaPlus /> Nueva Categoría
-          </button>
-        </div>
-      </div>
+           <button
+             onClick={() => {
+               setShowForm(true);
+               setIsEditing(false);
+               setFormErrors({});
+               setFormSuccess({});
+               setFormWarnings({});
+               setTouchedFields({});
+               setNewCategoria({
+                 categoria: "",
+                 descripcion: "",
+                 estado: "true"
+               });
+             }}
+             style={{
+               backgroundColor: "#2E5939",
+               color: "white",
+               padding: "12px 20px",
+               border: "none",
+               borderRadius: 10,
+               cursor: "pointer",
+               fontWeight: "600",
+               boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+               transition: "all 0.3s ease",
+               display: 'flex',
+               alignItems: 'center',
+               gap: '8px'
+             }}
+             onMouseOver={(e) => {
+               e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+               e.target.style.transform = "translateY(-2px)";
+             }}
+             onMouseOut={(e) => {
+               e.target.style.background = "#2E5939";
+               e.target.style.transform = "translateY(0)";
+             }}
+           >
+             <FaPlus /> Nueva Categoría
+           </button>
+         </div>
+       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      {/* Estadísticas - IGUAL QUE TIPO CABAÑA */}
+      {!loading && categorias.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {categorias.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Categorías
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {categorias.filter(c => c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Categorías Activas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {categorias.filter(c => !c.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Categorías Inactivas
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda - SIMPLIFICADA */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
-            placeholder="Buscar por nombre o descripción de categoría..."
+            placeholder="Buscar por nombre o descripción..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -1084,17 +1119,14 @@ const CategoriaProducto = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredCategorias.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
+          <div style={modalContentStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>
                 {isEditing ? "Editar Categoría" : "Nueva Categoría"}
               </h2>
               <button
@@ -1112,130 +1144,43 @@ const CategoriaProducto = () => {
               </button>
             </div>
             
-            <form onSubmit={handleAddCategoria}>
-              <div style={formContainerStyle}>
-                <FormField
-                  label="Nombre de la Categoría"
-                  name="categoria"
-                  value={newCategoria.categoria}
-                  onChange={handleChange}
-                  error={formErrors.categoria}
-                  success={formSuccess.categoria}
-                  warning={formWarnings.categoria}
-                  style={{ gridColumn: '1 / -1' }}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.categoria.maxLength}
-                  showCharCount={true}
-                  placeholder="Ej: Aseo, Bebidas, Alimentos, Limpieza..."
-                  icon={<FaTag />}
-                />
+            <form onSubmit={handleAddCategoria} style={formContainerStyle}>
+              <FormField
+                label="Nombre de la Categoría"
+                name="categoria"
+                value={newCategoria.categoria}
+                onChange={handleChange}
+                onBlur={handleInputBlur}
+                error={formErrors.categoria}
+                success={formSuccess.categoria}
+                warning={formWarnings.categoria}
+                required={true}
+                disabled={loading}
+                maxLength={VALIDATION_RULES.categoria.maxLength}
+                showCharCount={true}
+                placeholder="Ej: Aseo, Bebidas, Alimentos, Limpieza..."
+                touched={touchedFields.categoria}
+              />
 
-                <FormField
-                  label="Descripción"
-                  name="descripcion"
-                  value={newCategoria.descripcion}
-                  onChange={handleChange}
-                  error={formErrors.descripcion}
-                  success={formSuccess.descripcion}
-                  warning={formWarnings.descripcion}
-                  style={{ gridColumn: '1 / -1' }}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.descripcion.maxLength}
-                  showCharCount={true}
-                  placeholder="Descripción detallada de la categoría y su propósito..."
-                  textarea={true}
-                />
+              <FormField
+                label="Descripción"
+                name="descripcion"
+                type="textarea"
+                value={newCategoria.descripcion}
+                onChange={handleChange}
+                onBlur={handleInputBlur}
+                error={formErrors.descripcion}
+                success={formSuccess.descripcion}
+                warning={formWarnings.descripcion}
+                required={true}
+                disabled={loading}
+                maxLength={VALIDATION_RULES.descripcion.maxLength}
+                showCharCount={true}
+                placeholder="Descripción detallada de la categoría y su propósito..."
+                touched={touchedFields.descripcion}
+              />
 
-                {/* Botón Toggle para Estado - oculto en modo edición */}
-                {!isEditing && (
-                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
-                    <label style={labelStyle}>
-                      Estado de la Categoría
-                      <span style={{ color: "red" }}>*</span>
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <button
-                        type="button"
-                        onClick={toggleEstado}
-                        style={toggleButtonStyle(newCategoria.estado)}
-                        disabled={loading}
-                      >
-                        {newCategoria.estado ? (
-                          <>
-                            <FaToggleOn size={20} />
-                            <span>🟢 Activa</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaToggleOff size={20} />
-                            <span>🔴 Inactiva</span>
-                          </>
-                        )}
-                      </button>
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newCategoria.estado ? '#4caf50' : '#e57373',
-                        fontWeight: '500'
-                      }}>
-                        {newCategoria.estado 
-                          ? 'La categoría está activa y disponible para productos' 
-                          : 'La categoría está inactiva y no disponible para productos'
-                        }
-                      </span>
-                    </div>
-                    {formErrors.estado && (
-                      <div style={errorValidationStyle}>
-                        <FaExclamationTriangle size={12} />
-                        {formErrors.estado}
-                      </div>
-                    )}
-                    {formSuccess.estado && (
-                      <div style={successValidationStyle}>
-                        <FaCheck size={12} />
-                        {formSuccess.estado}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </div>
-
-              {/* Resumen de la categoría */}
-              <div style={{
-                backgroundColor: '#E8F5E8',
-                border: '1px solid #679750',
-                borderRadius: '8px',
-                padding: '15px',
-                marginBottom: '20px'
-              }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen de la Categoría</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
-                  <div>Nombre:</div>
-                  <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                    {newCategoria.categoria || 'Sin nombre'}
-                  </div>
-                  
-                  <div>Caracteres descripción:</div>
-                  <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                    {newCategoria.descripcion.length}/200
-                  </div>
-                  
-                  <div style={{ borderTop: '1px solid #ccc', paddingTop: '5px' }}>
-                    <strong>Estado:</strong>
-                  </div>
-                  <div style={{ 
-                    textAlign: 'right', 
-                    fontWeight: 'bold', 
-                    color: newCategoria.estado ? '#4caf50' : '#e57373', 
-                    borderTop: '1px solid #ccc', 
-                    paddingTop: '5px' 
-                  }}>
-                    {newCategoria.estado ? '🟢 Activa' : '🔴 Inactiva'}
-                  </div>
-                </div>
-              </div>
+              
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
@@ -1295,7 +1240,7 @@ const CategoriaProducto = () => {
       {/* Modal de detalles */}
       {showDetails && selectedCategoria && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Categoría</h2>
               <button
@@ -1321,7 +1266,7 @@ const CategoriaProducto = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Nombre de la Categoría</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaTag color="#679750" />
                     {selectedCategoria.categoria}
                   </div>
@@ -1331,6 +1276,22 @@ const CategoriaProducto = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Descripción</div>
                 <div style={detailValueStyle}>{selectedCategoria.descripcion}</div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Productos Asociados</div>
+                <div style={detailValueStyle}>
+                  <span style={{ 
+                    backgroundColor: '#E8F5E8',
+                    color: '#2E5939',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {contarProductosPorCategoria(selectedCategoria.idCategoria)} productos
+                  </span>
+                </div>
               </div>
               
               <div style={detailItemStyle}>
@@ -1343,6 +1304,24 @@ const CategoriaProducto = () => {
                   {selectedCategoria.estado ? '🟢 Activa' : '🔴 Inactiva'}
                 </div>
               </div>
+
+              {/* Información sobre productos */}
+              {contarProductosPorCategoria(selectedCategoria.idCategoria) > 0 && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>Información Importante</div>
+                  <div style={{
+                    ...detailValueStyle,
+                    color: '#ff9800',
+                    fontSize: '14px',
+                    backgroundColor: '#fff3cd',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ffeaa7'
+                  }}>
+                    ⚠️ Esta categoría tiene productos asociados. No se puede eliminar ni desactivar mientras tenga productos.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1368,42 +1347,41 @@ const CategoriaProducto = () => {
       {/* Modal de Confirmación de Eliminación */}
       {showDeleteConfirm && categoriaToDelete && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
-            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
-            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
-              ¿Estás seguro de eliminar la categoría "<strong>{categoriaToDelete.categoria}</strong>"?
+          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 12, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 18, fontSize: '1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar de forma permanente la categoría "<strong>{categoriaToDelete.categoria}</strong>"? Esta acción no se puede deshacer.
             </p>
-            
-            {/* Advertencia sobre productos */}
+
             <div style={{ 
-              backgroundColor: '#fff3cd', 
-              border: '1px solid #ffeaa7',
+              backgroundColor: '#ffecec', 
+              border: '1px solid #e57373',
               borderRadius: '8px',
-              padding: '15px',
-              marginBottom: '20px'
+              padding: '12px 15px',
+              marginBottom: '18px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <FaInfoCircle style={{ color: '#856404' }} />
-                <strong style={{ color: '#856404' }}>Categoría a eliminar</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <FaInfoCircle style={{ color: '#e57373' }} />
+                <strong style={{ color: '#2E5939' }}>Atención</strong>
               </div>
-              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Esta acción eliminará permanentemente la categoría. No se puede eliminar si tiene productos asociados.
+              <p style={{ color: '#2E5939', margin: 0, fontSize: '0.9rem' }}>
+                Si la categoría está asociada a productos, la eliminación será rechazada por el servidor y se mostrará el motivo.
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
                 style={{
-                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  backgroundColor: loading ? "#ccc" : "#e53935",
                   color: "white",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  fontWeight: "700",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                 }}
               >
                 {loading ? "Eliminando..." : "Sí, Eliminar"}
@@ -1414,23 +1392,11 @@ const CategoriaProducto = () => {
                 style={{
                   backgroundColor: loading ? "#ccc" : "#2E5939",
                   color: "#fff",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "#2E5939";
-                  }
                 }}
               >
                 Cancelar
@@ -1472,6 +1438,7 @@ const CategoriaProducto = () => {
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Categoría</th>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Descripción</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Productos</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1479,84 +1446,103 @@ const CategoriaProducto = () => {
             <tbody>
               {paginatedCategorias.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                      <FaInfoCircle size={30} color="#679750" />
-                      {categorias.length === 0 ? "No hay categorías registradas" : "No se encontraron resultados"}
-                      {categorias.length === 0 && (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          style={{
-                            backgroundColor: "#2E5939",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: "600",
-                            marginTop: '10px'
-                          }}
-                        >
-                          <FaPlus style={{ marginRight: '5px' }} />
-                          Agregar Primera Categoría
-                        </button>
-                      )}
-                    </div>
+                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    {categorias.length === 0 ? "No hay categorías registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
-                paginatedCategorias.map((categoria) => (
-                  <tr key={categoria.idCategoria} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "15px", fontWeight: "500" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaTag color="#679750" />
-                        {categoria.categoria}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px" }}>{categoria.descripcion}</td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstadoCategoria(categoria)}
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: categoria.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px"
-                        }}
-                      >
-                        {categoria.estado ? "Activa" : "Inactiva"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(categoria)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(categoria)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(categoria)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                paginatedCategorias.map((categoria) => {
+                  const productosCount = contarProductosPorCategoria(categoria.idCategoria);
+                  return (
+                    <tr key={categoria.idCategoria} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <FaTag color="#679750" />
+                          {categoria.categoria}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px" }}>
+                        {categoria.descripcion?.length > 100 
+                          ? `${categoria.descripcion.substring(0, 100)}...` 
+                          : categoria.descripcion}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <span style={{ 
+                          backgroundColor: productosCount > 0 ? '#E8F5E8' : '#F7F4EA',
+                          color: productosCount > 0 ? '#2E5939' : '#666',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '500'
+                        }}>
+                          {productosCount} productos
+                        </span>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => toggleEstadoCategoria(categoria)}
+                          disabled={productosCount > 0 && categoria.estado}
+                          style={{
+                            cursor: productosCount > 0 && categoria.estado ? "not-allowed" : "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: categoria.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px",
+                            opacity: productosCount > 0 && categoria.estado ? 0.6 : 1,
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            if (!loading && !(productosCount > 0 && categoria.estado)) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!loading && !(productosCount > 0 && categoria.estado)) {
+                              e.target.style.transform = "scale(1)";
+                            }
+                          }}
+                          title={productosCount > 0 && categoria.estado ? "No se puede desactivar - Tiene productos asociados" : ""}
+                        >
+                          {categoria.estado ? "Activa" : "Inactiva"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                          <button
+                            onClick={() => handleView(categoria)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(categoria)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(categoria); }}
+                            style={{
+                              ...btnAccion("#fbe9e7", "#e57373"),
+                              opacity: productosCount > 0 ? 0.5 : 1,
+                              cursor: productosCount > 0 ? "not-allowed" : "pointer"
+                            }}
+                            title={productosCount > 0 ? "No se puede eliminar - Tiene productos asociados" : "Eliminar"}
+                            disabled={productosCount > 0}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1565,7 +1551,7 @@ const CategoriaProducto = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -1573,18 +1559,33 @@ const CategoriaProducto = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -1592,75 +1593,14 @@ const CategoriaProducto = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && categorias.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {categorias.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Categorías
-            </div>
-          </div>
           
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {categorias.filter(c => c.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Categorías Activas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {categorias.filter(c => !c.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Categorías Inactivas
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {Math.round(categorias.reduce((sum, cat) => sum + cat.descripcion.length, 0) / categorias.length)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Prom. Caracteres
-            </div>
+            Página {currentPage} de {totalPages}
           </div>
         </div>
       )}
