@@ -1,5 +1,6 @@
+// src/components/Gestipaq.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaImage, FaUpload, FaCamera, FaConciergeBell, FaMapMarkerAlt, FaList, FaHotel } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaImage, FaUpload, FaCamera, FaConciergeBell, FaMapMarkerAlt, FaList, FaHotel, FaBoxOpen, FaPercent } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -247,7 +248,15 @@ const selectorItemStyle = {
   marginBottom: '5px',
   backgroundColor: 'white',
   borderRadius: '5px',
-  border: '1px solid #e0e0e0'
+  border: '1px solid #e0e0e0',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease'
+};
+
+const selectorItemSelectedStyle = {
+  ...selectorItemStyle,
+  backgroundColor: '#E8F5E8',
+  border: '1px solid #679750'
 };
 
 const selectorListStyle = {
@@ -346,10 +355,22 @@ const VALIDATION_RULES = {
 // ===============================================
 const API_PAQUETES = "http://localhost:5018/api/Paquetes";
 const API_SERVICIOS = "http://localhost:5018/api/Servicios";
-const API_SEDES = "http://localhost:5018/api/Sedes";
+const API_SEDES = "http://localhost:5018/api/Sede";
 const API_SERVICIO_POR_PAQUETE = "http://localhost:5018/api/ServicioPorPaquete";
 const API_SEDE_POR_PAQUETE = "http://localhost:5018/api/SedePorPaquete";
 const ITEMS_PER_PAGE = 5;
+
+// ===============================================
+// FUNCIÓN PARA FORMATEAR PRECIOS
+// ===============================================
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+};
 
 // ===============================================
 // COMPONENTE FormField MEJORADO
@@ -535,21 +556,45 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PARA SELECTOR MÚLTIPLE
+// COMPONENTE PARA SELECTOR MÚLTIPLE CORREGIDO
 // ===============================================
 const SelectorMultiple = ({ 
   titulo, 
   items, 
   itemsSeleccionados, 
   onToggleItem, 
-  icon 
+  icon,
+  tipo = "multiple", // "multiple" o "single"
+  idField = "idServicio" // clave de id que identifica al item (ej. idServicio o idSede)
 }) => {
+  const isSelected = (item) => {
+    return itemsSeleccionados.some(sel => sel && item && sel[idField] === item[idField]);
+  };
+
+  const handleItemClick = (item) => {
+    if (tipo === "single") {
+      if (isSelected(item)) {
+        // deseleccionar el mismo
+        onToggleItem(item, { action: "deselect", idField });
+      } else {
+        // seleccionar solo este (reemplaza cualquier otro)
+        onToggleItem(item, { action: "selectSingle", idField });
+      }
+    } else {
+      // toggle normal para múltiples
+      onToggleItem(item, { action: "toggle", idField });
+    }
+  };
+
   return (
     <div style={selectorMultipleStyle}>
       <label style={labelStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {icon}
           {titulo}
+          <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+            ({tipo === "single" ? "Selecciona solo uno" : "Selecciona uno o varios"})
+          </span>
         </div>
       </label>
       
@@ -559,43 +604,66 @@ const SelectorMultiple = ({
             No hay elementos disponibles
           </div>
         ) : (
-          items.map(item => (
-            <div key={item.id} style={selectorItemStyle}>
-              <input
-                type="checkbox"
-                checked={itemsSeleccionados.some(sel => sel.id === item.id)}
-                onChange={() => onToggleItem(item)}
-                style={{ cursor: 'pointer' }}
-              />
-              <span style={{ flex: 1 }}>
-                {item.nombre || item.nombreServicio || item.nombreSede}
-                {item.precioServicio && (
-                  <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
-                    ({formatPrice(item.precioServicio)})
+          items.map(item => {
+            const selected = isSelected(item);
+            return (
+              <div 
+                key={item[idField]}
+                style={selected ? selectorItemSelectedStyle : selectorItemStyle}
+                onClick={() => handleItemClick(item)}
+                onMouseOver={(e) => {
+                  if (!selected) {
+                    e.currentTarget.style.backgroundColor = '#f0f0f0';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!selected) {
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }
+                }}
+              >
+                <input
+                  type={tipo === "single" ? "radio" : "checkbox"}
+                  checked={selected}
+                  onChange={() => handleItemClick(item)}
+                  style={{ cursor: 'pointer' }}
+                  name={tipo === "single" ? "selector-unico" : undefined}
+                />
+                <span style={{ flex: 1 }}>
+                  {item.nombre || item.nombreServicio || item.nombreSede}
+                  {item.precioServicio && (
+                    <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                      ({formatPrice(item.precioServicio)})
+                    </span>
+                  )}
+                </span>
+                {item.estado !== undefined && (
+                  <span style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    backgroundColor: item.estado ? '#4caf50' : '#e57373',
+                    color: 'white'
+                  }}>
+                    {item.estado ? 'Activo' : 'Inactivo'}
                   </span>
                 )}
-              </span>
-              {item.estado !== undefined && (
-                <span style={{
-                  fontSize: '0.7rem',
-                  padding: '2px 6px',
-                  borderRadius: '10px',
-                  backgroundColor: item.estado ? '#4caf50' : '#e57373',
-                  color: 'white'
-                }}>
-                  {item.estado ? 'Activo' : 'Inactivo'}
-                </span>
-              )}
-            </div>
-          ))
+              </div>
+            );
+          })
         )}
       </div>
       
       {itemsSeleccionados.length > 0 && (
         <div style={{ marginTop: '10px' }}>
           <div style={{ fontSize: '0.8rem', color: '#2E5939', marginBottom: '5px' }}>
-            Seleccionados: {itemsSeleccionados.length}
+            {tipo === "single" ? 'Seleccionado:' : 'Seleccionados:'} {itemsSeleccionados.length}
           </div>
+          {tipo === "multiple" && (
+            <div style={{ fontSize: '0.7rem', color: '#679750' }}>
+              {itemsSeleccionados.map(item => item.nombre || item.nombreServicio || item.nombreSede).join(', ')}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -645,7 +713,7 @@ const Gestipaq = () => {
     dias: "1",
     descuento: "0",
     imagen: "",
-    estado: true
+    estado: "true"
   });
 
   // ===============================================
@@ -767,6 +835,7 @@ const Gestipaq = () => {
       setSedes(res.data);
     } catch (error) {
       console.error("❌ Error al obtener sedes:", error);
+      // No mostrar error para sedes ya que es opcional
     }
   };
 
@@ -856,7 +925,7 @@ const Gestipaq = () => {
       }
     }
     else if (fieldName === 'estado') {
-      success = value ? "Paquete activo" : "Paquete inactivo";
+      success = value === "true" ? "Paquete activo" : "Paquete inactivo";
     }
     else if (trimmedValue) {
       success = `${fieldName === 'nombrePaquete' ? 'Nombre' : fieldName === 'imagen' ? 'Imagen' : 'Campo'} válido.`;
@@ -982,25 +1051,33 @@ const Gestipaq = () => {
   };
 
   // ===============================================
-  // FUNCIONES PARA SELECTORES MÚLTIPLES
+  // FUNCIONES PARA SELECTORES MÚLTIPLES CORREGIDAS
   // ===============================================
-  const toggleServicio = (servicio) => {
+  const toggleServicio = (servicio, opts = { action: "toggle", idField: "idServicio" }) => {
+    const { action, idField } = opts;
     setServiciosSeleccionados(prev => {
-      const exists = prev.some(s => s.idServicio === servicio.idServicio);
-      if (exists) {
-        return prev.filter(s => s.idServicio !== servicio.idServicio);
-      } else {
+      if (action === "selectSingle") {
+        return [servicio];
+      } else if (action === "deselect") {
+        return prev.filter(s => s[idField] !== servicio[idField]);
+      } else { // toggle
+        const exists = prev.some(s => s[idField] === servicio[idField]);
+        if (exists) return prev.filter(s => s[idField] !== servicio[idField]);
         return [...prev, servicio];
       }
     });
   };
 
-  const toggleSede = (sede) => {
+  const toggleSede = (sede, opts = { action: "toggle", idField: "idSede" }) => {
+    const { action, idField } = opts;
     setSedesSeleccionadas(prev => {
-      const exists = prev.some(s => s.idSede === sede.idSede);
-      if (exists) {
-        return prev.filter(s => s.idSede !== sede.idSede);
-      } else {
+      if (action === "selectSingle") {
+        return [sede];
+      } else if (action === "deselect") {
+        return prev.filter(s => s[idField] !== sede[idField]);
+      } else { // toggle
+        const exists = prev.some(s => s[idField] === sede[idField]);
+        if (exists) return prev.filter(s => s[idField] !== sede[idField]);
         return [...prev, sede];
       }
     });
@@ -1033,14 +1110,14 @@ const Gestipaq = () => {
         dias: parseInt(newPaquete.dias),
         descuento: parseFloat(newPaquete.descuento),
         imagen: newPaquete.imagen?.trim() || null,
-        estado: newPaquete.estado === "true" || newPaquete.estado === true
+        estado: newPaquete.estado === "true"
       };
 
       let idPaqueteCreado;
 
       if (isEditing) {
         // Editar paquete existente
-        paqueteData.idPaquete = newPaquete.idPaquete;
+        paqueteData.idPaquete = parseInt(newPaquete.idPaquete);
         await axios.put(`${API_PAQUETES}/${newPaquete.idPaquete}`, paqueteData);
         idPaqueteCreado = newPaquete.idPaquete;
         displayAlert("Paquete actualizado exitosamente.", "success");
@@ -1071,38 +1148,48 @@ const Gestipaq = () => {
   };
 
   const guardarRelacionesServicios = async (idPaquete) => {
-    // Eliminar relaciones existentes si estamos editando
-    if (isEditing) {
-      const relacionesExistentes = serviciosPorPaquete.filter(sp => sp.idPaquete === idPaquete);
-      for (const relacion of relacionesExistentes) {
-        await axios.delete(`${API_SERVICIO_POR_PAQUETE}/${relacion.idServicioPaquete}`);
+    try {
+      // Eliminar relaciones existentes si estamos editando
+      if (isEditing) {
+        const relacionesExistentes = serviciosPorPaquete.filter(sp => sp.idPaquete === parseInt(idPaquete));
+        for (const relacion of relacionesExistentes) {
+          await axios.delete(`${API_SERVICIO_POR_PAQUETE}/${relacion.idServicioPaquete}`);
+        }
       }
-    }
 
-    // Crear nuevas relaciones
-    for (const servicio of serviciosSeleccionados) {
-      await axios.post(API_SERVICIO_POR_PAQUETE, {
-        idServicio: servicio.idServicio,
-        idPaquete: idPaquete
-      });
+      // Crear nuevas relaciones
+      for (const servicio of serviciosSeleccionados) {
+        await axios.post(API_SERVICIO_POR_PAQUETE, {
+          idServicio: servicio.idServicio,
+          idPaquete: parseInt(idPaquete)
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al guardar relaciones servicios-paquete:", error);
+      throw error;
     }
   };
 
   const guardarRelacionesSedes = async (idPaquete) => {
-    // Eliminar relaciones existentes si estamos editando
-    if (isEditing) {
-      const relacionesExistentes = sedesPorPaquete.filter(sp => sp.idPaquete === idPaquete);
-      for (const relacion of relacionesExistentes) {
-        await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+    try {
+      // Eliminar relaciones existentes si estamos editando
+      if (isEditing) {
+        const relacionesExistentes = sedesPorPaquete.filter(sp => sp.idPaquete === parseInt(idPaquete));
+        for (const relacion of relacionesExistentes) {
+          await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+        }
       }
-    }
 
-    // Crear nuevas relaciones
-    for (const sede of sedesSeleccionadas) {
-      await axios.post(API_SEDE_POR_PAQUETE, {
-        idSede: sede.idSede,
-        idPaquete: idPaquete
-      });
+      // Crear nuevas relaciones
+      for (const sede of sedesSeleccionadas) {
+        await axios.post(API_SEDE_POR_PAQUETE, {
+          idSede: sede.idSede,
+          idPaquete: parseInt(idPaquete)
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al guardar relaciones sedes-paquete:", error);
+      throw error;
     }
   };
 
@@ -1233,7 +1320,7 @@ const Gestipaq = () => {
       dias: "1",
       descuento: "0",
       imagen: "",
-      estado: true
+      estado: "true"
     });
   };
 
@@ -1315,15 +1402,6 @@ const Gestipaq = () => {
   // ===============================================
   // FUNCIONES PARA FORMATEAR DATOS
   // ===============================================
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
   const calcularPrecioConDescuento = (precio, descuento) => {
     return precio - (precio * descuento / 100);
   };
@@ -1437,7 +1515,7 @@ const Gestipaq = () => {
               dias: "1",
               descuento: "0",
               imagen: "",
-              estado: true
+              estado: "true"
             });
           }}
           style={{
@@ -1466,6 +1544,91 @@ const Gestipaq = () => {
           <FaPlus /> Agregar Paquete
         </button>
       </div>
+
+      {/* Tarjetas de Estadísticas */}
+      {!loading && paquetes.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {paquetes.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Paquetes
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {paquetes.filter(p => p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Paquetes Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {paquetes.filter(p => !p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Paquetes Inactivos
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {serviciosPorPaquete.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Relaciones Servicios
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {sedesPorPaquete.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Relaciones Sedes
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Barra de búsqueda */}
       <div style={{ marginBottom: '20px' }}>
@@ -1643,7 +1806,26 @@ const Gestipaq = () => {
                   />
                 </div>
 
-                
+                <div>
+                  <FormField
+                    label="Estado"
+                    name="estado"
+                    type="select"
+                    value={newPaquete.estado}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.estado}
+                    success={formSuccess.estado}
+                    warning={formWarnings.estado}
+                    required={true}
+                    disabled={loading}
+                    options={[
+                      { value: "true", label: "Activo" },
+                      { value: "false", label: "Inactivo" }
+                    ]}
+                    touched={touchedFields.estado}
+                  />
+                </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelStyle}>
@@ -1762,7 +1944,7 @@ const Gestipaq = () => {
                   )}
                 </div>
 
-                {/* Selector de Servicios */}
+                {/* Selector de Servicios - MÚLTIPLE */}
                 <div style={{ gridColumn: '1 / -1' }}>
                   <SelectorMultiple
                     titulo="Servicios Incluidos"
@@ -1770,17 +1952,21 @@ const Gestipaq = () => {
                     itemsSeleccionados={serviciosSeleccionados}
                     onToggleItem={toggleServicio}
                     icon={<FaConciergeBell />}
+                    tipo="multiple" // Permite selección múltiple
+                    idField="idServicio" // clave de id que identifica al item
                   />
                 </div>
 
-                {/* Selector de Sedes */}
+                {/* Selector de Sedes - ÚNICO */}
                 <div style={{ gridColumn: '1 / -1' }}>
                   <SelectorMultiple
-                    titulo="Sedes Disponibles"
+                    titulo="Sede Principal"
                     items={sedes.filter(s => s.estado)}
                     itemsSeleccionados={sedesSeleccionadas}
                     onToggleItem={toggleSede}
                     icon={<FaMapMarkerAlt />}
+                    tipo="single" // Permite selección única
+                    idField="idSede" // clave de id que identifica al item
                   />
                 </div>
               </div>
@@ -1810,8 +1996,10 @@ const Gestipaq = () => {
                     <div>Servicios incluidos:</div>
                     <div style={{ textAlign: 'right' }}>{serviciosSeleccionados.length}</div>
 
-                    <div>Sedes disponibles:</div>
-                    <div style={{ textAlign: 'right' }}>{sedesSeleccionadas.length}</div>
+                    <div>Sede principal:</div>
+                    <div style={{ textAlign: 'right' }}>
+                      {sedesSeleccionadas.length > 0 ? sedesSeleccionadas[0].nombreSede : 'No seleccionada'}
+                    </div>
                     
                     {newPaquete.descuento > 0 && (
                       <>
@@ -1977,7 +2165,7 @@ const Gestipaq = () => {
                 <div style={detailLabelStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FaMapMarkerAlt />
-                    Sedes Disponibles ({getSedesDelPaquete(selectedPaquete.idPaquete).length})
+                    Sede Principal ({getSedesDelPaquete(selectedPaquete.idPaquete).length})
                   </div>
                 </div>
                 <div style={detailValueStyle}>
@@ -1987,13 +2175,13 @@ const Gestipaq = () => {
                         <div key={sede.idSede} style={selectorItemStyle}>
                           <span>{sede.nombreSede}</span>
                           <span style={{ color: '#679750', fontSize: '0.8rem' }}>
-                            {sede.ubicacion}
+                            {sede.ubicacionSede}
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <span style={{ color: '#679750' }}>No hay sedes asociadas</span>
+                    <span style={{ color: '#679750' }}>No hay sede asociada</span>
                   )}
                 </div>
               </div>
@@ -2092,7 +2280,7 @@ const Gestipaq = () => {
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: '15px' }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
@@ -2175,7 +2363,7 @@ const Gestipaq = () => {
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio Base</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio Final</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Servicios</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Sedes</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Sede</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -2268,7 +2456,7 @@ const Gestipaq = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
                           <span style={{ fontWeight: 'bold' }}>{sedesAsociadas.length}</span>
                           <span style={{ fontSize: '12px', color: '#679750' }}>
-                            sedes
+                            sede
                           </span>
                         </div>
                       </td>

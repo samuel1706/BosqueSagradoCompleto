@@ -1,3 +1,4 @@
+// src/components/Admisede.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt, FaBox, FaList } from "react-icons/fa";
 import axios from "axios";
@@ -289,7 +290,20 @@ const VALIDATION_RULES = {
 const API_SEDES = "http://localhost:5018/api/Sede";
 const API_PAQUETES = "http://localhost:5018/api/Paquetes";
 const API_SEDE_POR_PAQUETE = "http://localhost:5018/api/SedePorPaquete";
+const API_SEDES_POR_SERVICIO = "http://localhost:5018/api/SedePorServicio";
 const ITEMS_PER_PAGE = 5;
+
+// ===============================================
+// FUNCIÓN PARA FORMATEAR PRECIOS
+// ===============================================
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+};
 
 // ===============================================
 // COMPONENTE FormField MEJORADO
@@ -300,6 +314,7 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
@@ -424,6 +439,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={{
               ...getInputStyle(),
               minHeight: `${rows * 20}px`,
@@ -454,6 +470,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled}
@@ -573,7 +590,7 @@ const Admisede = () => {
     nombreSede: "",
     ubicacionSede: "",
     celular: "",
-    estado: true
+    estado: "true"
   });
 
   // ===============================================
@@ -887,20 +904,25 @@ const Admisede = () => {
   };
 
   const guardarRelacionesPaquetes = async (idSede) => {
-    // Eliminar relaciones existentes si estamos editando
-    if (isEditing) {
-      const relacionesExistentes = sedePorPaquete.filter(sp => sp.idSede === idSede);
-      for (const relacion of relacionesExistentes) {
-        await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+    try {
+      // Eliminar relaciones existentes si estamos editando
+      if (isEditing) {
+        const relacionesExistentes = sedePorPaquete.filter(sp => sp.idSede === parseInt(idSede));
+        for (const relacion of relacionesExistentes) {
+          await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+        }
       }
-    }
 
-    // Crear nuevas relaciones
-    for (const paquete of paquetesSeleccionados) {
-      await axios.post(API_SEDE_POR_PAQUETE, {
-        idSede: idSede,
-        idPaquete: paquete.idPaquete
-      });
+      // Crear nuevas relaciones
+      for (const paquete of paquetesSeleccionados) {
+        await axios.post(API_SEDE_POR_PAQUETE, {
+          idSede: parseInt(idSede),
+          idPaquete: paquete.idPaquete
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al guardar relaciones sede-paquete:", error);
+      throw error;
     }
   };
 
@@ -1021,7 +1043,7 @@ const Admisede = () => {
       nombreSede: "",
       ubicacionSede: "",
       celular: "",
-      estado: true
+      estado: "true"
     });
   };
 
@@ -1086,18 +1108,6 @@ const Admisede = () => {
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-
-  // ===============================================
-  // FUNCIONES PARA FORMATEAR DATOS
-  // ===============================================
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
   };
 
   // ===============================================
@@ -1201,7 +1211,7 @@ const Admisede = () => {
               nombreSede: "",
               ubicacionSede: "",
               celular: "",
-              estado: true
+              estado: "true"
             });
           }}
           style={{
@@ -1416,7 +1426,26 @@ const Admisede = () => {
                   />
                 </div>
 
-                
+                <div>
+                  <FormField
+                    label="Estado"
+                    name="estado"
+                    type="select"
+                    value={newItem.estado}
+                    onChange={handleInputChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.estado}
+                    success={formSuccess.estado}
+                    warning={formWarnings.estado}
+                    required={true}
+                    disabled={loading}
+                    options={[
+                      { value: "true", label: "Activa" },
+                      { value: "false", label: "Inactiva" }
+                    ]}
+                    touched={touchedFields.estado}
+                  />
+                </div>
 
                 {/* Selector de Paquetes */}
                 <div style={{ gridColumn: '1 / -1' }}>

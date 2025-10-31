@@ -1,5 +1,5 @@
 // src/components/Users.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaUser, FaUserShield, FaPhone, FaEnvelope, FaIdCard, FaCalendar, FaLock, FaSync, FaFilter } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaUser, FaUserShield, FaPhone, FaEnvelope, FaIdCard, FaCalendar, FaLock, FaSync, FaFilter, FaSlidersH } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 
@@ -327,7 +327,7 @@ const VALIDATION_RULES = {
   },
   contrasena: {
     minLength: 8,
-    required: true,
+    required: false,
     errorMessages: {
       required: "La contraseña es obligatoria.",
       minLength: "La contraseña debe tener al menos 8 caracteres.",
@@ -335,7 +335,7 @@ const VALIDATION_RULES = {
     }
   },
   confirmPassword: {
-    required: true,
+    required: false,
     errorMessages: {
       required: "Debe confirmar la contraseña.",
       mismatch: "Las contraseñas no coinciden."
@@ -379,7 +379,7 @@ const FormField = ({
   maxLength,
   placeholder,
   showCharCount = false,
-  showValidation = true, // Nueva prop para controlar cuándo mostrar validación
+  showValidation = true,
   ...props
 }) => {
   const finalOptions = useMemo(() => {
@@ -532,7 +532,17 @@ const Users = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRole, setSelectedRole] = useState("all");
-  const [showValidation, setShowValidation] = useState(false); // Controla cuándo mostrar validación
+  const [showValidation, setShowValidation] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    tipoDocumento: "all",
+    fechaDesde: "",
+    fechaHasta: "",
+    edadMin: "",
+    edadMax: ""
+  });
 
   const [newUser, setNewUser] = useState({
     tipoDocumento: "Cédula de Ciudadanía",
@@ -568,7 +578,7 @@ const Users = () => {
       validateField('correo', newUser.correo);
       validateField('idRol', newUser.idRol);
       
-      if (!isEditing || newUser.contrasena) {
+      if (newUser.contrasena || newUser.confirmPassword) {
         validateField('contrasena', newUser.contrasena);
         validateField('confirmPassword', newUser.confirmPassword);
       }
@@ -593,6 +603,17 @@ const Users = () => {
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
     `;
     document.head.appendChild(style);
@@ -705,7 +726,6 @@ const Users = () => {
     else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
       error = rules.errorMessages.pattern;
     }
-    // Validaciones específicas por campo
     else if (fieldName === 'fechaNacimiento' && trimmedValue) {
       const age = calculateAge(trimmedValue);
       if (age < 18) {
@@ -739,7 +759,6 @@ const Users = () => {
       success = "Campo válido";
     }
 
-    // Verificaciones de duplicados
     if ((fieldName === 'numeroDocumento' || fieldName === 'correo') && trimmedValue && !error) {
       const duplicate = users.find(user => {
         if (fieldName === 'numeroDocumento') {
@@ -772,7 +791,7 @@ const Users = () => {
       'celular', 'fechaNacimiento', 'correo', 'idRol'
     ];
 
-    if (!isEditing || newUser.contrasena) {
+    if (!isEditing || newUser.contrasena || newUser.confirmPassword) {
       fieldsToValidate.push('contrasena', 'confirmPassword');
     }
 
@@ -882,7 +901,6 @@ const Users = () => {
       return;
     }
 
-    // Activar validación visual al enviar el formulario
     setShowValidation(true);
 
     if (!validateForm()) {
@@ -893,7 +911,6 @@ const Users = () => {
     setLoading(true);
     
     try {
-      // Preparar datos según el modelo del backend
       const userData = {
         tipoDocumento: newUser.tipoDocumento,
         numeroDocumento: newUser.numeroDocumento,
@@ -903,32 +920,33 @@ const Users = () => {
         fechaNacimiento: newUser.fechaNacimiento,
         correo: newUser.correo,
         idRol: parseInt(newUser.idRol),
-        estado: true, // Usuario activo por defecto
-        contrasena: btoa(newUser.contrasena), // Codificar en base64
-        codigoVerificacion: "000000" // Valor por defecto
+        estado: newUser.estado
       };
+
+      if (isEditing) {
+        if (!newUser.contrasena) {
+          userData.contrasena = currentPassword;
+        } else {
+          userData.contrasena = newUser.contrasena;
+        }
+      } else {
+        if (!newUser.contrasena) {
+          displayAlert("La contraseña es obligatoria para crear un nuevo usuario.", "error");
+          return;
+        }
+        userData.contrasena = newUser.contrasena;
+      }
 
       console.log("Enviando datos de usuario:", userData);
 
       if (isEditing) {
-        // Incluir el ID en los datos para la edición
-        const updateData = {
-          ...userData,
-          idUsuario: parseInt(newUser.idUsuario),
-          estado: newUser.estado // Mantener el estado actual al editar
-        };
+        userData.idUsuario = parseInt(newUser.idUsuario);
         
-        // Si no se cambió la contraseña, no enviarla
-        if (!newUser.contrasena) {
-          delete updateData.contrasena;
-        }
-        
-        await axios.put(`${API_USUARIOS}/${newUser.idUsuario}`, updateData, {
+        await axios.put(`${API_USUARIOS}/${newUser.idUsuario}`, userData, {
           headers: { 'Content-Type': 'application/json' }
         });
         displayAlert("Usuario actualizado exitosamente.", "success");
       } else {
-        // Al agregar, siempre se crea como activo
         await axios.post(API_USUARIOS, userData, {
           headers: { 'Content-Type': 'application/json' }
         });
@@ -956,7 +974,6 @@ const Users = () => {
       } catch (error) {
         console.error("Error al eliminar usuario:", error);
         
-        // Manejo específico para error de integridad referencial
         if (error.response && error.response.status === 409) {
           displayAlert("No se puede eliminar el usuario porque tiene datos asociados.", "error");
         } else {
@@ -980,10 +997,30 @@ const Users = () => {
       [name]: type === 'checkbox' ? checked : value
     }));
 
-    // Activar validación visual cuando el usuario comienza a escribir
     if (!showValidation && value.trim() !== '') {
       setShowValidation(true);
     }
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      tipoDocumento: "all",
+      fechaDesde: "",
+      fechaHasta: "",
+      edadMin: "",
+      edadMax: ""
+    });
+    setCurrentPage(1);
   };
 
   const closeForm = () => {
@@ -992,7 +1029,8 @@ const Users = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
-    setShowValidation(false); // Resetear validación visual al cerrar
+    setShowValidation(false);
+    setCurrentPassword("");
     setNewUser({
       tipoDocumento: "Cédula de Ciudadanía",
       numeroDocumento: "",
@@ -1021,10 +1059,21 @@ const Users = () => {
   const toggleActive = async (user) => {
     setLoading(true);
     try {
-      const updatedUser = { 
-        ...user,
+      const userDetails = await axios.get(`${API_USUARIOS}/${user.idUsuario}`);
+      const currentPassword = userDetails.data.contrasena;
+      
+      const updatedUser = {
+        idUsuario: user.idUsuario,
+        tipoDocumento: user.tipoDocumento,
+        numeroDocumento: user.numeroDocumento,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        celular: user.celular,
+        fechaNacimiento: user.fechaNacimiento,
+        correo: user.correo,
+        idRol: user.idRol,
         estado: !user.estado,
-        contrasena: "" // No cambiar la contraseña
+        contrasena: currentPassword
       };
       
       await axios.put(`${API_USUARIOS}/${user.idUsuario}`, updatedUser, {
@@ -1045,30 +1094,44 @@ const Users = () => {
     setShowDetails(true);
   };
 
-  const handleEdit = (user) => {
+  const handleEdit = async (user) => {
     console.log("Editando usuario:", user);
     
-    setNewUser({
-      idUsuario: user.idUsuario,
-      tipoDocumento: user.tipoDocumento || "Cédula de Ciudadanía",
-      numeroDocumento: user.numeroDocumento || "",
-      nombre: user.nombre || "",
-      apellido: user.apellido || "",
-      celular: user.celular || "",
-      fechaNacimiento: user.fechaNacimiento || "",
-      correo: user.correo || "",
-      idRol: user.idRol ? user.idRol.toString() : "",
-      estado: user.estado !== undefined ? user.estado : true,
-      contrasena: "",
-      confirmPassword: ""
-    });
-    
-    setIsEditing(true);
-    setShowForm(true);
-    setFormErrors({});
-    setFormSuccess({});
-    setFormWarnings({});
-    setShowValidation(true); // Activar validación visual en edición
+    try {
+      const userDetails = await axios.get(`${API_USUARIOS}/${user.idUsuario}`);
+      const usuarioCompleto = userDetails.data;
+      
+      const formattedDate = usuarioCompleto.fechaNacimiento 
+        ? usuarioCompleto.fechaNacimiento.split('T')[0] 
+        : "";
+      
+      setCurrentPassword(usuarioCompleto.contrasena || "currentpassword123");
+      
+      setNewUser({
+        idUsuario: usuarioCompleto.idUsuario,
+        tipoDocumento: usuarioCompleto.tipoDocumento || "Cédula de Ciudadanía",
+        numeroDocumento: usuarioCompleto.numeroDocumento || "",
+        nombre: usuarioCompleto.nombre || "",
+        apellido: usuarioCompleto.apellido || "",
+        celular: usuarioCompleto.celular || "",
+        fechaNacimiento: formattedDate,
+        correo: usuarioCompleto.correo || "",
+        idRol: usuarioCompleto.idRol ? usuarioCompleto.idRol.toString() : "",
+        estado: usuarioCompleto.estado !== undefined ? usuarioCompleto.estado : true,
+        contrasena: "",
+        confirmPassword: ""
+      });
+      
+      setIsEditing(true);
+      setShowForm(true);
+      setFormErrors({});
+      setFormSuccess({});
+      setFormWarnings({});
+      setShowValidation(false);
+    } catch (error) {
+      console.error("Error al cargar detalles del usuario:", error);
+      displayAlert("Error al cargar los datos del usuario para editar.", "error");
+    }
   };
 
   const handleDeleteClick = (user) => {
@@ -1077,24 +1140,64 @@ const Users = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredUsers = useMemo(() => {
-    let filtered = users.filter(user =>
-      user.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.correo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.numeroDocumento?.includes(searchTerm) ||
-      getRoleName(user.idRol)?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let filtered = users.filter(user => {
+      // Búsqueda general
+      const matchesSearch = 
+        user.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.correo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.numeroDocumento?.includes(searchTerm) ||
+        getRoleName(user.idRol)?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filtro por rol
-    if (selectedRole !== "all") {
-      filtered = filtered.filter(user => user.idRol === parseInt(selectedRole));
-    }
+      if (!matchesSearch) return false;
+
+      // Filtro por rol
+      if (selectedRole !== "all" && user.idRol !== parseInt(selectedRole)) {
+        return false;
+      }
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (user.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por tipo de documento
+      if (filters.tipoDocumento !== "all" && user.tipoDocumento !== filters.tipoDocumento) {
+        return false;
+      }
+
+      // Filtro por fecha de nacimiento
+      if (filters.fechaDesde || filters.fechaHasta) {
+        const userFecha = new Date(user.fechaNacimiento);
+        
+        if (filters.fechaDesde) {
+          const fechaDesde = new Date(filters.fechaDesde);
+          if (userFecha < fechaDesde) return false;
+        }
+        
+        if (filters.fechaHasta) {
+          const fechaHasta = new Date(filters.fechaHasta);
+          if (userFecha > fechaHasta) return false;
+        }
+      }
+
+      // Filtro por edad
+      if (filters.edadMin || filters.edadMax) {
+        const edad = calculateAge(user.fechaNacimiento);
+        
+        if (filters.edadMin && edad < parseInt(filters.edadMin)) return false;
+        if (filters.edadMax && edad > parseInt(filters.edadMax)) return false;
+      }
+
+      return true;
+    });
 
     return filtered;
-  }, [users, searchTerm, selectedRole]);
+  }, [users, searchTerm, selectedRole, filters]);
 
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
@@ -1130,7 +1233,6 @@ const Users = () => {
     const activeUsers = users.filter(u => u.estado).length;
     const inactiveUsers = users.filter(u => !u.estado).length;
     
-    // Estadísticas por rol
     const roleStats = roles.map(role => {
       const count = users.filter(user => user.idRol === role.idRol).length;
       return {
@@ -1149,6 +1251,19 @@ const Users = () => {
       totalRoles: roles.length
     };
   }, [users, roles]);
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedRole !== "all") count++;
+    if (filters.estado !== "all") count++;
+    if (filters.tipoDocumento !== "all") count++;
+    if (filters.fechaDesde) count++;
+    if (filters.fechaHasta) count++;
+    if (filters.edadMin) count++;
+    if (filters.edadMax) count++;
+    return count;
+  }, [selectedRole, filters]);
 
   // ===============================================
   // RENDERIZADO
@@ -1242,7 +1357,8 @@ const Users = () => {
               setFormErrors({});
               setFormSuccess({});
               setFormWarnings({});
-              setShowValidation(false); // No mostrar validación inicialmente
+              setShowValidation(false);
+              setCurrentPassword("");
               setNewUser({
                 tipoDocumento: "Cédula de Ciudadanía",
                 numeroDocumento: "",
@@ -1285,7 +1401,7 @@ const Users = () => {
         </div>
       </div>
 
-      {/* Estadísticas rápidas - MOVIDAS ARRIBA */}
+      {/* Estadísticas rápidas */}
       {!loading && users.length > 0 && (
         <div style={{
           marginBottom: '25px',
@@ -1369,68 +1485,241 @@ const Users = () => {
 
       {/* Barra de búsqueda y filtros */}
       <div style={{ 
-        display: 'flex', 
-        gap: '15px', 
-        marginBottom: '20px', 
-        alignItems: 'center',
-        flexWrap: 'wrap'
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, apellido, correo, documento o rol..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+        {/* Búsqueda principal */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, apellido, correo, documento o rol..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Filtro por rol */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FaFilter style={{ color: '#2E5939' }} />
+            <select
+              value={selectedRole}
+              onChange={(e) => {
+                setSelectedRole(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid #ccc",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                minWidth: '150px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">Todos los roles</option>
+              {roles.map(role => (
+                <option key={role.idRol} value={role.idRol}>
+                  {role.nombreRol}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             }}
-          />
-        </div>
-
-        {/* Filtro por rol */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 20 }}>
-          <FaFilter style={{ color: '#2E5939' }} />
-          <select
-            value={selectedRole}
-            onChange={(e) => {
-              setSelectedRole(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 8,
-              border: "1px solid #ccc",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
-              minWidth: '150px',
-              cursor: 'pointer'
-            }}
           >
-            <option value="all">Todos los roles</option>
-            {roles.map(role => (
-              <option key={role.idRol} value={role.idRol}>
-                {role.nombreRol}
-              </option>
-            ))}
-          </select>
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
 
-        {selectedRole !== "all" && (
-          <div style={{ color: '#679750', fontSize: '14px', whiteSpace: 'nowrap', fontWeight: '600' }}>
-            • {getRoleName(parseInt(selectedRole))}
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por tipo de documento */}
+              <div>
+                <label style={labelStyle}>Tipo de Documento</label>
+                <select
+                  name="tipoDocumento"
+                  value={filters.tipoDocumento}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los tipos</option>
+                  {TIPO_DOCUMENTO_OPTIONS.map(tipo => (
+                    <option key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por fecha de nacimiento */}
+              <div>
+                <label style={labelStyle}>Fecha Nacimiento Desde</label>
+                <input
+                  type="date"
+                  name="fechaDesde"
+                  value={filters.fechaDesde}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Fecha Nacimiento Hasta</label>
+                <input
+                  type="date"
+                  name="fechaHasta"
+                  value={filters.fechaHasta}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Filtro por edad */}
+              <div>
+                <label style={labelStyle}>Edad Mínima</label>
+                <input
+                  type="number"
+                  name="edadMin"
+                  value={filters.edadMin}
+                  onChange={handleFilterChange}
+                  placeholder="Ej: 18"
+                  min="18"
+                  max="100"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Edad Máxima</label>
+                <input
+                  type="number"
+                  name="edadMax"
+                  value={filters.edadMax}
+                  onChange={handleFilterChange}
+                  placeholder="Ej: 65"
+                  min="18"
+                  max="100"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredUsers.length !== users.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredUsers.length} de {users.length} usuarios
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
           </div>
         )}
       </div>
+
+      {/* Resto del código permanece igual (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
+      {/* ... El resto del código del componente permanece igual ... */}
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -1598,70 +1887,123 @@ const Users = () => {
                 </div>
               </div>
 
-              {/* Sección: Acceso (contraseñas) */}
+              {/* Sección: Acceso (contraseñas) - MEJORADA */}
               <div style={sectionStyle}>
                 <h4 style={sectionHeaderStyle}>Acceso</h4>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'start' }}>
-                  <div>
-                    <FormField
-                      label="Contraseña"
-                      name="contrasena"
-                      type="password"
-                      value={newUser.contrasena}
-                      onChange={handleInputChange}
-                      error={formErrors.contrasena}
-                      success={formSuccess.contrasena}
-                      warning={formWarnings.contrasena}
-                      required={!isEditing}
-                      disabled={loading}
-                      minLength="8"
-                      placeholder="Mínimo 8 caracteres"
-                      showValidation={showValidation}
-                    />
-                    {newUser.contrasena && (
-                      <div style={passwordStrengthStyle}>
-                        <div>Fortaleza: {passwordStrength.text}</div>
-                        <div style={{
-                          ...strengthBarStyle,
-                          width: `${(passwordStrength.strength / 5) * 100}%`,
-                          backgroundColor: passwordStrength.color
-                        }}></div>
-                      </div>
-                    )}
-                  </div>
+                {isEditing ? (
+                  // Vista para edición - Contraseñas opcionales
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'start' }}>
+                    <div>
+                      <FormField
+                        label="Nueva Contraseña (opcional)"
+                        name="contrasena"
+                        type="password"
+                        value={newUser.contrasena}
+                        onChange={handleInputChange}
+                        error={formErrors.contrasena}
+                        success={formSuccess.contrasena}
+                        warning={formWarnings.contrasena}
+                        required={false}
+                        disabled={loading}
+                        minLength="8"
+                        placeholder="Dejar vacío para mantener contraseña actual"
+                        showValidation={showValidation}
+                      />
+                      {newUser.contrasena && (
+                        <div style={passwordStrengthStyle}>
+                          <div>Fortaleza: {passwordStrength.text}</div>
+                          <div style={{
+                            ...strengthBarStyle,
+                            width: `${(passwordStrength.strength / 5) * 100}%`,
+                            backgroundColor: passwordStrength.color
+                          }}></div>
+                        </div>
+                      )}
+                    </div>
 
-                  <div>
-                    <FormField
-                      label="Confirmar Contraseña"
-                      name="confirmPassword"
-                      type="password"
-                      value={newUser.confirmPassword}
-                      onChange={handleInputChange}
-                      error={formErrors.confirmPassword}
-                      success={formSuccess.confirmPassword}
-                      warning={formWarnings.confirmPassword}
-                      required={!isEditing}
-                      disabled={loading}
-                      placeholder="Repetir contraseña"
-                      showValidation={showValidation}
-                    />
+                    <div>
+                      <FormField
+                        label="Confirmar Nueva Contraseña"
+                        name="confirmPassword"
+                        type="password"
+                        value={newUser.confirmPassword}
+                        onChange={handleInputChange}
+                        error={formErrors.confirmPassword}
+                        success={formSuccess.confirmPassword}
+                        warning={formWarnings.confirmPassword}
+                        required={false}
+                        disabled={loading}
+                        placeholder="Solo si cambias contraseña"
+                        showValidation={showValidation}
+                      />
 
-                    {isEditing && (
                       <div style={{
-                        backgroundColor: '#fff3cd',
-                        border: '1px solid #ffeaa7',
+                        backgroundColor: '#e8f5e8',
+                        border: '1px solid #679750',
                         borderRadius: '8px',
                         padding: '10px 12px',
                         marginTop: '8px',
-                        color: '#856404',
+                        color: '#2E5939',
                         fontSize: '13px'
                       }}>
-                        <FaInfoCircle style={{ marginRight: 8 }} /> Rellena contraseña solo si deseas cambiarla.
+                        <FaInfoCircle style={{ marginRight: 8, color: '#679750' }} /> 
+                        {newUser.contrasena ? 
+                          "Se cambiará la contraseña al guardar" : 
+                          "La contraseña actual se mantendrá"
+                        }
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  // Vista para creación - Contraseñas obligatorias
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'start' }}>
+                    <div>
+                      <FormField
+                        label="Contraseña"
+                        name="contrasena"
+                        type="password"
+                        value={newUser.contrasena}
+                        onChange={handleInputChange}
+                        error={formErrors.contrasena}
+                        success={formSuccess.contrasena}
+                        warning={formWarnings.contrasena}
+                        required={true}
+                        disabled={loading}
+                        minLength="8"
+                        placeholder="Mínimo 8 caracteres"
+                        showValidation={showValidation}
+                      />
+                      {newUser.contrasena && (
+                        <div style={passwordStrengthStyle}>
+                          <div>Fortaleza: {passwordStrength.text}</div>
+                          <div style={{
+                            ...strengthBarStyle,
+                            width: `${(passwordStrength.strength / 5) * 100}%`,
+                            backgroundColor: passwordStrength.color
+                          }}></div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <FormField
+                        label="Confirmar Contraseña"
+                        name="confirmPassword"
+                        type="password"
+                        value={newUser.confirmPassword}
+                        onChange={handleInputChange}
+                        error={formErrors.confirmPassword}
+                        success={formSuccess.confirmPassword}
+                        warning={formWarnings.confirmPassword}
+                        required={true}
+                        disabled={loading}
+                        placeholder="Repetir contraseña"
+                        showValidation={showValidation}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Estado: solo visible al editar */}
@@ -1986,10 +2328,10 @@ const Users = () => {
                   <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
-                      {users.length === 0 ? "No hay usuarios registrados" : "No se encontraron resultados"}
-                      {selectedRole !== "all" && (
+                      {users.length === 0 ? "No hay usuarios registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
                         <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
-                          Filtrado por rol: {getRoleName(parseInt(selectedRole))}
+                          Filtros activos: {activeFiltersCount}
                         </div>
                       )}
                       {users.length === 0 && (
@@ -2008,6 +2350,23 @@ const Users = () => {
                         >
                           <FaPlus style={{ marginRight: '5px' }} />
                           Agregar Primer Usuario
+                        </button>
+                      )}
+                      {users.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          Limpiar Filtros
                         </button>
                       )}
                     </div>

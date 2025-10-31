@@ -989,12 +989,7 @@ const Admiprovee = () => {
   };
 
   const handleDeleteClick = (proveedor) => {
-    // Validar si el proveedor tiene productos asociados antes de eliminar
-    const hasProducts = contarProductosPorProveedor(proveedor.idProveedor) > 0;
-    if (hasProducts) {
-      displayAlert("No se puede eliminar un proveedor que tiene productos asociados", "error");
-      return;
-    }
+    // Abrir confirmación de eliminación (la verificación de productos se realiza en el servidor)
     setProveedorToDelete(proveedor);
     setShowDeleteConfirm(true);
   };
@@ -1612,22 +1607,6 @@ const Admiprovee = () => {
               </div>
 
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Productos Asociados</div>
-                <div style={detailValueStyle}>
-                  <span style={{ 
-                    backgroundColor: '#E8F5E8',
-                    color: '#2E5939',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    fontSize: '14px',
-                    fontWeight: '600'
-                  }}>
-                    {contarProductosPorProveedor(selectedProveedor.idProveedor)} productos
-                  </span>
-                </div>
-              </div>
-              
-              <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
                   ...detailValueStyle,
@@ -1637,24 +1616,6 @@ const Admiprovee = () => {
                   {selectedProveedor.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
-
-              {/* Información sobre productos */}
-              {contarProductosPorProveedor(selectedProveedor.idProveedor) > 0 && (
-                <div style={detailItemStyle}>
-                  <div style={detailLabelStyle}>Información Importante</div>
-                  <div style={{
-                    ...detailValueStyle,
-                    color: '#ff9800',
-                    fontSize: '14px',
-                    backgroundColor: '#fff3cd',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: '1px solid #ffeaa7'
-                  }}>
-                    ⚠️ Este proveedor tiene productos asociados. No se puede eliminar mientras tenga productos.
-                  </div>
-                </div>
-              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1773,7 +1734,6 @@ const Admiprovee = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Contacto</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Celular</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Ubicación</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Productos</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1787,7 +1747,6 @@ const Admiprovee = () => {
                 </tr>
               ) : (
                 paginatedProveedores.map((proveedor) => {
-                  const productosCount = contarProductosPorProveedor(proveedor.idProveedor);
                   return (
                     <tr key={proveedor.idProveedor} style={{ borderBottom: "1px solid #eee" }}>
                       <td style={{ padding: "15px", fontWeight: "500" }}>
@@ -1813,18 +1772,6 @@ const Admiprovee = () => {
                           <FaMapMarkerAlt color="#679750" size={12} />
                           {proveedor.ciudad}
                         </div>
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>
-                        <span style={{ 
-                          backgroundColor: productosCount > 0 ? '#E8F5E8' : '#F7F4EA',
-                          color: productosCount > 0 ? '#2E5939' : '#666',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '500'
-                        }}>
-                          {productosCount} productos
-                        </span>
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
                         <button
@@ -1874,13 +1821,8 @@ const Admiprovee = () => {
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteClick(proveedor); }}
-                            style={{
-                              ...btnAccion("#fbe9e7", "#e57373"),
-                              opacity: productosCount > 0 ? 0.5 : 1,
-                              cursor: productosCount > 0 ? "not-allowed" : "pointer"
-                            }}
-                            title={productosCount > 0 ? "No se puede eliminar - Tiene productos asociados" : "Eliminar"}
-                            disabled={productosCount > 0}
+                            style={btnAccion("#fbe9e7", "#e57373")}
+                            title="Eliminar"
                           >
                             <FaTrash />
                           </button>

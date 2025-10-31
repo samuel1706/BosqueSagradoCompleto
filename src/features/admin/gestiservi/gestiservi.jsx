@@ -42,20 +42,6 @@ const inputStyle = {
   transition: "all 0.3s ease",
 };
 
-const inputErrorStyle = {
-  ...inputStyle,
-  border: "2px solid #e74c3c",
-  backgroundColor: "#fdf2f2",
-};
-
-const yellowBlockedInputStyle = {
-  ...inputStyle,
-  backgroundColor: "#fffde7",
-  color: "#bfa100",
-  cursor: "not-allowed",
-  border: "1.5px solid #ffe082"
-};
-
 const navBtnStyle = (disabled) => ({
   cursor: disabled ? "not-allowed" : "pointer",
   padding: "8px 12px",
@@ -165,10 +151,10 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '80vh',
+  maxHeight: '90vh',
   overflowY: 'auto',
   border: "2px solid #679750",
 };
@@ -182,7 +168,8 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5
+  marginBottom: 5,
+  fontSize: "14px"
 };
 
 const detailValueStyle = {
@@ -356,6 +343,18 @@ const API_RESERVAS = "http://localhost:5018/api/Reservas";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
+// FUNCIÓN PARA FORMATEAR PRECIOS
+// ===============================================
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+};
+
+// ===============================================
 // COMPONENTE FormField MEJORADO
 // ===============================================
 const FormField = ({ 
@@ -378,7 +377,8 @@ const FormField = ({
   min,
   max,
   step,
-  touched = false
+  touched = false,
+  icon
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
@@ -437,6 +437,7 @@ const FormField = ({
       ...inputStyle,
       border: `1px solid ${borderColor}`,
       borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
+      paddingLeft: icon ? '40px' : '12px'
     };
   };
 
@@ -472,7 +473,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}></span>}
+        {required && <span style={{ color: "red" }}>*</span>}
       </label>
       {type === "select" ? (
         <select
@@ -524,32 +525,46 @@ const FormField = ({
           )}
         </div>
       ) : (
-        <div>
-          <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={handleFilteredInputChange}
-            onBlur={onBlur}
-            style={getInputStyle()}
-            required={required}
-            disabled={disabled}
-            maxLength={maxLength}
-            placeholder={placeholder}
-            min={min}
-            max={max}
-            step={step}
-          />
-          {showCharCount && maxLength && (
+        <div style={{ position: 'relative' }}>
+          {icon && (
             <div style={{
-              fontSize: "0.75rem",
-              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
-              textAlign: "right",
-              marginTop: "4px"
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#2E5939',
+              zIndex: 1
             }}>
-              {value.length}/{maxLength} caracteres
+              {icon}
             </div>
           )}
+          <div>
+            <input
+              type={type}
+              name={name}
+              value={value}
+              onChange={handleFilteredInputChange}
+              onBlur={onBlur}
+              style={getInputStyle()}
+              required={required}
+              disabled={disabled}
+              maxLength={maxLength}
+              placeholder={placeholder}
+              min={min}
+              max={max}
+              step={step}
+            />
+            {showCharCount && maxLength && (
+              <div style={{
+                fontSize: "0.75rem",
+                color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+                textAlign: "right",
+                marginTop: "4px"
+              }}>
+                {value.length}/{maxLength} caracteres
+              </div>
+            )}
+          </div>
         </div>
       )}
       {getValidationMessage()}
@@ -605,15 +620,7 @@ const Gestiservi = () => {
   // EFECTOS
   // ===============================================
   useEffect(() => {
-    fetchServicios();
-    fetchProductosPorServicio();
-    fetchSedesPorServicio();
-    fetchServiciosPorPaquete();
-    fetchServiciosReserva();
-    fetchProductos();
-    fetchSedes();
-    fetchPaquetes();
-    fetchReservas();
+    fetchAllData();
   }, []);
 
   // Validar formulario en tiempo real solo para campos tocados
@@ -869,9 +876,30 @@ const Gestiservi = () => {
   // ===============================================
   // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
   // ===============================================
-  const fetchServicios = async () => {
+  const fetchAllData = async () => {
     setLoading(true);
     setError(null);
+    try {
+      await Promise.all([
+        fetchServicios(),
+        fetchProductosPorServicio(),
+        fetchSedesPorServicio(),
+        fetchServiciosPorPaquete(),
+        fetchServiciosReserva(),
+        fetchProductos(),
+        fetchSedes(),
+        fetchPaquetes(),
+        fetchReservas()
+      ]);
+    } catch (error) {
+      console.error("❌ Error al cargar datos:", error);
+      handleApiError(error, "cargar los datos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchServicios = async () => {
     try {
       const res = await axios.get(API_SERVICIOS, {
         timeout: 10000,
@@ -888,9 +916,7 @@ const Gestiservi = () => {
       }
     } catch (error) {
       console.error("❌ Error al obtener servicios:", error);
-      handleApiError(error, "cargar los servicios");
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
@@ -1051,7 +1077,7 @@ const Gestiservi = () => {
         displayAlert("Servicio agregado exitosamente.", "success");
       }
       
-      await fetchServicios();
+      await fetchAllData();
       closeForm();
     } catch (error) {
       console.error("❌ Error al guardar servicio:", error);
@@ -1076,7 +1102,7 @@ const Gestiservi = () => {
 
         await axios.delete(`${API_SERVICIOS}/${servicioToDelete.idServicio}`);
         displayAlert("Servicio eliminado exitosamente.", "success");
-        await fetchServicios();
+        await fetchAllData();
         
         if (paginatedServicios.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
@@ -1174,29 +1200,69 @@ const Gestiservi = () => {
     return serviciosReserva.filter(rel => rel.idServicio === servicioId).length;
   };
 
-  // Funciones para obtener nombres
-  const getProductoNombre = (idProducto) => {
-    if (!idProducto) return "Sin producto";
-    const producto = productos.find(p => p.idProducto === idProducto);
-    return producto ? producto.nombre : `Producto ${idProducto}`;
+  // Funciones para obtener datos detallados de relaciones
+  const getProductosDelServicio = (servicioId) => {
+    const relaciones = productosPorServicio.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const producto = productos.find(p => p.idProducto === rel.idProducto);
+      return {
+        id: rel.idProducto,
+        nombre: producto ? producto.nombre : `Producto ${rel.idProducto}`,
+        cantidad: rel.cantidad || 1
+      };
+    });
   };
 
-  const getSedeNombre = (idSede) => {
-    if (!idSede) return "Sin sede";
-    const sede = sedes.find(s => s.idSede === idSede);
-    return sede ? sede.nombre : `Sede ${idSede}`;
+  const getSedesDelServicio = (servicioId) => {
+    const relaciones = sedesPorServicio.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const sede = sedes.find(s => s.idSede === rel.idSede);
+      return {
+        id: rel.idSede,
+        nombre: sede ? sede.nombre : `Sede ${rel.idSede}`,
+        direccion: sede ? sede.direccion : 'Dirección no disponible'
+      };
+    });
   };
 
-  const getPaqueteNombre = (idPaquete) => {
-    if (!idPaquete) return "Sin paquete";
-    const paquete = paquetes.find(p => p.idPaquete === idPaquete);
-    return paquete ? paquete.nombre : `Paquete ${idPaquete}`;
+  const getPaquetesDelServicio = (servicioId) => {
+    const relaciones = serviciosPorPaquete.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const paquete = paquetes.find(p => p.idPaquete === rel.idPaquete);
+      return {
+        id: rel.idPaquete,
+        nombre: paquete ? paquete.nombre : `Paquete ${rel.idPaquete}`,
+        descripcion: paquete ? paquete.descripcion : 'Descripción no disponible'
+      };
+    });
   };
 
-  const getReservaNombre = (idReserva) => {
-    if (!idReserva) return "Sin reserva";
-    const reserva = reservas.find(r => r.idReserva === idReserva);
-    return reserva ? `Reserva #${reserva.idReserva}` : `Reserva ${idReserva}`;
+  const getReservasDelServicio = (servicioId) => {
+    const relaciones = serviciosReserva.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const reserva = reservas.find(r => r.idReserva === rel.idReserva);
+      return {
+        id: rel.idReserva,
+        fecha: reserva ? reserva.fechaReserva : 'Fecha no disponible',
+        estado: reserva ? (reserva.estado ? 'Activa' : 'Cancelada') : 'Estado no disponible'
+      };
+    });
+  };
+
+  // Función para obtener todas las relaciones de un servicio
+  const getTodasLasRelacionesDelServicio = (servicioId) => {
+    const productos = getProductosDelServicio(servicioId);
+    const sedes = getSedesDelServicio(servicioId);
+    const paquetes = getPaquetesDelServicio(servicioId);
+    const reservas = getReservasDelServicio(servicioId);
+
+    return {
+      productos,
+      sedes,
+      paquetes,
+      reservas,
+      total: productos.length + sedes.length + paquetes.length + reservas.length
+    };
   };
 
   const handleChange = (e) => {
@@ -1332,18 +1398,351 @@ const Gestiservi = () => {
   // ===============================================
   // FUNCIONES PARA FORMATEAR DATOS
   // ===============================================
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
   const formatDescripcion = (descripcion) => {
     if (!descripcion) return "Sin descripción";
     return descripcion.length > 80 ? `${descripcion.substring(0, 80)}...` : descripcion;
+  };
+
+  // ===============================================
+  // COMPONENTES PARA DETALLES DE RELACIONES
+  // ===============================================
+  const RelacionesSection = ({ servicioId }) => {
+    const relaciones = getTodasLasRelacionesDelServicio(servicioId);
+
+    if (relaciones.total === 0) {
+      return (
+        <div style={detailItemStyle}>
+          <div style={detailLabelStyle}>Relaciones del Servicio</div>
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '15px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            color: '#679750'
+          }}>
+            Este servicio no tiene relaciones asociadas.
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={detailItemStyle}>
+        <div style={detailLabelStyle}>Relaciones del Servicio</div>
+        
+        {/* Resumen de relaciones */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+          gap: '10px', 
+          marginBottom: '20px' 
+        }}>
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaBox color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Productos</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.productos.length}
+            </div>
+          </div>
+
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaBuilding color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Sedes</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.sedes.length}
+            </div>
+          </div>
+
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaGift color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Paquetes</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.paquetes.length}
+            </div>
+          </div>
+
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaClipboardList color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Reservas</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.reservas.length}
+            </div>
+          </div>
+        </div>
+
+        {/* Detalles de cada tipo de relación */}
+        <div style={{ display: 'grid', gap: '15px' }}>
+          {/* Productos */}
+          {relaciones.productos.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaBox color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Productos Asociados</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.productos.map((producto, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <span style={{ fontWeight: '500' }}>{producto.nombre}</span>
+                    <span style={{ 
+                      backgroundColor: '#679750', 
+                      color: 'white', 
+                      padding: '2px 8px', 
+                      borderRadius: '12px', 
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      Cant: {producto.cantidad}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sedes */}
+          {relaciones.sedes.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaBuilding color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Sedes Disponibles</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.sedes.map((sede, index) => (
+                  <div key={index} style={{
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>{sede.nombre}</div>
+                    <div style={{ fontSize: '12px', color: '#679750' }}>{sede.direccion}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Paquetes */}
+          {relaciones.paquetes.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaGift color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Paquetes Incluidos</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.paquetes.map((paquete, index) => (
+                  <div key={index} style={{
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>{paquete.nombre}</div>
+                    <div style={{ fontSize: '12px', color: '#679750' }}>
+                      {paquete.descripcion || 'Sin descripción adicional'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reservas */}
+          {relaciones.reservas.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaClipboardList color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Reservas Activas</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.reservas.map((reserva, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '500' }}>Reserva #{reserva.id}</div>
+                      <div style={{ fontSize: '12px', color: '#679750' }}>{reserva.fecha}</div>
+                    </div>
+                    <span style={{
+                      backgroundColor: reserva.estado === 'Activa' ? '#4caf50' : '#e57373',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 'bold'
+                    }}>
+                      {reserva.estado}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Información importante sobre relaciones */}
+        {relaciones.total > 0 && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffeaa7',
+            borderRadius: '8px',
+            padding: '12px',
+            marginTop: '15px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+              <FaInfoCircle style={{ color: '#856404' }} />
+              <strong style={{ color: '#856404', fontSize: '14px' }}>Información Importante</strong>
+            </div>
+            <p style={{ color: '#856404', margin: 0, fontSize: '13px', lineHeight: '1.4' }}>
+              ⚠️ Este servicio tiene relaciones asociadas. No se puede eliminar mientras tenga productos, sedes, paquetes o reservas vinculadas.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ===============================================
+  // COMPONENTE PARA MOSTRAR RELACIONES EN EL LISTADO
+  // ===============================================
+  const RelacionesBadge = ({ servicioId }) => {
+    const relaciones = getTodasLasRelacionesDelServicio(servicioId);
+    
+    if (relaciones.total === 0) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+          <span style={{ fontWeight: 'bold', color: '#666' }}>0</span>
+          <span style={{ fontSize: '12px', color: '#679750' }}>
+            relaciones
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+        <span style={{ fontWeight: 'bold' }}>{relaciones.total}</span>
+        <span style={{ fontSize: '12px', color: '#679750' }}>
+          relaciones
+        </span>
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {relaciones.productos.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#4caf50',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              P: {relaciones.productos.length}
+            </span>
+          )}
+          {relaciones.sedes.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#2196f3',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              S: {relaciones.sedes.length}
+            </span>
+          )}
+          {relaciones.paquetes.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#ff9800',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              Paq: {relaciones.paquetes.length}
+            </span>
+          )}
+          {relaciones.reservas.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#e91e63',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              R: {relaciones.reservas.length}
+            </span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // ===============================================
@@ -1392,7 +1791,7 @@ const Gestiservi = () => {
           <p>{error}</p>
           <div style={{ marginTop: '10px' }}>
             <button
-              onClick={fetchServicios}
+              onClick={fetchAllData}
               style={{
                 backgroundColor: "#2E5939",
                 color: 'white',
@@ -1475,7 +1874,7 @@ const Gestiservi = () => {
         </button>
       </div>
 
-      {/* Estadísticas */}
+      {/* Tarjetas de Estadísticas */}
       {!loading && servicios.length > 0 && (
         <div style={{
           marginBottom: '20px',
@@ -1527,7 +1926,7 @@ const Gestiservi = () => {
               Servicios Inactivos
             </div>
           </div>
-          
+
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '15px',
@@ -1536,10 +1935,25 @@ const Gestiservi = () => {
             border: '1px solid #679750'
           }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPrice(servicios.reduce((sum, servicio) => sum + servicio.precioServicio, 0))}
+              {productosPorServicio.length}
             </div>
             <div style={{ fontSize: '14px', color: '#679750' }}>
-              Valor Total
+              Relaciones Productos
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {serviciosPorPaquete.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Relaciones Paquetes
             </div>
           </div>
         </div>
@@ -1638,10 +2052,30 @@ const Gestiservi = () => {
                     step="100"
                     placeholder="1000"
                     touched={touchedFields.precioServicio}
+                    icon={<FaDollarSign />}
                   />
                 </div>
 
-                
+                <div>
+                  <FormField
+                    label="Estado"
+                    name="estado"
+                    type="select"
+                    value={newServicio.estado}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.estado}
+                    success={formSuccess.estado}
+                    warning={formWarnings.estado}
+                    required={true}
+                    disabled={loading}
+                    options={[
+                      { value: "true", label: "Activo" },
+                      { value: "false", label: "Inactivo" }
+                    ]}
+                    touched={touchedFields.estado}
+                  />
+                </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelStyle}>
@@ -1921,71 +2355,8 @@ const Gestiservi = () => {
                 </div>
               </div>
 
-              {/* Relaciones del servicio */}
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Relaciones del Servicio</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
-                  <div style={{ 
-                    backgroundColor: '#E8F5E8',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
-                      <FaBox color="#679750" />
-                      <span style={{ fontWeight: 'bold' }}>Productos</span>
-                    </div>
-                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
-                      {contarProductosPorServicio(selectedServicio.idServicio)}
-                    </div>
-                  </div>
-
-                  <div style={{ 
-                    backgroundColor: '#E8F5E8',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
-                      <FaBuilding color="#679750" />
-                      <span style={{ fontWeight: 'bold' }}>Sedes</span>
-                    </div>
-                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
-                      {contarSedesPorServicio(selectedServicio.idServicio)}
-                    </div>
-                  </div>
-
-                  <div style={{ 
-                    backgroundColor: '#E8F5E8',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
-                      <FaGift color="#679750" />
-                      <span style={{ fontWeight: 'bold' }}>Paquetes</span>
-                    </div>
-                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
-                      {contarPaquetesPorServicio(selectedServicio.idServicio)}
-                    </div>
-                  </div>
-
-                  <div style={{ 
-                    backgroundColor: '#E8F5E8',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
-                      <FaClipboardList color="#679750" />
-                      <span style={{ fontWeight: 'bold' }}>Reservas</span>
-                    </div>
-                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
-                      {contarReservasPorServicio(selectedServicio.idServicio)}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Sección de relaciones */}
+              <RelacionesSection servicioId={selectedServicio.idServicio} />
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
@@ -1997,27 +2368,6 @@ const Gestiservi = () => {
                   {selectedServicio.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
-
-              {/* Información sobre relaciones */}
-              {(contarProductosPorServicio(selectedServicio.idServicio) > 0 || 
-                contarSedesPorServicio(selectedServicio.idServicio) > 0 || 
-                contarPaquetesPorServicio(selectedServicio.idServicio) > 0 || 
-                contarReservasPorServicio(selectedServicio.idServicio) > 0) && (
-                <div style={detailItemStyle}>
-                  <div style={detailLabelStyle}>Información Importante</div>
-                  <div style={{
-                    ...detailValueStyle,
-                    color: '#ff9800',
-                    fontSize: '14px',
-                    backgroundColor: '#fff3cd',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: '1px solid #ffeaa7'
-                  }}>
-                    ⚠️ Este servicio tiene relaciones asociadas. No se puede eliminar mientras tenga productos, sedes, paquetes o reservas vinculadas.
-                  </div>
-                </div>
-              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -2196,11 +2546,7 @@ const Gestiservi = () => {
                 </tr>
               ) : (
                 paginatedServicios.map((servicio) => {
-                  const productosCount = contarProductosPorServicio(servicio.idServicio);
-                  const sedesCount = contarSedesPorServicio(servicio.idServicio);
-                  const paquetesCount = contarPaquetesPorServicio(servicio.idServicio);
-                  const reservasCount = contarReservasPorServicio(servicio.idServicio);
-                  const totalRelations = productosCount + sedesCount + paquetesCount + reservasCount;
+                  const relaciones = getTodasLasRelacionesDelServicio(servicio.idServicio);
                   
                   return (
                     <tr key={servicio.idServicio} style={{ borderBottom: "1px solid #eee" }}>
@@ -2242,26 +2588,7 @@ const Gestiservi = () => {
                         {formatPrice(servicio.precioServicio)}
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                          <span style={{ 
-                            backgroundColor: totalRelations > 0 ? '#E8F5E8' : '#F7F4EA',
-                            color: totalRelations > 0 ? '#2E5939' : '#666',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}>
-                            {totalRelations} relaciones
-                          </span>
-                          {totalRelations > 0 && (
-                            <div style={{ fontSize: '10px', color: '#679750', display: 'flex', gap: '6px' }}>
-                              <span title="Productos">🟢P: {productosCount}</span>
-                              <span title="Sedes">🔵S: {sedesCount}</span>
-                              <span title="Paquetes">🟡Paq: {paquetesCount}</span>
-                              <span title="Reservas">🔴R: {reservasCount}</span>
-                            </div>
-                          )}
-                        </div>
+                        <RelacionesBadge servicioId={servicio.idServicio} />
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
                         <button
@@ -2314,11 +2641,11 @@ const Gestiservi = () => {
                             onClick={(e) => { e.stopPropagation(); handleDeleteClick(servicio); }}
                             style={{
                               ...btnAccion("#fbe9e7", "#e57373"),
-                              opacity: totalRelations > 0 ? 0.5 : 1,
-                              cursor: totalRelations > 0 ? "not-allowed" : "pointer"
+                              opacity: relaciones.total > 0 ? 0.5 : 1,
+                              cursor: relaciones.total > 0 ? "not-allowed" : "pointer"
                             }}
-                            title={totalRelations > 0 ? "No se puede eliminar - Tiene relaciones asociadas" : "Eliminar Servicio"}
-                            disabled={totalRelations > 0}
+                            title={relaciones.total > 0 ? "No se puede eliminar - Tiene relaciones asociadas" : "Eliminar Servicio"}
+                            disabled={relaciones.total > 0}
                           >
                             <FaTrash />
                           </button>

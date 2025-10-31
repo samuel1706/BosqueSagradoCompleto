@@ -1,13 +1,14 @@
+// src/components/Temporada.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { 
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaCalendarAlt,
-  FaPercentage, FaSync
+  FaPercentage, FaSync, FaShoppingCart
 } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES CON PAQUETES)
+// ESTILOS MEJORADOS (CONSISTENTES CON MARCAS)
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -69,8 +70,8 @@ const pageBtnStyle = (active) => ({
 
 const formContainerStyle = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '15px 20px',
+  gridTemplateColumns: '1fr',
+  gap: '15px',
   padding: '0 10px'
 };
 
@@ -93,7 +94,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -149,20 +150,13 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
-const alertInfoStyle = {
-  ...alertStyle,
-  backgroundColor: '#d1ecf1',
-  color: '#0c5460',
-  borderLeftColor: '#17a2b8',
-};
-
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 500,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '80vh',
@@ -213,7 +207,7 @@ const warningValidationStyle = {
 };
 
 // ===============================================
-// VALIDACIONES Y PATRONES
+// VALIDACIONES Y PATRONES PARA TEMPORADAS
 // ===============================================
 const VALIDATION_PATTERNS = {
   nombreTemporada: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&]+$/,
@@ -249,7 +243,7 @@ const VALIDATION_RULES = {
 // DATOS DE CONFIGURACIÓN
 // ===============================================
 const API_TEMPORADA = "http://localhost:5018/api/Temporada";
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 // ===============================================
 // COMPONENTE FormField PARA TEMPORADA
@@ -260,6 +254,7 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
@@ -272,7 +267,7 @@ const FormField = ({
   min,
   max,
   step,
-  icon
+  touched = false
 }) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -293,22 +288,26 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
-      paddingLeft: icon ? '40px' : '12px'
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
     };
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -316,7 +315,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -324,7 +323,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -341,45 +340,32 @@ const FormField = ({
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
       </label>
-      <div style={{ position: 'relative' }}>
-        {icon && (
+      <div>
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={handleFilteredInputChange}
+          onBlur={onBlur}
+          style={getInputStyle()}
+          required={required}
+          disabled={disabled}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          min={min}
+          max={max}
+          step={step}
+        />
+        {showCharCount && maxLength && (
           <div style={{
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#2E5939',
-            zIndex: 1
+            fontSize: "0.75rem",
+            color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+            textAlign: "right",
+            marginTop: "4px"
           }}>
-            {icon}
+            {value.length}/{maxLength} caracteres
           </div>
         )}
-        <div>
-          <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={handleFilteredInputChange}
-            style={getInputStyle()}
-            required={required}
-            disabled={disabled}
-            maxLength={maxLength}
-            placeholder={placeholder}
-            min={min}
-            max={max}
-            step={step}
-          />
-          {showCharCount && maxLength && (
-            <div style={{
-              fontSize: "0.75rem",
-              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
-              textAlign: "right",
-              marginTop: "4px"
-            }}>
-              {value.length}/{maxLength} caracteres
-            </div>
-          )}
-        </div>
       </div>
       {getValidationMessage()}
     </div>
@@ -408,6 +394,7 @@ const Temporada = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
 
   // Estado inicial basado en la estructura de tu API
   const [newTemporada, setNewTemporada] = useState({
@@ -423,15 +410,17 @@ const Temporada = () => {
     fetchTemporadas();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombreTemporada', newTemporada.nombreTemporada);
-      validateField('porcentaje', newTemporada.porcentaje);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newTemporada[fieldName]);
+        }
+      });
     }
-  }, [newTemporada, showForm]);
+  }, [newTemporada, showForm, touchedFields]);
 
-  // Efecto para agregar estilos de animación
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -474,8 +463,6 @@ const Temporada = () => {
         return <FaExclamationTriangle style={alertIconStyle} />;
       case "warning":
         return <FaExclamationTriangle style={alertIconStyle} />;
-      case "info":
-        return <FaInfoCircle style={alertIconStyle} />;
       default:
         return <FaInfoCircle style={alertIconStyle} />;
     }
@@ -489,8 +476,6 @@ const Temporada = () => {
         return alertErrorStyle;
       case "warning":
         return alertWarningStyle;
-      case "info":
-        return alertInfoStyle;
       default:
         return alertSuccessStyle;
     }
@@ -538,6 +523,8 @@ const Temporada = () => {
           warning = "Porcentaje muy alto. Verifique que sea correcto.";
         } else if (numericValue === 0) {
           warning = "Porcentaje en 0% — no se aplicará incremento.";
+        } else if (numericValue < 5) {
+          warning = "Porcentaje bajo. Verifique que sea correcto.";
         }
       }
     }
@@ -556,6 +543,24 @@ const Temporada = () => {
       }
     }
 
+    // Advertencias específicas para nombre
+    if (fieldName === 'nombreTemporada' && trimmedValue && !error) {
+      // Advertencia para nombres muy similares
+      const temporadaSimilar = temporadas.find(temp => 
+        temp.nombreTemporada.toLowerCase().includes(trimmedValue.toLowerCase()) && 
+        temp.idTemporada !== (isEditing ? newTemporada.idTemporada : null)
+      );
+      if (temporadaSimilar) {
+        warning = `Existe una temporada similar: "${temporadaSimilar.nombreTemporada}"`;
+      }
+      
+      // Advertencia para nombres muy genéricos
+      const nombresGenericos = ['temporada', 'general', 'normal', 'regular'];
+      if (nombresGenericos.includes(trimmedValue.toLowerCase())) {
+        warning = 'Considera usar un nombre más específico para la temporada';
+      }
+    }
+
     setFormErrors(prev => ({ ...prev, [fieldName]: error }));
     setFormSuccess(prev => ({ ...prev, [fieldName]: success }));
     setFormWarnings(prev => ({ ...prev, [fieldName]: warning }));
@@ -564,6 +569,13 @@ const Temporada = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombreTemporada: true,
+      porcentaje: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombreTemporada', newTemporada.nombreTemporada);
     const porcentajeValid = validateField('porcentaje', newTemporada.porcentaje);
 
@@ -582,8 +594,16 @@ const Temporada = () => {
     return isValid;
   };
 
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
   // ===============================================
-  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
+  // FUNCIONES DE LA API
   // ===============================================
   const fetchTemporadas = async () => {
     setLoading(true);
@@ -724,12 +744,20 @@ const Temporada = () => {
     }));
   };
 
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newTemporada[name]);
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setIsEditing(false);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setNewTemporada({
       idTemporada: 0,
       nombreTemporada: "",
@@ -762,6 +790,7 @@ const Temporada = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (temporada) => {
@@ -883,31 +912,13 @@ const Temporada = () => {
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button
-            onClick={fetchTemporadas}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 12px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-            title="Recargar temporadas"
-          >
-            <FaSync />
-          </button>
-          <button
             onClick={() => {
               setShowForm(true);
               setIsEditing(false);
               setFormErrors({});
               setFormSuccess({});
               setFormWarnings({});
+              setTouchedFields({});
               setNewTemporada({
                 idTemporada: 0,
                 nombreTemporada: "",
@@ -942,9 +953,64 @@ const Temporada = () => {
         </div>
       </div>
 
-      {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      {/* Estadísticas - IGUAL QUE MARCAS */}
+      {!loading && temporadas.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {temporadas.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Temporadas
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {temporadas.filter(t => t.porcentaje > 0).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Con Incremento
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPercentage(temporadas.reduce((sum, temp) => sum + temp.porcentaje, 0) / temporadas.length)}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Promedio %
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda - SIMPLIFICADA */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -965,17 +1031,14 @@ const Temporada = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredTemporadas.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
+          <div style={modalContentStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+              <h2 style={{ margin: 0, color: "#2E5939" }}>
                 {isEditing ? "Editar Temporada" : "Nueva Temporada"}
               </h2>
               <button
@@ -993,48 +1056,42 @@ const Temporada = () => {
               </button>
             </div>
             
-            <form onSubmit={handleAddTemporada}>
-              <div style={formContainerStyle}>
-                <FormField
-                  label="Nombre de la Temporada"
-                  name="nombreTemporada"
-                  value={newTemporada.nombreTemporada}
-                  onChange={handleChange}
-                  error={formErrors.nombreTemporada}
-                  success={formSuccess.nombreTemporada}
-                  warning={formWarnings.nombreTemporada}
-                  style={{ gridColumn: '1 / -1' }}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.nombreTemporada.maxLength}
-                  showCharCount={true}
-                  placeholder="Ej: Alta Temporada, Baja Temporada, Temporada Media..."
-                  icon={<FaCalendarAlt />}
-                />
+            <form onSubmit={handleAddTemporada} style={formContainerStyle}>
+              <FormField
+                label="Nombre de la Temporada"
+                name="nombreTemporada"
+                value={newTemporada.nombreTemporada}
+                onChange={handleChange}
+                onBlur={handleInputBlur}
+                error={formErrors.nombreTemporada}
+                success={formSuccess.nombreTemporada}
+                warning={formWarnings.nombreTemporada}
+                required={true}
+                disabled={loading}
+                maxLength={VALIDATION_RULES.nombreTemporada.maxLength}
+                showCharCount={true}
+                placeholder="Ej: Alta Temporada, Baja Temporada, Temporada Media..."
+                touched={touchedFields.nombreTemporada}
+              />
 
-                <FormField
-                  label={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaPercentage />
-                      Porcentaje (%)
-                    </div>
-                  }
-                  name="porcentaje"
-                  type="number"
-                  value={newTemporada.porcentaje}
-                  onChange={handleChange}
-                  error={formErrors.porcentaje}
-                  success={formSuccess.porcentaje}
-                  warning={formWarnings.porcentaje}
-                  required={true}
-                  disabled={loading}
-                  min={VALIDATION_RULES.porcentaje.min}
-                  max={VALIDATION_RULES.porcentaje.max}
-                  step="0.1"
-                  placeholder="10"
-                  icon={<FaPercentage />}
-                />
-              </div>
+              <FormField
+                label="Porcentaje de Incremento (%)"
+                name="porcentaje"
+                type="number"
+                value={newTemporada.porcentaje}
+                onChange={handleChange}
+                onBlur={handleInputBlur}
+                error={formErrors.porcentaje}
+                success={formSuccess.porcentaje}
+                warning={formWarnings.porcentaje}
+                required={true}
+                disabled={loading}
+                min={VALIDATION_RULES.porcentaje.min}
+                max={VALIDATION_RULES.porcentaje.max}
+                step="0.1"
+                placeholder="10"
+                touched={touchedFields.porcentaje}
+              />
 
               {/* Resumen de la temporada */}
               {newTemporada.porcentaje && (
@@ -1043,7 +1100,7 @@ const Temporada = () => {
                   border: '1px solid #679750',
                   borderRadius: '8px',
                   padding: '15px',
-                  marginBottom: '20px'
+                  marginBottom: '10px'
                 }}>
                   <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen de la Temporada</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
@@ -1113,7 +1170,7 @@ const Temporada = () => {
       {/* Modal de detalles */}
       {showDetails && selectedTemporada && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Temporada</h2>
               <button
@@ -1139,7 +1196,7 @@ const Temporada = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Nombre de la Temporada</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaCalendarAlt color="#679750" />
                     {selectedTemporada.nombreTemporada}
                   </div>
@@ -1147,9 +1204,9 @@ const Temporada = () => {
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Porcentaje</div>
+                <div style={detailLabelStyle}>Porcentaje de Incremento</div>
                 <div style={{ ...detailValueStyle, fontWeight: 'bold', color: '#2E5939' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FaPercentage color="#679750" />
                     {formatPercentage(selectedTemporada.porcentaje)}
                   </div>
@@ -1180,42 +1237,41 @@ const Temporada = () => {
       {/* Modal de Confirmación de Eliminación */}
       {showDeleteConfirm && temporadaToDelete && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
-            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
-            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
-              ¿Estás seguro de eliminar la temporada "<strong>{temporadaToDelete.nombreTemporada}</strong>"?
+          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 12, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 18, fontSize: '1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar de forma permanente la temporada "<strong>{temporadaToDelete.nombreTemporada}</strong>"? Esta acción no se puede deshacer.
             </p>
-            
-            {/* Advertencia sobre valor */}
+
             <div style={{ 
-              backgroundColor: '#fff3cd', 
-              border: '1px solid #ffeaa7',
+              backgroundColor: '#ffecec', 
+              border: '1px solid #e57373',
               borderRadius: '8px',
-              padding: '15px',
-              marginBottom: '20px'
+              padding: '12px 15px',
+              marginBottom: '18px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <FaInfoCircle style={{ color: '#856404' }} />
-                <strong style={{ color: '#856404' }}>Temporada a eliminar</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <FaInfoCircle style={{ color: '#e57373' }} />
+                <strong style={{ color: '#2E5939' }}>Atención</strong>
               </div>
-              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Porcentaje: {formatPercentage(temporadaToDelete.porcentaje)}
+              <p style={{ color: '#2E5939', margin: 0, fontSize: '0.9rem' }}>
+                Si la temporada está asociada a tarifas, la eliminación será rechazada por el servidor y se mostrará el motivo.
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
                 style={{
-                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  backgroundColor: loading ? "#ccc" : "#e53935",
                   color: "white",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  fontWeight: "700",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                 }}
               >
                 {loading ? "Eliminando..." : "Sí, Eliminar"}
@@ -1226,23 +1282,11 @@ const Temporada = () => {
                 style={{
                   backgroundColor: loading ? "#ccc" : "#2E5939",
                   color: "#fff",
-                  padding: "10px 20px",
+                  padding: "10px 22px",
                   border: "none",
                   borderRadius: 10,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "#2E5939";
-                  }
                 }}
               >
                 Cancelar
@@ -1283,7 +1327,7 @@ const Temporada = () => {
             <thead>
               <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Temporada</th>
-                <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Porcentaje</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Porcentaje</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
@@ -1291,64 +1335,45 @@ const Temporada = () => {
               {paginatedTemporadas.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={3} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                      <FaInfoCircle size={30} color="#679750" />
-                      {temporadas.length === 0 ? "No hay temporadas registradas" : "No se encontraron resultados"}
-                      {temporadas.length === 0 && (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          style={{
-                            backgroundColor: "#2E5939",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: "600",
-                            marginTop: '10px'
-                          }}
-                        >
-                          <FaPlus style={{ marginRight: '5px' }} />
-                          Agregar Primera Temporada
-                        </button>
-                      )}
-                    </div>
+                    {temporadas.length === 0 ? "No hay temporadas registradas" : "No se encontraron resultados"}
                   </td>
                 </tr>
               ) : (
                 paginatedTemporadas.map((temporada) => (
                   <tr key={temporada.idTemporada} style={{ borderBottom: "1px solid #eee" }}>
                     <td style={{ padding: "15px", fontWeight: "500" }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <FaCalendarAlt color="#679750" />
                         {temporada.nombreTemporada}
                       </div>
                     </td>
-                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
+                    <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>
                       {formatPercentage(temporada.porcentaje)}
                     </td>
                     <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handleView(temporada)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Ver Detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(temporada)}
-                        style={btnAccion("#F7F4EA", "#2E5939")}
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(temporada)}
-                        style={btnAccion("#fbe9e7", "#e57373")}
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
+                      <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                        <button
+                          onClick={() => handleView(temporada)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Ver Detalles"
+                        >
+                          <FaEye />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(temporada)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Editar"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(temporada); }}
+                          style={btnAccion("#fbe9e7", "#e57373")}
+                          title="Eliminar"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -1360,7 +1385,7 @@ const Temporada = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -1368,18 +1393,33 @@ const Temporada = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -1387,60 +1427,14 @@ const Temporada = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && temporadas.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {temporadas.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Temporadas
-            </div>
-          </div>
           
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {temporadas.filter(t => t.porcentaje > 0).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Con Incremento
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPercentage(temporadas.reduce((sum, temp) => sum + temp.porcentaje, 0) / temporadas.length)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Promedio %
-            </div>
+            Página {currentPage} de {totalPages}
           </div>
         </div>
       )}

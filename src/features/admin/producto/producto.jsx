@@ -3,7 +3,7 @@ import {
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox,
   FaTag, FaDollarSign, FaHashtag, FaToggleOn, FaToggleOff,
-  FaSync, FaShoppingCart
+  FaSync, FaShoppingCart, FaBuilding, FaClipboardList
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -72,7 +72,7 @@ const formContainerStyle = {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
   gap: '15px 20px',
-  padding: '0 10px'
+  marginBottom: '20px'
 };
 
 const modalOverlayStyle = {
@@ -163,10 +163,10 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '80vh',
+  maxHeight: '90vh',
   overflowY: 'auto',
   border: "2px solid #679750",
 };
@@ -235,7 +235,7 @@ const toggleButtonStyle = (active) => ({
 // VALIDACIONES Y PATRONES PARA PRODUCTOS
 // ===============================================
 const VALIDATION_PATTERNS = {
-  nombre: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&.,()]+$/,
+  nombre: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&.,()0-9]+$/,
 };
 
 const VALIDATION_RULES = {
@@ -248,7 +248,7 @@ const VALIDATION_RULES = {
       required: "El nombre del producto es obligatorio.",
       minLength: "El nombre debe tener al menos 2 caracteres.",
       maxLength: "El nombre no puede exceder los 100 caracteres.",
-      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, espacios y los caracteres: - _ & . , ( )"
+      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, números, espacios y los caracteres: - _ & . , ( )"
     }
   },
   precio: {
@@ -311,6 +311,7 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
@@ -324,22 +325,23 @@ const FormField = ({
   min,
   max,
   step,
-  icon
+  icon,
+  touched = false
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
-      const placeholderOption = { value: "", label: "Seleccionar", disabled: required };
+      const placeholderOption = { value: "", label: placeholder || "Seleccionar", disabled: required };
       return [placeholderOption, ...options];
     }
     return options;
-  }, [options, type, required]);
+  }, [options, type, required, placeholder]);
 
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
     let filteredValue = value;
 
     if (name === 'nombre') {
-      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&.,()]/g, "");
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-_&.,()0-9]/g, "");
     } else if (name === 'precio') {
       filteredValue = value.replace(/[^0-9.]/g, "");
       const parts = filteredValue.split('.');
@@ -358,11 +360,16 @@ const FormField = ({
     onChange({ target: { name, value: filteredValue } });
   };
 
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
   const getInputStyle = () => {
     let borderColor = "#ccc";
-    if (error) borderColor = "#e57373";
-    else if (success) borderColor = "#4caf50";
-    else if (warning) borderColor = "#ff9800";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
 
     return {
       ...inputStyle,
@@ -373,7 +380,7 @@ const FormField = ({
   };
 
   const getValidationMessage = () => {
-    if (error) {
+    if (showError) {
       return (
         <div style={errorValidationStyle}>
           <FaExclamationTriangle size={12} />
@@ -381,7 +388,7 @@ const FormField = ({
         </div>
       );
     }
-    if (success) {
+    if (showSuccess) {
       return (
         <div style={successValidationStyle}>
           <FaCheck size={12} />
@@ -389,7 +396,7 @@ const FormField = ({
         </div>
       );
     }
-    if (warning) {
+    if (showWarning) {
       return (
         <div style={warningValidationStyle}>
           <FaInfoCircle size={12} />
@@ -425,6 +432,7 @@ const FormField = ({
               name={name}
               value={value}
               onChange={onChange}
+              onBlur={onBlur}
               style={{
                 ...getInputStyle(),
                 paddingLeft: icon ? '40px' : '12px',
@@ -470,6 +478,7 @@ const FormField = ({
               name={name}
               value={value}
               onChange={handleFilteredInputChange}
+              onBlur={onBlur}
               style={getInputStyle()}
               required={required}
               disabled={disabled}
@@ -524,6 +533,7 @@ const Productos = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
 
   // Estado inicial basado en la estructura de tu API
   const [newProducto, setNewProducto] = useState({
@@ -547,17 +557,16 @@ const Productos = () => {
     fetchProductosPorServicio();
   }, []);
 
-  // Validar formulario en tiempo real
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
-      validateField('nombre', newProducto.nombre);
-      validateField('precio', newProducto.precio);
-      validateField('cantidad', newProducto.cantidad);
-      validateField('idCategoria', newProducto.idCategoria);
-      validateField('idMarca', newProducto.idMarca);
-      validateField('estado', newProducto.estado);
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newProducto[fieldName]);
+        }
+      });
     }
-  }, [newProducto, showForm]);
+  }, [newProducto, showForm, touchedFields]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -709,6 +718,17 @@ const Productos = () => {
   };
 
   const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombre: true,
+      precio: true,
+      cantidad: true,
+      idCategoria: true,
+      idMarca: true,
+      estado: true
+    };
+    setTouchedFields(allFieldsTouched);
+
     const nombreValid = validateField('nombre', newProducto.nombre);
     const precioValid = validateField('precio', newProducto.precio);
     const cantidadValid = validateField('cantidad', newProducto.cantidad);
@@ -729,6 +749,14 @@ const Productos = () => {
     }
 
     return isValid;
+  };
+
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
   };
 
   // ===============================================
@@ -775,7 +803,6 @@ const Productos = () => {
       }
     } catch (error) {
       console.error("❌ Error al obtener categorías:", error);
-      handleApiError(error, "cargar las categorías");
     } finally {
       setLoadingCategorias(false);
     }
@@ -797,7 +824,6 @@ const Productos = () => {
       }
     } catch (error) {
       console.error("❌ Error al obtener marcas:", error);
-      handleApiError(error, "cargar las marcas");
     } finally {
       setLoadingMarcas(false);
     }
@@ -963,6 +989,18 @@ const Productos = () => {
     return productosPorServicio.filter(rel => rel.idProducto === productoId).length;
   };
 
+  // Función para obtener servicios detallados del producto
+  const getServiciosDelProducto = (productoId) => {
+    const relaciones = productosPorServicio.filter(rel => rel.idProducto === productoId);
+    // En una implementación real, aquí harías una llamada a la API de servicios
+    // Por ahora retornamos datos básicos
+    return relaciones.map(rel => ({
+      id: rel.idServicio,
+      nombre: `Servicio ${rel.idServicio}`,
+      cantidad: rel.cantidad || 1
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewProducto((prev) => ({
@@ -971,12 +1009,21 @@ const Productos = () => {
     }));
   };
 
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newProducto[name]);
+  };
+
   // Función para cambiar el estado con el botón toggle
   const toggleEstado = () => {
     setNewProducto(prev => ({
       ...prev,
       estado: !prev.estado
     }));
+    markFieldAsTouched('estado');
+    validateField('estado', !newProducto.estado);
   };
 
   const closeForm = () => {
@@ -985,6 +1032,7 @@ const Productos = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
     setNewProducto({
       idProducto: 0,
       nombre: "",
@@ -1044,6 +1092,7 @@ const Productos = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (producto) => {
@@ -1107,6 +1156,120 @@ const Productos = () => {
   };
 
   // ===============================================
+  // COMPONENTE PARA DETALLES DE RELACIONES
+  // ===============================================
+  const RelacionesSection = ({ productoId }) => {
+    const servicios = getServiciosDelProducto(productoId);
+    const serviciosCount = servicios.length;
+
+    if (serviciosCount === 0) {
+      return (
+        <div style={detailItemStyle}>
+          <div style={detailLabelStyle}>Relaciones del Producto</div>
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '15px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            color: '#679750'
+          }}>
+            Este producto no tiene servicios asociados.
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={detailItemStyle}>
+        <div style={detailLabelStyle}>Relaciones del Producto</div>
+        
+        {/* Resumen de relaciones */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          gap: '10px', 
+          marginBottom: '20px' 
+        }}>
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaClipboardList color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Servicios</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {serviciosCount}
+            </div>
+          </div>
+        </div>
+
+        {/* Detalles de servicios */}
+        {servicios.length > 0 && (
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '15px',
+            borderRadius: '8px',
+            border: '1px solid #E8F5E8'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <FaClipboardList color="#2E5939" />
+              <h4 style={{ margin: 0, color: '#2E5939' }}>Servicios Asociados</h4>
+            </div>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              {servicios.map((servicio, index) => (
+                <div key={index} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '8px',
+                  backgroundColor: 'white',
+                  borderRadius: '6px',
+                  border: '1px solid #E8F5E8'
+                }}>
+                  <span style={{ fontWeight: '500' }}>{servicio.nombre}</span>
+                  <span style={{ 
+                    backgroundColor: '#679750', 
+                    color: 'white', 
+                    padding: '2px 8px', 
+                    borderRadius: '12px', 
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    Cant: {servicio.cantidad}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Información importante sobre relaciones */}
+        {serviciosCount > 0 && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffeaa7',
+            borderRadius: '8px',
+            padding: '12px',
+            marginTop: '15px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+              <FaInfoCircle style={{ color: '#856404' }} />
+              <strong style={{ color: '#856404', fontSize: '14px' }}>Información Importante</strong>
+            </div>
+            <p style={{ color: '#856404', margin: 0, fontSize: '13px', lineHeight: '1.4' }}>
+              ⚠️ Este producto tiene servicios asociados. No se puede eliminar mientras tenga servicios vinculados.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ===============================================
   // RENDERIZADO
   // ===============================================
   return (
@@ -1154,7 +1317,7 @@ const Productos = () => {
             <button
               onClick={fetchProductos}
               style={{
-                backgroundColor: '#2E5939',
+                backgroundColor: "#2E5939",
                 color: 'white',
                 padding: '8px 16px',
                 border: 'none',
@@ -1187,80 +1350,128 @@ const Productos = () => {
         <div>
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Productos</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
-            {productos.length} productos registrados • 
-            {productos.filter(p => p.estado).length} activos • 
-            Valor total: {formatPrice(productos.reduce((sum, producto) => sum + (producto.precio * producto.cantidad), 0))}
+            {productos.length} productos registrados • {productos.filter(p => p.estado).length} activos
           </p>
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button
-            onClick={fetchProductos}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 12px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-            title="Recargar productos"
-          >
-            <FaSync />
-          </button>
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setIsEditing(false);
-              setFormErrors({});
-              setFormSuccess({});
-              setFormWarnings({});
-              setNewProducto({
-                idProducto: 0,
-                nombre: "",
-                idCategoria: categorias.length > 0 ? categorias[0].idCategoria.toString() : "",
-                idMarca: marcas.length > 0 ? marcas[0].idMarca.toString() : "",
-                cantidad: "1",
-                precio: "",
-                imagen: "nada",
-                estado: true
-              });
-            }}
-            style={{
-              backgroundColor: "#2E5939",
-              color: "white",
-              padding: "12px 20px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              transition: "all 0.3s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-              e.target.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#2E5939";
-              e.target.style.transform = "translateY(0)";
-            }}
-          >
-            <FaPlus /> Agregar Producto
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setShowForm(true);
+            setIsEditing(false);
+            setFormErrors({});
+            setFormSuccess({});
+            setFormWarnings({});
+            setTouchedFields({});
+            setNewProducto({
+              idProducto: 0,
+              nombre: "",
+              idCategoria: categorias.length > 0 ? categorias[0].idCategoria.toString() : "",
+              idMarca: marcas.length > 0 ? marcas[0].idMarca.toString() : "",
+              cantidad: "1",
+              precio: "",
+              imagen: "nada",
+              estado: true
+            });
+          }}
+          style={{
+            backgroundColor: "#2E5939",
+            color: "white",
+            padding: "12px 20px",
+            border: "none",
+            borderRadius: 10,
+            cursor: "pointer",
+            fontWeight: "600",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+            transition: "all 0.3s ease",
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+            e.target.style.transform = "translateY(-2px)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = "#2E5939";
+            e.target.style.transform = "translateY(0)";
+          }}
+        >
+          <FaPlus /> Agregar Producto
+        </button>
       </div>
 
+      {/* Estadísticas */}
+      {!loading && productos.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {productos.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Total Productos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {productos.filter(p => p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Productos Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#fff8e1',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #ffd54f'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+              {productos.filter(p => !p.estado).length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+              Productos Inactivos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {formatPrice(productos.reduce((sum, producto) => sum + (producto.precio * producto.cantidad), 0))}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Valor Total
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Barra de búsqueda */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 500 }}>
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: "relative", maxWidth: 500 }}>
           <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
           <input
             type="text"
@@ -1281,18 +1492,15 @@ const Productos = () => {
             }}
           />
         </div>
-        <div style={{ color: '#2E5939', fontSize: '14px', whiteSpace: 'nowrap' }}>
-          {filteredProductos.length} resultados
-        </div>
       </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 600 }}>
+          <div style={modalContentStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
-                {isEditing ? "Editar Producto" : "Nuevo Producto"}
+                {isEditing ? "Editar Producto" : "Agregar Nuevo Producto"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1303,6 +1511,7 @@ const Productos = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
@@ -1311,22 +1520,25 @@ const Productos = () => {
             
             <form onSubmit={handleAddProducto}>
               <div style={formContainerStyle}>
-                <FormField
-                  label="Nombre del Producto"
-                  name="nombre"
-                  value={newProducto.nombre}
-                  onChange={handleChange}
-                  error={formErrors.nombre}
-                  success={formSuccess.nombre}
-                  warning={formWarnings.nombre}
-                  style={{ gridColumn: '1 / -1' }}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.nombre.maxLength}
-                  showCharCount={true}
-                  placeholder="Ej: Arroz, Leche, Jabón, Detergente..."
-                  icon={<FaBox />}
-                />
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Nombre del Producto"
+                    name="nombre"
+                    value={newProducto.nombre}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.nombre}
+                    success={formSuccess.nombre}
+                    warning={formWarnings.nombre}
+                    required={true}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.nombre.maxLength}
+                    showCharCount={true}
+                    placeholder="Ej: Arroz, Leche, Jabón, Detergente..."
+                    icon={<FaBox />}
+                    touched={touchedFields.nombre}
+                  />
+                </div>
 
                 <FormField
                   label={
@@ -1339,6 +1551,7 @@ const Productos = () => {
                   type="select"
                   value={newProducto.idCategoria}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.idCategoria}
                   success={formSuccess.idCategoria}
                   warning={formWarnings.idCategoria}
@@ -1349,6 +1562,7 @@ const Productos = () => {
                     label: cat.categoria 
                   }))}
                   icon={<FaTag />}
+                  touched={touchedFields.idCategoria}
                 />
 
                 <FormField
@@ -1362,6 +1576,7 @@ const Productos = () => {
                   type="select"
                   value={newProducto.idMarca}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.idMarca}
                   success={formSuccess.idMarca}
                   warning={formWarnings.idMarca}
@@ -1372,6 +1587,7 @@ const Productos = () => {
                     label: marca.nombre 
                   }))}
                   icon={<FaShoppingCart />}
+                  touched={touchedFields.idMarca}
                 />
 
                 <FormField
@@ -1385,6 +1601,7 @@ const Productos = () => {
                   type="number"
                   value={newProducto.cantidad}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.cantidad}
                   success={formSuccess.cantidad}
                   warning={formWarnings.cantidad}
@@ -1394,6 +1611,7 @@ const Productos = () => {
                   max={VALIDATION_RULES.cantidad.max}
                   placeholder="1"
                   icon={<FaHashtag />}
+                  touched={touchedFields.cantidad}
                 />
 
                 <FormField
@@ -1407,6 +1625,7 @@ const Productos = () => {
                   type="number"
                   value={newProducto.precio}
                   onChange={handleChange}
+                  onBlur={handleInputBlur}
                   error={formErrors.precio}
                   success={formSuccess.precio}
                   warning={formWarnings.precio}
@@ -1417,60 +1636,58 @@ const Productos = () => {
                   step="0.01"
                   placeholder="1000"
                   icon={<FaDollarSign />}
+                  touched={touchedFields.precio}
                 />
 
-                {/* Botón Toggle para Estado - oculto en modo edición */}
-                {!isEditing && (
-                  <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
-                    <label style={labelStyle}>
-                      Estado del Producto
-                      <span style={{ color: "red" }}>*</span>
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <button
-                        type="button"
-                        onClick={toggleEstado}
-                        style={toggleButtonStyle(newProducto.estado)}
-                        disabled={loading}
-                      >
-                        {newProducto.estado ? (
-                          <>
-                            <FaToggleOn size={20} />
-                            <span>🟢 Activo</span>
-                          </>
-                        ) : (
-                          <>
-                            <FaToggleOff size={20} />
-                            <span>🔴 Inactivo</span>
-                          </>
-                        )}
-                      </button>
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newProducto.estado ? '#4caf50' : '#e57373',
-                        fontWeight: '500'
-                      }}>
-                        {newProducto.estado 
-                          ? 'El producto está activo y disponible para ventas' 
-                          : 'El producto está inactivo y no disponible para ventas'
-                        }
-                      </span>
-                    </div>
-                    {formErrors.estado && (
-                      <div style={errorValidationStyle}>
-                        <FaExclamationTriangle size={12} />
-                        {formErrors.estado}
-                      </div>
-                    )}
-                    {formSuccess.estado && (
-                      <div style={successValidationStyle}>
-                        <FaCheck size={12} />
-                        {formSuccess.estado}
-                      </div>
-                    )}
+                {/* Botón Toggle para Estado */}
+                <div style={{ gridColumn: '1 / -1', marginBottom: '15px' }}>
+                  <label style={labelStyle}>
+                    Estado del Producto
+                    <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <button
+                      type="button"
+                      onClick={toggleEstado}
+                      style={toggleButtonStyle(newProducto.estado)}
+                      disabled={loading}
+                    >
+                      {newProducto.estado ? (
+                        <>
+                          <FaToggleOn size={20} />
+                          <span>🟢 Activo</span>
+                        </>
+                      ) : (
+                        <>
+                          <FaToggleOff size={20} />
+                          <span>🔴 Inactivo</span>
+                        </>
+                      )}
+                    </button>
+                    <span style={{ 
+                      fontSize: '14px', 
+                      color: newProducto.estado ? '#4caf50' : '#e57373',
+                      fontWeight: '500'
+                    }}>
+                      {newProducto.estado 
+                        ? 'El producto está activo y disponible para ventas' 
+                        : 'El producto está inactivo y no disponible para ventas'
+                      }
+                    </span>
                   </div>
-                )}
-
+                  {touchedFields.estado && formErrors.estado && (
+                    <div style={errorValidationStyle}>
+                      <FaExclamationTriangle size={12} />
+                      {formErrors.estado}
+                    </div>
+                  )}
+                  {touchedFields.estado && formSuccess.estado && (
+                    <div style={successValidationStyle}>
+                      <FaCheck size={12} />
+                      {formSuccess.estado}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Resumen del producto */}
@@ -1504,7 +1721,7 @@ const Productos = () => {
                 </div>
               )}
 
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
@@ -1516,9 +1733,9 @@ const Productos = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
+                    flex: 1
                   }}
                   onMouseOver={(e) => {
                     if (!loading && !isSubmitting) {
@@ -1533,7 +1750,7 @@ const Productos = () => {
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar" : "Guardar")} Producto
+                  {loading ? "Guardando..." : (isEditing ? "Actualizar Producto" : "Guardar Producto")}
                 </button>
                 <button
                   type="button"
@@ -1547,8 +1764,8 @@ const Productos = () => {
                     borderRadius: 10,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    flex: 1
                   }}
                 >
                   Cancelar
@@ -1562,9 +1779,9 @@ const Productos = () => {
       {/* Modal de detalles */}
       {showDetails && selectedProducto && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Producto</h2>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles del Producto</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
@@ -1574,6 +1791,7 @@ const Productos = () => {
                   fontSize: "20px",
                   cursor: "pointer",
                 }}
+                title="Cerrar"
               >
                 <FaTimes />
               </button>
@@ -1586,7 +1804,7 @@ const Productos = () => {
               </div>
               
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Nombre del Producto</div>
+                <div style={detailLabelStyle}>Nombre</div>
                 <div style={detailValueStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FaBox color="#679750" />
@@ -1594,7 +1812,7 @@ const Productos = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Categoría</div>
                 <div style={detailValueStyle}>
@@ -1626,7 +1844,7 @@ const Productos = () => {
               </div>
 
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Precio</div>
+                <div style={detailLabelStyle}>Precio Unitario</div>
                 <div style={{ ...detailValueStyle, fontWeight: 'bold' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FaDollarSign color="#679750" />
@@ -1642,22 +1860,9 @@ const Productos = () => {
                 </div>
               </div>
 
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Servicios Asociados</div>
-                <div style={detailValueStyle}>
-                  <span style={{ 
-                    backgroundColor: '#E8F5E8',
-                    color: '#2E5939',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    fontSize: '14px',
-                    fontWeight: '600'
-                  }}>
-                    {contarServiciosPorProducto(selectedProducto.idProducto)} servicios
-                  </span>
-                </div>
-              </div>
-              
+              {/* Sección de relaciones */}
+              <RelacionesSection productoId={selectedProducto.idProducto} />
+
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
@@ -1668,24 +1873,6 @@ const Productos = () => {
                   {selectedProducto.estado ? '🟢 Activo' : '🔴 Inactivo'}
                 </div>
               </div>
-
-              {/* Información sobre servicios */}
-              {contarServiciosPorProducto(selectedProducto.idProducto) > 0 && (
-                <div style={detailItemStyle}>
-                  <div style={detailLabelStyle}>Información Importante</div>
-                  <div style={{
-                    ...detailValueStyle,
-                    color: '#ff9800',
-                    fontSize: '14px',
-                    backgroundColor: '#fff3cd',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: '1px solid #ffeaa7'
-                  }}>
-                    ⚠️ Este producto tiene servicios asociados. No se puede eliminar mientras tenga servicios.
-                  </div>
-                </div>
-              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
@@ -1699,6 +1886,16 @@ const Productos = () => {
                   borderRadius: 10,
                   cursor: "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "#2E5939";
+                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 Cerrar
@@ -1717,7 +1914,6 @@ const Productos = () => {
               ¿Estás seguro de eliminar el producto "<strong>{productoToDelete.nombre}</strong>"?
             </p>
             
-            {/* Advertencia sobre valor */}
             <div style={{ 
               backgroundColor: '#fff3cd', 
               border: '1px solid #ffeaa7',
@@ -1732,6 +1928,7 @@ const Productos = () => {
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
                 Precio: {formatPrice(productoToDelete.precio)} | 
                 Cantidad: {productoToDelete.cantidad} | 
+                Estado: {productoToDelete.estado ? 'Activo' : 'Inactivo'} |
                 Categoría: {getCategoriaNombre(productoToDelete.idCategoria)} |
                 Marca: {getMarcaNombre(productoToDelete.idMarca)} |
                 Servicios: {contarServiciosPorProducto(productoToDelete.idProducto)}
@@ -1859,48 +2056,76 @@ const Productos = () => {
               ) : (
                 paginatedProductos.map((producto) => {
                   const serviciosCount = contarServiciosPorProducto(producto.idProducto);
+                  
                   return (
                     <tr key={producto.idProducto} style={{ borderBottom: "1px solid #eee" }}>
                       <td style={{ padding: "15px", fontWeight: "500" }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FaBox color="#679750" />
-                          {producto.nombre}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '8px',
+                            backgroundColor: '#E8F5E8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#679750',
+                            fontWeight: 'bold',
+                            fontSize: '14px'
+                          }}>
+                            <FaBox />
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+                              {producto.nombre}
+                            </div>
+                            <div style={{ fontSize: "13px", color: "#679750" }}>
+                              ID: #{producto.idProducto}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td style={{ padding: "15px" }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FaTag color="#679750" />
+                          <FaTag color="#679750" size={14} />
                           {getCategoriaNombre(producto.idCategoria)}
                         </div>
                       </td>
                       <td style={{ padding: "15px" }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FaShoppingCart color="#679750" />
+                          <FaShoppingCart color="#679750" size={14} />
                           {getMarcaNombre(producto.idMarca)}
                         </div>
                       </td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>{producto.cantidad}</td>
-                      <td style={{ padding: "15px", textAlign: "right" }}>{formatPrice(producto.precio)}</td>
+                      <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>
+                        {producto.cantidad}
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "right" }}>
+                        {formatPrice(producto.precio)}
+                      </td>
                       <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
                         {formatPrice(producto.precio * producto.cantidad)}
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
-                        <span style={{ 
-                          backgroundColor: serviciosCount > 0 ? '#E8F5E8' : '#F7F4EA',
-                          color: serviciosCount > 0 ? '#2E5939' : '#666',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '500'
-                        }}>
-                          {serviciosCount} servicios
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                          <span style={{ 
+                            backgroundColor: serviciosCount > 0 ? '#E8F5E8' : '#F7F4EA',
+                            color: serviciosCount > 0 ? '#2E5939' : '#666',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}>
+                            {serviciosCount} servicios
+                          </span>
+                        </div>
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
                         <button
                           onClick={() => toggleEstadoProducto(producto)}
+                          disabled={loading}
                           style={{
-                            cursor: "pointer",
+                            cursor: loading ? "not-allowed" : "pointer",
                             padding: "6px 12px",
                             borderRadius: "20px",
                             border: "none",
@@ -1908,39 +2133,53 @@ const Productos = () => {
                             color: "white",
                             fontWeight: "600",
                             fontSize: "12px",
-                            minWidth: "80px"
+                            minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
                           }}
                         >
                           {producto.estado ? "Activo" : "Inactivo"}
                         </button>
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
-                        <button
-                          onClick={() => handleView(producto)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Ver Detalles"
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(producto)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(producto); }}
-                          style={{
-                            ...btnAccion("#fbe9e7", "#e57373"),
-                            opacity: serviciosCount > 0 ? 0.5 : 1,
-                            cursor: serviciosCount > 0 ? "not-allowed" : "pointer"
-                          }}
-                          title={serviciosCount > 0 ? "No se puede eliminar - Tiene servicios asociados" : "Eliminar"}
-                          disabled={serviciosCount > 0}
-                        >
-                          <FaTrash />
-                        </button>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => handleView(producto)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Ver Detalles"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(producto)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar Producto"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(producto); }}
+                            style={{
+                              ...btnAccion("#fbe9e7", "#e57373"),
+                              opacity: serviciosCount > 0 ? 0.5 : 1,
+                              cursor: serviciosCount > 0 ? "not-allowed" : "pointer"
+                            }}
+                            title={serviciosCount > 0 ? "No se puede eliminar - Tiene servicios asociados" : "Eliminar Producto"}
+                            disabled={serviciosCount > 0}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1968,6 +2207,7 @@ const Productos = () => {
                 key={page}
                 onClick={() => goToPage(page)}
                 style={pageBtnStyle(currentPage === page)}
+                aria-current={currentPage === page ? "page" : undefined}
               >
                 {page}
               </button>
@@ -1980,76 +2220,6 @@ const Productos = () => {
           >
             Siguiente
           </button>
-        </div>
-      )}
-
-      {/* Estadísticas */}
-      {!loading && productos.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px'
-        }}>
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {productos.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Productos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {productos.filter(p => p.estado).length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Productos Activos
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {productos.reduce((sum, prod) => sum + prod.cantidad, 0)}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Total Unidades
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPrice(productos.reduce((sum, prod) => sum + (prod.precio * prod.cantidad), 0))}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Valor Total
-            </div>
-          </div>
         </div>
       )}
     </div>

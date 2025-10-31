@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaUserShield } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaUserShield, FaFilter, FaSync } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -211,6 +211,41 @@ const errorValidationStyle = {
 const warningValidationStyle = {
   ...validationMessageStyle,
   color: "#ff9800"
+};
+
+// ===============================================
+// ESTILOS PARA FILTROS
+// ===============================================
+const filterSectionStyle = {
+  backgroundColor: '#fff',
+  borderRadius: '10px',
+  padding: '20px',
+  marginBottom: '20px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  border: '1px solid #e0e0e0'
+};
+
+const filterHeaderStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: '15px',
+  paddingBottom: '10px',
+  borderBottom: '2px solid #679750'
+};
+
+const filterGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  gap: '15px',
+  marginBottom: '15px'
+};
+
+const filterButtonGroupStyle = {
+  display: 'flex',
+  gap: '10px',
+  justifyContent: 'flex-end',
+  flexWrap: 'wrap'
 };
 
 // ===============================================
@@ -446,7 +481,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Rol CON ESTILOS MEJORADOS
+// COMPONENTE PRINCIPAL Rol CON FILTROS MEJORADOS
 // ===============================================
 const Rol = () => {
   const [roles, setRoles] = useState([]);
@@ -468,6 +503,16 @@ const Rol = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({}); // Nuevo estado para campos tocados
+
+  // Estados para filtros
+  const [filters, setFilters] = useState({
+    estado: "",
+    fechaInicio: "",
+    fechaFin: "",
+    ordenarPor: "nombre",
+    orden: "asc"
+  });
+  const [showFilters, setShowFilters] = useState(false);
 
   const [newItem, setNewItem] = useState({
     nombreRol: "",
@@ -797,6 +842,35 @@ const Rol = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS
+  // ===============================================
+  const handleFilterChange = (name, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1); // Resetear a primera página al cambiar filtros
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "",
+      fechaInicio: "",
+      fechaFin: "",
+      ordenarPor: "nombre",
+      orden: "asc"
+    });
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
+  const applyFilters = () => {
+    setCurrentPage(1);
+    setShowFilters(false);
+    displayAlert("Filtros aplicados correctamente", "success");
+  };
+
+  // ===============================================
   // FUNCIONES AUXILIARES
   // ===============================================
   const handleApiError = (error, operation) => {
@@ -896,14 +970,51 @@ const Rol = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredItems = useMemo(() => {
-    return roles.filter((item) =>
+    let filtered = roles.filter((item) =>
       item.nombreRol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [roles, searchTerm]);
+
+    // Aplicar filtros de estado
+    if (filters.estado !== "") {
+      const estadoFilter = filters.estado === "true";
+      filtered = filtered.filter(item => item.estado === estadoFilter);
+    }
+
+    // Aplicar ordenamiento
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (filters.ordenarPor) {
+        case "nombre":
+          aValue = a.nombreRol?.toLowerCase() || "";
+          bValue = b.nombreRol?.toLowerCase() || "";
+          break;
+        case "estado":
+          aValue = a.estado;
+          bValue = b.estado;
+          break;
+        case "id":
+          aValue = a.idRol;
+          bValue = b.idRol;
+          break;
+        default:
+          aValue = a.nombreRol?.toLowerCase() || "";
+          bValue = b.nombreRol?.toLowerCase() || "";
+      }
+
+      if (filters.orden === "asc") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+
+    return filtered;
+  }, [roles, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
 
@@ -1000,48 +1111,68 @@ const Rol = () => {
             {roles.length} roles registrados • {roles.filter(r => r.estado).length} activos
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setIsEditing(false);
-            setFormErrors({});
-            setFormSuccess({});
-            setFormWarnings({});
-            setTouchedFields({}); // Limpiar campos tocados al abrir
-            setNewItem({
-              nombreRol: "",
-              descripcion: "",
-              estado: true
-            });
-          }}
-          style={{
-            backgroundColor: "#2E5939",
-            color: "white",
-            padding: "12px 20px",
-            border: "none",
-            borderRadius: 10,
-            cursor: "pointer",
-            fontWeight: "600",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease",
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-            e.target.style.transform = "translateY(-2px)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#2E5939";
-            e.target.style.transform = "translateY(0)";
-          }}
-        >
-          <FaPlus /> Agregar Rol
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            style={{
+              backgroundColor: "#679750",
+              color: "white",
+              padding: "10px 16px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <FaFilter /> Filtros
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              setFormErrors({});
+              setFormSuccess({});
+              setFormWarnings({});
+              setTouchedFields({}); // Limpiar campos tocados al abrir
+              setNewItem({
+                nombreRol: "",
+                descripcion: "",
+                estado: true
+              });
+            }}
+            style={{
+              backgroundColor: "#2E5939",
+              color: "white",
+              padding: "10px 16px",
+              border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              fontWeight: "600",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+              transition: "all 0.3s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+              e.target.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#2E5939";
+              e.target.style.transform = "translateY(0)";
+            }}
+          >
+            <FaPlus /> Agregar Rol
+          </button>
+        </div>
       </div>
 
-      {/* Estadísticas - COLOCADAS ENTRE EL HEADER Y LA BARRA DE BÚSQUEDA */}
+      {/* Estadísticas */}
       {!loading && roles.length > 0 && (
         <div style={{
           marginBottom: '20px',
@@ -1093,33 +1224,265 @@ const Rol = () => {
               Roles Inactivos
             </div>
           </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '15px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+              {filteredItems.length}
+            </div>
+            <div style={{ fontSize: '14px', color: '#679750' }}>
+              Resultados Filtrados
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Barra de búsqueda - SIMPLIFICADA */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o descripción..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            }}
-          />
+      {/* Sección de Filtros */}
+      {showFilters && (
+        <div style={filterSectionStyle}>
+          <div style={filterHeaderStyle}>
+            <h3 style={{ margin: 0, color: "#2E5939", display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FaFilter />
+              Filtros de Búsqueda
+            </h3>
+            <button
+              onClick={() => setShowFilters(false)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#2E5939",
+                fontSize: "16px",
+                cursor: "pointer",
+              }}
+              title="Cerrar filtros"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          <div style={filterGridStyle}>
+            {/* Filtro por Estado */}
+            <div>
+              <label style={labelStyle}>Estado</label>
+              <select
+                value={filters.estado}
+                onChange={(e) => handleFilterChange('estado', e.target.value)}
+                style={inputStyle}
+              >
+                <option value="">Todos los estados</option>
+                <option value="true">🟢 Activo</option>
+                <option value="false">🔴 Inactivo</option>
+              </select>
+            </div>
+
+            {/* Ordenar por */}
+            <div>
+              <label style={labelStyle}>Ordenar por</label>
+              <select
+                value={filters.ordenarPor}
+                onChange={(e) => handleFilterChange('ordenarPor', e.target.value)}
+                style={inputStyle}
+              >
+                <option value="nombre">Nombre</option>
+                <option value="estado">Estado</option>
+                <option value="id">ID</option>
+              </select>
+            </div>
+
+            {/* Dirección del orden */}
+            <div>
+              <label style={labelStyle}>Orden</label>
+              <select
+                value={filters.orden}
+                onChange={(e) => handleFilterChange('orden', e.target.value)}
+                style={inputStyle}
+              >
+                <option value="asc">Ascendente (A-Z)</option>
+                <option value="desc">Descendente (Z-A)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Barra de búsqueda */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={labelStyle}>Buscar en nombre o descripción</label>
+            <div style={{ position: "relative" }}>
+              <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o descripción..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: "12px 12px 12px 40px",
+                  borderRadius: 10,
+                  border: "1px solid #ccc",
+                  width: "100%",
+                  backgroundColor: "#F7F4EA",
+                  color: "#2E5939",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Botones de acción de filtros */}
+          <div style={filterButtonGroupStyle}>
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "#6c757d",
+                color: "white",
+                padding: "10px 16px",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <FaSync /> Limpiar Filtros
+            </button>
+            <button
+              onClick={applyFilters}
+              style={{
+                backgroundColor: "#2E5939",
+                color: "white",
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <FaFilter /> Aplicar Filtros
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Barra de búsqueda básica (cuando los filtros están ocultos) */}
+      {!showFilters && (
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ position: "relative", maxWidth: 500 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o descripción..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Indicador de filtros activos */}
+      {(searchTerm || filters.estado !== "" || filters.ordenarPor !== "nombre" || filters.orden !== "asc") && (
+        <div style={{
+          backgroundColor: '#e3f2fd',
+          border: '1px solid #90caf9',
+          borderRadius: '8px',
+          padding: '10px 15px',
+          marginBottom: '15px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <FaInfoCircle color="#1976d2" />
+            <span style={{ color: '#1976d2', fontWeight: '600' }}>Filtros activos:</span>
+            {searchTerm && (
+              <span style={{
+                backgroundColor: '#bbdefb',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                color: '#0d47a1'
+              }}>
+                Búsqueda: "{searchTerm}"
+              </span>
+            )}
+            {filters.estado !== "" && (
+              <span style={{
+                backgroundColor: '#bbdefb',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                color: '#0d47a1'
+              }}>
+                Estado: {filters.estado === "true" ? "Activo" : "Inactivo"}
+              </span>
+            )}
+            {filters.ordenarPor !== "nombre" && (
+              <span style={{
+                backgroundColor: '#bbdefb',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                color: '#0d47a1'
+              }}>
+                Ordenado por: {filters.ordenarPor}
+              </span>
+            )}
+            {filters.orden !== "asc" && (
+              <span style={{
+                backgroundColor: '#bbdefb',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                color: '#0d47a1'
+              }}>
+                Orden: {filters.orden === "asc" ? "Ascendente" : "Descendente"}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={clearFilters}
+            style={{
+              backgroundColor: 'transparent',
+              border: '1px solid #1976d2',
+              color: '#1976d2',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}
+          >
+            Limpiar
+          </button>
+        </div>
+      )}
+
+      {/* Resto del código (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
+      {/* ... (El resto del código permanece igual que en tu versión original) */}
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -1477,7 +1840,28 @@ const Rol = () => {
               {paginatedItems.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {roles.length === 0 ? "No hay roles registrados" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {roles.length === 0 ? "No hay roles registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {roles.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Rol
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
