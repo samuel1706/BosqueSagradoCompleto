@@ -1,5 +1,5 @@
 // src/components/Cabins.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaChair, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaUsers, FaDollarSign } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaChair, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaUsers, FaDollarSign, FaSlidersH } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 
@@ -295,39 +295,6 @@ const galleryImageStyle = {
 };
 
 // ===============================================
-// ESTILOS PARA FILTROS
-// ===============================================
-const filterContainerStyle = {
-  backgroundColor: '#fff',
-  padding: '20px',
-  borderRadius: '10px',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  marginBottom: '20px',
-  border: '1px solid #E8F5E8'
-};
-
-const filterGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-  gap: '15px',
-  alignItems: 'end'
-};
-
-const filterButtonStyle = {
-  backgroundColor: '#2E5939',
-  color: 'white',
-  padding: '10px 15px',
-  border: 'none',
-  borderRadius: '8px',
-  cursor: 'pointer',
-  fontWeight: '600',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  transition: 'all 0.3s ease'
-};
-
-// ===============================================
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
@@ -408,14 +375,14 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_CABANAS = "http://localhost:5018/api/Cabanas";
-const API_SEDES = "http://localhost:5018/api/Sede";
-const API_TEMPORADAS = "http://localhost:5018/api/Temporada";
-const API_TIPOS_CABANA = "http://localhost:5018/api/TipoCabana";
-const API_COMODIDADES = "http://localhost:5018/api/Comodidades";
-const API_CABANA_COMODIDADES = "http://localhost:5018/api/CabanaPorComodidades";
-const API_RESERVAS = "http://localhost:5018/api/Reserva";
-const API_IMAGENES = "http://localhost:5018/api/ImgCabana";
+const API_CABANAS = "http://localhost:5272/api/Cabanas";
+const API_SEDES = "http://localhost:5272/api/Sede";
+const API_TEMPORADAS = "http://localhost:5272/api/Temporada";
+const API_TIPOS_CABANA = "http://localhost:5272/api/TipoCabana";
+const API_COMODIDADES = "http://localhost:5272/api/Comodidades";
+const API_CABANA_COMODIDADES = "http://localhost:5272/api/CabanaPorComodidades";
+const API_RESERVAS = "http://localhost:5272/api/Reservas";
+const API_IMAGENES = "http://localhost:5272/api/ImgCabana";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -662,6 +629,7 @@ const Cabins = () => {
   // ===============================================
   // FILTROS MEJORADOS
   // ===============================================
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     sede: '',
     tipo: '',
@@ -729,6 +697,17 @@ const Cabins = () => {
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
     `;
     document.head.appendChild(style);
@@ -912,11 +891,13 @@ const Cabins = () => {
   // ===============================================
   // FUNCIONES DE FILTRADO MEJORADAS
   // ===============================================
-  const handleFilterChange = (filterName, value) => {
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
-      [filterName]: value
+      [name]: value
     }));
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -929,9 +910,21 @@ const Cabins = () => {
       capacidadMin: '',
       capacidadMax: ''
     });
-    setSearchTerm("");
     setCurrentPage(1);
   };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.sede) count++;
+    if (filters.tipo) count++;
+    if (filters.estado !== '') count++;
+    if (filters.precioMin) count++;
+    if (filters.precioMax) count++;
+    if (filters.capacidadMin) count++;
+    if (filters.capacidadMax) count++;
+    return count;
+  }, [filters]);
 
   // Función para verificar si una cabaña tiene reservas activas
   const tieneReservasActivas = (cabanaId) => {
@@ -1330,7 +1323,7 @@ const Cabins = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1731,77 +1724,102 @@ const Cabins = () => {
       {/* Estadísticas */}
       {!loading && cabins.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {cabins.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Cabañas
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {cabins.filter(c => c.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Cabañas Activas
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {cabins.filter(c => !c.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Cabañas Inactivas
             </div>
           </div>
-          
+
           <div style={{
-            backgroundColor: '#ffe0e0',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ff8a8a'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e57373' }}>
-              {cabins.filter(c => tieneReservasActivas(c.idCabana)).length}
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredCabins.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#e57373' }}>
-              Con Reservas Activas
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda y Filtros */}
-      <div style={filterContainerStyle}>
-        <div style={{ marginBottom: '15px' }}>
-          <div style={{ position: "relative", maxWidth: 500 }}>
+      {/* Barra de búsqueda y filtros - MEJORADO CON BOTÓN AL LADO */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
             <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
             <input
               type="text"
@@ -1822,210 +1840,259 @@ const Cabins = () => {
               }}
             />
           </div>
-        </div>
 
-        <div style={filterGridStyle}>
-          {/* Filtro por Sede */}
-          <div>
-            <label style={labelStyle}>Sede</label>
-            <select
-              value={filters.sede}
-              onChange={(e) => handleFilterChange('sede', e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Todas las sedes</option>
-              {sedes.map(sede => (
-                <option key={sede.idSede} value={sede.idSede}>
-                  {sede.nombreSede}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            style={{
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
+            }}
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
 
-          {/* Filtro por Tipo */}
-          <div>
-            <label style={labelStyle}>Tipo de Cabaña</label>
-            <select
-              value={filters.tipo}
-              onChange={(e) => handleFilterChange('tipo', e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Todos los tipos</option>
-              {tiposCabana.map(tipo => (
-                <option key={tipo.idTipoCabana} value={tipo.idTipoCabana}>
-                  {tipo.nombreTipoCabana}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro por Estado */}
-          <div>
-            <label style={labelStyle}>Estado</label>
-            <select
-              value={filters.estado}
-              onChange={(e) => handleFilterChange('estado', e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Todos los estados</option>
-              <option value="true">Activas</option>
-              <option value="false">Inactivas</option>
-            </select>
-          </div>
-
-          {/* Filtro por Precio Mínimo */}
-          <div>
-            <label style={labelStyle}>Precio Mínimo</label>
-            <div style={{ position: 'relative' }}>
-              <FaDollarSign style={{ 
-                position: "absolute", 
-                left: 12, 
-                top: "50%", 
-                transform: "translateY(-50%)", 
-                color: "#2E5939",
-                fontSize: '14px'
-              }} />
-              <input
-                type="number"
-                placeholder="0.00"
-                value={filters.precioMin}
-                onChange={(e) => handleFilterChange('precioMin', e.target.value)}
-                style={{
-                  ...inputStyle,
-                  paddingLeft: '30px'
-                }}
-                min="0"
-                step="0.01"
-              />
-            </div>
-          </div>
-
-          {/* Filtro por Precio Máximo */}
-          <div>
-            <label style={labelStyle}>Precio Máximo</label>
-            <div style={{ position: 'relative' }}>
-              <FaDollarSign style={{ 
-                position: "absolute", 
-                left: 12, 
-                top: "50%", 
-                transform: "translateY(-50%)", 
-                color: "#2E5939",
-                fontSize: '14px'
-              }} />
-              <input
-                type="number"
-                placeholder="10000.00"
-                value={filters.precioMax}
-                onChange={(e) => handleFilterChange('precioMax', e.target.value)}
-                style={{
-                  ...inputStyle,
-                  paddingLeft: '30px'
-                }}
-                min="0"
-                step="0.01"
-              />
-            </div>
-          </div>
-
-          {/* Filtro por Capacidad Mínima */}
-          <div>
-            <label style={labelStyle}>Capacidad Mínima</label>
-            <div style={{ position: 'relative' }}>
-              <FaUsers style={{ 
-                position: "absolute", 
-                left: 12, 
-                top: "50%", 
-                transform: "translateY(-50%)", 
-                color: "#2E5939",
-                fontSize: '14px'
-              }} />
-              <input
-                type="number"
-                placeholder="1"
-                value={filters.capacidadMin}
-                onChange={(e) => handleFilterChange('capacidadMin', e.target.value)}
-                style={{
-                  ...inputStyle,
-                  paddingLeft: '30px'
-                }}
-                min="1"
-                max="20"
-              />
-            </div>
-          </div>
-
-          {/* Filtro por Capacidad Máxima */}
-          <div>
-            <label style={labelStyle}>Capacidad Máxima</label>
-            <div style={{ position: 'relative' }}>
-              <FaUsers style={{ 
-                position: "absolute", 
-                left: 12, 
-                top: "50%", 
-                transform: "translateY(-50%)", 
-                color: "#2E5939",
-                fontSize: '14px'
-              }} />
-              <input
-                type="number"
-                placeholder="20"
-                value={filters.capacidadMax}
-                onChange={(e) => handleFilterChange('capacidadMax', e.target.value)}
-                style={{
-                  ...inputStyle,
-                  paddingLeft: '30px'
-                }}
-                min="1"
-                max="20"
-              />
-            </div>
-          </div>
-
-          {/* Botón Limpiar Filtros */}
-          <div>
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
             <button
               onClick={clearFilters}
               style={{
-                ...filterButtonStyle,
-                backgroundColor: '#6c757d'
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#5a6268';
-                e.target.style.transform = "translateY(-2px)";
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = '#6c757d';
-                e.target.style.transform = "translateY(0)";
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
               }}
             >
-              <FaTimes /> Limpiar Filtros
+              Limpiar Filtros
             </button>
-          </div>
+          )}
         </div>
 
-        {/* Mostrar filtros activos */}
-        {(filters.sede || filters.tipo || filters.estado !== '' || filters.precioMin || filters.precioMax || filters.capacidadMin || filters.capacidadMax) && (
-          <div style={{ 
-            marginTop: '15px', 
-            padding: '10px',
-            backgroundColor: '#E8F5E8',
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
             borderRadius: '8px',
-            fontSize: '14px',
-            color: '#2E5939'
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
           }}>
-            <strong>Filtros activos:</strong> 
-            {filters.sede && ` Sede: ${getSedeNombre(parseInt(filters.sede))}`}
-            {filters.tipo && ` Tipo: ${getTipoCabanaNombre(parseInt(filters.tipo))}`}
-            {filters.estado !== '' && ` Estado: ${filters.estado === 'true' ? 'Activas' : 'Inactivas'}`}
-            {filters.precioMin && ` Precio mínimo: ${formatPrecio(parseFloat(filters.precioMin))}`}
-            {filters.precioMax && ` Precio máximo: ${formatPrecio(parseFloat(filters.precioMax))}`}
-            {filters.capacidadMin && ` Capacidad mínima: ${filters.capacidadMin} personas`}
-            {filters.capacidadMax && ` Capacidad máxima: ${filters.capacidadMax} personas`}
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por sede */}
+              <div>
+                <label style={labelStyle}>Sede</label>
+                <select
+                  name="sede"
+                  value={filters.sede}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="">Todas las sedes</option>
+                  {sedes.map(sede => (
+                    <option key={sede.idSede} value={sede.idSede}>
+                      {sede.nombreSede}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por tipo */}
+              <div>
+                <label style={labelStyle}>Tipo de Cabaña</label>
+                <select
+                  name="tipo"
+                  value={filters.tipo}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="">Todos los tipos</option>
+                  {tiposCabana.map(tipo => (
+                    <option key={tipo.idTipoCabana} value={tipo.idTipoCabana}>
+                      {tipo.nombreTipoCabana}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="true">Activas</option>
+                  <option value="false">Inactivas</option>
+                </select>
+              </div>
+
+              {/* Filtro por precio mínimo */}
+              <div>
+                <label style={labelStyle}>Precio Mínimo</label>
+                <div style={{ position: 'relative' }}>
+                  <FaDollarSign style={{ 
+                    position: "absolute", 
+                    left: 12, 
+                    top: "50%", 
+                    transform: "translateY(-50%)", 
+                    color: "#2E5939",
+                    fontSize: '14px'
+                  }} />
+                  <input
+                    type="number"
+                    name="precioMin"
+                    placeholder="0.00"
+                    value={filters.precioMin}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '30px'
+                    }}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Filtro por precio máximo */}
+              <div>
+                <label style={labelStyle}>Precio Máximo</label>
+                <div style={{ position: 'relative' }}>
+                  <FaDollarSign style={{ 
+                    position: "absolute", 
+                    left: 12, 
+                    top: "50%", 
+                    transform: "translateY(-50%)", 
+                    color: "#2E5939",
+                    fontSize: '14px'
+                  }} />
+                  <input
+                    type="number"
+                    name="precioMax"
+                    placeholder="10000.00"
+                    value={filters.precioMax}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '30px'
+                    }}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Filtro por capacidad mínima */}
+              <div>
+                <label style={labelStyle}>Capacidad Mínima</label>
+                <div style={{ position: 'relative' }}>
+                  <FaUsers style={{ 
+                    position: "absolute", 
+                    left: 12, 
+                    top: "50%", 
+                    transform: "translateY(-50%)", 
+                    color: "#2E5939",
+                    fontSize: '14px'
+                  }} />
+                  <input
+                    type="number"
+                    name="capacidadMin"
+                    placeholder="1"
+                    value={filters.capacidadMin}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '30px'
+                    }}
+                    min="1"
+                    max="20"
+                  />
+                </div>
+              </div>
+
+              {/* Filtro por capacidad máxima */}
+              <div>
+                <label style={labelStyle}>Capacidad Máxima</label>
+                <div style={{ position: 'relative' }}>
+                  <FaUsers style={{ 
+                    position: "absolute", 
+                    left: 12, 
+                    top: "50%", 
+                    transform: "translateY(-50%)", 
+                    color: "#2E5939",
+                    fontSize: '14px'
+                  }} />
+                  <input
+                    type="number"
+                    name="capacidadMax"
+                    placeholder="20"
+                    value={filters.capacidadMax}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '30px'
+                    }}
+                    min="1"
+                    max="20"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredCabins.length !== cabins.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredCabins.length} de {cabins.length} cabañas
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
           </div>
         )}
       </div>
 
-      {/* Formulario de agregar/editar */}
+      {/* Formulario de agregar/editar - CON ORDEN CORREGIDO */}
       {showForm && (
         <div style={modalOverlayStyle}>
           <div style={{...modalContentStyle, maxWidth: 700}}>
@@ -2051,45 +2118,7 @@ const Cabins = () => {
             
             <form onSubmit={handleAddCabin}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <FormField
-                    label="Nombre de la Cabaña"
-                    name="nombre"
-                    value={newCabin.nombre}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.nombre}
-                    success={formSuccess.nombre}
-                    warning={formWarnings.nombre}
-                    required={true}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.nombre.maxLength}
-                    showCharCount={true}
-                    placeholder="Ej: Mykonos, Paraíso, Cabaña Familiar"
-                    touched={touchedFields.nombre}
-                  />
-                </div>
-                
-                <FormField
-                  label="Tipo de Cabaña"
-                  name="idTipoCabana"
-                  type="select"
-                  value={newCabin.idTipoCabana}
-                  onChange={handleInputChange}
-                  onBlur={handleInputBlur}
-                  error={formErrors.idTipoCabana}
-                  success={formSuccess.idTipoCabana}
-                  warning={formWarnings.idTipoCabana}
-                  options={tiposCabana.map(tipo => ({ 
-                    value: tipo.idTipoCabana.toString(), 
-                    label: tipo.nombreTipoCabana 
-                  }))}
-                  required={true}
-                  disabled={loadingTiposCabana || tiposCabana.length === 0}
-                  placeholder="Selecciona un tipo"
-                  touched={touchedFields.idTipoCabana}
-                />
-                
+                {/* ORDEN CORREGIDO: Sede primero */}
                 <FormField
                   label="Sede"
                   name="idSede"
@@ -2110,6 +2139,70 @@ const Cabins = () => {
                   touched={touchedFields.idSede}
                 />
 
+                {/* Tipo de Cabaña */}
+                <FormField
+                  label="Tipo de Cabaña"
+                  name="idTipoCabana"
+                  type="select"
+                  value={newCabin.idTipoCabana}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  error={formErrors.idTipoCabana}
+                  success={formSuccess.idTipoCabana}
+                  warning={formWarnings.idTipoCabana}
+                  options={tiposCabana.map(tipo => ({ 
+                    value: tipo.idTipoCabana.toString(), 
+                    label: tipo.nombreTipoCabana 
+                  }))}
+                  required={true}
+                  disabled={loadingTiposCabana || tiposCabana.length === 0}
+                  placeholder="Selecciona un tipo"
+                  touched={touchedFields.idTipoCabana}
+                />
+
+                {/* Nombre - Ahora ocupa toda la fila */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Nombre de la Cabaña"
+                    name="nombre"
+                    value={newCabin.nombre}
+                    onChange={handleInputChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.nombre}
+                    success={formSuccess.nombre}
+                    warning={formWarnings.nombre}
+                    required={true}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.nombre.maxLength}
+                    showCharCount={true}
+                    placeholder="Ej: Mykonos, Paraíso, Cabaña Familiar"
+                    touched={touchedFields.nombre}
+                  />
+                </div>
+
+                {/* Descripción - Ahora ocupa toda la fila */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Descripción de la Cabaña"
+                    name="descripcion"
+                    value={newCabin.descripcion}
+                    onChange={handleInputChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.descripcion}
+                    success={formSuccess.descripcion}
+                    warning={formWarnings.descripcion}
+                    required={true}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.descripcion.maxLength}
+                    showCharCount={true}
+                    placeholder="Describe las características, ubicación, vistas y comodidades especiales de la cabaña..."
+                    touched={touchedFields.descripcion}
+                    textarea={true}
+                    rows={4}
+                  />
+                </div>
+
+                {/* Resto de campos */}
                 <FormField
                   label="Temporada"
                   name="idTemporada"
@@ -2212,28 +2305,6 @@ const Cabins = () => {
                     )}
                   </div>
                 </div>
-              </div>
-
-              {/* Descripción */}
-              <div style={{ marginBottom: '20px' }}>
-                <FormField
-                  label="Descripción de la Cabaña"
-                  name="descripcion"
-                  value={newCabin.descripcion}
-                  onChange={handleInputChange}
-                  onBlur={handleInputBlur}
-                  error={formErrors.descripcion}
-                  success={formSuccess.descripcion}
-                  warning={formWarnings.descripcion}
-                  required={true}
-                  disabled={loading}
-                  maxLength={VALIDATION_RULES.descripcion.maxLength}
-                  showCharCount={true}
-                  placeholder="Describe las características, ubicación, vistas y comodidades especiales de la cabaña..."
-                  touched={touchedFields.descripcion}
-                  textarea={true}
-                  rows={4}
-                />
               </div>
 
               {/* Gestión de Imágenes */}
@@ -2452,6 +2523,7 @@ const Cabins = () => {
         </div>
       )}
 
+      {/* Resto del código permanece igual (Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
       {/* Modal de detalles */}
       {showDetails && currentCabin && (
         <div style={modalOverlayStyle}>

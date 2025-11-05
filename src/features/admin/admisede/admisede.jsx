@@ -1,6 +1,6 @@
 // src/components/Admisede.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt, FaBox, FaList } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt, FaBox, FaList, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -287,10 +287,10 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_SEDES = "http://localhost:5018/api/Sede";
-const API_PAQUETES = "http://localhost:5018/api/Paquetes";
-const API_SEDE_POR_PAQUETE = "http://localhost:5018/api/SedePorPaquete";
-const API_SEDES_POR_SERVICIO = "http://localhost:5018/api/SedePorServicio";
+const API_SEDES = "http://localhost:5272/api/Sede";
+const API_PAQUETES = "http://localhost:5272/api/Paquetes";
+const API_SEDE_POR_PAQUETE = "http://localhost:5272/api/SedePorPaquete";
+const API_SEDES_POR_SERVICIO = "http://localhost:5272/api/SedePorServicio";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -557,7 +557,7 @@ const SelectorPaquetes = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Admisede CON GESTIÓN DE PAQUETES
+// COMPONENTE PRINCIPAL Admisede CON GESTIÓN DE PAQUETES Y FILTROS MEJORADOS
 // ===============================================
 const Admisede = () => {
   const [sedes, setSedes] = useState([]);
@@ -585,6 +585,14 @@ const Admisede = () => {
 
   // Estados para selección múltiple de paquetes
   const [paquetesSeleccionados, setPaquetesSeleccionados] = useState([]);
+
+  // Estados para filtros - MEJORADO COMO EN ROLES
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    fechaDesde: "",
+    fechaHasta: ""
+  });
 
   const [newItem, setNewItem] = useState({
     nombreSede: "",
@@ -625,6 +633,17 @@ const Admisede = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -847,6 +866,36 @@ const Admisede = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN ROLES
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      fechaDesde: "",
+      fechaHasta: ""
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.fechaDesde) count++;
+    if (filters.fechaHasta) count++;
+    return count;
+  }, [filters]);
+
+  // ===============================================
   // FUNCIONES CRUD PARA SEDES
   // ===============================================
   const handleAddSede = async (e) => {
@@ -992,7 +1041,7 @@ const Admisede = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1089,15 +1138,29 @@ const Admisede = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredItems = useMemo(() => {
-    return sedes.filter((item) =>
-      item.nombreSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.ubicacionSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.celular?.includes(searchTerm)
-    );
-  }, [sedes, searchTerm]);
+    let filtered = sedes.filter(item => {
+      // Búsqueda general
+      const matchesSearch = 
+        item.nombreSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.ubicacionSede?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.celular?.includes(searchTerm);
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (item.estado !== estadoFilter) return false;
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [sedes, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
 
@@ -1244,96 +1307,241 @@ const Admisede = () => {
       {/* Estadísticas */}
       {!loading && sedes.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {sedes.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Sedes
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {sedes.filter(s => s.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Sedes Activas
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {sedes.filter(s => !s.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Sedes Inactivas
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedePorPaquete.length}
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredItems.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Relaciones Activas
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, ubicación o celular..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN ROLES */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, ubicación o celular..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activas</option>
+                  <option value="inactivo">Inactivas</option>
+                </select>
+              </div>
+
+              {/* Filtro por fecha de creación */}
+              <div>
+                <label style={labelStyle}>Fecha Creación Desde</label>
+                <input
+                  type="date"
+                  name="fechaDesde"
+                  value={filters.fechaDesde}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Fecha Creación Hasta</label>
+                <input
+                  type="date"
+                  name="fechaHasta"
+                  value={filters.fechaHasta}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredItems.length !== sedes.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredItems.length} de {sedes.length} sedes
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
 
       {/* Formulario de agregar/editar */}
@@ -1754,7 +1962,50 @@ const Admisede = () => {
               {paginatedItems.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {sedes.length === 0 ? "No hay sedes registradas" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {sedes.length === 0 ? "No hay sedes registradas" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
+                      {sedes.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primera Sede
+                        </button>
+                      )}
+                      {sedes.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -1762,7 +2013,10 @@ const Admisede = () => {
                   const paquetesAsociados = getPaquetesDeLaSede(item.idSede);
                   
                   return (
-                    <tr key={item.idSede} style={{ borderBottom: "1px solid #eee" }}>
+                    <tr key={item.idSede} style={{ 
+                      borderBottom: "1px solid #eee",
+                      backgroundColor: item.estado ? '#fff' : '#f9f9f9'
+                    }}>
                       <td style={{ padding: "15px", fontWeight: "500" }}>{item.nombreSede}</td>
                       <td style={{ padding: "15px" }}>
                         {item.ubicacionSede?.length > 50 
@@ -1781,8 +2035,9 @@ const Admisede = () => {
                       <td style={{ padding: "15px", textAlign: "center" }}>
                         <button
                           onClick={() => toggleEstado(item)}
+                          disabled={loading}
                           style={{
-                            cursor: "pointer",
+                            cursor: loading ? "not-allowed" : "pointer",
                             padding: "6px 12px",
                             borderRadius: "20px",
                             border: "none",
@@ -1791,13 +2046,18 @@ const Admisede = () => {
                             fontWeight: "600",
                             fontSize: "12px",
                             minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
                             transition: "all 0.3s ease",
                           }}
                           onMouseOver={(e) => {
-                            e.target.style.transform = "scale(1.05)";
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
                           }}
                           onMouseOut={(e) => {
-                            e.target.style.transform = "scale(1)";
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
                           }}
                         >
                           {item.estado ? "Activa" : "Inactiva"}
@@ -1839,7 +2099,7 @@ const Admisede = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -1847,19 +2107,33 @@ const Admisede = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-                aria-current={currentPage === page ? "page" : undefined}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -1867,6 +2141,15 @@ const Admisede = () => {
           >
             Siguiente
           </button>
+          
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
+          }}>
+            Página {currentPage} de {totalPages}
+          </div>
         </div>
       )}
     </div>

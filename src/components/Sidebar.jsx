@@ -21,7 +21,8 @@ import {
   FaSignOutAlt,
   FaUserCircle,
   FaCalendarAlt,
-  FaCalendar
+  FaCalendar,
+  FaShoppingBag, // 🆕 Icono para Ventas
 } from "react-icons/fa";
 import "./Sidebar.css";
 
@@ -54,7 +55,7 @@ function Sidebar() {
             </Link>
           </li>
 
-          {/* Configuración (PRIMERO) */}
+          {/* Configuración */}
           <li>
             <details>
               <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
@@ -75,7 +76,7 @@ function Sidebar() {
             </details>
           </li>
 
-          {/* Reservas (SEGUNDO) - orden lógico interno */}
+          {/* Reservas */}
           <li>
             <details>
               <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
@@ -88,7 +89,7 @@ function Sidebar() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/reservas/Tipocabana">
+                  <Link to="/reservas/tipocabana">
                     <FaHome /> &nbsp; Tipo Cabañas
                   </Link>
                 </li>
@@ -131,7 +132,7 @@ function Sidebar() {
             </details>
           </li>
 
-          {/* Compras (TERCERO) */}
+          {/* Compras */}
           <li>
             <details>
               <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
@@ -166,6 +167,22 @@ function Sidebar() {
               </ul>
             </details>
           </li>
+
+          {/* 🆕 Ventas (debajo de Compras) */}
+          <li>
+            <details>
+              <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
+                <FaShoppingBag /> &nbsp; Ventas
+              </summary>
+              <ul className="submenu">
+                <li>
+                  <Link to="/ventas/ventas">
+                    <FaShoppingBag /> &nbsp; Ventas
+                  </Link>
+                </li>
+              </ul>
+            </details>
+          </li>
         </ul>
       </nav>
 
@@ -178,7 +195,7 @@ function Sidebar() {
           margin: "0 10px 10px 10px",
           display: "flex",
           alignItems: "center",
-          gap: "10px"
+          gap: "10px",
         }}
         aria-label="Perfil del usuario"
       >
@@ -205,7 +222,7 @@ function Sidebar() {
             justifyContent: "center",
             cursor: "pointer",
             fontWeight: "bold",
-            transition: "background-color 0.3s"
+            transition: "background-color 0.3s",
           }}
           aria-label="Cerrar sesión"
         >

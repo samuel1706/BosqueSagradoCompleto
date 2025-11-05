@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { 
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaShoppingCart,
-  FaToggleOn, FaToggleOff, FaSync
+  FaToggleOn, FaToggleOff, FaSync, FaSlidersH
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -237,8 +237,8 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_MARCAS = "http://localhost:5018/api/MarcaProducto";
-const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const API_MARCAS = "http://localhost:5272/api/MarcaProducto";
+const API_PRODUCTOS = "http://localhost:5272/api/Productos";
 const ITEMS_PER_PAGE = 10;
 
 // ===============================================
@@ -385,7 +385,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Marca MEJORADO
+// COMPONENTE PRINCIPAL Marca MEJORADO CON FILTROS
 // ===============================================
 const Marca = () => {
   const [marcas, setMarcas] = useState([]);
@@ -408,6 +408,14 @@ const Marca = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
+
+  // Estados para filtros - MEJORADO COMO EN SERVICIOS Y TEMPORADAS
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    productos: "all",
+    tipoProductos: "all"
+  });
 
   const [newMarca, setNewMarca] = useState({
     nombre: "",
@@ -444,6 +452,17 @@ const Marca = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -492,6 +511,36 @@ const Marca = () => {
         return alertSuccessStyle;
     }
   };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN SERVICIOS Y TEMPORADAS
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      productos: "all",
+      tipoProductos: "all"
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.productos !== "all") count++;
+    if (filters.tipoProductos !== "all") count++;
+    return count;
+  }, [filters]);
 
   // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
@@ -728,7 +777,7 @@ const Marca = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -858,13 +907,40 @@ const Marca = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredMarcas = useMemo(() => {
-    return marcas.filter(marca =>
-      marca.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [marcas, searchTerm]);
+    let filtered = marcas.filter(marca => {
+      // Búsqueda general
+      const matchesSearch = 
+        marca.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (marca.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por productos
+      const productosCount = contarProductosPorMarca(marca.idMarca);
+      if (filters.productos !== "all") {
+        if (filters.productos === "con" && productosCount === 0) return false;
+        if (filters.productos === "sin" && productosCount > 0) return false;
+      }
+
+      // Filtro por tipo de productos
+      if (filters.tipoProductos !== "all") {
+        if (filters.tipoProductos === "pocos" && productosCount >= 5) return false;
+        if (filters.tipoProductos === "muchos" && productosCount < 5) return false;
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [marcas, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredMarcas.length / ITEMS_PER_PAGE);
 
@@ -1004,85 +1080,261 @@ const Marca = () => {
         </div>
       </div>
 
-      {/* Estadísticas - IGUAL QUE TIPO CABAÑA */}
+      {/* Estadísticas - MEJORADO COMO EN SERVICIOS */}
       {!loading && marcas.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {marcas.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Marcas
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {marcas.filter(m => m.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Marcas Activas
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {marcas.filter(m => !m.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Marcas Inactivas
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredMarcas.length}
+            </div>
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda - SIMPLIFICADA */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre de marca..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN SERVICIOS Y TEMPORADAS */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre de marca..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Marcas activas</option>
+                  <option value="inactivo">Marcas inactivas</option>
+                </select>
+              </div>
+
+              {/* Filtro por productos */}
+              <div>
+                <label style={labelStyle}>Productos</label>
+                <select
+                  name="productos"
+                  value={filters.productos}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todas las marcas</option>
+                  <option value="con">Con productos</option>
+                  <option value="sin">Sin productos</option>
+                </select>
+              </div>
+
+              {/* Filtro por tipo de productos */}
+              <div>
+                <label style={labelStyle}>Cantidad de Productos</label>
+                <select
+                  name="tipoProductos"
+                  value={filters.tipoProductos}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Cualquier cantidad</option>
+                  <option value="pocos">Pocos productos (1-4)</option>
+                  <option value="muchos">Muchos productos (5+)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredMarcas.length !== marcas.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredMarcas.length} de {marcas.length} marcas
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
+
+      {/* Resto del código permanece igual (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
+      {/* ... */}
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -1124,8 +1376,6 @@ const Marca = () => {
                 placeholder="Ej: Dove, Coca-Cola, Samsung, Nike, Adidas..."
                 touched={touchedFields.nombre}
               />
-
-              
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
@@ -1386,7 +1636,50 @@ const Marca = () => {
               {paginatedMarcas.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {marcas.length === 0 ? "No hay marcas registradas" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {marcas.length === 0 ? "No hay marcas registradas" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
+                      {marcas.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primera Marca
+                        </button>
+                      )}
+                      {marcas.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (

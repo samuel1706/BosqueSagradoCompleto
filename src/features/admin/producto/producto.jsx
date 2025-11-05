@@ -3,7 +3,7 @@ import {
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox,
   FaTag, FaDollarSign, FaHashtag, FaToggleOn, FaToggleOff,
-  FaSync, FaShoppingCart, FaBuilding, FaClipboardList
+  FaSync, FaShoppingCart, FaBuilding, FaClipboardList, FaSlidersH
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -296,10 +296,10 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PRODUCTOS = "http://localhost:5018/api/Productos";
-const API_CATEGORIAS = "http://localhost:5018/api/CategoriaProductos";
-const API_MARCAS = "http://localhost:5018/api/MarcaProducto";
-const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5018/api/ProductoPorServicio";
+const API_PRODUCTOS = "http://localhost:5272/api/Productos";
+const API_CATEGORIAS = "http://localhost:5272/api/CategoriaProductos";
+const API_MARCAS = "http://localhost:5272/api/MarcaProducto";
+const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5272/api/ProductoPorServicio";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -507,7 +507,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Productos MEJORADO
+// COMPONENTE PRINCIPAL Productos MEJORADO CON FILTROS
 // ===============================================
 const Productos = () => {
   const [productos, setProductos] = useState([]);
@@ -534,6 +534,17 @@ const Productos = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
+
+  // Estados para filtros - NUEVO
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    categoria: "all",
+    marca: "all",
+    stock: "all",
+    precio: "all",
+    servicios: "all"
+  });
 
   // Estado inicial basado en la estructura de tu API
   const [newProducto, setNewProducto] = useState({
@@ -580,6 +591,17 @@ const Productos = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -632,6 +654,42 @@ const Productos = () => {
         return alertSuccessStyle;
     }
   };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - NUEVO
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      categoria: "all",
+      marca: "all",
+      stock: "all",
+      precio: "all",
+      servicios: "all"
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.categoria !== "all") count++;
+    if (filters.marca !== "all") count++;
+    if (filters.stock !== "all") count++;
+    if (filters.precio !== "all") count++;
+    if (filters.servicios !== "all") count++;
+    return count;
+  }, [filters]);
 
   // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
@@ -947,7 +1005,7 @@ const Productos = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1107,15 +1165,61 @@ const Productos = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredProductos = useMemo(() => {
-    return productos.filter(producto =>
-      producto.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getCategoriaNombre(producto.idCategoria)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getMarcaNombre(producto.idMarca)?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [productos, searchTerm]);
+    let filtered = productos.filter(producto => {
+      // Búsqueda general
+      const matchesSearch = 
+        producto.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getCategoriaNombre(producto.idCategoria)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getMarcaNombre(producto.idMarca)?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (producto.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por categoría
+      if (filters.categoria !== "all") {
+        if (producto.idCategoria !== parseInt(filters.categoria)) return false;
+      }
+
+      // Filtro por marca
+      if (filters.marca !== "all") {
+        if (producto.idMarca !== parseInt(filters.marca)) return false;
+      }
+
+      // Filtro por stock
+      if (filters.stock !== "all") {
+        if (filters.stock === "con" && producto.cantidad === 0) return false;
+        if (filters.stock === "sin" && producto.cantidad > 0) return false;
+        if (filters.stock === "bajo" && producto.cantidad >= 10) return false;
+        if (filters.stock === "agotado" && producto.cantidad > 0) return false;
+      }
+
+      // Filtro por precio
+      if (filters.precio !== "all") {
+        if (filters.precio === "bajo" && producto.precio >= 50000) return false;
+        if (filters.precio === "medio" && (producto.precio < 50000 || producto.precio >= 200000)) return false;
+        if (filters.precio === "alto" && producto.precio < 200000) return false;
+      }
+
+      // Filtro por servicios
+      const serviciosCount = contarServiciosPorProducto(producto.idProducto);
+      if (filters.servicios !== "all") {
+        if (filters.servicios === "con" && serviciosCount === 0) return false;
+        if (filters.servicios === "sin" && serviciosCount > 0) return false;
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [productos, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredProductos.length / ITEMS_PER_PAGE);
 
@@ -1399,100 +1503,324 @@ const Productos = () => {
         </button>
       </div>
 
-      {/* Estadísticas */}
+      {/* Estadísticas - MEJORADO */}
       {!loading && productos.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {productos.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Productos
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {productos.filter(p => p.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Productos Activos
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {productos.filter(p => !p.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Productos Inactivos
             </div>
           </div>
-          
+
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPrice(productos.reduce((sum, producto) => sum + (producto.precio * producto.cantidad), 0))}
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredProductos.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Valor Total
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, categoría o marca..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, categoría o marca..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Productos activos</option>
+                  <option value="inactivo">Productos inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por categoría */}
+              <div>
+                <label style={labelStyle}>Categoría</label>
+                <select
+                  name="categoria"
+                  value={filters.categoria}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todas las categorías</option>
+                  {categorias.map(cat => (
+                    <option key={cat.idCategoria} value={cat.idCategoria}>
+                      {cat.categoria}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por marca */}
+              <div>
+                <label style={labelStyle}>Marca</label>
+                <select
+                  name="marca"
+                  value={filters.marca}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todas las marcas</option>
+                  {marcas.map(marca => (
+                    <option key={marca.idMarca} value={marca.idMarca}>
+                      {marca.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por stock */}
+              <div>
+                <label style={labelStyle}>Stock</label>
+                <select
+                  name="stock"
+                  value={filters.stock}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todo el stock</option>
+                  <option value="con">Con stock</option>
+                  <option value="sin">Sin stock</option>
+                  <option value="bajo">Stock bajo (menos de 10)</option>
+                  <option value="agotado">Agotados</option>
+                </select>
+              </div>
+
+              {/* Filtro por precio */}
+              <div>
+                <label style={labelStyle}>Precio</label>
+                <select
+                  name="precio"
+                  value={filters.precio}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los precios</option>
+                  <option value="bajo">Bajo (menos de $50,000)</option>
+                  <option value="medio">Medio ($50,000 - $200,000)</option>
+                  <option value="alto">Alto (más de $200,000)</option>
+                </select>
+              </div>
+
+              {/* Filtro por servicios */}
+              <div>
+                <label style={labelStyle}>Servicios</label>
+                <select
+                  name="servicios"
+                  value={filters.servicios}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los productos</option>
+                  <option value="con">Con servicios asociados</option>
+                  <option value="sin">Sin servicios asociados</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredProductos.length !== productos.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredProductos.length} de {productos.length} productos
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
+
+      {/* Resto del código permanece igual (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
+      {/* ... */}
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -2031,7 +2359,12 @@ const Productos = () => {
                   <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaBox size={30} color="#679750" />
-                      {productos.length === 0 ? "No hay productos registrados" : "No se encontraron resultados"}
+                      {productos.length === 0 ? "No hay productos registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
                       {productos.length === 0 && (
                         <button
                           onClick={() => setShowForm(true)}
@@ -2048,6 +2381,23 @@ const Productos = () => {
                         >
                           <FaPlus style={{ marginRight: '5px' }} />
                           Agregar Primer Producto
+                        </button>
+                      )}
+                      {productos.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
                         </button>
                       )}
                     </div>

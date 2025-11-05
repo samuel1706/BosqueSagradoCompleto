@@ -1,6 +1,6 @@
 // src/components/Gestipaq.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaImage, FaUpload, FaCamera, FaConciergeBell, FaMapMarkerAlt, FaList, FaHotel, FaBoxOpen, FaPercent } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaImage, FaUpload, FaCamera, FaConciergeBell, FaMapMarkerAlt, FaList, FaHotel, FaBoxOpen, FaPercent, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -353,11 +353,11 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PAQUETES = "http://localhost:5018/api/Paquetes";
-const API_SERVICIOS = "http://localhost:5018/api/Servicios";
-const API_SEDES = "http://localhost:5018/api/Sede";
-const API_SERVICIO_POR_PAQUETE = "http://localhost:5018/api/ServicioPorPaquete";
-const API_SEDE_POR_PAQUETE = "http://localhost:5018/api/SedePorPaquete";
+const API_PAQUETES = "http://localhost:5272/api/Paquetes";
+const API_SERVICIOS = "http://localhost:5272/api/Servicios";
+const API_SEDES = "http://localhost:5272/api/Sede";
+const API_SERVICIO_POR_PAQUETE = "http://localhost:5272/api/ServicioPorPaquete";
+const API_SEDE_POR_PAQUETE = "http://localhost:5272/api/SedePorPaquete";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -704,6 +704,20 @@ const Gestipaq = () => {
   const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
   const [sedesSeleccionadas, setSedesSeleccionadas] = useState([]);
 
+  // Estados para filtros - MEJORADO COMO EN SEDES
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    precioMin: "",
+    precioMax: "",
+    personasMin: "",
+    personasMax: "",
+    diasMin: "",
+    diasMax: "",
+    descuentoMin: "",
+    descuentoMax: ""
+  });
+
   // Estado inicial basado en la estructura de tu API
   const [newPaquete, setNewPaquete] = useState({
     idPaquete: 0,
@@ -750,6 +764,17 @@ const Gestipaq = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -1084,6 +1109,48 @@ const Gestipaq = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN SEDES
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      precioMin: "",
+      precioMax: "",
+      personasMin: "",
+      personasMax: "",
+      diasMin: "",
+      diasMax: "",
+      descuentoMin: "",
+      descuentoMax: ""
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.precioMin) count++;
+    if (filters.precioMax) count++;
+    if (filters.personasMin) count++;
+    if (filters.personasMax) count++;
+    if (filters.diasMin) count++;
+    if (filters.diasMax) count++;
+    if (filters.descuentoMin) count++;
+    if (filters.descuentoMax) count++;
+    return count;
+  }, [filters]);
+
+  // ===============================================
   // FUNCIONES CRUD PARA PAQUETES
   // ===============================================
   const handleAddPaquete = async (e) => {
@@ -1245,7 +1312,7 @@ const Gestipaq = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1380,13 +1447,43 @@ const Gestipaq = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredPaquetes = useMemo(() => {
-    return paquetes.filter(paquete =>
-      paquete.nombrePaquete?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [paquetes, searchTerm]);
+    let filtered = paquetes.filter(paquete => {
+      // Búsqueda general
+      const matchesSearch = 
+        paquete.nombrePaquete?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (paquete.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por precio
+      if (filters.precioMin && paquete.precioPaquete < parseFloat(filters.precioMin)) return false;
+      if (filters.precioMax && paquete.precioPaquete > parseFloat(filters.precioMax)) return false;
+
+      // Filtro por personas
+      if (filters.personasMin && paquete.personas < parseInt(filters.personasMin)) return false;
+      if (filters.personasMax && paquete.personas > parseInt(filters.personasMax)) return false;
+
+      // Filtro por días
+      if (filters.diasMin && paquete.dias < parseInt(filters.diasMin)) return false;
+      if (filters.diasMax && paquete.dias > parseInt(filters.diasMax)) return false;
+
+      // Filtro por descuento
+      if (filters.descuentoMin && paquete.descuento < parseFloat(filters.descuentoMin)) return false;
+      if (filters.descuentoMax && paquete.descuento > parseFloat(filters.descuentoMax)) return false;
+
+      return true;
+    });
+
+    return filtered;
+  }, [paquetes, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredPaquetes.length / ITEMS_PER_PAGE);
 
@@ -1548,112 +1645,332 @@ const Gestipaq = () => {
       {/* Tarjetas de Estadísticas */}
       {!loading && paquetes.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {paquetes.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Paquetes
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {paquetes.filter(p => p.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Paquetes Activos
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {paquetes.filter(p => !p.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Paquetes Inactivos
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {serviciosPorPaquete.length}
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredPaquetes.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Relaciones Servicios
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {sedesPorPaquete.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Relaciones Sedes
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre de paquete..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN SEDES */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre de paquete..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por precio */}
+              <div>
+                <label style={labelStyle}>Precio Mínimo (COP)</label>
+                <input
+                  type="number"
+                  name="precioMin"
+                  value={filters.precioMin}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Precio Máximo (COP)</label>
+                <input
+                  type="number"
+                  name="precioMax"
+                  value={filters.precioMax}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="10000000"
+                  min="0"
+                />
+              </div>
+
+              {/* Filtro por personas */}
+              <div>
+                <label style={labelStyle}>Personas Mínimo</label>
+                <input
+                  type="number"
+                  name="personasMin"
+                  value={filters.personasMin}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="1"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Personas Máximo</label>
+                <input
+                  type="number"
+                  name="personasMax"
+                  value={filters.personasMax}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="50"
+                  min="1"
+                />
+              </div>
+
+              {/* Filtro por días */}
+              <div>
+                <label style={labelStyle}>Días Mínimo</label>
+                <input
+                  type="number"
+                  name="diasMin"
+                  value={filters.diasMin}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="1"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Días Máximo</label>
+                <input
+                  type="number"
+                  name="diasMax"
+                  value={filters.diasMax}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="30"
+                  min="1"
+                />
+              </div>
+
+              {/* Filtro por descuento */}
+              <div>
+                <label style={labelStyle}>Descuento Mínimo (%)</label>
+                <input
+                  type="number"
+                  name="descuentoMin"
+                  value={filters.descuentoMin}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="0"
+                  min="0"
+                  max="50"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Descuento Máximo (%)</label>
+                <input
+                  type="number"
+                  name="descuentoMax"
+                  value={filters.descuentoMax}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="50"
+                  min="0"
+                  max="50"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredPaquetes.length !== paquetes.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredPaquetes.length} de {paquetes.length} paquetes
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
+
+      {/* Resto del código del formulario, modales y tabla se mantiene igual */}
+      {/* ... (el resto del código permanece igual) ... */}
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -2374,7 +2691,12 @@ const Gestipaq = () => {
                   <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
-                      {paquetes.length === 0 ? "No hay paquetes registrados" : "No se encontraron resultados"}
+                      {paquetes.length === 0 ? "No hay paquetes registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
                       {paquetes.length === 0 && (
                         <button
                           onClick={() => setShowForm(true)}
@@ -2391,6 +2713,23 @@ const Gestipaq = () => {
                         >
                           <FaPlus style={{ marginRight: '5px' }} />
                           Agregar Primer Paquete
+                        </button>
+                      )}
+                      {paquetes.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
                         </button>
                       )}
                     </div>
@@ -2527,7 +2866,7 @@ const Gestipaq = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -2535,19 +2874,33 @@ const Gestipaq = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-                aria-current={currentPage === page ? "page" : undefined}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -2555,6 +2908,15 @@ const Gestipaq = () => {
           >
             Siguiente
           </button>
+          
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
+          }}>
+            Página {currentPage} de {totalPages}
+          </div>
         </div>
       )}
     </div>

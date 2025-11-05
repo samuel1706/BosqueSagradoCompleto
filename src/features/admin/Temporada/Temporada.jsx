@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { 
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaCalendarAlt,
-  FaPercentage, FaSync, FaShoppingCart
+  FaPercentage, FaSync, FaShoppingCart, FaSlidersH
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -242,7 +242,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_TEMPORADA = "http://localhost:5018/api/Temporada";
+const API_TEMPORADA = "http://localhost:5272/api/Temporada";
 const ITEMS_PER_PAGE = 10;
 
 // ===============================================
@@ -373,7 +373,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL TEMPORADA MEJORADO
+// COMPONENTE PRINCIPAL TEMPORADA MEJORADO CON FILTROS
 // ===============================================
 const Temporada = () => {
   const [temporadas, setTemporadas] = useState([]);
@@ -396,7 +396,14 @@ const Temporada = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
 
-  // Estado inicial basado en la estructura de tu API
+  // Estados para filtros - MEJORADO COMO EN SERVICIOS Y SEDES
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    porcentajeMin: "",
+    porcentajeMax: "",
+    tipoPorcentaje: "all"
+  });
+
   const [newTemporada, setNewTemporada] = useState({
     idTemporada: 0,
     nombreTemporada: "",
@@ -432,6 +439,17 @@ const Temporada = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -603,6 +621,36 @@ const Temporada = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN SERVICIOS Y SEDES
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      porcentajeMin: "",
+      porcentajeMax: "",
+      tipoPorcentaje: "all"
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.porcentajeMin) count++;
+    if (filters.porcentajeMax) count++;
+    if (filters.tipoPorcentaje !== "all") count++;
+    return count;
+  }, [filters]);
+
+  // ===============================================
   // FUNCIONES DE LA API
   // ===============================================
   const fetchTemporadas = async () => {
@@ -712,7 +760,7 @@ const Temporada = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -799,13 +847,41 @@ const Temporada = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredTemporadas = useMemo(() => {
-    return temporadas.filter(temporada =>
-      temporada.nombreTemporada?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [temporadas, searchTerm]);
+    let filtered = temporadas.filter(temporada => {
+      // Búsqueda general
+      const matchesSearch = 
+        temporada.nombreTemporada?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      // Filtro por porcentaje mínimo
+      if (filters.porcentajeMin) {
+        const porcentajeMin = parseFloat(filters.porcentajeMin);
+        if (temporada.porcentaje < porcentajeMin) return false;
+      }
+
+      // Filtro por porcentaje máximo
+      if (filters.porcentajeMax) {
+        const porcentajeMax = parseFloat(filters.porcentajeMax);
+        if (temporada.porcentaje > porcentajeMax) return false;
+      }
+
+      // Filtro por tipo de porcentaje
+      if (filters.tipoPorcentaje !== "all") {
+        if (filters.tipoPorcentaje === "sin" && temporada.porcentaje > 0) return false;
+        if (filters.tipoPorcentaje === "con" && temporada.porcentaje === 0) return false;
+        if (filters.tipoPorcentaje === "alto" && temporada.porcentaje < 20) return false;
+        if (filters.tipoPorcentaje === "bajo" && temporada.porcentaje >= 20) return false;
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [temporadas, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredTemporadas.length / ITEMS_PER_PAGE);
 
@@ -953,85 +1029,283 @@ const Temporada = () => {
         </div>
       </div>
 
-      {/* Estadísticas - IGUAL QUE MARCAS */}
+      {/* Estadísticas - MEJORADO COMO EN SERVICIOS */}
       {!loading && temporadas.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {temporadas.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Temporadas
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {temporadas.filter(t => t.porcentaje > 0).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Con Incremento
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {formatPercentage(temporadas.reduce((sum, temp) => sum + temp.porcentaje, 0) / temporadas.length)}
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {temporadas.filter(t => t.porcentaje === 0).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Promedio %
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
+              Sin Incremento
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredTemporadas.length}
+            </div>
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda - SIMPLIFICADA */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre de temporada..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN SERVICIOS Y SEDES */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre de temporada..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por porcentaje mínimo */}
+              <div>
+                <label style={labelStyle}>Porcentaje Mínimo</label>
+                <div style={{ position: 'relative' }}>
+                  <FaPercentage style={{ 
+                    position: 'absolute', 
+                    left: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    color: '#2E5939' 
+                  }} />
+                  <input
+                    type="number"
+                    name="porcentajeMin"
+                    value={filters.porcentajeMin}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '35px'
+                    }}
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                  />
+                </div>
+              </div>
+
+              {/* Filtro por porcentaje máximo */}
+              <div>
+                <label style={labelStyle}>Porcentaje Máximo</label>
+                <div style={{ position: 'relative' }}>
+                  <FaPercentage style={{ 
+                    position: 'absolute', 
+                    left: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    color: '#2E5939' 
+                  }} />
+                  <input
+                    type="number"
+                    name="porcentajeMax"
+                    value={filters.porcentajeMax}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '35px'
+                    }}
+                    placeholder="100"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                  />
+                </div>
+              </div>
+
+              {/* Filtro por tipo de porcentaje */}
+              <div>
+                <label style={labelStyle}>Tipo de Temporada</label>
+                <select
+                  name="tipoPorcentaje"
+                  value={filters.tipoPorcentaje}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todas las temporadas</option>
+                  <option value="sin">Sin incremento (0%)</option>
+                  <option value="con">Con incremento</option>
+                  <option value="bajo">Incremento bajo (1-19%)</option>
+                  <option value="alto">Incremento alto (20%+)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredTemporadas.length !== temporadas.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredTemporadas.length} de {temporadas.length} temporadas
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
+
+      {/* Resto del código permanece igual (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
+      {/* ... */}
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -1335,7 +1609,50 @@ const Temporada = () => {
               {paginatedTemporadas.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={3} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {temporadas.length === 0 ? "No hay temporadas registradas" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {temporadas.length === 0 ? "No hay temporadas registradas" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
+                      {temporadas.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primera Temporada
+                        </button>
+                      )}
+                      {temporadas.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (

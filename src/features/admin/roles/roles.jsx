@@ -1,5 +1,6 @@
+// src/components/Rol.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaUserShield, FaFilter, FaSync } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaUserShield, FaFilter, FaSync, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -46,14 +47,6 @@ const inputErrorStyle = {
   ...inputStyle,
   border: "2px solid #e74c3c",
   backgroundColor: "#fdf2f2",
-};
-
-const yellowBlockedInputStyle = {
-  ...inputStyle,
-  backgroundColor: "#fffde7",
-  color: "#bfa100",
-  cursor: "not-allowed",
-  border: "1.5px solid #ffe082"
 };
 
 const navBtnStyle = (disabled) => ({
@@ -214,41 +207,6 @@ const warningValidationStyle = {
 };
 
 // ===============================================
-// ESTILOS PARA FILTROS
-// ===============================================
-const filterSectionStyle = {
-  backgroundColor: '#fff',
-  borderRadius: '10px',
-  padding: '20px',
-  marginBottom: '20px',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  border: '1px solid #e0e0e0'
-};
-
-const filterHeaderStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  marginBottom: '15px',
-  paddingBottom: '10px',
-  borderBottom: '2px solid #679750'
-};
-
-const filterGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-  gap: '15px',
-  marginBottom: '15px'
-};
-
-const filterButtonGroupStyle = {
-  display: 'flex',
-  gap: '10px',
-  justifyContent: 'flex-end',
-  flexWrap: 'wrap'
-};
-
-// ===============================================
 // VALIDACIONES Y PATRONES
 // ===============================================
 const VALIDATION_PATTERNS = {
@@ -293,7 +251,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_ROLES = "http://localhost:5018/api/Rol";
+const API_ROLES = "http://localhost:5272/api/Rol";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -316,7 +274,7 @@ const FormField = ({
   placeholder,
   showCharCount = false,
   rows = 3,
-  touched = false // Nuevo prop para controlar si el campo ha sido tocado
+  touched = false
 }) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -502,17 +460,15 @@ const Rol = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [touchedFields, setTouchedFields] = useState({}); // Nuevo estado para campos tocados
+  const [touchedFields, setTouchedFields] = useState({});
 
-  // Estados para filtros
-  const [filters, setFilters] = useState({
-    estado: "",
-    fechaInicio: "",
-    fechaFin: "",
-    ordenarPor: "nombre",
-    orden: "asc"
-  });
+  // Estados para filtros - MEJORADO COMO EN USUARIOS
   const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    fechaDesde: "",
+    fechaHasta: ""
+  });
 
   const [newItem, setNewItem] = useState({
     nombreRol: "",
@@ -556,6 +512,17 @@ const Rol = () => {
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
     `;
     document.head.appendChild(style);
@@ -842,32 +809,24 @@ const Rol = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO MEJORADAS
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN USUARIOS
   // ===============================================
-  const handleFilterChange = (name, value) => {
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
       [name]: value
     }));
-    setCurrentPage(1); // Resetear a primera página al cambiar filtros
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
     setFilters({
-      estado: "",
-      fechaInicio: "",
-      fechaFin: "",
-      ordenarPor: "nombre",
-      orden: "asc"
+      estado: "all",
+      fechaDesde: "",
+      fechaHasta: ""
     });
-    setSearchTerm("");
     setCurrentPage(1);
-  };
-
-  const applyFilters = () => {
-    setCurrentPage(1);
-    setShowFilters(false);
-    displayAlert("Filtros aplicados correctamente", "success");
   };
 
   // ===============================================
@@ -880,7 +839,7 @@ const Rol = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -973,44 +932,21 @@ const Rol = () => {
   // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredItems = useMemo(() => {
-    let filtered = roles.filter((item) =>
-      item.nombreRol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let filtered = roles.filter(item => {
+      // Búsqueda general
+      const matchesSearch = 
+        item.nombreRol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Aplicar filtros de estado
-    if (filters.estado !== "") {
-      const estadoFilter = filters.estado === "true";
-      filtered = filtered.filter(item => item.estado === estadoFilter);
-    }
+      if (!matchesSearch) return false;
 
-    // Aplicar ordenamiento
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (filters.ordenarPor) {
-        case "nombre":
-          aValue = a.nombreRol?.toLowerCase() || "";
-          bValue = b.nombreRol?.toLowerCase() || "";
-          break;
-        case "estado":
-          aValue = a.estado;
-          bValue = b.estado;
-          break;
-        case "id":
-          aValue = a.idRol;
-          bValue = b.idRol;
-          break;
-        default:
-          aValue = a.nombreRol?.toLowerCase() || "";
-          bValue = b.nombreRol?.toLowerCase() || "";
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (item.estado !== estadoFilter) return false;
       }
 
-      if (filters.orden === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
+      return true;
     });
 
     return filtered;
@@ -1026,6 +962,15 @@ const Rol = () => {
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
+
+  // Contador de filtros activos - IGUAL QUE EN USUARIOS
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.fechaDesde) count++;
+    if (filters.fechaHasta) count++;
+    return count;
+  }, [filters]);
 
   // ===============================================
   // RENDERIZADO
@@ -1111,25 +1056,7 @@ const Rol = () => {
             {roles.length} roles registrados • {roles.filter(r => r.estado).length} activos
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            style={{
-              backgroundColor: "#679750",
-              color: "white",
-              padding: "10px 16px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <FaFilter /> Filtros
-          </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button
             onClick={() => {
               setShowForm(true);
@@ -1137,7 +1064,7 @@ const Rol = () => {
               setFormErrors({});
               setFormSuccess({});
               setFormWarnings({});
-              setTouchedFields({}); // Limpiar campos tocados al abrir
+              setTouchedFields({});
               setNewItem({
                 nombreRol: "",
                 descripcion: "",
@@ -1147,7 +1074,7 @@ const Rol = () => {
             style={{
               backgroundColor: "#2E5939",
               color: "white",
-              padding: "10px 16px",
+              padding: "12px 20px",
               border: "none",
               borderRadius: 10,
               cursor: "pointer",
@@ -1175,209 +1102,102 @@ const Rol = () => {
       {/* Estadísticas */}
       {!loading && roles.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {roles.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Roles
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {roles.filter(r => r.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Roles Activos
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {roles.filter(r => !r.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Roles Inactivos
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {filteredItems.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
               Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Sección de Filtros */}
-      {showFilters && (
-        <div style={filterSectionStyle}>
-          <div style={filterHeaderStyle}>
-            <h3 style={{ margin: 0, color: "#2E5939", display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FaFilter />
-              Filtros de Búsqueda
-            </h3>
-            <button
-              onClick={() => setShowFilters(false)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#2E5939",
-                fontSize: "16px",
-                cursor: "pointer",
-              }}
-              title="Cerrar filtros"
-            >
-              <FaTimes />
-            </button>
-          </div>
-
-          <div style={filterGridStyle}>
-            {/* Filtro por Estado */}
-            <div>
-              <label style={labelStyle}>Estado</label>
-              <select
-                value={filters.estado}
-                onChange={(e) => handleFilterChange('estado', e.target.value)}
-                style={inputStyle}
-              >
-                <option value="">Todos los estados</option>
-                <option value="true">🟢 Activo</option>
-                <option value="false">🔴 Inactivo</option>
-              </select>
-            </div>
-
-            {/* Ordenar por */}
-            <div>
-              <label style={labelStyle}>Ordenar por</label>
-              <select
-                value={filters.ordenarPor}
-                onChange={(e) => handleFilterChange('ordenarPor', e.target.value)}
-                style={inputStyle}
-              >
-                <option value="nombre">Nombre</option>
-                <option value="estado">Estado</option>
-                <option value="id">ID</option>
-              </select>
-            </div>
-
-            {/* Dirección del orden */}
-            <div>
-              <label style={labelStyle}>Orden</label>
-              <select
-                value={filters.orden}
-                onChange={(e) => handleFilterChange('orden', e.target.value)}
-                style={inputStyle}
-              >
-                <option value="asc">Ascendente (A-Z)</option>
-                <option value="desc">Descendente (Z-A)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Barra de búsqueda */}
-          <div style={{ marginBottom: '15px' }}>
-            <label style={labelStyle}>Buscar en nombre o descripción</label>
-            <div style={{ position: "relative" }}>
-              <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o descripción..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  padding: "12px 12px 12px 40px",
-                  borderRadius: 10,
-                  border: "1px solid #ccc",
-                  width: "100%",
-                  backgroundColor: "#F7F4EA",
-                  color: "#2E5939",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Botones de acción de filtros */}
-          <div style={filterButtonGroupStyle}>
-            <button
-              onClick={clearFilters}
-              style={{
-                backgroundColor: "#6c757d",
-                color: "white",
-                padding: "10px 16px",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: "600",
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <FaSync /> Limpiar Filtros
-            </button>
-            <button
-              onClick={applyFilters}
-              style={{
-                backgroundColor: "#2E5939",
-                color: "white",
-                padding: "10px 20px",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: "600",
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <FaFilter /> Aplicar Filtros
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Barra de búsqueda básica (cuando los filtros están ocultos) */}
-      {!showFilters && (
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ position: "relative", maxWidth: 500 }}>
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN USUARIOS */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
             <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
             <input
               type="text"
@@ -1398,92 +1218,128 @@ const Rol = () => {
               }}
             />
           </div>
-        </div>
-      )}
 
-      {/* Indicador de filtros activos */}
-      {(searchTerm || filters.estado !== "" || filters.ordenarPor !== "nombre" || filters.orden !== "asc") && (
-        <div style={{
-          backgroundColor: '#e3f2fd',
-          border: '1px solid #90caf9',
-          borderRadius: '8px',
-          padding: '10px 15px',
-          marginBottom: '15px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '10px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <FaInfoCircle color="#1976d2" />
-            <span style={{ color: '#1976d2', fontWeight: '600' }}>Filtros activos:</span>
-            {searchTerm && (
-              <span style={{
-                backgroundColor: '#bbdefb',
-                padding: '4px 8px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                color: '#0d47a1'
-              }}>
-                Búsqueda: "{searchTerm}"
-              </span>
-            )}
-            {filters.estado !== "" && (
-              <span style={{
-                backgroundColor: '#bbdefb',
-                padding: '4px 8px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                color: '#0d47a1'
-              }}>
-                Estado: {filters.estado === "true" ? "Activo" : "Inactivo"}
-              </span>
-            )}
-            {filters.ordenarPor !== "nombre" && (
-              <span style={{
-                backgroundColor: '#bbdefb',
-                padding: '4px 8px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                color: '#0d47a1'
-              }}>
-                Ordenado por: {filters.ordenarPor}
-              </span>
-            )}
-            {filters.orden !== "asc" && (
-              <span style={{
-                backgroundColor: '#bbdefb',
-                padding: '4px 8px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                color: '#0d47a1'
-              }}>
-                Orden: {filters.orden === "asc" ? "Ascendente" : "Descendente"}
-              </span>
-            )}
-          </div>
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
           <button
-            onClick={clearFilters}
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              backgroundColor: 'transparent',
-              border: '1px solid #1976d2',
-              color: '#1976d2',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '600'
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
           >
-            Limpiar
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
           </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
-      )}
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por fecha de creación */}
+              <div>
+                <label style={labelStyle}>Fecha Creación Desde</label>
+                <input
+                  type="date"
+                  name="fechaDesde"
+                  value={filters.fechaDesde}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Fecha Creación Hasta</label>
+                <input
+                  type="date"
+                  name="fechaHasta"
+                  value={filters.fechaHasta}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredItems.length !== roles.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredItems.length} de {roles.length} roles
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
+      </div>
 
       {/* Resto del código (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
-      {/* ... (El resto del código permanece igual que en tu versión original) */}
-
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
@@ -1521,7 +1377,7 @@ const Rol = () => {
                     name="nombreRol"
                     value={newItem.nombreRol}
                     onChange={handleInputChange}
-                    onBlur={handleInputBlur} // Nuevo evento onBlur
+                    onBlur={handleInputBlur}
                     error={formErrors.nombreRol}
                     success={formSuccess.nombreRol}
                     warning={formWarnings.nombreRol}
@@ -1530,7 +1386,7 @@ const Rol = () => {
                     maxLength={VALIDATION_RULES.nombreRol.maxLength}
                     showCharCount={true}
                     placeholder="Ej: Administrador, Empleado, Cliente..."
-                    touched={touchedFields.nombreRol} // Pasar estado de tocado
+                    touched={touchedFields.nombreRol}
                   />
                 </div>
                 
@@ -1541,7 +1397,7 @@ const Rol = () => {
                     type="textarea"
                     value={newItem.descripcion}
                     onChange={handleInputChange}
-                    onBlur={handleInputBlur} // Nuevo evento onBlur
+                    onBlur={handleInputBlur}
                     error={formErrors.descripcion}
                     success={formSuccess.descripcion}
                     warning={formWarnings.descripcion}
@@ -1551,7 +1407,7 @@ const Rol = () => {
                     showCharCount={true}
                     rows={4}
                     placeholder="Descripción de los permisos y funciones del rol..."
-                    touched={touchedFields.descripcion} // Pasar estado de tocado
+                    touched={touchedFields.descripcion}
                   />
                 </div>
 
@@ -1562,7 +1418,7 @@ const Rol = () => {
                     type="select"
                     value={newItem.estado}
                     onChange={handleInputChange}
-                    onBlur={handleInputBlur} // Nuevo evento onBlur
+                    onBlur={handleInputBlur}
                     error={formErrors.estado}
                     success={formSuccess.estado}
                     warning={formWarnings.estado}
@@ -1572,7 +1428,7 @@ const Rol = () => {
                       { value: "true", label: "🟢 Activo" },
                       { value: "false", label: "🔴 Inactivo" }
                     ]}
-                    touched={touchedFields.estado} // Pasar estado de tocado
+                    touched={touchedFields.estado}
                   />
                 </div>
               </div>
@@ -1817,6 +1673,15 @@ const Rol = () => {
             <div style={{ fontSize: '18px', marginBottom: '10px' }}>
               🔄 Cargando roles...
             </div>
+            <div style={{ 
+              width: '40px', 
+              height: '40px', 
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #2E5939',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto'
+            }}></div>
           </div>
         )}
 
@@ -1843,6 +1708,11 @@ const Rol = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
                       {roles.length === 0 ? "No hay roles registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
                       {roles.length === 0 && (
                         <button
                           onClick={() => setShowForm(true)}
@@ -1861,12 +1731,32 @@ const Rol = () => {
                           Agregar Primer Rol
                         </button>
                       )}
+                      {roles.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
               ) : (
                 paginatedItems.map((item) => (
-                  <tr key={item.idRol} style={{ borderBottom: "1px solid #eee" }}>
+                  <tr key={item.idRol} style={{ 
+                    borderBottom: "1px solid #eee",
+                    backgroundColor: item.estado ? '#fff' : '#f9f9f9'
+                  }}>
                     <td style={{ padding: "15px", fontWeight: "500" }}>{item.nombreRol}</td>
                     <td style={{ padding: "15px" }}>
                       {item.descripcion?.length > 50 
@@ -1876,8 +1766,9 @@ const Rol = () => {
                     <td style={{ padding: "15px", textAlign: "center" }}>
                       <button
                         onClick={() => toggleEstado(item)}
+                        disabled={loading}
                         style={{
-                          cursor: "pointer",
+                          cursor: loading ? "not-allowed" : "pointer",
                           padding: "6px 12px",
                           borderRadius: "20px",
                           border: "none",
@@ -1886,13 +1777,7 @@ const Rol = () => {
                           fontWeight: "600",
                           fontSize: "12px",
                           minWidth: "80px",
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.transform = "scale(1.05)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.transform = "scale(1)";
+                          opacity: loading ? 0.6 : 1
                         }}
                       >
                         {item.estado ? "Activo" : "Inactivo"}
@@ -1933,7 +1818,7 @@ const Rol = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
@@ -1941,19 +1826,33 @@ const Rol = () => {
           >
             Anterior
           </button>
-          {[...Array(totalPages)].map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => goToPage(page)}
-                style={pageBtnStyle(currentPage === page)}
-                aria-current={currentPage === page ? "page" : undefined}
-              >
-                {page}
-              </button>
-            );
-          })}
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -1961,6 +1860,15 @@ const Rol = () => {
           >
             Siguiente
           </button>
+          
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
+          }}>
+            Página {currentPage} de {totalPages}
+          </div>
         </div>
       )}
     </div>

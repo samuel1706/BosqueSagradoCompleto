@@ -4,7 +4,7 @@ import {
   FaEye, FaEdit, FaTrash, FaPlus, FaMinus, FaFilePdf, FaTimes, 
   FaSearch, FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox, 
   FaShoppingCart, FaDollarSign, FaUser, FaSync, FaToggleOn, 
-  FaToggleOff, FaFileAlt
+  FaToggleOff, FaFileAlt, FaSlidersH
 } from "react-icons/fa";
 import { usePDF } from 'react-to-pdf';
 import axios from "axios";
@@ -252,16 +252,6 @@ const removeButtonStyle = {
   transition: "all 0.3s ease",
 };
 
-const productChipStyle = {
-  backgroundColor: '#2E5939',
-  color: 'white',
-  padding: '4px 8px',
-  borderRadius: '12px',
-  fontSize: '11px',
-  margin: '2px',
-  display: 'inline-block'
-};
-
 const totalSummaryStyle = {
   gridColumn: '1 / -1',
   marginTop: 20,
@@ -297,24 +287,6 @@ const totalValueStyle = {
   color: '#2E5939',
   fontWeight: 'bold'
 };
-
-const toggleButtonStyle = (active) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  padding: '10px 16px',
-  borderRadius: '25px',
-  border: 'none',
-  cursor: 'pointer',
-  fontWeight: '600',
-  fontSize: '14px',
-  transition: 'all 0.3s ease',
-  backgroundColor: active ? '#4caf50' : '#e57373',
-  color: 'white',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-  minWidth: '140px'
-});
 
 // ===============================================
 // VALIDACIONES Y PATRONES
@@ -359,10 +331,10 @@ const VALIDATION_RULES = {
 // ===============================================
 // CONFIGURACIÓN DE API
 // ===============================================
-const API_COMPRAS = "http://localhost:5018/api/Compras";
-const API_PROVEEDORES = "http://localhost:5018/api/Proveedore";
-const API_PRODUCTOS = "http://localhost:5018/api/Productos";
-const API_DETALLE_COMPRAS = "http://localhost:5018/api/DetalleCompras";
+const API_COMPRAS = "http://localhost:5272/api/Compras";
+const API_PROVEEDORES = "http://localhost:5272/api/Proveedore";
+const API_PRODUCTOS = "http://localhost:5272/api/Productos";
+const API_DETALLE_COMPRAS = "http://localhost:5272/api/DetalleCompras";
 const IVA_RATE = 0.19;
 const ITEMS_PER_PAGE = 10;
 
@@ -518,7 +490,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL AdminCompras CORREGIDO
+// COMPONENTE PRINCIPAL AdminCompras CON FILTROS MEJORADOS
 // ===============================================
 const AdminCompras = () => {
   const [compras, setCompras] = useState([]);
@@ -552,6 +524,16 @@ const AdminCompras = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
   
+  // Estados para filtros - MEJORADO COMO EN TIPO CABAÑA
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    metodoPago: "all",
+    proveedor: "all",
+    fechaDesde: "",
+    fechaHasta: ""
+  });
+
   const { toPDF, targetRef } = usePDF({filename: `compra_${selectedCompra?.idCompra || 'nueva'}.pdf`});
 
   // ===============================================
@@ -591,6 +573,17 @@ const AdminCompras = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -964,7 +957,7 @@ const AdminCompras = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1001,14 +994,6 @@ const AdminCompras = () => {
     const { name } = e.target;
     markFieldAsTouched(name);
     validateField(name, newCompra[name]);
-  };
-
-  // Función para cambiar el estado con el botón toggle
-  const toggleEstado = () => {
-    setNewCompra(prev => ({
-      ...prev,
-      estado: !prev.estado
-    }));
   };
 
   const closeForm = () => {
@@ -1165,6 +1150,40 @@ const AdminCompras = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN TIPO CABAÑA
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      metodoPago: "all",
+      proveedor: "all",
+      fechaDesde: "",
+      fechaHasta: ""
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.metodoPago !== "all") count++;
+    if (filters.proveedor !== "all") count++;
+    if (filters.fechaDesde) count++;
+    if (filters.fechaHasta) count++;
+    return count;
+  }, [filters]);
+
+  // ===============================================
   // FUNCIONES PARA OBTENER NOMBRES Y DETALLES
   // ===============================================
   const getProductoNombre = (idProducto) => {
@@ -1227,18 +1246,40 @@ const AdminCompras = () => {
   ];
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredCompras = useMemo(() => {
     return compras.filter(compra => {
+      // Búsqueda general
       const proveedor = proveedores.find(p => p.idProveedor === compra.idProveedor);
       const productosCompra = getNombresProductosCompra(compra.idCompra);
       
-      return proveedor?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             compra.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             productosCompra.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = 
+        proveedor?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        compra.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        productosCompra.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (compra.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por método de pago
+      if (filters.metodoPago !== "all" && compra.metodoPago !== filters.metodoPago) {
+        return false;
+      }
+
+      // Filtro por proveedor
+      if (filters.proveedor !== "all" && compra.idProveedor !== parseInt(filters.proveedor)) {
+        return false;
+      }
+
+      return true;
     });
-  }, [compras, proveedores, searchTerm, detalleCompras, productos]);
+  }, [compras, proveedores, searchTerm, detalleCompras, productos, filters]);
 
   const totalPages = Math.ceil(filteredCompras.length / ITEMS_PER_PAGE);
 
@@ -1424,144 +1465,327 @@ const AdminCompras = () => {
             {compras.length} compras registradas • {compras.filter(c => c.estado).length} activas
           </p>
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setIsEditing(false);
-              setFormErrors({});
-              setFormSuccess({});
-              setFormWarnings({});
-              setTouchedFields({});
-              setNewCompra({
-                idProveedor: proveedores.length > 0 ? proveedores[0].idProveedor.toString() : "",
-                metodoPago: "Transferencia",
-                estado: true
-              });
-              setProductosCompra([]);
-            }}
-            style={{
-              backgroundColor: "#2E5939",
-              color: "white",
-              padding: "12px 20px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              transition: "all 0.3s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-              e.target.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#2E5939";
-              e.target.style.transform = "translateY(0)";
-            }}
-          >
-            <FaPlus /> Nueva Compra
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setShowForm(true);
+            setIsEditing(false);
+            setFormErrors({});
+            setFormSuccess({});
+            setFormWarnings({});
+            setTouchedFields({});
+            setNewCompra({
+              idProveedor: proveedores.length > 0 ? proveedores[0].idProveedor.toString() : "",
+              metodoPago: "Transferencia",
+              estado: true
+            });
+            setProductosCompra([]);
+          }}
+          style={{
+            backgroundColor: "#2E5939",
+            color: "white",
+            padding: "12px 20px",
+            border: "none",
+            borderRadius: 10,
+            cursor: "pointer",
+            fontWeight: "600",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+            transition: "all 0.3s ease",
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+            e.target.style.transform = "translateY(-2px)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = "#2E5939";
+            e.target.style.transform = "translateY(0)";
+          }}
+        >
+          <FaPlus /> Nueva Compra
+        </button>
       </div>
 
-      {/* Estadísticas - IGUAL QUE MARCAS Y PROVEEDORES */}
+      {/* Estadísticas */}
       {!loading && compras.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {compras.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Compras
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {compras.filter(c => c.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Compras Activas
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {compras.filter(c => !c.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Compras Inactivas
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               ${compras.reduce((sum, compra) => sum + compra.total, 0).toLocaleString('es-CO')}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
               Valor Total
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda - SIMPLIFICADA */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por proveedor, producto o método de pago..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN TIPO CABAÑA */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por proveedor, producto o método de pago..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activas</option>
+                  <option value="inactivo">Inactivas</option>
+                </select>
+              </div>
+
+              {/* Filtro por método de pago */}
+              <div>
+                <label style={labelStyle}>Método de Pago</label>
+                <select
+                  name="metodoPago"
+                  value={filters.metodoPago}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los métodos</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+
+              {/* Filtro por proveedor */}
+              <div>
+                <label style={labelStyle}>Proveedor</label>
+                <select
+                  name="proveedor"
+                  value={filters.proveedor}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los proveedores</option>
+                  {proveedores.map(proveedor => (
+                    <option key={proveedor.idProveedor} value={proveedor.idProveedor}>
+                      {proveedor.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por fecha de creación */}
+              <div>
+                <label style={labelStyle}>Fecha Desde</label>
+                <input
+                  type="date"
+                  name="fechaDesde"
+                  value={filters.fechaDesde}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Fecha Hasta</label>
+                <input
+                  type="date"
+                  name="fechaHasta"
+                  value={filters.fechaHasta}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredCompras.length !== compras.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredCompras.length} de {compras.length} compras
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
 
       {/* Formulario de agregar/editar */}
@@ -1630,9 +1854,6 @@ const AdminCompras = () => {
                   touched={touchedFields.metodoPago}
                   icon={<FaDollarSign />}
                 />
-
-                {/* Botón Toggle para Estado */}
-                
               </div>
 
               {/* Sección de Productos */}
@@ -2141,7 +2362,50 @@ const AdminCompras = () => {
               {paginatedCompras.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {compras.length === 0 ? "No hay compras registradas" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {compras.length === 0 ? "No hay compras registradas" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
+                      {compras.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primera Compra
+                        </button>
+                      )}
+                      {compras.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -2149,7 +2413,10 @@ const AdminCompras = () => {
                   const nombresProductos = getNombresProductosCompra(compra.idCompra);
                   
                   return (
-                    <tr key={compra.idCompra} style={{ borderBottom: "1px solid #eee" }}>
+                    <tr key={compra.idCompra} style={{ 
+                      borderBottom: "1px solid #eee",
+                      backgroundColor: compra.estado ? '#fff' : '#f9f9f9'
+                    }}>
                       <td style={{ padding: "15px", fontWeight: "500" }}>
                         {getProveedorNombre(compra.idProveedor)}
                       </td>

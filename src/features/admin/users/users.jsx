@@ -346,8 +346,8 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_USUARIOS = "http://localhost:5018/api/Usuarios";
-const API_ROLES = "http://localhost:5018/api/Rol";
+const API_USUARIOS = "http://localhost:5272/api/Usuarios";
+const API_ROLES = "http://localhost:5272/api/Rol";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -866,7 +866,7 @@ const Users = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1521,33 +1521,7 @@ const Users = () => {
             />
           </div>
 
-          {/* Filtro por rol */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <FaFilter style={{ color: '#2E5939' }} />
-            <select
-              value={selectedRole}
-              onChange={(e) => {
-                setSelectedRole(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 8,
-                border: "1px solid #ccc",
-                backgroundColor: "#F7F4EA",
-                color: "#2E5939",
-                minWidth: '150px',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">Todos los roles</option>
-              {roles.map(role => (
-                <option key={role.idRol} value={role.idRol}>
-                  {role.nombreRol}
-                </option>
-              ))}
-            </select>
-          </div>
+         
 
           {/* Botón para mostrar/ocultar filtros avanzados */}
           <button
@@ -1564,6 +1538,7 @@ const Users = () => {
               alignItems: 'center',
               gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
           >
             <FaSlidersH />

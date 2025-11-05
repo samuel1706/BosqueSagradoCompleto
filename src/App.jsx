@@ -20,11 +20,30 @@ import Temporada from "./features/admin/Temporada/Temporada";
 import TipoCabana from "./features/admin/TipoCabana/Tipocabana";
 import Disponibilidad from "./features/admin/Disponibilidad/Disponibilidad";
 
-// ✅ Componente placeholder para rutas vacías
+
+// 🆕 Importamos el módulo de ventas (por ahora placeholder)
+const Ventas = () => (
+  <div style={{
+    padding: '40px',
+    textAlign: 'center',
+    color: '#2E5939',
+    backgroundColor: '#f5f8f2',
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column'
+  }}>
+    <h1 style={{ fontSize: '2.5rem', margin: 0 }}>🛒 Gestión de Ventas</h1>
+    <p style={{ fontSize: '1.2rem', color: '#679750' }}>Módulo de ventas en desarrollo</p>
+  </div>
+);
+
+// ✅ Componente placeholder reutilizable
 const Placeholder = ({ title }) => (
-  <div style={{ 
-    padding: '40px', 
-    textAlign: 'center', 
+  <div style={{
+    padding: '40px',
+    textAlign: 'center',
     color: '#2E5939',
     backgroundColor: '#f5f8f2',
     minHeight: '100vh',
@@ -47,15 +66,14 @@ function LayoutWithSidebar() {
       <Sidebar />
       <div className="flex-1 bg-[#F5F5F5] min-h-screen">
         <Routes>
-          {/* 📌 Dashboard */}
+          {/* 📊 Dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* 📌 Configuración */}
+          {/* ⚙️ Configuración */}
           <Route path="/roles" element={<Roles />} />
           <Route path="/usuarios" element={<Users />} />
-          
 
-          {/* 📌 Reservas - MANTIENDO LA ESTRUCTURA ORIGINAL */}
+          {/* 🏕️ Reservas */}
           <Route path="/reservas/cabanas" element={<Cabins />} />
           <Route path="/reservas/tipocabana" element={<TipoCabana />} />
           <Route path="/reservas/disponibilidad" element={<Disponibilidad />} />
@@ -66,18 +84,22 @@ function LayoutWithSidebar() {
           <Route path="/reservas/muebles" element={<Furniture />} />
           <Route path="/reservas/Temporada" element={<Temporada />} />
 
-          {/* 📌 Compras */}
+          {/* 🛍️ Compras */}
           <Route path="/compras/gestion-categoria-producto" element={<CategoriaProducto />} />
           <Route path="/compras/gestion-productos" element={<Productos />} />
           <Route path="/compras/proveedores" element={<Proveedores />} />
           <Route path="/compras/compras" element={<Compras />} />
           <Route path="/compras/gestion-marca" element={<Marca />} />
-
-          {/* 📌 Rutas vacías opcionales */}
-          <Route path="/reservas" element={<Placeholder title="Gestión de Reservas" />} />
           <Route path="/compras" element={<Placeholder title="Gestión de Compras" />} />
 
-          {/* 📌 Ruta por defecto */}
+          {/* 🆕 🛒 Ventas */}
+          <Route path="/ventas" element={<Ventas />} />
+          <Route path="/ventas/ventas" element={<Ventas />} />
+
+          {/* 🚧 Rutas vacías opcionales */}
+          <Route path="/reservas" element={<Placeholder title="Gestión de Reservas" />} />
+
+          {/* 🏠 Ruta por defecto */}
           <Route path="/" element={<Dashboard />} />
         </Routes>
       </div>

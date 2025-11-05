@@ -1,6 +1,6 @@
 // src/components/TipoCabana.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaHome, FaCouch, FaBed, FaStar, FaUsers, FaTree } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaHome, FaCouch, FaBed, FaStar, FaUsers, FaTree, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -146,6 +146,13 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
+const alertInfoStyle = {
+  ...alertStyle,
+  backgroundColor: '#d1ecf1',
+  color: '#0c5460',
+  borderLeftColor: '#17a2b8',
+};
+
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
@@ -246,7 +253,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_TIPO_CABANA = "http://localhost:5018/api/TipoCabana";
+const API_TIPO_CABANA = "http://localhost:5272/api/TipoCabana";
 const ITEMS_PER_PAGE = 10;
 
 // ===============================================
@@ -268,7 +275,7 @@ const FormField = ({
   maxLength,
   placeholder,
   showCharCount = false,
-  touched = false // Nuevo prop para controlar si el campo ha sido tocado
+  touched = false
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
@@ -427,7 +434,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL TipoCabana CON DISTRIBUCIÓN MEJORADA
+// COMPONENTE PRINCIPAL TipoCabana CON FILTROS MEJORADOS
 // ===============================================
 const TipoCabana = () => {
   const [tiposCabana, setTiposCabana] = useState([]);
@@ -448,12 +455,21 @@ const TipoCabana = () => {
   const [formSuccess, setFormSuccess] = useState({});
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [touchedFields, setTouchedFields] = useState({}); // Nuevo estado para campos tocados
+  const [touchedFields, setTouchedFields] = useState({});
+
+  // Estados para filtros - MEJORADO COMO EN ROLES Y SEDES
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    fechaDesde: "",
+    fechaHasta: ""
+  });
 
   const [newTipoCabana, setNewTipoCabana] = useState({
+    idTipoCabana: 0,
     nombreTipoCabana: "",
     descripcion: "",
-    estado: "true"
+    estado: true
   });
 
   // ===============================================
@@ -463,7 +479,6 @@ const TipoCabana = () => {
     fetchTiposCabana();
   }, []);
 
-  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
       Object.keys(touchedFields).forEach(fieldName => {
@@ -485,6 +500,17 @@ const TipoCabana = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -516,6 +542,8 @@ const TipoCabana = () => {
         return <FaExclamationTriangle style={alertIconStyle} />;
       case "warning":
         return <FaExclamationTriangle style={alertIconStyle} />;
+      case "info":
+        return <FaInfoCircle style={alertIconStyle} />;
       default:
         return <FaInfoCircle style={alertIconStyle} />;
     }
@@ -529,6 +557,8 @@ const TipoCabana = () => {
         return alertErrorStyle;
       case "warning":
         return alertWarningStyle;
+      case "info":
+        return alertInfoStyle;
       default:
         return alertSuccessStyle;
     }
@@ -560,7 +590,7 @@ const TipoCabana = () => {
       error = rules.errorMessages.pattern;
     }
     else if (fieldName === 'estado') {
-      success = value === "true" ? "Tipo de cabaña activo" : "Tipo de cabaña inactivo";
+      success = value === true || value === "true" ? "Tipo de cabaña activo" : "Tipo de cabaña inactivo";
     }
     else if (trimmedValue) {
       success = `${fieldName === 'nombreTipoCabana' ? 'Nombre' : 'Descripción'} válido.`;
@@ -628,6 +658,36 @@ const TipoCabana = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN ROLES Y SEDES
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      fechaDesde: "",
+      fechaHasta: ""
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.fechaDesde) count++;
+    if (filters.fechaHasta) count++;
+    return count;
+  }, [filters]);
+
+  // ===============================================
   // FUNCIONES DE LA API CORREGIDAS
   // ===============================================
   const fetchTiposCabana = async () => {
@@ -650,7 +710,6 @@ const TipoCabana = () => {
         setTiposCabana(res.data);
         console.log(`📝 ${res.data.length} tipos de cabaña cargados`);
       } else if (res.data && Array.isArray(res.data.$values)) {
-        // Si la API devuelve un objeto con propiedad $values (common in .NET)
         setTiposCabana(res.data.$values);
         console.log(`📝 ${res.data.$values.length} tipos de cabaña cargados`);
       } else {
@@ -659,12 +718,6 @@ const TipoCabana = () => {
       }
     } catch (error) {
       console.error("❌ Error completo al cargar:", error);
-      console.error("❌ Detalles del error:", {
-        message: error.message,
-        code: error.code,
-        response: error.response,
-        request: error.request
-      });
       handleApiError(error, "cargar los tipos de cabaña");
     } finally {
       setLoading(false);
@@ -687,21 +740,19 @@ const TipoCabana = () => {
     setLoading(true);
     
     try {
-      // CORRECCIÓN: Formato de datos corregido para la API
+      // FORMATO CORREGIDO: Enviar exactamente como espera la API
       const tipoCabanaData = {
+        idTipoCabana: isEditing ? newTipoCabana.idTipoCabana : 0,
         nombreTipoCabana: newTipoCabana.nombreTipoCabana.trim(),
         descripcion: newTipoCabana.descripcion.trim(),
-        estado: newTipoCabana.estado === "true"
+        estado: newTipoCabana.estado === "true" || newTipoCabana.estado === true
       };
 
-      // DEBUG: Ver qué se está enviando
       console.log("📤 Enviando datos a la API:", tipoCabanaData);
-      console.log("🔗 URL:", isEditing ? 
-        `${API_TIPO_CABANA}/${newTipoCabana.idTipoCabana}` : 
-        API_TIPO_CABANA);
 
+      let response;
       if (isEditing) {
-        const response = await axios.put(
+        response = await axios.put(
           `${API_TIPO_CABANA}/${newTipoCabana.idTipoCabana}`, 
           tipoCabanaData,
           {
@@ -714,7 +765,7 @@ const TipoCabana = () => {
         console.log("✅ Respuesta de actualización:", response.data);
         displayAlert("Tipo de cabaña actualizado exitosamente.", "success");
       } else {
-        const response = await axios.post(
+        response = await axios.post(
           API_TIPO_CABANA, 
           tipoCabanaData,
           {
@@ -755,15 +806,12 @@ const TipoCabana = () => {
         }
       });
 
-      // Eliminar del estado local para actualizar la UI inmediatamente
       setTiposCabana(prev => prev.filter(t => t.idTipoCabana !== tipoCabanaToDelete.idTipoCabana));
-
       displayAlert("Tipo de cabaña eliminado correctamente.", "success");
     } catch (error) {
       console.error("❌ Error al eliminar tipo de cabaña:", error);
       console.error("❌ Detalles del error:", error.response?.data);
       
-      // Si la API devuelve conflicto por dependencias, informar claramente
       if (error.response && error.response.status === 409) {
         displayAlert("No se puede eliminar el tipo de cabaña porque está siendo utilizado en cabañas existentes.", "error");
       } else if (error.response && error.response.status === 404) {
@@ -789,11 +837,10 @@ const TipoCabana = () => {
 
     if (axios.isAxiosError(error)) {
       if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-        errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en http://localhost:5018";
+        errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en http://localhost:5272";
       } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = "No se puede conectar al servidor. Verifica que esté ejecutándose en el puerto 5018";
+        errorMessage = "No se puede conectar al servidor. Verifica que esté ejecutándose en el puerto 5272";
       } else if (error.response) {
-        // El servidor respondió con un código de error
         const status = error.response.status;
         const data = error.response.data;
         
@@ -817,11 +864,9 @@ const TipoCabana = () => {
             errorMessage = `Error ${status}: ${JSON.stringify(data)}`;
         }
       } else if (error.request) {
-        // La request fue hecha pero no hubo respuesta
         errorMessage = "El servidor no respondió. Verifica que la API esté funcionando.";
       }
     } else {
-      // Error no relacionado con Axios
       errorMessage = `Error: ${error.message}`;
     }
     
@@ -833,11 +878,10 @@ const TipoCabana = () => {
     const { name, value } = e.target;
     setNewTipoCabana((prev) => ({
       ...prev,
-      [name]: value
+      [name]: name === 'estado' ? (value === "true") : value
     }));
   };
 
-  // Nueva función para manejar el blur (cuando el campo pierde el foco)
   const handleInputBlur = (e) => {
     const { name } = e.target;
     markFieldAsTouched(name);
@@ -871,7 +915,6 @@ const TipoCabana = () => {
       await fetchTiposCabana();
     } catch (error) {
       console.error("❌ Error al cambiar estado:", error);
-      console.error("❌ Detalles del error:", error.response?.data);
       handleApiError(error, "cambiar el estado");
     } finally {
       setLoading(false);
@@ -884,11 +927,12 @@ const TipoCabana = () => {
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
-    setTouchedFields({}); // Limpiar campos tocados al cerrar
+    setTouchedFields({});
     setNewTipoCabana({
+      idTipoCabana: 0,
       nombreTipoCabana: "",
       descripcion: "",
-      estado: "true"
+      estado: true
     });
   };
 
@@ -910,14 +954,14 @@ const TipoCabana = () => {
   const handleEdit = (tipoCabana) => {
     setNewTipoCabana({
       ...tipoCabana,
-      estado: tipoCabana.estado.toString() // Convertir a string para el select
+      estado: tipoCabana.estado
     });
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
-    setTouchedFields({}); // Limpiar campos tocados al editar
+    setTouchedFields({});
   };
 
   const handleDeleteClick = (tipoCabana) => {
@@ -926,14 +970,28 @@ const TipoCabana = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredTiposCabana = useMemo(() => {
-    return tiposCabana.filter(tipo =>
-      tipo.nombreTipoCabana?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tipo.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [tiposCabana, searchTerm]);
+    let filtered = tiposCabana.filter(tipo => {
+      // Búsqueda general
+      const matchesSearch = 
+        tipo.nombreTipoCabana?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tipo.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (tipo.estado !== estadoFilter) return false;
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [tiposCabana, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredTiposCabana.length / ITEMS_PER_PAGE);
 
@@ -1056,11 +1114,12 @@ const TipoCabana = () => {
             setFormErrors({});
             setFormSuccess({});
             setFormWarnings({});
-            setTouchedFields({}); // Limpiar campos tocados al abrir
+            setTouchedFields({});
             setNewTipoCabana({
+              idTipoCabana: 0,
               nombreTipoCabana: "",
               descripcion: "",
-              estado: "true"
+              estado: true
             });
           }}
           style={{
@@ -1090,84 +1149,244 @@ const TipoCabana = () => {
         </button>
       </div>
 
-      {/* Estadísticas - COLOCADAS ENTRE EL HEADER Y LA BARRA DE BÚSQUEDA */}
+      {/* Estadísticas */}
       {!loading && tiposCabana.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {tiposCabana.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Tipos
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {tiposCabana.filter(t => t.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Tipos Activos
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {tiposCabana.filter(t => !t.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Tipos Inactivos
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredTiposCabana.length}
+            </div>
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda - SIMPLIFICADA */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o descripción..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN ROLES Y SEDES */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o descripción..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por fecha de creación */}
+              <div>
+                <label style={labelStyle}>Fecha Creación Desde</label>
+                <input
+                  type="date"
+                  name="fechaDesde"
+                  value={filters.fechaDesde}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Fecha Creación Hasta</label>
+                <input
+                  type="date"
+                  name="fechaHasta"
+                  value={filters.fechaHasta}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredTiposCabana.length !== tiposCabana.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredTiposCabana.length} de {tiposCabana.length} tipos de cabaña
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
 
       {/* Formulario de agregar/editar */}
@@ -1199,7 +1418,7 @@ const TipoCabana = () => {
                 name="nombreTipoCabana"
                 value={newTipoCabana.nombreTipoCabana}
                 onChange={handleChange}
-                onBlur={handleInputBlur} // Nuevo evento onBlur
+                onBlur={handleInputBlur}
                 error={formErrors.nombreTipoCabana}
                 success={formSuccess.nombreTipoCabana}
                 warning={formWarnings.nombreTipoCabana}
@@ -1208,7 +1427,7 @@ const TipoCabana = () => {
                 maxLength={VALIDATION_RULES.nombreTipoCabana.maxLength}
                 showCharCount={true}
                 placeholder="Ej: Lujo, Familiar, Económica, Premium..."
-                touched={touchedFields.nombreTipoCabana} // Pasar estado de tocado
+                touched={touchedFields.nombreTipoCabana}
               />
 
               <FormField
@@ -1217,7 +1436,7 @@ const TipoCabana = () => {
                 type="textarea"
                 value={newTipoCabana.descripcion}
                 onChange={handleChange}
-                onBlur={handleInputBlur} // Nuevo evento onBlur
+                onBlur={handleInputBlur}
                 error={formErrors.descripcion}
                 success={formSuccess.descripcion}
                 warning={formWarnings.descripcion}
@@ -1226,10 +1445,25 @@ const TipoCabana = () => {
                 maxLength={VALIDATION_RULES.descripcion.maxLength}
                 showCharCount={true}
                 placeholder="Descripción detallada del tipo de cabaña, características principales..."
-                touched={touchedFields.descripcion} // Pasar estado de tocado
+                touched={touchedFields.descripcion}
               />
 
-              
+              <FormField
+                label="Estado"
+                name="estado"
+                type="select"
+                value={newTipoCabana.estado.toString()}
+                onChange={handleChange}
+                error={formErrors.estado}
+                success={formSuccess.estado}
+                required={true}
+                disabled={loading}
+                options={[
+                  { value: "true", label: "Activo" },
+                  { value: "false", label: "Inactivo" }
+                ]}
+                touched={touchedFields.estado}
+              />
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
@@ -1359,7 +1593,7 @@ const TipoCabana = () => {
         </div>
       )}
 
-      {/* Modal de Confirmación de Eliminación - CORREGIDO */}
+      {/* Modal de Confirmación de Eliminación */}
       {showDeleteConfirm && tipoCabanaToDelete && (
         <div style={modalOverlayStyle}>
           <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
@@ -1461,12 +1695,58 @@ const TipoCabana = () => {
               {paginatedTiposCabana.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {tiposCabana.length === 0 ? "No hay tipos de cabaña registrados" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {tiposCabana.length === 0 ? "No hay tipos de cabaña registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
+                      {tiposCabana.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Tipo
+                        </button>
+                      )}
+                      {tiposCabana.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedTiposCabana.map((tipo) => (
-                  <tr key={tipo.idTipoCabana} style={{ borderBottom: "1px solid #eee" }}>
+                  <tr key={tipo.idTipoCabana} style={{ 
+                    borderBottom: "1px solid #eee",
+                    backgroundColor: tipo.estado ? '#fff' : '#f9f9f9'
+                  }}>
                     <td style={{ padding: "15px", fontWeight: "500" }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         {getTipoIcon(tipo.nombreTipoCabana)}

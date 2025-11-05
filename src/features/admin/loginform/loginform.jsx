@@ -106,7 +106,7 @@ const loginWithAPI = async (email, password) => {
   try {
     console.log('🔐 Intentando login con:', { email, password });
     
-    const response = await fetch('http://localhost:5018/api/Usuarios/Login', {
+    const response = await fetch('http://localhost:5272/api/Usuarios/Login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ const loginWithAPI = async (email, password) => {
 // Función para obtener todos los usuarios
 const getAllUsers = async () => {
   try {
-    const response = await fetch('http://localhost:5018/api/Usuarios', {
+    const response = await fetch('http://localhost:5272/api/Usuarios', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ const registerWithAPI = async (userData) => {
   try {
     console.log('📝 Intentando registrar usuario:', userData);
     
-    const response = await fetch('http://localhost:5018/api/Usuarios', {
+    const response = await fetch('http://localhost:5272/api/Usuarios', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

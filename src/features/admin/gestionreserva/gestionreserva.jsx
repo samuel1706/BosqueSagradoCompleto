@@ -1,14 +1,12 @@
-// src/components/GestionReserva.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaMoneyBillAlt, FaFilePdf, FaCalendarAlt, FaUser, FaMapMarkerAlt, FaHome, FaBox, FaCreditCard, FaSearch, FaSync, FaCheck } from "react-icons/fa";
+// src/components/Gestiservi.jsx
 import React, { useState, useMemo, useEffect } from "react";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaClock, FaTag, FaImage, FaUpload, FaCamera, FaBox, FaBuilding, FaGift, FaClipboardList, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 
 // ===============================================
-// ESTILOS MEJORADOS
+// ESTILOS MEJORADOS (CONSISTENTES)
 // ===============================================
-const btnAccion = (bg, borderColor, hoverBg) => ({
+const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
   cursor: "pointer",
   padding: "8px 12px",
@@ -17,70 +15,54 @@ const btnAccion = (bg, borderColor, hoverBg) => ({
   backgroundColor: bg,
   color: borderColor,
   fontWeight: "600",
-  fontSize: "14px",
+  fontSize: "16px",
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '6px',
+  gap: '5px',
   transition: "all 0.3s ease",
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-  ':hover': {
-    backgroundColor: hoverBg,
-    transform: "translateY(-1px)",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.15)"
-  }
 });
 
 const labelStyle = {
   display: "block",
   fontWeight: "600",
-  marginBottom: 8,
+  marginBottom: 4,
   color: "#2E5939",
-  fontSize: "14px"
 };
 
 const inputStyle = {
   width: "100%",
-  padding: "12px 15px",
-  border: "1px solid #ddd",
-  borderRadius: 10,
+  padding: "10px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 8,
   backgroundColor: "#F7F4EA",
   color: "#2E5939",
   boxSizing: 'border-box',
-  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-  fontSize: "14px",
+  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
   transition: "all 0.3s ease",
-  ':focus': {
-    outline: "none",
-    borderColor: "#2E5939",
-    boxShadow: "0 0 0 3px rgba(46, 89, 57, 0.1)"
-  }
 };
 
-const inputDisabledStyle = {
-  ...inputStyle,
-  backgroundColor: "#f8f9fa",
-  color: "#6c757d",
-  cursor: "not-allowed",
-  borderColor: "#e9ecef"
-};
+const navBtnStyle = (disabled) => ({
+  cursor: disabled ? "not-allowed" : "pointer",
+  padding: "8px 12px",
+  borderRadius: 8,
+  border: "1px solid #ccc",
+  backgroundColor: disabled ? "#e0e0e0" : "#F7F4EA",
+  color: "#2E5939",
+  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+});
 
-const cardStyle = {
-  backgroundColor: '#fff',
-  borderRadius: '12px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-  overflow: 'hidden',
-  border: '1px solid rgba(103, 151, 80, 0.1)'
-};
-
-const statCardStyle = {
-  backgroundColor: '#fff',
-  borderRadius: '12px',
-  padding: '20px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-  border: '1px solid rgba(103, 151, 80, 0.1)',
-  textAlign: 'center'
-};
+const pageBtnStyle = (active) => ({
+  cursor: "pointer",
+  padding: "8px 12px",
+  borderRadius: 8,
+  border: "1px solid #2E5939",
+  backgroundColor: active ? "#2E5939" : "#F7F4EA",
+  color: active ? "white" : "#2E5939",
+  fontWeight: "600",
+  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+});
 
 const modalOverlayStyle = {
   position: "fixed",
@@ -88,21 +70,20 @@ const modalOverlayStyle = {
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.7)",
+  backgroundColor: "rgba(0, 0, 0, 0.6)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
-  backdropFilter: "blur(4px)"
 };
 
 const modalContentStyle = {
   backgroundColor: "#fff",
   padding: 30,
-  borderRadius: 16,
-  boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+  borderRadius: 12,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 750,
+  maxWidth: 600,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -111,1399 +92,561 @@ const modalContentStyle = {
   border: "2px solid #679750",
 };
 
+// Estilos mejorados para alertas
 const alertStyle = {
   position: 'fixed',
   top: 20,
   right: 20,
-  padding: '16px 20px',
-  borderRadius: '12px',
-  boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+  padding: '15px 20px',
+  borderRadius: '10px',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
   zIndex: 10000,
   display: 'flex',
   alignItems: 'center',
   gap: '12px',
   fontWeight: '600',
-  fontSize: '15px',
-  minWidth: '320px',
+  fontSize: '16px',
+  minWidth: '300px',
   maxWidth: '500px',
   animation: 'slideInRight 0.3s ease-out',
   borderLeft: '5px solid',
   backdropFilter: 'blur(10px)',
 };
 
+const alertIconStyle = {
+  fontSize: '20px',
+  flexShrink: 0,
+};
+
+const alertSuccessStyle = {
+  ...alertStyle,
+  backgroundColor: '#d4edda',
+  color: '#155724',
+  borderLeftColor: '#28a745',
+};
+
+const alertErrorStyle = {
+  ...alertStyle,
+  backgroundColor: '#f8d7da',
+  color: '#721c24',
+  borderLeftColor: '#dc3545',
+};
+
+const alertWarningStyle = {
+  ...alertStyle,
+  backgroundColor: '#fff3cd',
+  color: '#856404',
+  borderLeftColor: '#ffc107',
+};
+
+const alertInfoStyle = {
+  ...alertStyle,
+  backgroundColor: '#d1ecf1',
+  color: '#0c5460',
+  borderLeftColor: '#17a2b8',
+};
+
 const detailsModalStyle = {
   backgroundColor: "#fff",
   padding: 30,
-  borderRadius: 16,
-  boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+  borderRadius: 12,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '85vh',
+  maxHeight: '90vh',
   overflowY: 'auto',
   border: "2px solid #679750",
 };
 
 const detailItemStyle = {
-  marginBottom: 20,
-  paddingBottom: 20,
+  marginBottom: 15,
+  paddingBottom: 15,
   borderBottom: "1px solid rgba(46, 89, 57, 0.1)"
 };
 
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 8,
-  fontSize: "15px",
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px'
+  marginBottom: 5,
+  fontSize: "14px"
 };
 
 const detailValueStyle = {
   fontSize: 16,
-  color: "#2E5939",
-  fontWeight: "500",
-  lineHeight: "1.5"
+  color: "#2E5939"
+};
+
+const validationMessageStyle = {
+  fontSize: "0.8rem",
+  marginTop: "4px",
+  display: "flex",
+  alignItems: "center",
+  gap: "5px"
+};
+
+const successValidationStyle = {
+  ...validationMessageStyle,
+  color: "#4caf50"
+};
+
+const errorValidationStyle = {
+  ...validationMessageStyle,
+  color: "#e57373"
+};
+
+const warningValidationStyle = {
+  ...validationMessageStyle,
+  color: "#ff9800"
+};
+
+// ===============================================
+// ESTILOS PARA IMÁGENES
+// ===============================================
+const imageUploadStyle = {
+  border: '2px dashed #679750',
+  borderRadius: '10px',
+  padding: '20px',
+  textAlign: 'center',
+  backgroundColor: '#F7F4EA',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  marginBottom: '15px'
+};
+
+const imagePreviewContainerStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+  gap: '10px',
+  marginTop: '15px'
+};
+
+const imagePreviewStyle = {
+  position: 'relative',
+  borderRadius: '8px',
+  overflow: 'hidden',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+const imageStyle = {
+  width: '100%',
+  height: '100px',
+  objectFit: 'cover',
+  display: 'block'
+};
+
+const imageRemoveButtonStyle = {
+  position: 'absolute',
+  top: '5px',
+  right: '5px',
+  background: 'rgba(229, 115, 115, 0.9)',
+  color: 'white',
+  border: 'none',
+  borderRadius: '50%',
+  width: '24px',
+  height: '24px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '12px'
+};
+
+const imageGalleryStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+  gap: '15px',
+  marginTop: '15px'
+};
+
+const galleryImageStyle = {
+  width: '100%',
+  height: '120px',
+  objectFit: 'cover',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+// ===============================================
+// VALIDACIONES Y PATRONES
+// ===============================================
+const VALIDATION_PATTERNS = {
+  nombreServicio: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]+$/,
+  descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/,
+  imagen: /^[a-zA-Z0-9\-_\.\/:]+$/ // Patrón básico para URLs de imágenes
+};
+
+const VALIDATION_RULES = {
+  nombreServicio: {
+    minLength: 2,
+    maxLength: 100,
+    required: true,
+    pattern: VALIDATION_PATTERNS.nombreServicio,
+    errorMessages: {
+      required: "El nombre del servicio es obligatorio.",
+      minLength: "El nombre debe tener al menos 2 caracteres.",
+      maxLength: "El nombre no puede exceder los 100 caracteres.",
+      pattern: "El nombre contiene caracteres no permitidos. Solo se permiten letras, espacios, guiones y el símbolo &."
+    }
+  },
+  descripcion: {
+    minLength: 10,
+    maxLength: 500,
+    required: false,
+    pattern: VALIDATION_PATTERNS.descripcion,
+    errorMessages: {
+      minLength: "La descripción debe tener al menos 10 caracteres.",
+      maxLength: "La descripción no puede exceder los 500 caracteres.",
+      pattern: "La descripción contiene caracteres no válidos."
+    }
+  },
+  precioServicio: {
+    min: 1000,
+    max: 10000000,
+    required: true,
+    errorMessages: {
+      required: "El precio es obligatorio.",
+      min: "El precio mínimo es $1,000 COP.",
+      max: "El precio máximo es $10,000,000 COP.",
+      invalid: "El precio debe ser un valor numérico válido."
+    }
+  },
+  imagen: {
+    maxLength: 500,
+    required: false,
+    pattern: VALIDATION_PATTERNS.imagen,
+    errorMessages: {
+      maxLength: "La URL de la imagen no puede exceder los 500 caracteres.",
+      pattern: "La URL de la imagen contiene caracteres no válidos."
+    }
+  },
+  estado: {
+    required: true,
+    errorMessages: {
+      required: "El estado es obligatorio."
+    }
+  }
 };
 
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_BASE_URL = "http://localhost:5018/api";
-const API_RESERVAS = `${API_BASE_URL}/Reserva`;
-const API_CABANAS = `${API_BASE_URL}/Cabanas`;
-const API_SEDES = `${API_BASE_URL}/Sede`;
-const API_PAQUETES = `${API_BASE_URL}/Paquetes`;
-const API_ESTADOS = `${API_BASE_URL}/EstadosReserva`;
-const API_USUARIOS = `${API_BASE_URL}/Usuarios`;
-const API_METODOS_PAGO = `${API_BASE_URL}/metodopago`;
-const API_SERVICIOS = `${API_BASE_URL}/Servicios`;
-const API_SERVICIOS_RESERVA = `${API_BASE_URL}/ServiciosReserva`;
-
-const ITEMS_PER_PAGE = 8;
+const API_SERVICIOS = "http://localhost:5272/api/Servicios";
+const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5272/api/ProductoPorServicio";
+const API_SEDES_POR_SERVICIO = "http://localhost:5272/api/SedesPorServicio";
+const API_SERVICIOS_POR_PAQUETE = "http://localhost:5272/api/ServicioPorPaquete";
+const API_SERVICIOS_RESERVA = "http://localhost:5272/api/ServiciosReserva";
+const API_PRODUCTOS = "http://localhost:5272/api/Productos";
+const API_SEDES = "http://localhost:5272/api/Sede";
+const API_PAQUETES = "http://localhost:5272/api/Paquetes";
+const API_RESERVAS = "http://localhost:5272/api/Reservas";
+const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE PRINCIPAL GestionReserva MEJORADO
+// FUNCIÓN PARA FORMATEAR PRECIOS
 // ===============================================
-const GestionReserva = () => {
-  const [reservas, setReservas] = useState([]);
-  const [cabinas, setCabinas] = useState([]);
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+};
+
+// ===============================================
+// COMPONENTE FormField MEJORADO
+// ===============================================
+const FormField = ({ 
+  label, 
+  name, 
+  type = "text", 
+  value, 
+  onChange, 
+  onBlur,
+  error, 
+  success,
+  warning,
+  options = [],
+  style = {}, 
+  required = true, 
+  disabled = false,
+  maxLength,
+  placeholder,
+  showCharCount = false,
+  min,
+  max,
+  step,
+  touched = false,
+  icon
+}) => {
+  const finalOptions = useMemo(() => {
+    if (type === "select") {
+      const placeholderOption = { value: "", label: placeholder || "Seleccionar", disabled: required };
+      return [placeholderOption, ...options];
+    }
+    return options;
+  }, [options, type, required, placeholder]);
+
+  const handleFilteredInputChange = (e) => {
+    const { name, value } = e.target;
+    let filteredValue = value;
+
+    if (name === 'nombreServicio') {
+      filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]/g, "");
+    } else if (name === 'descripcion') {
+      if (value === "" || VALIDATION_PATTERNS.descripcion.test(value)) {
+        filteredValue = value;
+      } else {
+        return;
+      }
+    } else if (name === 'precioServicio') {
+      filteredValue = value.replace(/[^0-9.]/g, "");
+      const parts = filteredValue.split('.');
+      if (parts.length > 2) {
+        filteredValue = parts[0] + '.' + parts.slice(1).join('');
+      }
+      if (parts.length === 2 && parts[1].length > 2) {
+        filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
+      }
+    } else if (name === 'imagen') {
+      if (value === "" || VALIDATION_PATTERNS.imagen.test(value)) {
+        filteredValue = value;
+      } else {
+        return;
+      }
+    } else {
+      filteredValue = value;
+    }
+    
+    onChange({ target: { name, value: filteredValue } });
+  };
+
+  // Solo mostrar errores si el campo ha sido tocado
+  const showError = touched && error;
+  const showSuccess = touched && success && !error;
+  const showWarning = touched && warning && !error;
+
+  const getInputStyle = () => {
+    let borderColor = "#ccc";
+    if (showError) borderColor = "#e57373";
+    else if (showSuccess) borderColor = "#4caf50";
+    else if (showWarning) borderColor = "#ff9800";
+
+    return {
+      ...inputStyle,
+      border: `1px solid ${borderColor}`,
+      borderLeft: showError || showSuccess || showWarning ? `4px solid ${borderColor}` : `1px solid ${borderColor}`,
+      paddingLeft: icon ? '40px' : '12px'
+    };
+  };
+
+  const getValidationMessage = () => {
+    if (showError) {
+      return (
+        <div style={errorValidationStyle}>
+          <FaExclamationTriangle size={12} />
+          {error}
+        </div>
+      );
+    }
+    if (showSuccess) {
+      return (
+        <div style={successValidationStyle}>
+          <FaCheck size={12} />
+          {success}
+        </div>
+      );
+    }
+    if (showWarning) {
+      return (
+        <div style={warningValidationStyle}>
+          <FaInfoCircle size={12} />
+          {warning}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div style={{ marginBottom: '15px', ...style }}>
+      <label style={labelStyle}>
+        {label}
+        {required && <span style={{ color: "red" }}></span>}
+      </label>
+      {type === "select" ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          style={getInputStyle()}
+          required={required}
+          disabled={disabled}
+        >
+          {finalOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : type === "textarea" ? (
+        <div>
+          <textarea
+            name={name}
+            value={value}
+            onChange={handleFilteredInputChange}
+            onBlur={onBlur}
+            style={{
+              ...getInputStyle(),
+              minHeight: "80px",
+              resize: "vertical",
+              fontFamily: "inherit"
+            }}
+            required={required}
+            disabled={disabled}
+            maxLength={maxLength}
+            placeholder={placeholder}
+          />
+          {showCharCount && maxLength && (
+            <div style={{
+              fontSize: "0.75rem",
+              color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+              textAlign: "right",
+              marginTop: "4px"
+            }}>
+              {value.length}/{maxLength} caracteres
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ position: 'relative' }}>
+          {icon && (
+            <div style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#2E5939',
+              zIndex: 1
+            }}>
+              {icon}
+            </div>
+          )}
+          <div>
+            <input
+              type={type}
+              name={name}
+              value={value}
+              onChange={handleFilteredInputChange}
+              onBlur={onBlur}
+              style={getInputStyle()}
+              required={required}
+              disabled={disabled}
+              maxLength={maxLength}
+              placeholder={placeholder}
+              min={min}
+              max={max}
+              step={step}
+            />
+            {showCharCount && maxLength && (
+              <div style={{
+                fontSize: "0.75rem",
+                color: value.length > maxLength * 0.8 ? "#ff9800" : "#679750",
+                textAlign: "right",
+                marginTop: "4px"
+              }}>
+                {value.length}/{maxLength} caracteres
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {getValidationMessage()}
+    </div>
+  );
+};
+
+// ===============================================
+// COMPONENTE PRINCIPAL Gestiservi MEJORADO CON FILTROS
+// ===============================================
+const Gestiservi = () => {
+  const [servicios, setServicios] = useState([]);
+  const [productosPorServicio, setProductosPorServicio] = useState([]);
+  const [sedesPorServicio, setSedesPorServicio] = useState([]);
+  const [serviciosPorPaquete, setServiciosPorPaquete] = useState([]);
+  const [serviciosReserva, setServiciosReserva] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [sedes, setSedes] = useState([]);
   const [paquetes, setPaquetes] = useState([]);
-  const [estados, setEstados] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [metodosPago, setMetodosPago] = useState([]);
-  const [servicios, setServicios] = useState([]);
- 
+  const [reservas, setReservas] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [currentReserva, setCurrentReserva] = useState(null);
+  const [selectedServicio, setSelectedServicio] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [reservaToDelete, setReservaToDelete] = useState(null);
+  const [servicioToDelete, setServicioToDelete] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
+  const [alertType, setAlertType] = useState("success");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
+  const [formSuccess, setFormSuccess] = useState({});
+  const [formWarnings, setFormWarnings] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  const [newReserva, setNewReserva] = useState({
-    idReserva: 0,
-    fechaReserva: "",
-    fechaEntrada: "",
-    fechaRegistro: "",
-    abono: 0,
-    restante: 0,
-    monofiota1: 0,
-    idUsuario: "",
-    idEstado: "",
-    idSede: "",
-    idCabana: "",
-    idMetodoPago: "",
-    idPaquete: "",
-    serviciosSeleccionados: []
+  // Estados para filtros - MEJORADO COMO EN SEDES
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    precioMin: "",
+    precioMax: "",
+    tieneRelaciones: "all"
   });
 
-  // ===============================================
-  // FUNCIONES PARA FILTRAR ELEMENTOS ACTIVOS
-  // ===============================================
-  const serviciosActivos = useMemo(() => {
-    return servicios.filter(servicio => {
-      if (servicio.estadoServicio === undefined) return true;
-      return servicio.estadoServicio === true ||
-             servicio.estadoServicio === 1 ||
-             servicio.estadoServicio?.toString().toLowerCase() === 'activo';
-    });
-  }, [servicios]);
-
-  const paquetesActivos = useMemo(() => {
-    return paquetes.filter(paquete => {
-      if (paquete.estadoPaquete === undefined) return true;
-      return paquete.estadoPaquete === true ||
-             paquete.estadoPaquete === 1 ||
-             paquete.estadoPaquete?.toString().toLowerCase() === 'activo';
-    });
-  }, [paquetes]);
-
-  const sedesActivas = useMemo(() => {
-    return sedes.filter(sede => {
-      if (sede.estadoSede === undefined) return true;
-      return sede.estadoSede === true ||
-             sede.estadoSede === 1 ||
-             sede.estadoSede?.toString().toLowerCase() === 'activo';
-    });
-  }, [sedes]);
-
-  const cabinasActivas = useMemo(() => {
-    return cabinas.filter(cabina => {
-      if (cabina.estadoCabana === undefined) return true;
-      return cabina.estadoCabana === true ||
-             cabina.estadoCabana === 1 ||
-             cabina.estadoCabana?.toString().toLowerCase() === 'activo';
-    });
-  }, [cabinas]);
+  const [newServicio, setNewServicio] = useState({
+    idServicio: 0,
+    nombreServicio: "",
+    precioServicio: "",
+    imagen: "",
+    descripcion: "",
+    estado: true
+  });
 
   // ===============================================
   // EFECTOS
   // ===============================================
   useEffect(() => {
-    fetchReservas();
-    fetchDatosRelacionados();
+    fetchAllData();
   }, []);
 
+  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
-    const paqueteSeleccionado = paquetesActivos.find(p => p.idPaquete === parseInt(newReserva.idPaquete));
-    const precioPaquete = paqueteSeleccionado ? parseFloat(paqueteSeleccionado.precioPaquete || 0) : 0;
-
-    const preciosServicios = serviciosActivos
-      .filter(s => newReserva.serviciosSeleccionados.includes(s.idServicio))
-      .map(s => parseFloat(s.precioServicio || 0));
-    const totalServicios = preciosServicios.reduce((acc, val) => acc + val, 0);
-
-    const montoTotal = precioPaquete + totalServicios;
-    const abono = Math.round(montoTotal * 0.5);
-    const restante = montoTotal - abono;
-
-    setNewReserva(prev => ({
-      ...prev,
-      monofiota1: montoTotal,
-      abono: abono,
-      restante: restante
-    }));
-  }, [newReserva.idPaquete, newReserva.serviciosSeleccionados, paquetesActivos, serviciosActivos]);
-
-  // ===============================================
-  // FUNCIONES DE LA API
-  // ===============================================
-  const fetchReservas = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(API_RESERVAS, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+    if (showForm) {
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newServicio[fieldName]);
         }
       });
-     
-      if (Array.isArray(res.data)) {
-        setReservas(res.data);
-      } else if (res.data && Array.isArray(res.data.$values)) {
-        setReservas(res.data.$values);
-      } else if (res.data && typeof res.data === 'object') {
-        setReservas([res.data]);
-      } else {
-        throw new Error("Formato de datos inválido");
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener reservas:", error);
-      handleApiError(error, "cargar las reservas");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [newServicio, showForm, touchedFields]);
 
-  const fetchDatosRelacionados = async () => {
-    try {
-      const configuracionPorDefecto = {
-        estados: [
-          { idEstado: 1, nombreEstado: 'Abonado' },
-          { idEstado: 2, nombreEstado: 'Pendiente' },
-          { idEstado: 3, nombreEstado: 'Cancelada' },
-          { idEstado: 4, nombreEstado: 'Completada' }
-        ],
-        metodosPago: [
-          { idMetodoPago: 1, nombreMetodoPago: "Transferencia" }
-        ],
-        servicios: []
-      };
-
-      const fetchConManejoError = async (url, defaultValue = []) => {
-        try {
-          const response = await axios.get(url, { timeout: 8000 });
-          if (Array.isArray(response.data)) {
-            return response.data;
-          } else if (response.data && Array.isArray(response.data.$values)) {
-            return response.data.$values;
-          } else if (response.data && typeof response.data === 'object') {
-            return [response.data];
-          } else {
-            return defaultValue;
-          }
-        } catch (error) {
-          console.warn(`⚠ No se pudieron cargar datos de ${url}:`, error.message);
-          return defaultValue;
-        }
-      };
-
-      const [
-        cabinasData,
-        sedesData,
-        paquetesData,
-        usuariosData,
-        metodosPagoData,
-        serviciosData,
-        estadosData
-      ] = await Promise.all([
-        fetchConManejoError(API_CABANAS),
-        fetchConManejoError(API_SEDES),
-        fetchConManejoError(API_PAQUETES),
-        fetchConManejoError(API_USUARIOS),
-        fetchConManejoError(API_METODOS_PAGO, configuracionPorDefecto.metodosPago),
-        fetchConManejoError(API_SERVICIOS, configuracionPorDefecto.servicios),
-        fetchConManejoError(API_ESTADOS, configuracionPorDefecto.estados)
-      ]);
-
-      setCabinas(cabinasData);
-      setSedes(sedesData);
-      setPaquetes(paquetesData);
-      setUsuarios(usuariosData);
-      setMetodosPago(metodosPagoData);
-      setServicios(serviciosData);
-      setEstados(estadosData);
-
-    } catch (error) {
-      console.error("❌ Error crítico al cargar datos relacionados:", error);
-      setEstados(configuracionPorDefecto.estados);
-      setMetodosPago(configuracionPorDefecto.metodosPago);
-      setServicios([]);
-    }
-  };
-
-  const obtenerServiciosReserva = async (idReserva) => {
-    try {
-      const res = await axios.get(API_SERVICIOS_RESERVA, { timeout: 10000 });
-      const datos = Array.isArray(res.data) ? res.data
-        : (res.data && Array.isArray(res.data.$values) ? res.data.$values : []);
-      return datos.filter(s => s.idReserva != null && s.idReserva.toString() === idReserva.toString());
-    } catch (error) {
-      console.warn("⚠ Error al obtener servicios de reserva:", error);
-      return [];
-    }
-  };
-
-  const manejarServiciosReserva = async (idReserva, serviciosSeleccionados = []) => {
-    try {
-      const existentes = await obtenerServiciosReserva(idReserva);
-      if (Array.isArray(existentes) && existentes.length > 0) {
-        for (const s of existentes) {
-          const idToDelete = s.idServicioReserva ?? s.id;
-          if (idToDelete != null) {
-            await axios.delete(`${API_SERVICIOS_RESERVA}/${idToDelete}`);
-          }
-        }
-      }
-
-      if (!Array.isArray(serviciosSeleccionados) || serviciosSeleccionados.length === 0) return;
-
-      for (const idServ of serviciosSeleccionados) {
-        const servicioObj = serviciosActivos.find(s => s.idServicio?.toString() === idServ.toString());
-        const precio = servicioObj ? Number(servicioObj.precioServicio || 0) : 0;
-
-        const payload = {
-          idServicioReserva: 0,
-          idServicio: Number(idServ),
-          idReserva: Number(idReserva),
-          precio: precio
-        };
-
-        await axios.post(API_SERVICIOS_RESERVA, payload, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    } catch (error) {
-      console.error("❌ Error al manejar servicios de reserva:", error);
-      throw error;
-    }
-  };
-
-  // ===============================================
-  // FUNCIONES PRINCIPALES
-  // ===============================================
-  const inicializarNuevaReserva = () => {
-    const fechaActual = new Date().toISOString().split('T')[0];
-   
-    const metodoTransferencia = metodosPago.find(m =>
-      m.nombreMetodoPago?.toLowerCase() === 'transferencia' ||
-      m.nombreMetodoPago?.toLowerCase().includes('transferencia')
-    );
-   
-    const estadoPorId2 = estados.find(e => Number(e.idEstado) === 2);
-    const estadoPendienteByName = estados.find(e =>
-      e.nombreEstado?.toLowerCase() === 'pendiente' ||
-      e.nombreEstado?.toLowerCase().includes('pendiente')
-    );
-   
-    const metodoPagoDefault = metodoTransferencia ||
-                             (metodosPago.length > 0 ? metodosPago[0] : null);
-
-    const estadoDefault = estadoPorId2 || estadoPendienteByName ||
-                         (estados.length > 0 ? estados[0] : null);
-
-    setNewReserva({
-      idReserva: 0,
-      fechaReserva: fechaActual,
-      fechaEntrada: fechaActual,
-      fechaRegistro: fechaActual,
-      abono: 0,
-      restante: 0,
-      monofiota1: 0,
-      idUsuario: usuarios.length > 0 ? usuarios[0].idUsuario.toString() : "",
-      idEstado: estadoDefault ? String(estadoDefault.idEstado) : "2",
-      idSede: sedesActivas.length > 0 ? String(sedesActivas[0].idSede) : "",
-      idCabana: cabinasActivas.length > 0 ? String(cabinasActivas[0].idCabana) : "",
-      idMetodoPago: metodoPagoDefault ? String(metodoPagoDefault.idMetodoPago) : "1",
-      idPaquete: "",
-      serviciosSeleccionados: []
-    });
-  };
-
-  const handleAddReserva = async (e) => {
-    e.preventDefault();
-
-    if (validateForm()) {
-      setLoading(true);
-      try {
-        const reservaData = {
-          idReserva: isEditing ? newReserva.idReserva : 0,
-          fechaReserva: newReserva.fechaReserva,
-          fechaEntrada: newReserva.fechaEntrada,
-          fechaRegistro: newReserva.fechaRegistro,
-          abono: parseFloat(newReserva.abono) || 0,
-          restante: parseFloat(newReserva.restante) || 0,
-          montoTotal: parseFloat(newReserva.monofiota1) || 0,
-          idUsuario: parseInt(newReserva.idUsuario),
-          idEstado: parseInt(newReserva.idEstado),
-          idSede: parseInt(newReserva.idSede),
-          idCabana: parseInt(newReserva.idCabana),
-          idMetodoPago: parseInt(newReserva.idMetodoPago),
-          idPaquete: newReserva.idPaquete && newReserva.idPaquete !== "" ? parseInt(newReserva.idPaquete) : null
-        };
-
-        let response;
-        if (isEditing) {
-          response = await axios.put(`${API_RESERVAS}/${newReserva.idReserva}`, reservaData, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-          await manejarServiciosReserva(newReserva.idReserva, newReserva.serviciosSeleccionados);
-        } else {
-          response = await axios.post(API_RESERVAS, reservaData, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-
-          let idNumeric = null;
-          const returned = response.data;
-
-          if (returned != null) {
-            if (typeof returned === 'number') {
-              idNumeric = Number(returned);
-            } else if (returned.idReserva ?? returned.IdReserva ?? returned.id) {
-              idNumeric = Number(returned.idReserva ?? returned.IdReserva ?? returned.id);
-            }
-          }
-
-          if (!idNumeric || isNaN(idNumeric)) {
-            const resAll = await axios.get(API_RESERVAS, { timeout: 10000 });
-            const lista = Array.isArray(resAll.data) ? resAll.data : (resAll.data?.$values ?? []);
-           
-            const normalizeDate = (d) => {
-              if (!d) return "";
-              try { return new Date(d).toISOString().split('T')[0]; } catch { return String(d).split('T')[0]; }
-            };
-
-            const found = lista.find(r => {
-              const fechaRegApi = normalizeDate(r.fechaRegistro ?? r.fechaRegistro);
-              return fechaRegApi === normalizeDate(newReserva.fechaRegistro)
-                && String(r.idUsuario) === String(newReserva.idUsuario)
-                && String(r.idCabana) === String(newReserva.idCabana)
-                && Math.abs(Number(r.monofiota1 ?? r.montoTotal ?? 0) - Number(reservaData.montoTotal)) < 1;
-            });
-
-            if (found) {
-              idNumeric = Number(found.idReserva ?? found.IdReserva ?? found.id);
-            }
-          }
-
-          if (idNumeric && !isNaN(idNumeric)) {
-            await manejarServiciosReserva(idNumeric, newReserva.serviciosSeleccionados);
-          }
-        }
-
-        displayAlert(isEditing ? "✅ Reserva actualizada exitosamente." : "✅ Reserva agregada exitosamente.");
-        await fetchReservas();
-        closeForm();
-      } catch (error) {
-        console.error("❌ Error al guardar reserva:", error);
-        if (error.response) {
-          displayAlert(`❌ Error ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-        } else {
-          handleApiError(error, isEditing ? "actualizar la reserva" : "agregar la reserva");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (reservaToDelete) {
-      setLoading(true);
-      try {
-        const idReserva = reservaToDelete.idReserva;
-       
-        try {
-          const serviciosReserva = await obtenerServiciosReserva(idReserva);
-          for (const servicio of serviciosReserva) {
-            await axios.delete(`${API_SERVICIOS_RESERVA}/${servicio.idServicioReserva}`);
-          }
-        } catch (error) {
-          console.warn("⚠ No se pudieron eliminar servicios asociados:", error);
-        }
-
-        await axios.delete(`${API_RESERVAS}/${idReserva}`);
-        displayAlert("✅ Reserva eliminada exitosamente.");
-        await fetchReservas();
-      } catch (error) {
-        console.error("❌ Error al eliminar reserva:", error);
-        handleApiError(error, "eliminar la reserva");
-      } finally {
-        setLoading(false);
-        setReservaToDelete(null);
-        setShowDeleteConfirm(false);
-      }
-    }
-  };
-
-  // ===============================================
-  // FUNCIONES AUXILIARES
-  // ===============================================
-  const handleApiError = (error, operation) => {
-    let errorMessage = `Error al ${operation}`;
-   
-    if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-      errorMessage = "❌ Error de conexión. Verifica que el servidor esté ejecutándose.";
-    } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "❌ No se puede conectar al servidor en http://localhost:5018";
-    } else if (error.response) {
-      errorMessage = `❌ Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
-    } else if (error.request) {
-      errorMessage = "❌ No hay respuesta del servidor.";
-    }
-   
-    setError(errorMessage);
-    displayAlert(errorMessage);
-  };
-
-  const displayAlert = (message) => {
-    setAlertMessage(message);
-    setShowAlert(true);
-    setTimeout(() => {
-      setShowAlert(false);
-      setAlertMessage("");
-    }, 4000);
-  };
-
-  const validateForm = () => {
-    const requiredFields = [
-      'fechaReserva', 'fechaEntrada', 'fechaRegistro',
-      'monofiota1', 'abono', 'restante',
-      'idUsuario', 'idEstado', 'idSede', 'idCabana', 'idMetodoPago'
-    ];
-
-    for (const field of requiredFields) {
-      if (!newReserva[field]) {
-        displayAlert(`❌ El campo ${field.replace('id', '').replace('fechaEntrada', 'Fecha Entrada').replace('monofiota1', 'Monto Total')} es obligatorio.`);
-        return false;
-      }
-    }
-
-    const hoy = new Date().toISOString().split('T')[0];
-    if (newReserva.fechaEntrada < hoy) {
-      displayAlert("❌ La fecha de entrada no puede ser anterior a hoy.");
-      return false;
-    }
-
-    if (parseFloat(newReserva.monofiota1) <= 0) {
-      displayAlert("❌ El monto total debe ser mayor a 0.");
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-   
-    if ((name === 'fechaRegistro' || name === 'idEstado') && !isEditing) {
-      return;
-    }
-   
-    setNewReserva((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const closeForm = () => {
-    setShowForm(false);
-    setIsEditing(false);
-    setNewReserva({
-      idReserva: 0,
-      fechaReserva: "",
-      fechaEntrada: "",
-      fechaRegistro: "",
-      abono: 0,
-      restante: 0,
-      monofiota1: 0,
-      idUsuario: "",
-      idEstado: "",
-      idSede: "",
-      idCabana: "",
-      idMetodoPago: "",
-      idPaquete: "",
-      serviciosSeleccionados: []
-    });
-    setError(null);
-  };
-
-  const closeDetailsModal = () => {
-    setShowDetails(false);
-    setCurrentReserva(null);
-  };
-
-  const cancelDelete = () => {
-    setReservaToDelete(null);
-    setShowDeleteConfirm(false);
-  };
-
-  const handleView = async (reserva) => {
-    try {
-      const serviciosNormalizados = await obtenerServiciosReserva(reserva.idReserva)
-        .then(servicios => servicios.map(s => s.idServicio));
-     
-      setCurrentReserva({
-        ...reserva,
-        serviciosSeleccionados: serviciosNormalizados
-      });
-      setShowDetails(true);
-    } catch (error) {
-      console.error("❌ Error al cargar detalles:", error);
-      setCurrentReserva(reserva);
-      setShowDetails(true);
-    }
-  };
-
-  const handleEdit = async (reserva) => {
-    try {
-      const serviciosNormalizados = await obtenerServiciosReserva(reserva.idReserva)
-        .then(servicios => servicios.map(s => s.idServicio));
-
-      setNewReserva({
-        idReserva: reserva.idReserva,
-        fechaReserva: formatDateForInput(reserva.fechaReserva),
-        fechaEntrada: formatDateForInput(reserva.fechafintrada || reserva.fechaEntrada),
-        fechaRegistro: formatDateForInput(reserva.fechaRegistro),
-        abono: reserva.abono || 0,
-        restante: reserva.restante || 0,
-        monofiota1: reserva.monofiota1 || reserva.montoTotal || 0,
-        idUsuario: reserva.idUsuario?.toString() || "",
-        idEstado: reserva.idEstado?.toString() || "",
-        idSede: reserva.idSede?.toString() || "",
-        idCabana: reserva.idCabana?.toString() || "",
-        idMetodoPago: reserva.idMetodoPago?.toString() || "",
-        idPaquete: reserva.idPaquete?.toString() || "",
-        serviciosSeleccionados: serviciosNormalizados
-      });
-      setIsEditing(true);
-      setShowForm(true);
-    } catch (error) {
-      console.error("❌ Error al cargar datos para edición:", error);
-      displayAlert("❌ Error al cargar los datos de la reserva");
-    }
-  };
-
-  const handleDeleteClick = (reserva) => {
-    setReservaToDelete(reserva);
-    setShowDeleteConfirm(true);
-  };
-
-  const getServiciosDetalle = (serviciosIds) => {
-    if (!Array.isArray(serviciosIds) || serviciosIds.length === 0) return [];
-   
-    return serviciosIds
-      .map(id => {
-        const servicio = serviciosActivos.find(s => s.idServicio === id);
-        return servicio ? {
-          id: servicio.idServicio,
-          nombre: servicio.nombreServicio,
-          precio: servicio.precioServicio || 0
-        } : null;
-      })
-      .filter(serv => serv !== null);
-  };
-
-  // ===============================================
-  // FUNCIONES DE FORMATO
-  // ===============================================
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch {
-      return 'Fecha inválida';
-    }
-  };
-
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      return date.toISOString().split('T')[0];
-    } catch {
-      return '';
-    }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(amount || 0);
-  };
-
-  // ===============================================
-  // FUNCIONES PARA OBTENER NOMBRES
-  // ===============================================
-  const getCabinaNombre = (idCabana) => {
-    const cabina = cabinasActivas.find(c => c.idCabana === idCabana);
-    return cabina ? `${cabina.nombre} (${cabina.tipoCabana || 'Tipo no especificado'})` : `Cabaña ${idCabana}`;
-  };
-
-  const getSedeNombre = (idSede) => {
-    const sede = sedesActivas.find(s => s.idSede === idSede);
-    return sede ? sede.nombreSede : `Sede ${idSede}`;
-  };
-
-  const getPaqueteNombre = (idPaquete) => {
-    if (!idPaquete || idPaquete === 0) return 'No aplica';
-    const paquete = paquetesActivos.find(p => p.idPaquete === idPaquete);
-    return paquete ? paquete.nombrePaquete : `Paquete ${idPaquete}`;
-  };
-
-  const getEstadoNombre = (idEstado) => {
-    const estado = estados.find(e => e.idEstado === idEstado);
-    return estado ? estado.nombreEstado : `Estado ${idEstado}`;
-  };
-
-  const getUsuarioNombre = (idUsuario) => {
-    const usuario = usuarios.find(u => u.idUsuario === idUsuario);
-    return usuario ? `${usuario.nombre} ${usuario.apellido || ''}` : `Usuario ${idUsuario}`;
-  };
-
-  const getMetodoPagoNombre = (idMetodoPago) => {
-    const metodo = metodosPago.find(m => m.idMetodoPago === idMetodoPago);
-    return metodo ? metodo.nombreMetodoPago : `Método ${idMetodoPago}`;
-  };
-
-  const getEstadoColor = (idEstado) => {
-    const estado = getEstadoNombre(idEstado).toLowerCase();
-    if (estado.includes('abonado') || estado.includes('completada')) return '#4caf50';
-    if (estado.includes('pendiente')) return '#ff9800';
-    if (estado.includes('cancelada')) return '#f44336';
-    return '#757575';
-  };
-
-  // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
-  // ===============================================
-  const filteredReservas = useMemo(() => {
-    return reservas.filter(reserva =>
-      getCabinaNombre(reserva.idCabana)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getSedeNombre(reserva.idSede)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getEstadoNombre(reserva.idEstado)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getUsuarioNombre(reserva.idUsuario)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reserva.idReserva?.toString().includes(searchTerm)
-    );
-  }, [reservas, searchTerm, cabinasActivas, sedesActivas, estados, usuarios]);
-
-  const totalPages = Math.ceil(filteredReservas.length / ITEMS_PER_PAGE);
-
-  const paginatedReservas = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredReservas.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredReservas, currentPage]);
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-
-  const getDiasPaquete = () => {
-    if (!newReserva.idPaquete) return 1;
-    const paquete = paquetesActivos.find(p => p.idPaquete === parseInt(newReserva.idPaquete));
-    return paquete && paquete.dias ? parseInt(paquete.dias) : 1;
-  };
-
-  // ===============================================
-  // ESTADÍSTICAS
-  // ===============================================
-  const estadisticas = useMemo(() => {
-    const total = reservas.length;
-    const pendientes = reservas.filter(r => getEstadoNombre(r.idEstado).toLowerCase().includes('pendiente')).length;
-    const abonadas = reservas.filter(r => getEstadoNombre(r.idEstado).toLowerCase().includes('abonado')).length;
-    const completadas = reservas.filter(r => getEstadoNombre(r.idEstado).toLowerCase().includes('completada')).length;
-    const totalIngresos = reservas.reduce((sum, r) => sum + (r.monofiota1 || r.montoTotal || 0), 0);
-
-    return { total, pendientes, abonadas, completadas, totalIngresos };
-  }, [reservas]);
-
-  // ===============================================
-  // FUNCIÓN PARA GENERAR PDF
-  // ===============================================
-  const handleDownloadPDF = async (reserva) => {
-    let serviciosDetalle = [];
-    try {
-      const serviciosReserva = await obtenerServiciosReserva(reserva.idReserva);
-      serviciosDetalle = serviciosReserva.map(s => {
-        const servicio = serviciosActivos.find(serv => serv.idServicio === s.idServicio);
-        return servicio
-          ? { nombre: servicio.nombreServicio, precio: servicio.precioServicio }
-          : { nombre: `Servicio ${s.idServicio}`, precio: s.precio };
-      });
-    } catch {
-      serviciosDetalle = [];
-    }
-
-    const doc = new jsPDF();
-   
-    // ENCABEZADO MEJORADO
-    doc.setFillColor(46, 89, 57);
-    doc.rect(0, 0, 210, 40, 'F');
-   
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.setTextColor(255, 255, 255);
-    doc.text("🏕", 20, 25);
-    doc.text("GLAMPING LUXURY", 35, 25);
-   
-    doc.setFontSize(12);
-    doc.setTextColor(200, 200, 200);
-    doc.text("Vereda El Descanso, Villeta - Cundinamarca", 35, 32);
-   
-    doc.setFontSize(20);
-    doc.setTextColor(46, 89, 57);
-    doc.text("COMPROBANTE DE RESERVA", 105, 55, { align: "center" });
-   
-    doc.setDrawColor(103, 151, 80);
-    doc.setLineWidth(1);
-    doc.line(20, 60, 190, 60);
-   
-    let y = 70;
-
-    // INFORMACIÓN PRINCIPAL EN DOS COLUMNAS
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(46, 89, 57);
-    doc.text("INFORMACIÓN DE LA RESERVA", 20, y);
-    y += 10;
-   
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-   
-    doc.text(`ID Reserva: #${reserva.idReserva}`, 20, y);
-    doc.text(`Estado: ${getEstadoNombre(reserva.idEstado)}`, 20, y + 6);
-    doc.text(`Usuario: ${getUsuarioNombre(reserva.idUsuario)}`, 20, y + 12);
-    doc.text(`Cabaña: ${getCabinaNombre(reserva.idCabana)}`, 20, y + 18);
-    doc.text(`Sede: ${getSedeNombre(reserva.idSede)}`, 20, y + 24);
-   
-    doc.text(`Fecha Entrada: ${formatDate(reserva.fechafintrada || reserva.fechaEntrada)}`, 110, y);
-    doc.text(`Fecha Salida: ${formatDate(reserva.fechaReserva)}`, 110, y + 6);
-    doc.text(`Fecha Registro: ${formatDate(reserva.fechaRegistro)}`, 110, y + 12);
-    doc.text(`Paquete: ${getPaqueteNombre(reserva.idPaquete)}`, 110, y + 18);
-    doc.text(`Método de Pago: ${getMetodoPagoNombre(reserva.idMetodoPago)}`, 110, y + 24);
-   
-    y += 35;
-
-    // DETALLES DE PAGO CON DISEÑO MEJORADO
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(46, 89, 57);
-    doc.text("DETALLES DE PAGO", 20, y);
-    y += 8;
-   
-    doc.setFillColor(247, 244, 234);
-    doc.roundedRect(20, y, 170, 25, 3, 3, 'F');
-   
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(46, 89, 57);
-   
-    doc.text("Monto Total:", 30, y + 8);
-    doc.text("Abono (50%):", 30, y + 16);
-    doc.text("Restante:", 30, y + 24);
-   
-    doc.setTextColor(0, 0, 0);
-    doc.text(formatCurrency(reserva.monofiota1 || reserva.montoTotal), 120, y + 8);
-    doc.text(formatCurrency(reserva.abono), 120, y + 16);
-    doc.text(formatCurrency(reserva.restante), 120, y + 24);
-   
-    y += 35;
-
-    // SERVICIOS EXTRAS CON DISEÑO MEJORADO
-    if (serviciosDetalle.length > 0) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(46, 89, 57);
-      doc.text("SERVICIOS EXTRAS ADICIONALES", 20, y);
-      y += 8;
-     
-      const serviciosTable = serviciosDetalle.map(servicio => [
-        servicio.nombre,
-        formatCurrency(servicio.precio)
-      ]);
-     
-      const totalServicios = serviciosDetalle.reduce((total, serv) => total + (serv.precio || 0), 0);
-      serviciosTable.push(['TOTAL SERVICIOS', formatCurrency(totalServicios)]);
-     
-      doc.autoTable({
-        startY: y,
-        head: [['Servicio', 'Precio']],
-        body: serviciosTable,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [46, 89, 57],
-          textColor: 255,
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [247, 244, 234]
-        },
-        styles: {
-          fontSize: 10,
-          cellPadding: 3
-        },
-        margin: { left: 20, right: 20 }
-      });
-     
-      y = doc.lastAutoTable.finalY + 10;
-    }
-
-    // RESUMEN FINAL
-    const montoTotal = reserva.monofiota1 || reserva.montoTotal || 0;
-    const totalServicios = serviciosDetalle.reduce((total, serv) => total + (serv.precio || 0), 0);
-   
-    doc.setFillColor(46, 89, 57);
-    doc.roundedRect(20, y, 170, 25, 3, 3, 'F');
-   
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(255, 255, 255);
-    doc.text("RESUMEN FINAL", 105, y + 8, { align: "center" });
-   
-    doc.setFontSize(11);
-    doc.text(`Total Reserva: ${formatCurrency(montoTotal - totalServicios)}`, 30, y + 16);
-    doc.text(`+ Servicios: ${formatCurrency(totalServicios)}`, 30, y + 22);
-   
-    doc.setFontSize(13);
-    doc.text(`TOTAL: ${formatCurrency(montoTotal)}`, 140, y + 19, { align: "right" });
-   
-    y += 35;
-
-    // PIE DE PÁGINA MEJORADO
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-   
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.5);
-    doc.line(20, y, 190, y);
-    y += 10;
-   
-    doc.text("Glamping Luxury - Experiencias Únicas en la Naturaleza", 105, y, { align: "center" });
-    y += 5;
-    doc.text("📍 Vereda El Descanso, Villeta, Cundinamarca", 105, y, { align: "center" });
-    y += 5;
-    doc.text("📞 Tel: 310 123 4567 | ✉ Email: info@glampingluxury.com", 105, y, { align: "center" });
-    y += 5;
-    doc.text("🌐 www.glampingluxury.com", 105, y, { align: "center" });
-    y += 10;
-   
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text("Este documento es un comprobante de reserva generado automáticamente.", 105, y, { align: "center" });
-    y += 4;
-    doc.text("Para consultas o modificaciones contacte con nuestro equipo de soporte.", 105, y, { align: "center" });
-    y += 4;
-    doc.text(`Generado el: ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}`, 105, y, { align: "center" });
-
-    doc.save(`Reserva_${reserva.idReserva}_GlampingLuxury.pdf`);
-    displayAlert("✅ PDF generado exitosamente.");
-  };
-
-  // ===============================================
-  // COMPONENTE FormField REUTILIZABLE
-  // ===============================================
-  const FormField = ({ 
-    label, 
-    name, 
-    type = "text", 
-    value, 
-    onChange, 
-    options = [], 
-    required = false, 
-    disabled = false,
-    placeholder = "",
-    style = {},
-    icon
-  }) => {
-    return (
-      <div style={{ marginBottom: '16px', ...style }}>
-        <label style={labelStyle}>
-          {icon && <span style={{ marginRight: '8px' }}>{icon}</span>}
-          {label}
-          {required && <span style={{ color: "#e57373", marginLeft: '4px' }}>*</span>}
-        </label>
-        {type === "select" ? (
-          <select
-            name={name}
-            value={value}
-            onChange={onChange}
-            style={{
-              ...inputStyle,
-              ...(disabled && inputDisabledStyle),
-              appearance: 'none',
-              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E5939' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 12px center',
-              backgroundSize: '16px'
-            }}
-            required={required}
-            disabled={disabled}
-          >
-            <option value="">{placeholder}</option>
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={onChange}
-            placeholder={placeholder}
-            style={{
-              ...inputStyle,
-              ...(disabled && inputDisabledStyle)
-            }}
-            required={required}
-            disabled={disabled}
-          />
-        )}
-      </div>
-    );
-  };
-
-  // ===============================================
-  // COMPONENTES DE MODALES
-  // ===============================================
-  const DetailsModal = () => {
-    if (!showDetails || !currentReserva) return null;
-
-    return (
-      <div style={modalOverlayStyle}>
-        <div style={detailsModalStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h2 style={{ margin: 0, color: "#2E5939", fontSize: "24px" }}>
-              Detalles de la Reserva #{currentReserva.idReserva}
-            </h2>
-            <button
-              onClick={closeDetailsModal}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#2E5939",
-                fontSize: "20px",
-                cursor: "pointer",
-                padding: "8px",
-                borderRadius: "50%",
-                transition: "all 0.3s ease"
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = "rgba(46, 89, 57, 0.1)";
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = "transparent";
-              }}
-            >
-              <FaTimes />
-            </button>
-          </div>
-         
-          <div>
-            {/* Fechas */}
-            <div style={detailItemStyle}>
-              <div style={detailLabelStyle}>
-                <FaCalendarAlt /> Fechas
-              </div>
-              <div style={detailValueStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div><strong>Entrada:</strong> {formatDate(currentReserva.fechafintrada || currentReserva.fechaEntrada)}</div>
-                  <div><strong>Salida:</strong> {formatDate(currentReserva.fechaReserva)}</div>
-                  <div><strong>Registro:</strong> {formatDate(currentReserva.fechaRegistro)}</div>
-                </div>
-              </div>
-            </div>
-           
-            {/* Información de Pago */}
-            <div style={detailItemStyle}>
-              <div style={detailLabelStyle}>
-                <FaMoneyBillAlt /> Información de Pago
-              </div>
-              <div style={detailValueStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div><strong>Monto Total:</strong> {formatCurrency(currentReserva.monofiota1 || currentReserva.montoTotal)}</div>
-                  <div><strong>Abono:</strong> {formatCurrency(currentReserva.abono)}</div>
-                  <div><strong>Restante:</strong> {formatCurrency(currentReserva.restante)}</div>
-                  <div><strong>Método de Pago:</strong> {getMetodoPagoNombre(currentReserva.idMetodoPago)}</div>
-                </div>
-              </div>
-            </div>
-           
-            {/* Detalles de la Reserva */}
-            <div style={detailItemStyle}>
-              <div style={detailLabelStyle}>
-                <FaHome /> Detalles de la Reserva
-              </div>
-              <div style={detailValueStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div><strong>Sede:</strong> {getSedeNombre(currentReserva.idSede)}</div>
-                  <div><strong>Cabaña:</strong> {getCabinaNombre(currentReserva.idCabana)}</div>
-                  <div><strong>Paquete:</strong> {getPaqueteNombre(currentReserva.idPaquete)}</div>
-                  <div><strong>Estado:</strong>
-                    <span style={{
-                      color: getEstadoColor(currentReserva.idEstado),
-                      fontWeight: 'bold',
-                      marginLeft: '8px',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      backgroundColor: 'rgba(46, 89, 57, 0.1)',
-                      fontSize: '14px'
-                    }}>
-                      {getEstadoNombre(currentReserva.idEstado)}
-                    </span>
-                  </div>
-                  <div><strong>Usuario:</strong> {getUsuarioNombre(currentReserva.idUsuario)}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Servicios Extras */}
-            <div style={detailItemStyle}>
-              <div style={detailLabelStyle}>
-                <FaBox /> Servicios Extras
-              </div>
-              <div style={detailValueStyle}>
-                {(() => {
-                  const serviciosDetalle = getServiciosDetalle(
-                    Array.isArray(currentReserva.serviciosSeleccionados)
-                      ? currentReserva.serviciosSeleccionados
-                      : []
-                  );
-                 
-                  if (serviciosDetalle.length > 0) {
-                    return (
-                      <div>
-                        <div style={{ 
-                          display: 'grid', 
-                          gap: '8px',
-                          marginBottom: '16px'
-                        }}>
-                          {serviciosDetalle.map((serv, idx) => (
-                            <div key={idx} style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              padding: '12px',
-                              backgroundColor: '#f8f9fa',
-                              borderRadius: '8px',
-                              border: '1px solid rgba(46, 89, 57, 0.1)'
-                            }}>
-                              <span style={{ fontWeight: '500' }}>{serv.nombre}</span>
-                              <span style={{ 
-                                color: '#2E5939', 
-                                fontWeight: 'bold',
-                                fontSize: '14px'
-                              }}>
-                                {formatCurrency(serv.precio)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{ 
-                          padding: '12px', 
-                          backgroundColor: '#E8F5E8', 
-                          borderRadius: '8px',
-                          border: '1px solid #679750',
-                          textAlign: 'center'
-                        }}>
-                          <strong style={{ color: '#2E5939', fontSize: '15px' }}>
-                            Total servicios: {formatCurrency(
-                              serviciosDetalle.reduce((total, serv) => total + (serv.precio || 0), 0)
-                            )}
-                          </strong>
-                        </div>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div style={{ 
-                        textAlign: 'center', 
-                        color: '#999', 
-                        padding: '20px',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px'
-                      }}>
-                        No se seleccionaron servicios extras.
-                      </div>
-                    );
-                  }
-                })()}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ 
-            display: "flex", 
-            justifyContent: "center", 
-            gap: "12px", 
-            marginTop: "24px",
-            paddingTop: "20px",
-            borderTop: "1px solid rgba(46, 89, 57, 0.1)"
-          }}>
-            <button
-              onClick={() => handleDownloadPDF(currentReserva)}
-              style={{
-                backgroundColor: "#e57373",
-                color: "white",
-                padding: "12px 24px",
-                border: "none",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: "600",
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: "all 0.3s ease",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = "#d32f2f";
-                e.target.style.transform = "translateY(-2px)";
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = "#e57373";
-                e.target.style.transform = "translateY(0)";
-              }}
-            >
-              <FaFilePdf /> Descargar PDF
-            </button>
-            <button
-              onClick={closeDetailsModal}
-              style={{
-                backgroundColor: "#2E5939",
-                color: "#fff",
-                padding: "12px 24px",
-                border: "none",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: "600",
-                transition: "all 0.3s ease",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-              }}
-              onMouseOver={(e) => {
-                e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                e.target.style.transform = "translateY(-2px)";
-              }}
-              onMouseOut={(e) => {
-                e.target.style.background = "#2E5939";
-                e.target.style.transform = "translateY(0)";
-              }}
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const DeleteConfirmModal = () => {
-    if (!showDeleteConfirm || !reservaToDelete) return null;
-
-    return (
-      <div style={modalOverlayStyle}>
-        <div style={{ ...modalContentStyle, maxWidth: 480, textAlign: 'center' }}>
-          <div style={{ 
-            backgroundColor: '#fff3cd',
-            border: '1px solid #ffeaa7',
-            borderRadius: '12px',
-            padding: '16px',
-            marginBottom: '20px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <FaExclamationTriangle style={{ color: '#856404' }} />
-              <strong style={{ color: '#856404' }}>Confirmar Eliminación</strong>
-            </div>
-            <p style={{ color: '#856404', margin: 0, fontSize: '14px' }}>
-              ¿Estás seguro de eliminar la reserva del usuario <strong>{getUsuarioNombre(reservaToDelete.idUsuario)}</strong>?
-            </p>
-          </div>
-
-          <div style={{ 
-            backgroundColor: '#f8f9fa',
-            padding: '16px',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            textAlign: 'left'
-          }}>
-            <div style={{ fontSize: '14px', color: '#2E5939', marginBottom: '8px' }}>
-              <strong>Detalles de la reserva:</strong>
-            </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>
-              <div>• Cabaña: {getCabinaNombre(reservaToDelete.idCabana)}</div>
-              <div>• Fecha Entrada: {formatDate(reservaToDelete.fechaEntrada)}</div>
-              <div>• Monto: {formatCurrency(reservaToDelete.monofiota1)}</div>
-              <div>• Estado: {getEstadoNombre(reservaToDelete.idEstado)}</div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
-            <button
-              onClick={confirmDelete}
-              disabled={loading}
-              style={{
-                backgroundColor: loading ? "#ccc" : "#e57373",
-                color: "white",
-                padding: "12px 24px",
-                border: "none",
-                borderRadius: 10,
-                cursor: loading ? "not-allowed" : "pointer",
-                fontWeight: "600",
-                flex: 1,
-                transition: "all 0.3s ease",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-              }}
-              onMouseOver={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = "#d32f2f";
-                  e.target.style.transform = "translateY(-2px)";
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = "#e57373";
-                  e.target.style.transform = "translateY(0)";
-                }
-              }}
-            >
-              {loading ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid transparent',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></div>
-                  Eliminando...
-                </div>
-              ) : (
-                "Sí, Eliminar"
-              )}
-            </button>
-            <button
-              onClick={cancelDelete}
-              disabled={loading}
-              style={{
-                backgroundColor: loading ? "#ccc" : "#2E5939",
-                color: "#fff",
-                padding: "12px 24px",
-                border: "none",
-                borderRadius: 10,
-                cursor: loading ? "not-allowed" : "pointer",
-                fontWeight: "600",
-                flex: 1,
-                transition: "all 0.3s ease",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-              }}
-              onMouseOver={(e) => {
-                if (!loading) {
-                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  e.target.style.transform = "translateY(-2px)";
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!loading) {
-                  e.target.style.background = "#2E5939";
-                  e.target.style.transform = "translateY(0)";
-                }
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ===============================================
-  // ESTILOS CSS PARA ANIMACIONES
-  // ===============================================
+  // Efecto para agregar estilos de animación
   useEffect(() => {
-    const styles = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-
+    const style = document.createElement('style');
+    style.textContent = `
       @keyframes slideInRight {
         from {
           transform: translateX(100%);
@@ -1514,8 +657,8 @@ const GestionReserva = () => {
           opacity: 1;
         }
       }
-
-      @keyframes fadeIn {
+      
+      @keyframes slideDown {
         from {
           opacity: 0;
           transform: translateY(-10px);
@@ -1525,39 +668,1190 @@ const GestionReserva = () => {
           transform: translateY(0);
         }
       }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
     `;
+    document.head.appendChild(style);
 
-    const styleSheet = document.createElement("style");
-    styleSheet.innerText = styles;
-    document.head.appendChild(styleSheet);
-    
     return () => {
-      document.head.removeChild(styleSheet);
+      document.head.removeChild(style);
     };
   }, []);
 
   // ===============================================
-  // RENDER FINAL DEL COMPONENTE
+  // FUNCIONES DE ALERTAS MEJORADAS
+  // ===============================================
+  const displayAlert = (message, type = "success") => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+      setAlertMessage("");
+    }, 5000);
+  };
+
+  const getAlertIcon = (type) => {
+    switch (type) {
+      case "success":
+        return <FaCheck style={alertIconStyle} />;
+      case "error":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "warning":
+        return <FaExclamationTriangle style={alertIconStyle} />;
+      case "info":
+        return <FaInfoCircle style={alertIconStyle} />;
+      default:
+        return <FaInfoCircle style={alertIconStyle} />;
+    }
+  };
+
+  const getAlertStyle = (type) => {
+    switch (type) {
+      case "success":
+        return alertSuccessStyle;
+      case "error":
+        return alertErrorStyle;
+      case "warning":
+        return alertWarningStyle;
+      case "info":
+        return alertInfoStyle;
+      default:
+        return alertSuccessStyle;
+    }
+  };
+
+  // ===============================================
+  // FUNCIONES DE VALIDACIÓN MEJORADAS
+  // ===============================================
+  const validateField = (fieldName, value) => {
+    const rules = VALIDATION_RULES[fieldName];
+    if (!rules) return true;
+
+    let error = "";
+    let success = "";
+    let warning = "";
+
+    const trimmedValue = value ? value.toString().trim() : "";
+
+    if (rules.required && !trimmedValue) {
+      error = rules.errorMessages.required;
+    }
+    else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
+      error = rules.errorMessages.minLength;
+    }
+    else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
+      error = rules.errorMessages.maxLength;
+    }
+    else if (trimmedValue && rules.pattern && !rules.pattern.test(trimmedValue)) {
+      error = rules.errorMessages.pattern;
+    }
+    else if (trimmedValue && fieldName === 'precioServicio') {
+      const numericValue = parseFloat(trimmedValue);
+      
+      if (isNaN(numericValue)) {
+        error = rules.errorMessages.invalid;
+      } else if (rules.min !== undefined && numericValue < rules.min) {
+        error = rules.errorMessages.min;
+      } else if (rules.max !== undefined && numericValue > rules.max) {
+        error = rules.errorMessages.max;
+      } else {
+        success = "Precio válido.";
+        
+        // Advertencias específicas
+        if (numericValue > 1000000) {
+          warning = "El precio es bastante alto. Verifique que sea correcto.";
+        }
+      }
+    }
+    else if (fieldName === 'estado') {
+      success = value ? "Servicio activo" : "Servicio inactivo";
+    }
+    else if (trimmedValue) {
+      success = `${fieldName === 'nombreServicio' ? 'Nombre' : fieldName === 'descripcion' ? 'Descripción' : fieldName === 'imagen' ? 'Imagen' : 'Campo'} válido.`;
+      
+      if (fieldName === 'nombreServicio' && trimmedValue.length > 50) {
+        warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
+      } else if (fieldName === 'descripcion' && trimmedValue.length > 300) {
+        warning = "La descripción es muy larga. Considere ser más conciso.";
+      } else if (fieldName === 'descripcion' && trimmedValue.length < 20 && trimmedValue.length > 0) {
+        warning = "La descripción es muy breve. Sea más descriptivo.";
+      } else if (fieldName === 'imagen' && !trimmedValue.startsWith('http')) {
+        warning = "La URL de la imagen debería comenzar con http:// o https://";
+      }
+    }
+
+    // Verificación de duplicados para nombre
+    if (fieldName === 'nombreServicio' && trimmedValue && !error) {
+      const duplicate = servicios.find(servicio => 
+        servicio.nombreServicio.toLowerCase() === trimmedValue.toLowerCase() && 
+        (!isEditing || servicio.idServicio !== newServicio.idServicio)
+      );
+      if (duplicate) {
+        error = "Ya existe un servicio con este nombre.";
+      }
+    }
+
+    setFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    setFormSuccess(prev => ({ ...prev, [fieldName]: success }));
+    setFormWarnings(prev => ({ ...prev, [fieldName]: warning }));
+
+    return !error;
+  };
+
+  const validateForm = () => {
+    // Marcar todos los campos como tocados al enviar el formulario
+    const allFieldsTouched = {
+      nombreServicio: true,
+      precioServicio: true,
+      estado: true,
+      descripcion: true,
+      imagen: true
+    };
+    setTouchedFields(allFieldsTouched);
+
+    const nombreValid = validateField('nombreServicio', newServicio.nombreServicio);
+    const precioValid = validateField('precioServicio', newServicio.precioServicio);
+    const estadoValid = validateField('estado', newServicio.estado);
+
+    // La descripción e imagen son opcionales según la API
+    const descripcionValid = !newServicio.descripcion || validateField('descripcion', newServicio.descripcion);
+    const imagenValid = !newServicio.imagen || validateField('imagen', newServicio.imagen);
+
+    const isValid = nombreValid && precioValid && estadoValid && descripcionValid && imagenValid;
+    
+    if (!isValid) {
+      displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[style*="border-color: #e57373"]');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+
+    return isValid;
+  };
+
+  // Función para marcar campo como tocado
+  const markFieldAsTouched = (fieldName) => {
+    setTouchedFields(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+  };
+
+  // ===============================================
+  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // ===============================================
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      displayAlert("La imagen es demasiado grande. El tamaño máximo es 5MB.", "error");
+      return;
+    }
+
+    // Crear URL para previsualización
+    const imageUrl = URL.createObjectURL(file);
+    setImagenSeleccionada({
+      file,
+      preview: imageUrl,
+      isNew: true
+    });
+
+    // También actualizar el campo de imagen en el formulario
+    setNewServicio(prev => ({
+      ...prev,
+      imagen: imageUrl // URL temporal para previsualización
+    }));
+
+    e.target.value = ''; // Reset input
+  };
+
+  const removeImage = () => {
+    if (imagenSeleccionada && imagenSeleccionada.isNew) {
+      URL.revokeObjectURL(imagenSeleccionada.preview);
+    }
+    setImagenSeleccionada(null);
+    setNewServicio(prev => ({
+      ...prev,
+      imagen: ""
+    }));
+  };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN SEDES
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      precioMin: "",
+      precioMax: "",
+      tieneRelaciones: "all"
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.precioMin) count++;
+    if (filters.precioMax) count++;
+    if (filters.tieneRelaciones !== "all") count++;
+    return count;
+  }, [filters]);
+
+  // ===============================================
+  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
+  // ===============================================
+  const fetchAllData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await Promise.all([
+        fetchServicios(),
+        fetchProductosPorServicio(),
+        fetchSedesPorServicio(),
+        fetchServiciosPorPaquete(),
+        fetchServiciosReserva(),
+        fetchProductos(),
+        fetchSedes(),
+        fetchPaquetes(),
+        fetchReservas()
+      ]);
+    } catch (error) {
+      console.error("❌ Error al cargar datos:", error);
+      handleApiError(error, "cargar los datos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchServicios = async () => {
+    try {
+      const res = await axios.get(API_SERVICIOS, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setServicios(res.data);
+      } else {
+        throw new Error("Formato de datos inválido");
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener servicios:", error);
+      throw error;
+    }
+  };
+
+  const fetchProductosPorServicio = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS_POR_SERVICIO, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setProductosPorServicio(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener productos por servicio:", error);
+    }
+  };
+
+  const fetchSedesPorServicio = async () => {
+    try {
+      const res = await axios.get(API_SEDES_POR_SERVICIO, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setSedesPorServicio(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener sedes por servicio:", error);
+    }
+  };
+
+  const fetchServiciosPorPaquete = async () => {
+    try {
+      const res = await axios.get(API_SERVICIOS_POR_PAQUETE, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setServiciosPorPaquete(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener servicios por paquete:", error);
+    }
+  };
+
+  const fetchServiciosReserva = async () => {
+    try {
+      const res = await axios.get(API_SERVICIOS_RESERVA, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setServiciosReserva(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener servicios reserva:", error);
+    }
+  };
+
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
+    }
+  };
+
+  const fetchSedes = async () => {
+    try {
+      const res = await axios.get(API_SEDES, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setSedes(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener sedes:", error);
+    }
+  };
+
+  const fetchPaquetes = async () => {
+    try {
+      const res = await axios.get(API_PAQUETES, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setPaquetes(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener paquetes:", error);
+    }
+  };
+
+  const fetchReservas = async () => {
+    try {
+      const res = await axios.get(API_RESERVAS, { timeout: 10000 });
+      if (Array.isArray(res.data)) {
+        setReservas(res.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener reservas:", error);
+    }
+  };
+
+  const handleAddServicio = async (e) => {
+    e.preventDefault();
+    
+    if (isSubmitting) {
+      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setLoading(true);
+    
+    try {
+      // Preparar datos según la estructura de tu API
+      const servicioData = {
+        nombreServicio: newServicio.nombreServicio.trim(),
+        precioServicio: parseFloat(newServicio.precioServicio),
+        imagen: newServicio.imagen?.trim() || null, // La API permite null
+        descripcion: newServicio.descripcion?.trim() || null, // La API permite null
+        estado: newServicio.estado === "true" || newServicio.estado === true
+      };
+
+      console.log("📤 Enviando datos:", servicioData);
+
+      if (isEditing) {
+        // Para edición, incluir el idServicio
+        servicioData.idServicio = newServicio.idServicio;
+        await axios.put(`${API_SERVICIOS}/${newServicio.idServicio}`, servicioData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        displayAlert("Servicio actualizado exitosamente.", "success");
+      } else {
+        await axios.post(API_SERVICIOS, servicioData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        displayAlert("Servicio agregado exitosamente.", "success");
+      }
+      
+      await fetchAllData();
+      closeForm();
+    } catch (error) {
+      console.error("❌ Error al guardar servicio:", error);
+      handleApiError(error, isEditing ? "actualizar el servicio" : "agregar el servicio");
+    } finally {
+      setLoading(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (servicioToDelete) {
+      setLoading(true);
+      try {
+        // Verificar si el servicio tiene relaciones antes de eliminar
+        const hasRelations = await checkIfServicioHasRelations(servicioToDelete.idServicio);
+        if (hasRelations) {
+          displayAlert("No se puede eliminar el servicio porque tiene productos, sedes, paquetes o reservas asociadas.", "error");
+          setLoading(false);
+          return;
+        }
+
+        await axios.delete(`${API_SERVICIOS}/${servicioToDelete.idServicio}`);
+        displayAlert("Servicio eliminado exitosamente.", "success");
+        await fetchAllData();
+        
+        if (paginatedServicios.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } catch (error) {
+        console.error("❌ Error al eliminar servicio:", error);
+        
+        if (error.response && error.response.status === 409) {
+          displayAlert("No se puede eliminar el servicio porque está siendo utilizado en reservas.", "error");
+        } else {
+          handleApiError(error, "eliminar el servicio");
+        }
+      } finally {
+        setLoading(false);
+        setServicioToDelete(null);
+        setShowDeleteConfirm(false);
+      }
+    }
+  };
+
+  // ===============================================
+  // FUNCIONES AUXILIARES MEJORADAS
+  // ===============================================
+  const handleApiError = (error, operation) => {
+    let errorMessage = `Error al ${operation}`;
+    let alertType = "error";
+    
+    if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+      errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
+    } else if (error.code === 'ECONNREFUSED') {
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
+    } else if (error.response) {
+      if (error.response.status === 400) {
+        errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
+      } else if (error.response.status === 404) {
+        errorMessage = "Recurso no encontrado.";
+      } else if (error.response.status === 409) {
+        errorMessage = "Conflicto: El servicio está siendo utilizado y no puede ser eliminado.";
+        alertType = "warning";
+      } else if (error.response.status === 500) {
+        errorMessage = "Error interno del servidor.";
+      } else {
+        errorMessage = `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}`;
+      }
+    } else if (error.request) {
+      errorMessage = "No hay respuesta del servidor.";
+    } else {
+      errorMessage = `Error inesperado: ${error.message}`;
+    }
+    
+    setError(errorMessage);
+    displayAlert(errorMessage, alertType);
+  };
+
+  // Función para verificar si un servicio tiene relaciones
+  const checkIfServicioHasRelations = async (servicioId) => {
+    try {
+      const productosAsociados = productosPorServicio.filter(
+        rel => rel.idServicio === servicioId
+      );
+      const sedesAsociadas = sedesPorServicio.filter(
+        rel => rel.idServicio === servicioId
+      );
+      const paquetesAsociados = serviciosPorPaquete.filter(
+        rel => rel.idServicio === servicioId
+      );
+      const reservasAsociadas = serviciosReserva.filter(
+        rel => rel.idServicio === servicioId
+      );
+
+      return productosAsociados.length > 0 || 
+             sedesAsociadas.length > 0 || 
+             paquetesAsociados.length > 0 || 
+             reservasAsociadas.length > 0;
+    } catch (error) {
+      console.error("Error al verificar relaciones:", error);
+      return true; // Por seguridad, asumir que tiene relaciones si hay error
+    }
+  };
+
+  // Funciones para contar relaciones
+  const contarProductosPorServicio = (servicioId) => {
+    return productosPorServicio.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  const contarSedesPorServicio = (servicioId) => {
+    return sedesPorServicio.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  const contarPaquetesPorServicio = (servicioId) => {
+    return serviciosPorPaquete.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  const contarReservasPorServicio = (servicioId) => {
+    return serviciosReserva.filter(rel => rel.idServicio === servicioId).length;
+  };
+
+  // Funciones para obtener datos detallados de relaciones
+  const getProductosDelServicio = (servicioId) => {
+    const relaciones = productosPorServicio.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const producto = productos.find(p => p.idProducto === rel.idProducto);
+      return {
+        id: rel.idProducto,
+        nombre: producto ? producto.nombre : `Producto ${rel.idProducto}`,
+        cantidad: rel.cantidad || 1
+      };
+    });
+  };
+
+  const getSedesDelServicio = (servicioId) => {
+    const relaciones = sedesPorServicio.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const sede = sedes.find(s => s.idSede === rel.idSede);
+      return {
+        id: rel.idSede,
+        nombre: sede ? sede.nombre : `Sede ${rel.idSede}`,
+        direccion: sede ? sede.direccion : 'Dirección no disponible'
+      };
+    });
+  };
+
+  const getPaquetesDelServicio = (servicioId) => {
+    const relaciones = serviciosPorPaquete.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const paquete = paquetes.find(p => p.idPaquete === rel.idPaquete);
+      return {
+        id: rel.idPaquete,
+        nombre: paquete ? paquete.nombre : `Paquete ${rel.idPaquete}`,
+        descripcion: paquete ? paquete.descripcion : 'Descripción no disponible'
+      };
+    });
+  };
+
+  const getReservasDelServicio = (servicioId) => {
+    const relaciones = serviciosReserva.filter(rel => rel.idServicio === servicioId);
+    return relaciones.map(rel => {
+      const reserva = reservas.find(r => r.idReserva === rel.idReserva);
+      return {
+        id: rel.idReserva,
+        fecha: reserva ? reserva.fechaReserva : 'Fecha no disponible',
+        estado: reserva ? (reserva.estado ? 'Activa' : 'Cancelada') : 'Estado no disponible'
+      };
+    });
+  };
+
+  // Función para obtener todas las relaciones de un servicio
+  const getTodasLasRelacionesDelServicio = (servicioId) => {
+    const productos = getProductosDelServicio(servicioId);
+    const sedes = getSedesDelServicio(servicioId);
+    const paquetes = getPaquetesDelServicio(servicioId);
+    const reservas = getReservasDelServicio(servicioId);
+
+    return {
+      productos,
+      sedes,
+      paquetes,
+      reservas,
+      total: productos.length + sedes.length + paquetes.length + reservas.length
+    };
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setNewServicio((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Nueva función para manejar el blur (cuando el campo pierde el foco)
+  const handleInputBlur = (e) => {
+    const { name } = e.target;
+    markFieldAsTouched(name);
+    validateField(name, newServicio[name]);
+  };
+
+  const toggleEstado = async (servicio) => {
+    setLoading(true);
+    try {
+      const updatedServicio = { 
+        ...servicio, 
+        estado: !servicio.estado 
+      };
+      await axios.put(`${API_SERVICIOS}/${servicio.idServicio}`, updatedServicio, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      displayAlert(`Servicio ${updatedServicio.estado ? 'activado' : 'desactivado'} exitosamente.`, "success");
+      await fetchServicios();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      handleApiError(error, "cambiar el estado");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
+    setTouchedFields({});
+    setImagenSeleccionada(null);
+    setNewServicio({
+      idServicio: 0,
+      nombreServicio: "",
+      precioServicio: "",
+      imagen: "",
+      descripcion: "",
+      estado: true
+    });
+  };
+
+  const closeDetailsModal = () => {
+    setShowDetails(false);
+    setSelectedServicio(null);
+  };
+
+  const cancelDelete = () => {
+    setServicioToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleView = (servicio) => {
+    setSelectedServicio(servicio);
+    setShowDetails(true);
+  };
+
+  const handleEdit = (servicio) => {
+    setNewServicio({
+      ...servicio,
+      precioServicio: servicio.precioServicio.toString(),
+      imagen: servicio.imagen || "", // Manejar null
+      descripcion: servicio.descripcion || "", // Manejar null
+      estado: servicio.estado ? "true" : "false"
+    });
+
+    // Cargar imagen existente si hay una
+    if (servicio.imagen) {
+      setImagenSeleccionada({
+        preview: servicio.imagen,
+        isNew: false
+      });
+    }
+
+    setIsEditing(true);
+    setShowForm(true);
+    setFormErrors({});
+    setFormSuccess({});
+    setFormWarnings({});
+    setTouchedFields({});
+  };
+
+  const handleDeleteClick = (servicio) => {
+    // Validar si el servicio tiene relaciones antes de eliminar
+    const hasRelations = 
+      contarProductosPorServicio(servicio.idServicio) > 0 ||
+      contarSedesPorServicio(servicio.idServicio) > 0 ||
+      contarPaquetesPorServicio(servicio.idServicio) > 0 ||
+      contarReservasPorServicio(servicio.idServicio) > 0;
+
+    if (hasRelations) {
+      displayAlert("No se puede eliminar un servicio que tiene productos, sedes, paquetes o reservas asociadas", "error");
+      return;
+    }
+    setServicioToDelete(servicio);
+    setShowDeleteConfirm(true);
+  };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
+  // ===============================================
+  const filteredServicios = useMemo(() => {
+    let filtered = servicios.filter(servicio => {
+      // Búsqueda general
+      const matchesSearch = 
+        servicio.nombreServicio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (servicio.descripcion && servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (servicio.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por precio mínimo
+      if (filters.precioMin) {
+        const precioMin = parseFloat(filters.precioMin);
+        if (servicio.precioServicio < precioMin) return false;
+      }
+
+      // Filtro por precio máximo
+      if (filters.precioMax) {
+        const precioMax = parseFloat(filters.precioMax);
+        if (servicio.precioServicio > precioMax) return false;
+      }
+
+      // Filtro por relaciones
+      if (filters.tieneRelaciones !== "all") {
+        const relaciones = getTodasLasRelacionesDelServicio(servicio.idServicio);
+        const tieneRelaciones = relaciones.total > 0;
+        
+        if (filters.tieneRelaciones === "con" && !tieneRelaciones) return false;
+        if (filters.tieneRelaciones === "sin" && tieneRelaciones) return false;
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [servicios, searchTerm, filters]);
+
+  const totalPages = Math.ceil(filteredServicios.length / ITEMS_PER_PAGE);
+
+  const paginatedServicios = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredServicios.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredServicios, currentPage]);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // ===============================================
+  // FUNCIONES PARA FORMATEAR DATOS
+  // ===============================================
+  const formatDescripcion = (descripcion) => {
+    if (!descripcion) return "Sin descripción";
+    return descripcion.length > 80 ? `${descripcion.substring(0, 80)}...` : descripcion;
+  };
+
+  // ===============================================
+  // COMPONENTES PARA DETALLES DE RELACIONES
+  // ===============================================
+  const RelacionesSection = ({ servicioId }) => {
+    const relaciones = getTodasLasRelacionesDelServicio(servicioId);
+
+    if (relaciones.total === 0) {
+      return (
+        <div style={detailItemStyle}>
+          <div style={detailLabelStyle}>Relaciones del Servicio</div>
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '15px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            color: '#679750'
+          }}>
+            Este servicio no tiene relaciones asociadas.
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={detailItemStyle}>
+        <div style={detailLabelStyle}>Relaciones del Servicio</div>
+        
+        {/* Resumen de relaciones */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+          gap: '10px', 
+          marginBottom: '20px' 
+        }}>
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaBox color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Productos</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.productos.length}
+            </div>
+          </div>
+
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaBuilding color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Sedes</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.sedes.length}
+            </div>
+          </div>
+
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaGift color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Paquetes</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.paquetes.length}
+            </div>
+          </div>
+
+          <div style={{ 
+            backgroundColor: '#E8F5E8',
+            padding: '12px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
+              <FaClipboardList color="#679750" />
+              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Reservas</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
+              {relaciones.reservas.length}
+            </div>
+          </div>
+        </div>
+
+        {/* Detalles de cada tipo de relación */}
+        <div style={{ display: 'grid', gap: '15px' }}>
+          {/* Productos */}
+          {relaciones.productos.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaBox color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Productos Asociados</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.productos.map((producto, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <span style={{ fontWeight: '500' }}>{producto.nombre}</span>
+                    <span style={{ 
+                      backgroundColor: '#679750', 
+                      color: 'white', 
+                      padding: '2px 8px', 
+                      borderRadius: '12px', 
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      Cant: {producto.cantidad}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sedes */}
+          {relaciones.sedes.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaBuilding color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Sedes Disponibles</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.sedes.map((sede, index) => (
+                  <div key={index} style={{
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>{sede.nombre}</div>
+                    <div style={{ fontSize: '12px', color: '#679750' }}>{sede.direccion}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Paquetes */}
+          {relaciones.paquetes.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaGift color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Paquetes Incluidos</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.paquetes.map((paquete, index) => (
+                  <div key={index} style={{
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>{paquete.nombre}</div>
+                    <div style={{ fontSize: '12px', color: '#679750' }}>
+                      {paquete.descripcion || 'Sin descripción adicional'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reservas */}
+          {relaciones.reservas.length > 0 && (
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <FaClipboardList color="#2E5939" />
+                <h4 style={{ margin: 0, color: '#2E5939' }}>Reservas Activas</h4>
+              </div>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {relaciones.reservas.map((reserva, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #E8F5E8'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '500' }}>Reserva #{reserva.id}</div>
+                      <div style={{ fontSize: '12px', color: '#679750' }}>{reserva.fecha}</div>
+                    </div>
+                    <span style={{
+                      backgroundColor: reserva.estado === 'Activa' ? '#4caf50' : '#e57373',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 'bold'
+                    }}>
+                      {reserva.estado}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Información importante sobre relaciones */}
+        {relaciones.total > 0 && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffeaa7',
+            borderRadius: '8px',
+            padding: '12px',
+            marginTop: '15px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+              <FaInfoCircle style={{ color: '#856404' }} />
+              <strong style={{ color: '#856404', fontSize: '14px' }}>Información Importante</strong>
+            </div>
+            <p style={{ color: '#856404', margin: 0, fontSize: '13px', lineHeight: '1.4' }}>
+              ⚠️ Este servicio tiene relaciones asociadas. No se puede eliminar mientras tenga productos, sedes, paquetes o reservas vinculadas.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ===============================================
+  // COMPONENTE PARA MOSTRAR RELACIONES EN EL LISTADO
+  // ===============================================
+  const RelacionesBadge = ({ servicioId }) => {
+    const relaciones = getTodasLasRelacionesDelServicio(servicioId);
+    
+    if (relaciones.total === 0) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+          <span style={{ fontWeight: 'bold', color: '#666' }}>0</span>
+          <span style={{ fontSize: '12px', color: '#679750' }}>
+            relaciones
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+        <span style={{ fontWeight: 'bold' }}>{relaciones.total}</span>
+        <span style={{ fontSize: '12px', color: '#679750' }}>
+          relaciones
+        </span>
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {relaciones.productos.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#4caf50',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              P: {relaciones.productos.length}
+            </span>
+          )}
+          {relaciones.sedes.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#2196f3',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              S: {relaciones.sedes.length}
+            </span>
+          )}
+          {relaciones.paquetes.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#ff9800',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              Paq: {relaciones.paquetes.length}
+            </span>
+          )}
+          {relaciones.reservas.length > 0 && (
+            <span style={{ 
+              backgroundColor: '#e91e63',
+              color: 'white',
+              padding: '1px 4px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: 'bold'
+            }}>
+              R: {relaciones.reservas.length}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ===============================================
+  // RENDERIZADO
   // ===============================================
   return (
-    <div style={{ position: "relative", padding: 24, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
-     
+    <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
+      
       {/* Alerta Mejorada */}
       {showAlert && (
-        <div style={{
-          ...alertStyle,
-          backgroundColor: alertMessage.includes('❌') ? '#e57373' : '#2E5939',
-          animation: 'slideInRight 0.3s ease-out'
-        }}>
-          {alertMessage.includes('❌') ? <FaExclamationTriangle /> : <FaCheck />}
-          <span>{alertMessage}</span>
-          <button
+        <div style={getAlertStyle(alertType)}>
+          {getAlertIcon(alertType)}
+          <span style={{ flex: 1 }}>{alertMessage}</span>
+          <button 
             onClick={() => setShowAlert(false)}
             style={{ 
               background: 'none', 
               border: 'none', 
-              color: 'white', 
+              color: 'inherit', 
               cursor: 'pointer',
+              fontSize: '16px',
+              padding: 0,
               display: 'flex',
               alignItems: 'center'
             }}
@@ -1572,28 +1866,27 @@ const GestionReserva = () => {
         <div style={{
           backgroundColor: '#fff3cd',
           border: '1px solid #ffeaa7',
-          borderRadius: '12px',
-          padding: '16px',
+          borderRadius: '10px',
+          padding: '15px',
           marginBottom: '20px',
           color: '#856404'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             <FaExclamationTriangle />
             <strong>Error de conexión</strong>
           </div>
-          <p style={{ margin: 0 }}>{error}</p>
-          <div style={{ marginTop: '12px' }}>
+          <p>{error}</p>
+          <div style={{ marginTop: '10px' }}>
             <button
-              onClick={fetchReservas}
+              onClick={fetchAllData}
               style={{
-                backgroundColor: '#2E5939',
+                backgroundColor: "#2E5939",
                 color: 'white',
                 padding: '8px 16px',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '5px',
                 cursor: 'pointer',
-                marginRight: '10px',
-                fontWeight: '600'
+                marginRight: '10px'
               }}
             >
               Reintentar
@@ -1601,190 +1894,369 @@ const GestionReserva = () => {
             <button
               onClick={() => setError(null)}
               style={{
-                backgroundColor: '#757575',
+                backgroundColor: '#6c757d',
                 color: 'white',
                 padding: '8px 16px',
                 border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600'
+                borderRadius: '5px',
+                cursor: 'pointer'
               }}
             >
-              Ocultar
+              Cerrar
             </button>
           </div>
         </div>
       )}
 
-      {/* Header Mejorado */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <h2 style={{ margin: 0, color: "#2E5939", fontSize: "28px", fontWeight: "700" }}>Gestión de Reservas</h2>
-          <p style={{ margin: "8px 0 0 0", color: "#679750", fontSize: "15px" }}>
-            Administra y controla todas las reservas del sistema
+          <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Servicios</h2>
+          <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
+            {servicios.length} servicios registrados • {servicios.filter(s => s.estado).length} activos
           </p>
         </div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        <button
+          onClick={() => {
+            setShowForm(true);
+            setIsEditing(false);
+            setFormErrors({});
+            setFormSuccess({});
+            setFormWarnings({});
+            setTouchedFields({});
+            setImagenSeleccionada(null);
+            setNewServicio({
+              idServicio: 0,
+              nombreServicio: "",
+              precioServicio: "",
+              imagen: "",
+              descripcion: "",
+              estado: true
+            });
+          }}
+          style={{
+            backgroundColor: "#2E5939",
+            color: "white",
+            padding: "12px 20px",
+            border: "none",
+            borderRadius: 10,
+            cursor: "pointer",
+            fontWeight: "600",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+            transition: "all 0.3s ease",
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+            e.target.style.transform = "translateY(-2px)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = "#2E5939";
+            e.target.style.transform = "translateY(0)";
+          }}
+        >
+          <FaPlus /> Agregar Servicio
+        </button>
+      </div>
+
+      {/* Tarjetas de Estadísticas */}
+      {!loading && servicios.length > 0 && (
+        <div style={{
+          marginBottom: '25px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {servicios.length}
+            </div>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
+              Total Servicios
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {servicios.filter(s => s.estado).length}
+            </div>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
+              Servicios Activos
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {servicios.filter(s => !s.estado).length}
+            </div>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
+              Servicios Inactivos
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredServicios.length}
+            </div>
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN SEDES */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o descripción..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
           <button
-            onClick={fetchReservas}
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              backgroundColor: "#679750",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
               color: "white",
-              padding: "12px 16px",
+              padding: "10px 15px",
               border: "none",
-              borderRadius: 10,
+              borderRadius: 8,
               cursor: "pointer",
               fontWeight: "600",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              transition: "all 0.3s ease",
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-              e.target.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#679750";
-              e.target.style.transform = "translateY(0)";
-            }}
-            title="Actualizar lista"
-          >
-            <FaSync /> Actualizar
-          </button>
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setIsEditing(false);
-              inicializarNuevaReserva();
-            }}
-            style={{
-              backgroundColor: "#2E5939",
-              color: "white",
-              padding: "14px 24px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-              transition: "all 0.3s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-              e.target.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#2E5939";
-              e.target.style.transform = "translateY(0)";
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
           >
-            <FaPlus /> Nueva Reserva
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
           </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por precio mínimo */}
+              <div>
+                <label style={labelStyle}>Precio Mínimo</label>
+                <div style={{ position: 'relative' }}>
+                  <FaDollarSign style={{ 
+                    position: 'absolute', 
+                    left: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    color: '#2E5939' 
+                  }} />
+                  <input
+                    type="number"
+                    name="precioMin"
+                    value={filters.precioMin}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '35px'
+                    }}
+                    placeholder="0"
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+              </div>
+
+              {/* Filtro por precio máximo */}
+              <div>
+                <label style={labelStyle}>Precio Máximo</label>
+                <div style={{ position: 'relative' }}>
+                  <FaDollarSign style={{ 
+                    position: 'absolute', 
+                    left: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    color: '#2E5939' 
+                  }} />
+                  <input
+                    type="number"
+                    name="precioMax"
+                    value={filters.precioMax}
+                    onChange={handleFilterChange}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '35px'
+                    }}
+                    placeholder="10000000"
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+              </div>
+
+              {/* Filtro por relaciones */}
+              <div>
+                <label style={labelStyle}>Relaciones</label>
+                <select
+                  name="tieneRelaciones"
+                  value={filters.tieneRelaciones}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los servicios</option>
+                  <option value="con">Con relaciones</option>
+                  <option value="sin">Sin relaciones</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredServicios.length !== servicios.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredServicios.length} de {servicios.length} servicios
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
 
-      {/* Estadísticas */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '16px', 
-        marginBottom: '24px' 
-      }}>
-        <div style={statCardStyle}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
-            {estadisticas.total}
-          </div>
-          <div style={{ color: '#679750', fontSize: '14px', fontWeight: '600' }}>
-            Total Reservas
-          </div>
-        </div>
-        <div style={statCardStyle}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#ff9800', marginBottom: '8px' }}>
-            {estadisticas.pendientes}
-          </div>
-          <div style={{ color: '#679750', fontSize: '14px', fontWeight: '600' }}>
-            Pendientes
-          </div>
-        </div>
-        <div style={statCardStyle}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#4caf50', marginBottom: '8px' }}>
-            {estadisticas.abonadas}
-          </div>
-          <div style={{ color: '#679750', fontSize: '14px', fontWeight: '600' }}>
-            Abonadas
-          </div>
-        </div>
-        <div style={statCardStyle}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2196f3', marginBottom: '8px' }}>
-            {formatCurrency(estadisticas.totalIngresos)}
-          </div>
-          <div style={{ color: '#679750', fontSize: '14px', fontWeight: '600' }}>
-            Ingresos Totales
-          </div>
-        </div>
-      </div>
-
-      {/* Barra de búsqueda mejorada */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '16px', 
-        marginBottom: '24px', 
-        alignItems: 'center',
-        padding: '20px',
-        ...cardStyle
-      }}>
-        <div style={{ position: "relative", flex: 1 }}>
-          <FaSearch style={{ 
-            position: "absolute", 
-            left: 16, 
-            top: "50%", 
-            transform: "translateY(-50%)", 
-            color: "#2E5939" 
-          }} />
-          <input
-            type="text"
-            placeholder="Buscar por cabaña, sede, estado, usuario o ID..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: "14px 14px 14px 45px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              fontSize: "15px"
-            }}
-          />
-        </div>
-        <div style={{ 
-          color: '#2E5939', 
-          fontSize: '14px', 
-          whiteSpace: 'nowrap',
-          fontWeight: '600',
-          backgroundColor: '#E8F5E8',
-          padding: '8px 16px',
-          borderRadius: '8px'
-        }}>
-          {filteredReservas.length} {filteredReservas.length === 1 ? 'resultado' : 'resultados'}
-        </div>
-      </div>
-
-      {/* Formulario de Reserva */}
+      {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={{...modalContentStyle, maxWidth: 750}}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", fontSize: "24px" }}>
-                {isEditing ? "Editar Reserva" : "Nueva Reserva"}
+          <div style={modalContentStyle}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+                {isEditing ? "Editar Servicio" : "Agregar Nuevo Servicio"}
               </h2>
               <button
                 onClick={closeForm}
@@ -1794,335 +2266,268 @@ const GestionReserva = () => {
                   color: "#2E5939",
                   fontSize: "20px",
                   cursor: "pointer",
-                  padding: "8px",
-                  borderRadius: "50%",
-                  transition: "all 0.3s ease"
                 }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = "rgba(46, 89, 57, 0.1)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.backgroundColor = "transparent";
-                }}
+                title="Cerrar"
+                disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
-           
-            <form onSubmit={handleAddReserva}>
-              {/* Sección de Información Básica */}
-              <div style={{ 
-                backgroundColor: '#FBFDF9', 
-                padding: '20px', 
-                borderRadius: '12px',
-                marginBottom: '20px',
-                border: '1px solid rgba(103, 151, 80, 0.1)'
-              }}>
-                <h3 style={{ color: '#2E5939', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FaUser /> Información Básica
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            
+            <form onSubmit={handleAddServicio}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
                   <FormField
-                    label="Usuario"
-                    name="idUsuario"
-                    type="select"
-                    value={newReserva.idUsuario}
-                    onChange={handleInputChange}
-                    options={usuarios.map(u => ({ value: u.idUsuario, label: `${u.nombre} ${u.apellido || ''}` }))}
+                    label="Nombre del Servicio"
+                    name="nombreServicio"
+                    value={newServicio.nombreServicio}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.nombreServicio}
+                    success={formSuccess.nombreServicio}
+                    warning={formWarnings.nombreServicio}
                     required={true}
-                    icon={<FaUser />}
-                  />
-                  <FormField
-                    label="Sede"
-                    name="idSede"
-                    type="select"
-                    value={newReserva.idSede}
-                    onChange={handleInputChange}
-                    options={sedesActivas.map(s => ({ value: s.idSede, label: s.nombreSede }))}
-                    required={true}
-                    icon={<FaMapMarkerAlt />}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.nombreServicio.maxLength}
+                    showCharCount={true}
+                    placeholder="Ej: Masaje Relajante, Spa Completo, Caminata Ecológica..."
+                    touched={touchedFields.nombreServicio}
                   />
                 </div>
-              </div>
 
-              {/* Sección de Alojamiento */}
-              <div style={{ 
-                backgroundColor: '#FBFDF9', 
-                padding: '20px', 
-                borderRadius: '12px',
-                marginBottom: '20px',
-                border: '1px solid rgba(103, 151, 80, 0.1)'
-              }}>
-                <h3 style={{ color: '#2E5939', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FaHome /> Alojamiento
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
                   <FormField
-                    label="Cabaña"
-                    name="idCabana"
-                    type="select"
-                    value={newReserva.idCabana}
-                    onChange={handleInputChange}
-                    options={cabinasActivas.map(c => ({ value: c.idCabana, label: `${c.nombre} - ${c.tipoCabana || 'Sin tipo'}` }))}
+                    label={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaDollarSign />
+                        Precio (COP)
+                      </div>
+                    }
+                    name="precioServicio"
+                    type="number"
+                    value={newServicio.precioServicio}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.precioServicio}
+                    success={formSuccess.precioServicio}
+                    warning={formWarnings.precioServicio}
                     required={true}
-                    icon={<FaHome />}
-                  />
-                  <FormField
-                    label="Paquete"
-                    name="idPaquete"
-                    type="select"
-                    value={newReserva.idPaquete}
-                    onChange={handleInputChange}
-                    options={[{ value: '', label: 'Sin paquete' }, ...paquetesActivos.map(p => ({ value: p.idPaquete, label: p.nombrePaquete }))]}
-                    icon={<FaBox />}
+                    disabled={loading}
+                    min={VALIDATION_RULES.precioServicio.min}
+                    max={VALIDATION_RULES.precioServicio.max}
+                    step="100"
+                    placeholder="1000"
+                    touched={touchedFields.precioServicio}
+                    icon={<FaDollarSign />}
                   />
                 </div>
-              </div>
 
-              {/* Sección de Servicios Extras */}
-              <div style={{ 
-                backgroundColor: '#FBFDF9', 
-                padding: '20px', 
-                borderRadius: '12px',
-                marginBottom: '20px',
-                border: '1px solid rgba(103, 151, 80, 0.1)'
-              }}>
-                <h3 style={{ color: '#2E5939', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FaBox /> Servicios Extras
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                  gap: '12px',
-                  maxHeight: '150px',
-                  overflowY: 'auto',
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  backgroundColor: '#f9f9f9'
-                }}>
-                  {serviciosActivos.map(servicio => (
-                    <label
-                      key={servicio.idServicio}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        backgroundColor: Array.isArray(newReserva.serviciosSeleccionados) &&
-                          newReserva.serviciosSeleccionados.map(id => Number(id)).includes(Number(servicio.idServicio))
-                          ? '#e8f5e8' : 'transparent',
-                        transition: 'background-color 0.2s',
+                <div>
+                  <FormField
+                    label="Estado"
+                    name="estado"
+                    type="select"
+                    value={newServicio.estado}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.estado}
+                    success={formSuccess.estado}
+                    warning={formWarnings.estado}
+                    required={true}
+                    disabled={loading}
+                    options={[
+                      { value: "true", label: "Activo" },
+                      { value: "false", label: "Inactivo" }
+                    ]}
+                    touched={touchedFields.estado}
+                  />
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaImage />
+                      Imagen del Servicio
+                      <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                        (Opcional)
+                      </span>
+                    </div>
+                  </label>
+                  
+                  {/* Área de subida de imagen */}
+                  <div 
+                    style={imageUploadStyle}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#E8F5E8';
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#F7F4EA';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = '#F7F4EA';
+                      handleImageUpload({ target: { files: e.dataTransfer.files } });
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                      id="image-upload"
+                    />
+                    <label 
+                      htmlFor="image-upload"
+                      style={{ 
                         cursor: 'pointer',
-                        border: '1px solid rgba(46, 89, 57, 0.1)'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '10px'
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        value={servicio.idServicio}
-                        checked={Array.isArray(newReserva.serviciosSeleccionados) &&
-                          newReserva.serviciosSeleccionados.map(id => Number(id)).includes(Number(servicio.idServicio))}
-                        onChange={e => {
-                          const checked = e.target.checked;
-                          setNewReserva(prev => {
-                            const serviciosActuales = Array.isArray(prev.serviciosSeleccionados)
-                              ? prev.serviciosSeleccionados.map(id => Number(id))
-                              : [];
-                            return {
-                              ...prev,
-                              serviciosSeleccionados: checked
-                                ? [...serviciosActuales, Number(servicio.idServicio)]
-                                : serviciosActuales.filter(id => id !== Number(servicio.idServicio))
-                            };
-                          });
-                        }}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '500', fontSize: '14px' }}>{servicio.nombreServicio}</div>
-                        <div style={{ fontSize: '12px', color: '#679750', fontWeight: '600' }}>
-                          {formatCurrency(servicio.precioServicio || 0)}
+                      <FaUpload size={30} color="#679750" />
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#2E5939', marginBottom: '5px' }}>
+                          Haz clic o arrastra una imagen aquí
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#679750' }}>
+                          Formatos: JPEG, PNG, GIF, WebP (Máx. 5MB)
                         </div>
                       </div>
                     </label>
-                  ))}
-                  {serviciosActivos.length === 0 && (
-                    <span style={{ color: '#999', fontSize: '14px', gridColumn: '1 / -1', textAlign: 'center' }}>
-                      No hay servicios extras disponibles
-                    </span>
+                  </div>
+
+                  {/* Campo para URL de imagen */}
+                  <FormField
+                    label="URL de la Imagen"
+                    name="imagen"
+                    value={newServicio.imagen}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.imagen}
+                    success={formSuccess.imagen}
+                    warning={formWarnings.imagen}
+                    required={false}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.imagen.maxLength}
+                    showCharCount={true}
+                    placeholder="https://ejemplo.com/imagen-servicio.jpg"
+                    touched={touchedFields.imagen}
+                  />
+
+                  {/* Previsualización de imagen */}
+                  {(imagenSeleccionada || newServicio.imagen) && (
+                    <div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginBottom: '10px'
+                      }}>
+                        <span style={{ fontWeight: '600', color: '#2E5939' }}>
+                          Vista previa
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          style={{
+                            background: '#e57373',
+                            color: 'white',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Eliminar imagen
+                        </button>
+                      </div>
+                      <div style={imagePreviewContainerStyle}>
+                        <div style={imagePreviewStyle}>
+                          <img 
+                            src={imagenSeleccionada ? imagenSeleccionada.preview : newServicio.imagen} 
+                            alt="Preview del servicio"
+                            style={imageStyle}
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/150x100/679750/FFFFFF?text=Imagen+No+Disponible';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* Sección de Fechas */}
-              <div style={{ 
-                backgroundColor: '#FBFDF9', 
-                padding: '20px', 
-                borderRadius: '12px',
-                marginBottom: '20px',
-                border: '1px solid rgba(103, 151, 80, 0.1)'
-              }}>
-                <h3 style={{ color: '#2E5939', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FaCalendarAlt /> Fechas
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
                   <FormField
-                    label="Fecha Entrada"
-                    name="fechaEntrada"
-                    type="date"
-                    value={newReserva.fechaEntrada}
-                    onChange={handleInputChange}
-                    required={true}
-                  />
-                  <FormField
-                    label="Fecha Salida"
-                    name="fechaReserva"
-                    type="date"
-                    value={newReserva.fechaReserva}
-                    onChange={handleInputChange}
-                    required={true}
-                  />
-                  <FormField
-                    label="Fecha Registro"
-                    name="fechaRegistro"
-                    type="date"
-                    value={newReserva.fechaRegistro}
-                    disabled={true}
+                    label="Descripción"
+                    name="descripcion"
+                    type="textarea"
+                    value={newServicio.descripcion}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.descripcion}
+                    success={formSuccess.descripcion}
+                    warning={formWarnings.descripcion}
+                    required={false}
+                    disabled={loading}
+                    maxLength={VALIDATION_RULES.descripcion.maxLength}
+                    showCharCount={true}
+                    placeholder="Descripción detallada del servicio (opcional)..."
+                    touched={touchedFields.descripcion}
                   />
                 </div>
               </div>
 
-              {/* Sección de Pagos */}
-              <div style={{ 
-                backgroundColor: '#FBFDF9', 
-                padding: '20px', 
-                borderRadius: '12px',
-                marginBottom: '20px',
-                border: '1px solid rgba(103, 151, 80, 0.1)'
-              }}>
-                <h3 style={{ color: '#2E5939', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FaMoneyBillAlt /> Información de Pago
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                  <FormField
-                    label="Monto Total"
-                    name="monofiota1"
-                    type="number"
-                    value={newReserva.monofiota1}
-                    disabled={true}
-                  />
-                  <FormField
-                    label="Abono (50%)"
-                    name="abono"
-                    type="number"
-                    value={newReserva.abono}
-                    disabled={true}
-                  />
-                  <FormField
-                    label="Restante"
-                    name="restante"
-                    type="number"
-                    value={newReserva.restante}
-                    disabled={true}
-                  />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-                  <FormField
-                    label="Estado"
-                    name="idEstado"
-                    type="select"
-                    value={newReserva.idEstado}
-                    onChange={handleInputChange}
-                    options={estados.map(e => ({ value: e.idEstado, label: e.nombreEstado }))}
-                    required={true}
-                    disabled={!isEditing}
-                  />
-                  <FormField
-                    label="Método de Pago"
-                    name="idMetodoPago"
-                    type="select"
-                    value={newReserva.idMetodoPago}
-                    options={metodosPago.map(m => ({ value: m.idMetodoPago, label: m.nombreMetodoPago }))}
-                    required={true}
-                    disabled={true}
-                    icon={<FaCreditCard />}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                   style={{
-                    backgroundColor: loading ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
                     color: "#fff",
-                    padding: "14px 24px",
+                    padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: loading ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
-                    fontSize: "15px"
+                    flex: 1
                   }}
                   onMouseOver={(e) => {
-                    if (!loading) {
+                    if (!loading && !isSubmitting) {
                       e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
                       e.target.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (!loading) {
+                    if (!loading && !isSubmitting) {
                       e.target.style.background = "#2E5939";
                       e.target.style.transform = "translateY(0)";
                     }
                   }}
                 >
-                  {loading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid transparent',
-                        borderTop: '2px solid white',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }}></div>
-                      Guardando...
-                    </div>
-                  ) : (
-                    isEditing ? "Actualizar Reserva" : "Crear Reserva"
-                  )}
+                  {loading ? "Guardando..." : (isEditing ? "Actualizar Servicio" : "Guardar Servicio")}
                 </button>
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                   style={{
-                    backgroundColor: "#f8f9fa",
-                    color: "#2E5939",
-                    padding: "14px 24px",
-                    border: "1px solid #ddd",
+                    backgroundColor: "#ccc",
+                    color: "#333",
+                    padding: "12px 25px",
+                    border: "none",
                     borderRadius: 10,
-                    cursor: loading ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
-                    flex: 1,
-                    transition: "all 0.3s ease"
-                  }}
-                  onMouseOver={(e) => {
-                    if (!loading) {
-                      e.target.style.backgroundColor = "#e9ecef";
-                      e.target.style.transform = "translateY(-2px)";
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!loading) {
-                      e.target.style.backgroundColor = "#f8f9fa";
-                      e.target.style.transform = "translateY(0)";
-                    }
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    flex: 1
                   }}
                 >
                   Cancelar
@@ -2133,303 +2538,473 @@ const GestionReserva = () => {
         </div>
       )}
 
-      {/* Tabla de Reservas Mejorada */}
-      <div style={cardStyle}>
-        {loading ? (
-          <div style={{
-            textAlign: "center",
-            padding: "60px",
+      {/* Modal de detalles */}
+      {showDetails && selectedServicio && (
+        <div style={modalOverlayStyle}>
+          <div style={detailsModalStyle}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles del Servicio</h2>
+              <button
+                onClick={closeDetailsModal}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#2E5939",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                }}
+                title="Cerrar"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div>
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>ID</div>
+                <div style={detailValueStyle}>#{selectedServicio.idServicio}</div>
+              </div>
+              
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Nombre</div>
+                <div style={detailValueStyle}>{selectedServicio.nombreServicio}</div>
+              </div>
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Precio</div>
+                <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750'}}>
+                  {formatPrice(selectedServicio.precioServicio)}
+                </div>
+              </div>
+
+              {/* Imagen del servicio */}
+              {selectedServicio.imagen && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaImage />
+                      Imagen del Servicio
+                    </div>
+                  </div>
+                  <div style={detailValueStyle}>
+                    <div style={imagePreviewStyle}>
+                      <img 
+                        src={selectedServicio.imagen} 
+                        alt={selectedServicio.nombreServicio}
+                        style={{
+                          ...galleryImageStyle,
+                          width: '100%',
+                          maxWidth: '300px'
+                        }}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/300x200/679750/FFFFFF?text=Imagen+No+Disponible';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Descripción</div>
+                <div style={{ 
+                  backgroundColor: "#F7F4EA", 
+                  padding: 15,
+                  borderRadius: 8,
+                  fontSize: 15,
+                  color: '#2E5939',
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  lineHeight: '1.5',
+                  minHeight: '60px'
+                }}>
+                  {selectedServicio.descripcion || "Sin descripción"}
+                </div>
+              </div>
+
+              {/* Sección de relaciones */}
+              <RelacionesSection servicioId={selectedServicio.idServicio} />
+
+              <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Estado</div>
+                <div style={{
+                  ...detailValueStyle,
+                  color: selectedServicio.estado ? '#4caf50' : '#e57373',
+                  fontWeight: 'bold'
+                }}>
+                  {selectedServicio.estado ? '🟢 Activo' : '🔴 Inactivo'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
+              <button
+                onClick={closeDetailsModal}
+                style={{
+                  backgroundColor: "#2E5939",
+                  color: "#fff",
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "#2E5939";
+                  e.target.style.transform = "translateY(0)";
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteConfirm && servicioToDelete && (
+        <div style={modalOverlayStyle}>
+          <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
+            <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
+              ¿Estás seguro de eliminar el servicio "<strong>{servicioToDelete.nombreServicio}</strong>"?
+            </p>
+            
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffeaa7',
+              borderRadius: '8px',
+              padding: '15px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <FaInfoCircle style={{ color: '#856404' }} />
+                <strong style={{ color: '#856404' }}>Servicio a eliminar</strong>
+              </div>
+              <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
+                Precio: {formatPrice(servicioToDelete.precioServicio)} | 
+                Estado: {servicioToDelete.estado ? 'Activo' : 'Inactivo'} |
+                Productos: {contarProductosPorServicio(servicioToDelete.idServicio)} |
+                Sedes: {contarSedesPorServicio(servicioToDelete.idServicio)} |
+                Paquetes: {contarPaquetesPorServicio(servicioToDelete.idServicio)} |
+                Reservas: {contarReservasPorServicio(servicioToDelete.idServicio)}
+              </p>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+              <button
+                onClick={confirmDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  color: "white",
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                }}
+              >
+                {loading ? "Eliminando..." : "Sí, Eliminar"}
+              </button>
+              <button
+                onClick={cancelDelete}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#ccc" : "#2E5939",
+                  color: "#fff",
+                  padding: "10px 20px",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.target.style.background = "#2E5939";
+                  }
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contenido principal */}
+      <div style={{
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        overflow: 'hidden'
+      }}>
+        {/* Loading */}
+        {loading && (
+          <div style={{ 
+            textAlign: "center", 
+            padding: "40px", 
             color: "#2E5939"
           }}>
-            <div style={{ fontSize: '18px', marginBottom: '16px' }}>
-              🔄 Cargando reservas...
+            <div style={{ fontSize: '18px', marginBottom: '10px' }}>
+              🔄 Cargando servicios...
             </div>
-            <div style={{ 
-              width: '40px', 
-              height: '40px', 
-              border: '3px solid #f3f3f3',
-              borderTop: '3px solid #2E5939',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto'
-            }}></div>
           </div>
-        ) : (
-          <>
-            <table style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              backgroundColor: "#fff",
-              color: "#2E5939",
-            }}>
-              <thead>
-                <tr style={{ 
-                  backgroundColor: "#679750", 
-                  color: "#fff",
-                  borderBottom: "2px solid #2E5939"
-                }}>
-                  <th style={{ padding: "18px 16px", textAlign: "left", fontWeight: "600", fontSize: "14px" }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaUser /> Usuario
+        )}
+
+        {/* Tabla */}
+        {!loading && (
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            backgroundColor: "#fff",
+            color: "#2E5939",
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
+                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Servicio</th>
+                <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Relaciones</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedServicios.length === 0 && !loading ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {servicios.length === 0 ? "No hay servicios registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
+                      {servicios.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Servicio
+                        </button>
+                      )}
+                      {servicios.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
                     </div>
-                  </th>
-                  <th style={{ padding: "18px 16px", textAlign: "left", fontWeight: "600", fontSize: "14px" }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaHome /> Cabaña
-                    </div>
-                  </th>
-                  <th style={{ padding: "18px 16px", textAlign: "center", fontWeight: "600", fontSize: "14px" }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                      <FaCalendarAlt /> Fechas
-                    </div>
-                  </th>
-                  <th style={{ padding: "18px 16px", textAlign: "center", fontWeight: "600", fontSize: "14px" }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                      <FaMoneyBillAlt /> Monto
-                    </div>
-                  </th>
-                  <th style={{ padding: "18px 16px", textAlign: "center", fontWeight: "600", fontSize: "14px" }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                      <FaCreditCard /> Estado
-                    </div>
-                  </th>
-                  <th style={{ padding: "18px 16px", textAlign: "center", fontWeight: "600", fontSize: "14px" }}>
-                    Acciones
-                  </th>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {paginatedReservas.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ padding: "60px", textAlign: "center", color: "#2E5939" }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                        <FaCalendarAlt size={48} color="#679750" />
-                        <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                          {reservas.length === 0 ? "No hay reservas registradas" : "No se encontraron resultados"}
-                        </div>
-                        {reservas.length === 0 && (
-                          <button
-                            onClick={() => setShowForm(true)}
-                            style={{
-                              backgroundColor: "#2E5939",
-                              color: "white",
-                              padding: "12px 24px",
-                              border: "none",
-                              borderRadius: 8,
-                              cursor: "pointer",
-                              fontWeight: "600",
-                              marginTop: '10px'
-                            }}
-                          >
-                            <FaPlus style={{ marginRight: '8px' }} />
-                            Crear Primera Reserva
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedReservas.map((reserva) => (
-                    <tr key={reserva.idReserva} style={{ 
-                      borderBottom: "1px solid rgba(46, 89, 57, 0.1)",
-                      transition: "all 0.3s ease",
-                    }}>
-                      <td style={{ padding: "20px 16px", textAlign: "left" }}>
-                        <div style={{ fontWeight: "600", color: "#2E5939" }}>
-                          {getUsuarioNombre(reserva.idUsuario)}
-                        </div>
-                        <div style={{ fontSize: "13px", color: "#679750", marginTop: "4px" }}>
-                          {getSedeNombre(reserva.idSede)}
-                        </div>
-                      </td>
-                      <td style={{ padding: "20px 16px", textAlign: "left" }}>
-                        <div style={{ fontWeight: "500" }}>
-                          {getCabinaNombre(reserva.idCabana)}
-                        </div>
-                      </td>
-                      <td style={{ padding: "20px 16px", textAlign: "center" }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ fontSize: "14px", fontWeight: "500" }}>
-                            {formatDate(reserva.fechaEntrada)}
-                          </div>
-                          <div style={{ fontSize: "12px", color: "#679750" }}>
-                            Salida: {formatDate(reserva.fechaReserva)}
+              ) : (
+                paginatedServicios.map((servicio) => {
+                  const relaciones = getTodasLasRelacionesDelServicio(servicio.idServicio);
+                  
+                  return (
+                    <tr key={servicio.idServicio} style={{ borderBottom: "1px solid #eee" }}>
+                      <td style={{ padding: "15px", fontWeight: "500" }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                          {servicio.imagen && (
+                            <div style={{
+                              width: '50px',
+                              height: '50px',
+                              borderRadius: '8px',
+                              overflow: 'hidden',
+                              flexShrink: 0
+                            }}>
+                              <img 
+                                src={servicio.imagen} 
+                                alt={servicio.nombreServicio}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                                onError={(e) => {
+                                  e.target.src = 'https://via.placeholder.com/50x50/679750/FFFFFF?text=S';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+                              {servicio.nombreServicio}
+                            </div>
+                            <div style={{ fontSize: "13px", color: "#679750", lineHeight: "1.3" }}>
+                              {formatDescripcion(servicio.descripcion)}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: "20px 16px", textAlign: "center" }}>
-                        <div style={{ 
-                          fontWeight: "600", 
-                          color: "#2E5939",
-                          fontSize: "15px"
-                        }}>
-                          {formatCurrency(reserva.monofiota1 || reserva.montoTotal)}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#679750", marginTop: "4px" }}>
-                          Abono: {formatCurrency(reserva.abono)}
-                        </div>
+                      <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>
+                        {formatPrice(servicio.precioServicio)}
                       </td>
-                      <td style={{ padding: "20px 16px", textAlign: "center" }}>
-                        <span style={{
-                          color: getEstadoColor(reserva.idEstado),
-                          fontWeight: 'bold',
-                          display: 'inline-block',
-                          padding: '8px 16px',
-                          borderRadius: '20px',
-                          backgroundColor: 'rgba(46, 89, 57, 0.1)',
-                          fontSize: "13px",
-                          border: `1px solid ${getEstadoColor(reserva.idEstado)}20`
-                        }}>
-                          {getEstadoNombre(reserva.idEstado)}
-                        </span>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <RelacionesBadge servicioId={servicio.idServicio} />
                       </td>
-                      <td style={{ padding: "20px 16px", textAlign: "center" }}>
-                        <div style={{
-                          display: "flex",
-                          flexDirection: "row",
-                          gap: "6px",
-                          justifyContent: "center",
-                          alignItems: "center"
-                        }}>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <button
+                          onClick={() => toggleEstado(servicio)}
+                          disabled={loading}
+                          style={{
+                            cursor: loading ? "not-allowed" : "pointer",
+                            padding: "6px 12px",
+                            borderRadius: "20px",
+                            border: "none",
+                            backgroundColor: servicio.estado ? "#4caf50" : "#e57373",
+                            color: "white",
+                            fontWeight: "600",
+                            fontSize: "12px",
+                            minWidth: "80px",
+                            opacity: loading ? 0.6 : 1,
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseOver={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1.05)";
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (!loading) {
+                              e.target.style.transform = "scale(1)";
+                            }
+                          }}
+                        >
+                          {servicio.estado ? "Activo" : "Inactivo"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
                           <button
-                            onClick={() => handleView(reserva)}
-                            style={{
-                              ...btnAccion("#F7F4EA", "#2E5939", "rgba(46, 89, 57, 0.1)"),
-                              padding: "10px 12px"
-                            }}
+                            onClick={() => handleView(servicio)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
                             title="Ver Detalles"
                           >
                             <FaEye />
                           </button>
                           <button
-                            onClick={() => handleEdit(reserva)}
-                            style={{
-                              ...btnAccion("#F7F4EA", "#2E5939", "rgba(46, 89, 57, 0.1)"),
-                              padding: "10px 12px"
-                            }}
-                            title="Editar"
+                            onClick={() => handleEdit(servicio)}
+                            style={btnAccion("#F7F4EA", "#2E5939")}
+                            title="Editar Servicio"
                           >
                             <FaEdit />
                           </button>
                           <button
-                            onClick={() => handleDownloadPDF(reserva)}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(servicio); }}
                             style={{
-                              ...btnAccion("#fce4ec", "#c2185b", "rgba(194, 24, 91, 0.1)"),
-                              padding: "10px 12px"
+                              ...btnAccion("#fbe9e7", "#e57373"),
+                              opacity: relaciones.total > 0 ? 0.5 : 1,
+                              cursor: relaciones.total > 0 ? "not-allowed" : "pointer"
                             }}
-                            title="Descargar PDF"
-                          >
-                            <FaFilePdf />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(reserva)}
-                            style={{
-                              ...btnAccion("#fbe9e7", "#e57373", "rgba(229, 115, 115, 0.1)"),
-                              padding: "10px 12px"
-                            }}
-                            title="Eliminar"
+                            title={relaciones.total > 0 ? "No se puede eliminar - Tiene relaciones asociadas" : "Eliminar Servicio"}
+                            disabled={relaciones.total > 0}
                           >
                             <FaTrash />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-
-            {/* Paginación Mejorada */}
-            {totalPages > 1 && (
-              <div style={{ 
-                padding: "20px", 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center",
-                borderTop: "1px solid rgba(46, 89, 57, 0.1)"
-              }}>
-                <div style={{ color: '#2E5939', fontSize: '14px', fontWeight: '500' }}>
-                  Mostrando {Math.min(ITEMS_PER_PAGE, paginatedReservas.length)} de {filteredReservas.length} reservas
-                </div>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <button
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    style={{
-                      padding: "10px 16px",
-                      border: "1px solid #ddd",
-                      borderRadius: "8px",
-                      backgroundColor: currentPage === 1 ? "#f5f5f5" : "#fff",
-                      color: currentPage === 1 ? "#999" : "#2E5939",
-                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                      fontWeight: "600",
-                      transition: "all 0.3s ease"
-                    }}
-                  >
-                    Anterior
-                  </button>
-                  
-                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                    let page;
-                    if (totalPages <= 5) {
-                      page = i + 1;
-                    } else if (currentPage <= 3) {
-                      page = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      page = totalPages - 4 + i;
-                    } else {
-                      page = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        style={{
-                          padding: "10px 16px",
-                          border: "1px solid",
-                          borderRadius: "8px",
-                          backgroundColor: currentPage === page ? "#2E5939" : "#fff",
-                          color: currentPage === page ? "white" : "#2E5939",
-                          borderColor: currentPage === page ? "#2E5939" : "#ddd",
-                          cursor: "pointer",
-                          fontWeight: "600",
-                          transition: "all 0.3s ease"
-                        }}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                  
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    style={{
-                      padding: "10px 16px",
-                      border: "1px solid #ddd",
-                      borderRadius: "8px",
-                      backgroundColor: currentPage === totalPages ? "#f5f5f5" : "#fff",
-                      color: currentPage === totalPages ? "#999" : "#2E5939",
-                      cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                      fontWeight: "600",
-                      transition: "all 0.3s ease"
-                    }}
-                  >
-                    Siguiente
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* Modales */}
-      <DetailsModal />
-      <DeleteConfirmModal />
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            style={navBtnStyle(currentPage === 1)}
+          >
+            Anterior
+          </button>
+          
+          <div style={{ display: "flex", gap: 5 }}>
+            {(() => {
+              const pages = [];
+              const maxVisiblePages = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+              
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+              }
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    style={pageBtnStyle(currentPage === i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+          
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            style={navBtnStyle(currentPage === totalPages)}
+          >
+            Siguiente
+          </button>
+          
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
+            marginLeft: '15px',
+            fontWeight: '500'
+          }}>
+            Página {currentPage} de {totalPages}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default GestionReserva;
+export default Gestiservi;

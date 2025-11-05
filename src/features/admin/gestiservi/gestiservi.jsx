@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaClock, FaTag, FaImage, FaUpload, FaCamera, FaBox, FaBuilding, FaGift, FaClipboardList } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaClock, FaTag, FaImage, FaUpload, FaCamera, FaBox, FaBuilding, FaGift, FaClipboardList, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
@@ -331,15 +331,15 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_SERVICIOS = "http://localhost:5018/api/Servicios";
-const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5018/api/ProductoPorServicio";
-const API_SEDES_POR_SERVICIO = "http://localhost:5018/api/SedesPorServicio";
-const API_SERVICIOS_POR_PAQUETE = "http://localhost:5018/api/ServicioPorPaquete";
-const API_SERVICIOS_RESERVA = "http://localhost:5018/api/ServiciosReserva";
-const API_PRODUCTOS = "http://localhost:5018/api/Productos";
-const API_SEDES = "http://localhost:5018/api/Sedes";
-const API_PAQUETES = "http://localhost:5018/api/Paquetes";
-const API_RESERVAS = "http://localhost:5018/api/Reservas";
+const API_SERVICIOS = "http://localhost:5272/api/Servicios";
+const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5272/api/ProductoPorServicio";
+const API_SEDES_POR_SERVICIO = "http://localhost:5272/api/SedesPorServicio";
+const API_SERVICIOS_POR_PAQUETE = "http://localhost:5272/api/ServicioPorPaquete";
+const API_SERVICIOS_RESERVA = "http://localhost:5272/api/ServiciosReserva";
+const API_PRODUCTOS = "http://localhost:5272/api/Productos";
+const API_SEDES = "http://localhost:5272/api/Sede";
+const API_PAQUETES = "http://localhost:5272/api/Paquetes";
+const API_RESERVAS = "http://localhost:5272/api/Reservas";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -473,7 +473,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}>*</span>}
+        {required && <span style={{ color: "red" }}></span>}
       </label>
       {type === "select" ? (
         <select
@@ -606,6 +606,16 @@ const Gestiservi = () => {
   const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Estados para filtros - MEJORADO COMO EN PAQUETES
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    precioMin: "",
+    precioMax: "",
+    relacionesMin: "",
+    relacionesMax: ""
+  });
+
   // Estado inicial basado en la estructura de tu API
   const [newServicio, setNewServicio] = useState({
     idServicio: 0,
@@ -646,6 +656,17 @@ const Gestiservi = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
       
@@ -872,6 +893,40 @@ const Gestiservi = () => {
       imagen: ""
     }));
   };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN PAQUETES
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      precioMin: "",
+      precioMax: "",
+      relacionesMin: "",
+      relacionesMax: ""
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.precioMin) count++;
+    if (filters.precioMax) count++;
+    if (filters.relacionesMin) count++;
+    if (filters.relacionesMax) count++;
+    return count;
+  }, [filters]);
 
   // ===============================================
   // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
@@ -1133,7 +1188,7 @@ const Gestiservi = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1375,14 +1430,37 @@ const Gestiservi = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredServicios = useMemo(() => {
-    return servicios.filter(servicio =>
-      servicio.nombreServicio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (servicio.descripcion && servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  }, [servicios, searchTerm]);
+    let filtered = servicios.filter(servicio => {
+      // Búsqueda general
+      const matchesSearch = 
+        servicio.nombreServicio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (servicio.descripcion && servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (servicio.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por precio
+      if (filters.precioMin && servicio.precioServicio < parseFloat(filters.precioMin)) return false;
+      if (filters.precioMax && servicio.precioServicio > parseFloat(filters.precioMax)) return false;
+
+      // Filtro por número de relaciones
+      const relaciones = getTodasLasRelacionesDelServicio(servicio.idServicio);
+      if (filters.relacionesMin && relaciones.total < parseInt(filters.relacionesMin)) return false;
+      if (filters.relacionesMax && relaciones.total > parseInt(filters.relacionesMax)) return false;
+
+      return true;
+    });
+
+    return filtered;
+  }, [servicios, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredServicios.length / ITEMS_PER_PAGE);
 
@@ -1877,111 +1955,272 @@ const Gestiservi = () => {
       {/* Tarjetas de Estadísticas */}
       {!loading && servicios.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {servicios.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Servicios
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {servicios.filter(s => s.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Servicios Activos
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {servicios.filter(s => !s.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Servicios Inactivos
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {productosPorServicio.length}
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredServicios.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Relaciones Productos
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {serviciosPorPaquete.length}
-            </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Relaciones Paquetes
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o descripción..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN PAQUETES */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o descripción..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por precio */}
+              <div>
+                <label style={labelStyle}>Precio Mínimo (COP)</label>
+                <input
+                  type="number"
+                  name="precioMin"
+                  value={filters.precioMin}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Precio Máximo (COP)</label>
+                <input
+                  type="number"
+                  name="precioMax"
+                  value={filters.precioMax}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="10000000"
+                  min="0"
+                />
+              </div>
+
+              {/* Filtro por número de relaciones */}
+              <div>
+                <label style={labelStyle}>Relaciones Mínimo</label>
+                <input
+                  type="number"
+                  name="relacionesMin"
+                  value={filters.relacionesMin}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Relaciones Máximo</label>
+                <input
+                  type="number"
+                  name="relacionesMax"
+                  value={filters.relacionesMax}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="50"
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredServicios.length !== servicios.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredServicios.length} de {servicios.length} servicios
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
 
       {/* Formulario de agregar/editar */}
@@ -2522,7 +2761,12 @@ const Gestiservi = () => {
                   <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
-                      {servicios.length === 0 ? "No hay servicios registrados" : "No se encontraron resultados"}
+                      {servicios.length === 0 ? "No hay servicios registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
                       {servicios.length === 0 && (
                         <button
                           onClick={() => setShowForm(true)}
@@ -2539,6 +2783,23 @@ const Gestiservi = () => {
                         >
                           <FaPlus style={{ marginRight: '5px' }} />
                           Agregar Primer Servicio
+                        </button>
+                      )}
+                      {servicios.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
                         </button>
                       )}
                     </div>

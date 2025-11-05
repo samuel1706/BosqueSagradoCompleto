@@ -4,7 +4,7 @@ import {
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaPhone,
   FaEnvelope, FaMapMarkerAlt, FaIdCard, FaSync, FaBuilding,
-  FaShoppingCart
+  FaShoppingCart, FaSlidersH
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -298,8 +298,8 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_PROVEEDORES = "http://localhost:5018/api/Proveedore";
-const API_PRODUCTOS = "http://localhost:5018/api/Productos";
+const API_PROVEEDORES = "http://localhost:5272/api/Proveedore";
+const API_PRODUCTOS = "http://localhost:5272/api/Productos";
 const ITEMS_PER_PAGE = 10;
 
 // ===============================================
@@ -509,6 +509,16 @@ const Admiprovee = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
 
+  // Estados para filtros - MEJORADO COMO EN LOS OTROS MÓDULOS
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    departamento: "all",
+    ciudad: "",
+    productosMin: "",
+    productosMax: ""
+  });
+
   const [newProveedor, setNewProveedor] = useState({
     nombre: "",
     celular: "",
@@ -552,6 +562,17 @@ const Admiprovee = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -600,6 +621,40 @@ const Admiprovee = () => {
         return alertSuccessStyle;
     }
   };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN OTROS MÓDULOS
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      departamento: "all",
+      ciudad: "",
+      productosMin: "",
+      productosMax: ""
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.departamento !== "all") count++;
+    if (filters.ciudad) count++;
+    if (filters.productosMin) count++;
+    if (filters.productosMax) count++;
+    return count;
+  }, [filters]);
 
   // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
@@ -862,7 +917,7 @@ const Admiprovee = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5018";
+      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -995,16 +1050,45 @@ const Admiprovee = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
   // ===============================================
   const filteredProveedores = useMemo(() => {
-    return proveedores.filter(proveedor =>
-      proveedor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proveedor.correo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proveedor.ciudad?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proveedor.numeroDocumento?.includes(searchTerm)
-    );
-  }, [proveedores, searchTerm]);
+    let filtered = proveedores.filter(proveedor => {
+      // Búsqueda general
+      const matchesSearch = 
+        proveedor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        proveedor.correo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        proveedor.ciudad?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        proveedor.numeroDocumento?.includes(searchTerm);
+
+      if (!matchesSearch) return false;
+
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (proveedor.estado !== estadoFilter) return false;
+      }
+
+      // Filtro por departamento
+      if (filters.departamento !== "all" && proveedor.departamento !== filters.departamento) {
+        return false;
+      }
+
+      // Filtro por ciudad
+      if (filters.ciudad && !proveedor.ciudad?.toLowerCase().includes(filters.ciudad.toLowerCase())) {
+        return false;
+      }
+
+      // Filtro por número de productos
+      const productosCount = contarProductosPorProveedor(proveedor.idProveedor);
+      if (filters.productosMin && productosCount < parseInt(filters.productosMin)) return false;
+      if (filters.productosMax && productosCount > parseInt(filters.productosMax)) return false;
+
+      return true;
+    });
+
+    return filtered;
+  }, [proveedores, searchTerm, filters]);
 
   const totalPages = Math.ceil(filteredProveedores.length / ITEMS_PER_PAGE);
 
@@ -1025,6 +1109,7 @@ const Admiprovee = () => {
   ];
 
   const departamentoOptions = [
+    { value: "all", label: "Todos los departamentos" },
     { value: "Antioquia", label: "Antioquia" },
     { value: "Cundinamarca", label: "Cundinamarca" },
     { value: "Valle del Cauca", label: "Valle del Cauca" },
@@ -1121,151 +1206,334 @@ const Admiprovee = () => {
             {proveedores.length} proveedores registrados • {proveedores.filter(p => p.estado).length} activos
           </p>
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-        
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setIsEditing(false);
-              setFormErrors({});
-              setFormSuccess({});
-              setFormWarnings({});
-              setTouchedFields({});
-              setNewProveedor({
-                nombre: "",
-                celular: "",
-                correo: "",
-                departamento: "",
-                ciudad: "",
-                barrio: "",
-                direccion: "",
-                tipoDocumento: "Cedula",
-                numeroDocumento: "",
-                estado: "true"
-              });
-            }}
-            style={{
-              backgroundColor: "#2E5939",
-              color: "white",
-              padding: "12px 20px",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              transition: "all 0.3s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-              e.target.style.transform = "translateY(-2px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#2E5939";
-              e.target.style.transform = "translateY(0)";
-            }}
-          >
-            <FaPlus /> Nuevo Proveedor
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setShowForm(true);
+            setIsEditing(false);
+            setFormErrors({});
+            setFormSuccess({});
+            setFormWarnings({});
+            setTouchedFields({});
+            setNewProveedor({
+              nombre: "",
+              celular: "",
+              correo: "",
+              departamento: "",
+              ciudad: "",
+              barrio: "",
+              direccion: "",
+              tipoDocumento: "Cedula",
+              numeroDocumento: "",
+              estado: "true"
+            });
+          }}
+          style={{
+            backgroundColor: "#2E5939",
+            color: "white",
+            padding: "12px 20px",
+            border: "none",
+            borderRadius: 10,
+            cursor: "pointer",
+            fontWeight: "600",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+            transition: "all 0.3s ease",
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+            e.target.style.transform = "translateY(-2px)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = "#2E5939";
+            e.target.style.transform = "translateY(0)";
+          }}
+        >
+          <FaPlus /> Nuevo Proveedor
+        </button>
       </div>
 
-      {/* Estadísticas - IGUAL QUE MARCAS */}
+      {/* Tarjetas de Estadísticas - MEJORADAS COMO EN OTROS MÓDULOS */}
       {!loading && proveedores.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {proveedores.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Proveedores
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {proveedores.filter(p => p.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Proveedores Activos
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {proveedores.filter(p => !p.estado).length}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Proveedores Inactivos
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {new Set(proveedores.map(p => p.ciudad)).size}
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {filteredProveedores.length}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Ciudades
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Resultados Filtrados
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda - SIMPLIFICADA */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, correo, ciudad o documento..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN OTROS MÓDULOS */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, correo, ciudad o documento..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
+
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
             style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
             }}
-          />
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
         </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Filtro por departamento */}
+              <div>
+                <label style={labelStyle}>Departamento</label>
+                <select
+                  name="departamento"
+                  value={filters.departamento}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  {departamentoOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por ciudad */}
+              <div>
+                <label style={labelStyle}>Ciudad</label>
+                <input
+                  type="text"
+                  name="ciudad"
+                  value={filters.ciudad}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="Filtrar por ciudad..."
+                  maxLength={50}
+                />
+              </div>
+
+              {/* Filtro por número de productos */}
+              <div>
+                <label style={labelStyle}>Productos Mínimo</label>
+                <input
+                  type="number"
+                  name="productosMin"
+                  value={filters.productosMin}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Productos Máximo</label>
+                <input
+                  type="number"
+                  name="productosMax"
+                  value={filters.productosMax}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                  placeholder="50"
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredProveedores.length !== proveedores.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredProveedores.length} de {proveedores.length} proveedores
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
       </div>
+
+      {/* Resto del código del formulario, modales y tabla se mantiene igual */}
+      {/* ... (el resto del código permanece igual) ... */}
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -1391,7 +1659,7 @@ const Admiprovee = () => {
                   error={formErrors.departamento}
                   success={formSuccess.departamento}
                   warning={formWarnings.departamento}
-                  options={departamentoOptions}
+                  options={departamentoOptions.filter(d => d.value !== "all")}
                   required={true}
                   disabled={loading}
                   touched={touchedFields.departamento}
@@ -1452,7 +1720,26 @@ const Admiprovee = () => {
                   icon={<FaMapMarkerAlt />}
                 />
 
-                
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField
+                    label="Estado"
+                    name="estado"
+                    type="select"
+                    value={newProveedor.estado}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.estado}
+                    success={formSuccess.estado}
+                    warning={formWarnings.estado}
+                    required={true}
+                    disabled={loading}
+                    options={[
+                      { value: "true", label: "Activo" },
+                      { value: "false", label: "Inactivo" }
+                    ]}
+                    touched={touchedFields.estado}
+                  />
+                </div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
@@ -1607,6 +1894,16 @@ const Admiprovee = () => {
               </div>
 
               <div style={detailItemStyle}>
+                <div style={detailLabelStyle}>Productos Asociados</div>
+                <div style={detailValueStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <FaShoppingCart color="#679750" />
+                    {contarProductosPorProveedor(selectedProveedor.idProveedor)} productos
+                  </div>
+                </div>
+              </div>
+
+              <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
                   ...detailValueStyle,
@@ -1734,6 +2031,7 @@ const Admiprovee = () => {
                 <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold" }}>Contacto</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Celular</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Ubicación</th>
+                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Productos</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -1742,11 +2040,56 @@ const Admiprovee = () => {
               {paginatedProveedores.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    {proveedores.length === 0 ? "No hay proveedores registrados" : "No se encontraron resultados"}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <FaInfoCircle size={30} color="#679750" />
+                      {proveedores.length === 0 ? "No hay proveedores registrados" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
+                      {proveedores.length === 0 && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px'
+                          }}
+                        >
+                          <FaPlus style={{ marginRight: '5px' }} />
+                          Agregar Primer Proveedor
+                        </button>
+                      )}
+                      {proveedores.length > 0 && activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearFilters}
+                          style={{
+                            backgroundColor: "#2E5939",
+                            color: "white",
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            marginTop: '10px',
+                          }}
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedProveedores.map((proveedor) => {
+                  const productosCount = contarProductosPorProveedor(proveedor.idProveedor);
+                  
                   return (
                     <tr key={proveedor.idProveedor} style={{ borderBottom: "1px solid #eee" }}>
                       <td style={{ padding: "15px", fontWeight: "500" }}>
@@ -1771,6 +2114,14 @@ const Admiprovee = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                           <FaMapMarkerAlt color="#679750" size={12} />
                           {proveedor.ciudad}
+                        </div>
+                      </td>
+                      <td style={{ padding: "15px", textAlign: "center" }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ fontWeight: 'bold' }}>{productosCount}</span>
+                          <span style={{ fontSize: '12px', color: '#679750' }}>
+                            productos
+                          </span>
                         </div>
                       </td>
                       <td style={{ padding: "15px", textAlign: "center" }}>
