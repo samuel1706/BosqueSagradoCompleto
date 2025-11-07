@@ -2,6 +2,7 @@
 import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaChair, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaUsers, FaDollarSign, FaSlidersH } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
+import { useCloudinary } from '../../../hooks/useCloudinary';
 
 // ===============================================
 // ESTILOS MEJORADOS (CONSISTENTES)
@@ -938,80 +939,105 @@ const Cabins = () => {
   // ===============================================
   // FUNCIONES PARA MANEJO DE IMÁGENES
   // ===============================================
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
+  const { uploadImage, uploadMultipleImages, uploading: cloudinaryUploading } = useCloudinary();
+
+// Reemplaza la función handleImageUpload existente con esta:
+const handleImageUpload = async (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+
+  // Validar tipos de archivo
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+  
+  if (invalidFiles.length > 0) {
+    displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
+    return;
+  }
+
+  // Validar tamaño (máximo 5MB por imagen)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const oversizedFiles = files.filter(file => file.size > maxSize);
+  
+  if (oversizedFiles.length > 0) {
+    displayAlert("Algunas imágenes son demasiado grandes. El tamaño máximo por imagen es 5MB.", "error");
+    return;
+  }
+
+  setUploadingImages(true);
+
+  try {
+    // Subir imágenes a Cloudinary
+    const uploadResults = await uploadMultipleImages(files);
     
-    // Validar tipos de archivo
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+    const successfulUploads = uploadResults.filter(result => result.success);
     
-    if (invalidFiles.length > 0) {
-      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
+    if (successfulUploads.length === 0) {
+      displayAlert("Error al subir las imágenes. Inténtalo de nuevo.", "error");
       return;
     }
 
-    // Validar tamaño (máximo 5MB por imagen)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    const oversizedFiles = files.filter(file => file.size > maxSize);
-    
-    if (oversizedFiles.length > 0) {
-      displayAlert("Algunas imágenes son demasiado grandes. El tamaño máximo por imagen es 5MB.", "error");
-      return;
-    }
-
-    // Crear URLs para previsualización
-    const newImages = files.map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
+    // Crear objetos de imagen para previsualización
+    const newImages = successfulUploads.map(result => ({
+      url: result.url,
+      publicId: result.publicId,
       descripcion: `Imagen de ${newCabin.nombre || 'cabaña'}`,
-      isNew: true
+      isNew: true,
+      isCloudinary: true // Marcar que viene de Cloudinary
     }));
 
     setImagenesSeleccionadas(prev => [...prev, ...newImages]);
+    displayAlert(`${successfulUploads.length} imagen(es) subida(s) exitosamente`, "success");
+    
+  } catch (error) {
+    console.error("Error en la subida de imágenes:", error);
+    displayAlert("Error al subir las imágenes", "error");
+  } finally {
+    setUploadingImages(false);
     e.target.value = ''; // Reset input
-  };
+  }
+};
 
   const removeImage = (index) => {
-    setImagenesSeleccionadas(prev => {
-      const newImages = [...prev];
-      // Liberar URL de objeto si es una imagen nueva
-      if (newImages[index].isNew) {
-        URL.revokeObjectURL(newImages[index].preview);
-      }
-      newImages.splice(index, 1);
-      return newImages;
-    });
-  };
+  setImagenesSeleccionadas(prev => {
+    const newImages = [...prev];
+    // Si la imagen es nueva y de Cloudinary, podrías eliminarla de Cloudinary también
+    // Pero por simplicidad, solo la removemos del estado local
+    newImages.splice(index, 1);
+    return newImages;
+  });
+};
 
-  const uploadImagesToServer = async (cabanaId) => {
-    if (imagenesSeleccionadas.length === 0) return;
+const uploadImagesToServer = async (cabanaId) => {
+  if (imagenesSeleccionadas.length === 0) return;
 
-    setUploadingImages(true);
-    
-    try {
-      for (const imagen of imagenesSeleccionadas) {
-        if (imagen.isNew) {
-          const formData = new FormData();
-          formData.append('file', imagen.file);
-          formData.append('idCabana', cabanaId.toString());
-          formData.append('descripcion', imagen.descripcion);
+  setUploadingImages(true);
+  
+  try {
+    // Filtrar solo las imágenes nuevas que necesitan ser guardadas en tu base de datos
+    const nuevasImagenes = imagenesSeleccionadas.filter(img => img.isNew);
 
-          await axios.post(API_IMAGENES, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            },
-            timeout: 15000
-          });
-        }
-      }
-      displayAlert("Imágenes subidas exitosamente", "success");
-    } catch (error) {
-      console.error("Error al subir imágenes:", error);
-      throw error;
-    } finally {
-      setUploadingImages(false);
+    for (const imagen of nuevasImagenes) {
+      const imagenData = {
+        idCabana: cabanaId,
+        rutaImagen: imagen.url, // Ahora usamos la URL de Cloudinary
+        descripcion: imagen.descripcion
+      };
+
+      await axios.post(API_IMAGENES, imagenData, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 15000
+      });
     }
-  };
+    
+    displayAlert("Imágenes guardadas exitosamente", "success");
+  } catch (error) {
+    console.error("Error al guardar imágenes en la base de datos:", error);
+    throw error;
+  } finally {
+    setUploadingImages(false);
+  }
+};
 
   const deleteImage = async (imageId) => {
     try {

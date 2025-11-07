@@ -19,7 +19,166 @@ import Marca from "./features/admin/marca/marca";
 import Temporada from "./features/admin/Temporada/Temporada";
 import TipoCabana from "./features/admin/TipoCabana/Tipocabana";
 import Disponibilidad from "./features/admin/Disponibilidad/Disponibilidad";
-import Ventas from "./features/admin/Ventas/Ventas"; // 🆕 Cambiado a mayúscula
+import Ventas from "./features/admin/Ventas/Ventas";
+
+// ✅ Cloudinary Configuration
+import { Cloudinary } from '@cloudinary/url-gen';
+
+// Configuración global de Cloudinary
+export const cld = new Cloudinary({
+  cloud: {
+    cloudName: 'dsmhnxyqh' // Tu cloud name
+  }
+});
+
+// ✅ Cloudinary Context para manejar la subida de imágenes
+import React, { createContext, useContext, useState } from 'react';
+import axios from 'axios';
+
+// Crear contexto para Cloudinary
+const CloudinaryContext = createContext();
+
+export const useCloudinary = () => {
+  const context = useContext(CloudinaryContext);
+  if (!context) {
+    throw new Error('useCloudinary debe ser usado dentro de CloudinaryProvider');
+  }
+  return context;
+};
+
+// Provider para Cloudinary
+export const CloudinaryProvider = ({ children }) => {
+  const [uploading, setUploading] = useState(false);
+
+  const uploadToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'react_upload'); // Usa el upload preset que creaste
+
+    try {
+      setUploading(true);
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/dsmhnxyqh/image/upload`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      console.log('✅ Imagen subida a Cloudinary:', response.data.secure_url);
+      return {
+        success: true,
+        url: response.data.secure_url,
+        publicId: response.data.public_id,
+        fullData: response.data
+      };
+    } catch (error) {
+      console.error('❌ Error subiendo imagen a Cloudinary:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadMultipleToCloudinary = async (files) => {
+    const uploadPromises = files.map(file => uploadToCloudinary(file));
+    const results = await Promise.all(uploadPromises);
+    return results;
+  };
+
+  const value = {
+    uploadToCloudinary,
+    uploadMultipleToCloudinary,
+    uploading
+  };
+
+  return (
+    <CloudinaryContext.Provider value={value}>
+      {children}
+    </CloudinaryContext.Provider>
+  );
+};
+
+// ✅ Componente reutilizable para subir imágenes
+export const ImageUploader = ({ onImageUpload, multiple = false }) => {
+  const { uploadToCloudinary, uploadMultipleToCloudinary, uploading } = useCloudinary();
+
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    
+    if (files.length === 0) return;
+
+    try {
+      let results;
+      
+      if (multiple) {
+        results = await uploadMultipleToCloudinary(files);
+      } else {
+        const result = await uploadToCloudinary(files[0]);
+        results = [result];
+      }
+
+      // Filtrar solo las subidas exitosas
+      const successfulUploads = results.filter(result => result.success);
+      
+      if (onImageUpload) {
+        if (multiple) {
+          onImageUpload(successfulUploads);
+        } else {
+          onImageUpload(successfulUploads[0] || null);
+        }
+      }
+
+    } catch (error) {
+      console.error('Error en el proceso de subida:', error);
+    }
+  };
+
+  return (
+    <div className="image-uploader">
+      <input 
+        type="file" 
+        onChange={handleFileChange} 
+        accept="image/*"
+        multiple={multiple}
+        disabled={uploading}
+        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+      />
+      {uploading && (
+        <p className="text-blue-600 text-sm mt-2">⏳ Subiendo imagen(es)...</p>
+      )}
+      <p className="text-gray-500 text-xs mt-1">
+        Formatos soportados: JPG, PNG, GIF, WEBP
+        {multiple && ' - Puedes seleccionar múltiples imágenes'}
+      </p>
+    </div>
+  );
+};
+
+// ✅ Componente para mostrar imágenes de Cloudinary
+export const CloudinaryImage = ({ publicId, width = 300, height, className = "" }) => {
+  const imageUrl = cld.image(publicId)
+    .resize(`w_${width}`, height ? `h_${height}` : null)
+    .quality('auto')
+    .format('auto')
+    .toURL();
+
+  return (
+    <img 
+      src={imageUrl} 
+      alt="Cloudinary" 
+      width={width}
+      height={height}
+      className={className}
+      loading="lazy"
+    />
+  );
+};
 
 // ✅ Componente placeholder reutilizable
 const Placeholder = ({ title }) => (
@@ -107,11 +266,13 @@ function App() {
   );
 }
 
-// ✅ Exporta envuelto en Router
+// ✅ Exporta envuelto en Router y CloudinaryProvider
 export default function AppWrapper() {
   return (
-    <Router>
-      <App />
-    </Router>
+    <CloudinaryProvider>
+      <Router>
+        <App />
+      </Router>
+    </CloudinaryProvider>
   );
 }
