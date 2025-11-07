@@ -1,111 +1,229 @@
 import React, { useState } from "react";
-import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye, FaCrown } from "react-icons/fa";
+import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye, FaCrown, FaMapMarkerAlt, FaStar, FaSearch, FaUsers, FaHome, FaBed } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
-// Datos de las sedes
-const sedes = [
+// Datos de las cabañas actualizados - solo Copacabana y San Felix
+const cabañas = [
   {
-    id: 1,
-    name: "Sede San Felix",
-    description: "Contamos Con 3 Cabañas Super Elegantes",
-    img: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/20/39/3b/ed/bubblesky-glamping.jpg?w=900&h=500&s=1",
+    id: 101,
+    name: "Cabaña Ambar Room",
+    description: "Amplia cabaña con jacuzzi privado. Ideal para parejas que buscan privacidad y lujo.",
+    img: "images/C_Ambar_Room/img1.jpg",
+    price: "$395.000 COP/noche",
+    sede: "Copacabana",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/C_Ambar_Room/img2.jpg",
+      "images/C_Ambar_Room/img3.jpg",
+      "images/C_Ambar_Room/img4.jpg"
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
   {
-    id: 2,
-    name: "Sede Copacabana",
-    description: "Contamos Con 2 Cabañas Lujosas",
-    img: "https://allnaturalcolombia.com/wp-content/uploads/2023/07/IMG_5446-780x516.jpg",
+    id: 102,
+    name: "Cabaña Bali Suite",
+    description: "Cabaña Premium. Perfecta para una escapada romántica con todas las comodidades.",
+    img: "images/C_Bali_Suite/img1.jpg",
+    price: "$520.000 COP/noche",
+    sede: "Copacabana",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/C_Bali_Suite/img2.jpg",
+      "images/C_Bali_Suite/img3.jpg",
+      "images/C_Bali_Suite/img4.jpg",
+      "images/C_Bali_Suite/img5.jpg",
+      "images/C_Bali_Suite/img6.jpg",
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
   {
-    id: 3,
-    name: "Sede Cerro de las Tres Cruces",
-    description: "Contamos Con 1 Cabaña Acogedora",
-    img: "https://dev.levitglamping.com/wp-content/uploads/2023/04/Glamping-guatape-Super-Luna.jpg",
+    id: 103,
+    name: "Cabaña Habana Room",
+    description: "Espaciosa cabaña ideal para familias, Perfecta para vacaciones familiares inolvidables.",
+    img: "images/C_Habana_Room/img1.jpg",
+    price: "$520.000 COP/noche",
+    sede: "Copacabana",
+    tipo: "Familiar",
+    capacidad: 6,
+    habitaciones: 1,
+    imagenes: [
+      "images/C_Habana_Room/img2.jpg",
+      "images/C_Habana_Room/img3.jpg",
+      "images/C_Habana_Room/img4.jpg",
+      "images/C_Habana_Room/img5.jpg",
+      "images/C_Habana_Room/img6.jpg",
+      "images/C_Habana_Room/img7.jpg"
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Piscina Privada", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
+  {
+    id: 104,
+    name: "Cabaña Mikonos Suite",
+    description: "Lujosa cabaña con diseño moderno y jacuzzi con vista a las montañas. Experiencia de lujo en un entorno natural privilegiado.",
+    img: "images/C_Mikonos_Suite/img1.jpg",
+    price: "$520.000 COP/noche",
+    sede: "Copacabana",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/C_Mikonos_Suite/img2.jpg",
+      "images/C_Mikonos_Suite/img3.jpg",
+      "images/C_Mikonos_Suite/img4.jpg",
+      "images/C_Mikonos_Suite/img5.jpg",
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  },
+  {
+    id: 201,
+    name: "Chalets",
+    description: "Ideal para parejas, con cama king. Un refugio íntimo para reconectar con tu pareja.",
+    img: "images/S_Chalets/img1.jpg",
+    price: "$380.000 COP/noche",
+    sede: "San Felix",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/S_Chalets/img2.jpg",
+      "images/S_Chalets/img3.jpg"
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  },
+  {
+    id: 202,
+    name: "Cabaña Crystal Garden",
+    description: "Perfecta para una escapada romántica con todas las comodidades.",
+    img: "images/S_Crystal_Garden/img1.jpg",
+    price: "$495.000 COP/noche",
+    sede: "San Felix",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/S_Crystal_Garden/img2.jpg",
+      "images/S_Crystal_Garden/img3.jpg"
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  },
+  {
+    id: 203,
+    name: "Domo Alaska ",
+    description: "rodeada de naturaleza, ideal para desconectarte del ruido y descansar.",
+    img: "images/S_Domo_Alaska/img1.jpg",
+    price: "$460.000 COP/noche",
+    sede: "San Felix",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/S_Domo_Alaska/img2.jpg",
+      "images/S_Domo_Alaska/img3.jpg",
+      "images/S_Domo_Alaska/img4.jpg",
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  },
+  {
+    id: 204,
+    name: "Domo Ataraxia",
+    description: "Disfruta amaneceres entre la neblina y el sonido de los pájaros.",
+    img: "images/S_Domo_Ataraxia/img1.jpg",
+    price: "$460.000 COP/noche",
+    sede: "San Felix",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/S_Domo_Ataraxia/img2.jpg",
+      "images/S_Domo_Ataraxia/img3.jpg",
+      "images/S_Domo_Ataraxia/img4.jpg",
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  },{
+    id: 205,
+    name: "Cabaña Golden Suite",
+    description: "Espacio íntimo y moderno, diseñado para parejas que buscan tranquilidad.",
+    img: "images/S_Golden_Suite/img1.jpg",
+    price: "$499.000 COP/noche",
+    sede: "San Felix",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/S_Golden_Suite/img2.jpg",
+      "images/S_Golden_Suite/img3.jpg",
+      "images/S_Golden_Suite/img4.jpg",
+      "images/S_Golden_Suite/img5.jpg",
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  },
+  {
+    id: 206,
+    name: "Cabaña Natural Suite",
+    description: "Perfecta para quienes aman despertar con vistas a la montaña.",
+    img: "images/S_Natural_Suite/img1.jpg",
+    price: "$499.000 COP/noche",
+    sede: "San Felix",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/S_Natural_Suite/img2.jpg",
+      "images/S_Natural_Suite/img3.jpg",
+      "images/S_Natural_Suite/img4.jpg",
+      "images/S_Natural_Suite/img5.jpg",
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  },
+  {
+    id: 207,
+    name: "Cabaña Villa Guadalupe",
+    description: "Combina el encanto natural con toques artesanales y confort total.",
+    img: "images/S_Villa_Guadalupe/img1.jpg",
+    price: "$499.000 COP/noche",
+    sede: "San Felix",
+    tipo: "Premium",
+    capacidad: 2,
+    habitaciones: 1,
+    imagenes: [
+      "images/S_Villa_Guadalupe/img2.jpg",
+      "images/S_Villa_Guadalupe/img3.jpg",
+      "images/S_Villa_Guadalupe/img4.jpg",
+      "images/S_Villa_Guadalupe/img5.jpg",
+    ],
+    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+  }
 ];
-
-// Datos de las cabañas por sede
-const cabañasPorSede = {
-  1: [
-    {
-      id: 101,
-      name: "Cabaña Premium San Felix",
-      description: "Amplia cabaña con jacuzzi privado y vista panorámica al bosque.",
-      img: "https://cincohorizontes.com/wp-content/uploads/2021/10/267154039.jpg.jpg",
-      price: "$350.000 COP/noche"
-    },
-    {
-      id: 102,
-      name: "Cabaña Deluxe San Felix",
-      description: "Cabaña romántica con terraza privada y chimenea.",
-      img: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/472647461.jpg?k=5201d575026ba2317bcc458ae690ba095bf32c1e103a346c35fe090a89d5d4cf&o=&hp=1",
-      price: "$480.000 COP/noche"
-    },
-    {
-      id: 103,
-      name: "Cabaña Familiar San Felix",
-      description: "Espaciosa cabaña ideal para familias, con dos habitaciones y área de juegos.",
-      img: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/622764182.jpg?k=f6e684052528eed8cfa20a7a5ded7b4bb77693fe7a39d9a42e2276d4b67f3277&o=&hp=1",
-      price: "$620.000 COP/noche"
-    }
-  ],
-  2: [
-    {
-      id: 201,
-      name: "Cabaña VIP Copacabana",
-      description: "Lujosa cabaña con diseño moderno y jacuzzi con vista a las montañas.",
-      img: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/514150337.jpg?k=ade23dfb4719a8a75701fba28a3c99d58c3cb21a2d072e1af0a149a37c5a812a&o=&hp=1",
-      price: "$450.000 COP/noche"
-    },
-    {
-      id: 202,
-      name: "Cabaña Romántica Copacabana",
-      description: "Ideal para parejas, con cama king size y baño de lujo.",
-      img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTS_7uJqLS9tJzFS3RbuZoHY6Dq3Xc8PWI3DQ&s",
-      price: "$320.000 COP/noche"
-    }
-  ],
-  3: [
-    {
-      id: 301,
-      name: "Cabaña Tres Cruces",
-      description: "Acogedora cabaña con la mejor vista al valle, perfecta para desconectar.",
-      img: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/410469926.jpg?k=b21f3d75541d614a70a7508fc42c604f1e9e48e4bb866399d12c7988b2eb5c70&o=&hp=1",
-      price: "$300.000 COP/noche"
-    }
-  ]
-};
-
-// Combinar todas las cabañas para mostrar en el home
-const todasLasCabañas = Object.values(cabañasPorSede).flat();
 
 const paquetes = [
   {
     name: "Kit de Asado",
-    img: "/images/comida.png",
-    description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes. Es la opción ideal para los amantes de un buen asado.",
+    img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes.",
     price: "$150.000 COP",
   },
   {
-    name: "Paquete de Alcohol",
-    img: "/images/licores.png",
-    description: "Una selección de cócteles vibrantes y coloridos, preparados por expertos para refrescar y animar cualquier ocasión. Este paquete es la elección perfecta para quienes buscan variedad y sabor en sus bebidas.",
+    name: "Paquete de Bebidas",
+    img: "https://images.unsplash.com/photo-1544145945-f90425340c7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    description: "Una selección de cócteles vibrantes y coloridos, preparados por expertos para refrescar y animar cualquier ocasión.",
     price: "$150.000 COP",
   },
   {
     name: "Masaje relajante",
-    img: "/images/masaje.png",
-    description: "Escapa del estrés diario con un masaje profesional diseñado para liberar la tensión muscular. Una experiencia de bienestar que te dejará sintiéndote completamente renovado y en paz.",
+    img: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    description: "Escapa del estrés diario con un masaje profesional diseñado para liberar la tensión muscular.",
     price: "$150.000 COP",
   },
 ];
 
-// Función para hacer login usando el endpoint de la API
+// Funciones API
 const loginWithAPI = async (email, password) => {
   try {
-    console.log('🔐 Intentando login con:', { email, password });
-    
     const response = await fetch('http://localhost:5272/api/Usuarios/Login', {
       method: 'POST',
       headers: {
@@ -116,8 +234,6 @@ const loginWithAPI = async (email, password) => {
         contrasena: password
       })
     });
-
-    console.log('📡 Respuesta del servidor:', response.status);
 
     if (!response.ok) {
       let errorMessage = 'Error en el login';
@@ -136,7 +252,6 @@ const loginWithAPI = async (email, password) => {
     }
 
     const result = await response.json();
-    console.log('✅ Login exitoso:', result);
     return result;
   } catch (error) {
     console.error('❌ Error en login:', error);
@@ -144,7 +259,6 @@ const loginWithAPI = async (email, password) => {
   }
 };
 
-// Función para obtener todos los usuarios
 const getAllUsers = async () => {
   try {
     const response = await fetch('http://localhost:5272/api/Usuarios', {
@@ -166,7 +280,6 @@ const getAllUsers = async () => {
   }
 };
 
-// Función para buscar usuario en la lista completa
 const findUserInList = async (email) => {
   try {
     const allUsers = await getAllUsers();
@@ -178,11 +291,8 @@ const findUserInList = async (email) => {
   }
 };
 
-// Función para registrar usuario
 const registerWithAPI = async (userData) => {
   try {
-    console.log('📝 Intentando registrar usuario:', userData);
-    
     const response = await fetch('http://localhost:5272/api/Usuarios', {
       method: 'POST',
       headers: {
@@ -190,8 +300,6 @@ const registerWithAPI = async (userData) => {
       },
       body: JSON.stringify(userData)
     });
-
-    console.log('📡 Respuesta del registro:', response.status, response.statusText);
 
     if (!response.ok) {
       let errorMessage = 'Error en el registro';
@@ -211,7 +319,6 @@ const registerWithAPI = async (userData) => {
     }
 
     const result = await response.json();
-    console.log('✅ Registro exitoso:', result);
     return result;
   } catch (error) {
     console.error('❌ Error en registro:', error);
@@ -228,11 +335,13 @@ function LoginRegister() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedCabin, setSelectedCabin] = useState(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [sedeCarouselIndex, setSedeCarouselIndex] = useState(0);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-
   const [showCabins, setShowCabins] = useState(false);
-  const [selectedSede, setSelectedSede] = useState(null);
+
+  // Nuevos estados para filtros - SOLO sede, tipo y capacidad
+  const [filtroSede, setFiltroSede] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState("");
+  const [filtroCapacidad, setFiltroCapacidad] = useState("");
+  const [cabinImageIndex, setCabinImageIndex] = useState(0);
 
   // Estados para registro
   const [tipoDocumento, setTipoDocumento] = useState("Cédula de Ciudadanía");
@@ -260,6 +369,44 @@ function LoginRegister() {
     "Tarjeta de Identidad"
   ];
 
+  // Obtener opciones únicas para filtros
+  const sedesUnicas = [...new Set(cabañas.map(cabin => cabin.sede))];
+  const tiposUnicos = [...new Set(cabañas.map(cabin => cabin.tipo))];
+  const capacidadesUnicas = [...new Set(cabañas.map(cabin => cabin.capacidad))].sort((a, b) => a - b);
+
+  // Función para filtrar cabañas - SOLO por sede, tipo y capacidad
+  const cabañasFiltradas = cabañas.filter(cabin => {
+    const coincideSede = !filtroSede || cabin.sede === filtroSede;
+    const coincideTipo = !filtroTipo || cabin.tipo === filtroTipo;
+    const coincideCapacidad = !filtroCapacidad || cabin.capacidad >= parseInt(filtroCapacidad);
+   
+    return coincideSede && coincideTipo && coincideCapacidad;
+  });
+
+  // Función para limpiar filtros
+  const limpiarFiltros = () => {
+    setFiltroSede("");
+    setFiltroTipo("");
+    setFiltroCapacidad("");
+  };
+
+  // Función para manejar cambio de imagen en el popup
+  const nextImage = () => {
+    if (selectedCabin) {
+      setCabinImageIndex((prev) =>
+        prev === selectedCabin.imagenes.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevImage = () => {
+    if (selectedCabin) {
+      setCabinImageIndex((prev) =>
+        prev === 0 ? selectedCabin.imagenes.length - 1 : prev - 1
+      );
+    }
+  };
+
   const showAlert = (title, text, icon, timer = 3000) => {
     Swal.fire({
       title,
@@ -271,9 +418,6 @@ function LoginRegister() {
       confirmButtonColor: '#2E5939',
       background: '#fff',
       color: '#2E3A30',
-      customClass: {
-        popup: 'custom-swal-popup'
-      }
     });
   };
 
@@ -287,9 +431,6 @@ function LoginRegister() {
       showConfirmButton: false,
       background: '#fff',
       color: '#2E3A30',
-      customClass: {
-        popup: 'custom-swal-popup'
-      }
     });
   };
 
@@ -301,14 +442,10 @@ function LoginRegister() {
       confirmButtonColor: '#2E5939',
       background: '#fff',
       color: '#2E3A30',
-      customClass: {
-        popup: 'custom-swal-popup'
-      }
     });
   };
 
   const handleShowLogin = () => {
-    setShowForgotPassword(false);
     setIsRegisterActive(false);
     setShowForm(true);
     setShowAboutUs(false);
@@ -319,13 +456,11 @@ function LoginRegister() {
   };
 
   const handleShowRegister = () => {
-    setShowForgotPassword(false);
     setIsRegisterActive(true);
     setShowForm(true);
     setShowAboutUs(false);
     setShowCabins(false);
     setErrors({});
-    // Resetear todos los campos del formulario
     setTipoDocumento("Cédula de Ciudadanía");
     setNumeroDocumento("");
     setFirstName("");
@@ -340,7 +475,6 @@ function LoginRegister() {
   const handleShowLanding = () => {
     setShowForm(false);
     setShowAboutUs(false);
-    setShowForgotPassword(false);
     setShowCabins(false);
   };
 
@@ -355,8 +489,10 @@ function LoginRegister() {
     setShowPopup(true);
   };
 
+  // Modificar la función handleShowCabinDetails para resetear el índice de imágenes
   const handleShowCabinDetails = (cabin) => {
     setSelectedCabin(cabin);
+    setCabinImageIndex(0);
     setShowPopup(true);
   };
 
@@ -364,6 +500,7 @@ function LoginRegister() {
     setShowPopup(false);
     setSelectedPackage(null);
     setSelectedCabin(null);
+    setCabinImageIndex(0);
   };
 
   const handleReserveCabin = () => {
@@ -371,27 +508,12 @@ function LoginRegister() {
     handleShowLogin();
   };
 
-  const handleShowCabins = (sede) => {
-    setSelectedSede(sede);
-    setShowCabins(true);
-    setShowForm(false);
-    setShowAboutUs(false);
-  };
-
   const nextSlide = () => {
-    setCarouselIndex((prev) => (prev + 1) % todasLasCabañas.length);
+    setCarouselIndex((prev) => (prev + 1) % cabañas.length);
   };
 
   const prevSlide = () => {
-    setCarouselIndex((prev) => (prev - 1 + todasLasCabañas.length) % todasLasCabañas.length);
-  };
-
-  const nextSedeSlide = () => {
-    setSedeCarouselIndex((prev) => (prev + 1) % sedes.length);
-  };
-
-  const prevSedeSlide = () => {
-    setSedeCarouselIndex((prev) => (prev - 1 + sedes.length) % sedes.length);
+    setCarouselIndex((prev) => (prev - 1 + cabañas.length) % cabañas.length);
   };
 
   const isValidEmail = (email) => {
@@ -402,11 +524,6 @@ function LoginRegister() {
   const isValidName = (name) => {
     const nameRegex = /^[a-zA-Z\sáéíóúÁÉÍÓÚñÑ]+$/;
     return nameRegex.test(name);
-  };
-
-  const isValidDocumentNumber = (numero) => {
-    const docRegex = /^[a-zA-Z0-9]+$/;
-    return docRegex.test(numero);
   };
 
   const isValidPhone = (phone) => {
@@ -421,12 +538,11 @@ function LoginRegister() {
     return selectedDate < today;
   };
 
-  // FUNCIÓN DE LOGIN CORREGIDA Y SIMPLIFICADA
+  // Función de Login
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validaciones básicas
     if (!loginEmail || !loginPassword) {
       showErrorAlert('Campos requeridos', 'Por favor ingresa tu correo electrónico y contraseña');
       setIsLoading(false);
@@ -440,28 +556,18 @@ function LoginRegister() {
     }
 
     try {
-      console.log('🚀 Iniciando proceso de login...');
-      
-      // 1. Primero intentamos hacer login con la API
       const loginResult = await loginWithAPI(loginEmail, loginPassword);
-      
+     
       if (loginResult && loginResult.exito) {
-        console.log('✅ Login API exitoso, buscando datos del usuario...');
-        
-        // 2. Buscar el usuario en la lista completa para obtener todos los datos
         const userFromList = await findUserInList(loginEmail);
-        
+       
         if (userFromList) {
-          console.log('👤 Usuario encontrado en lista:', userFromList);
-          
-          // Verificar si la cuenta está activa
           if (!userFromList.estado) {
             showErrorAlert('Cuenta inactiva', 'Tu cuenta está desactivada. Contacta al administrador.');
             setIsLoading(false);
             return;
           }
 
-          // Crear objeto de usuario con todos los datos necesarios
           const user = {
             id: userFromList.idUsuario,
             firstName: userFromList.nombre || '',
@@ -474,21 +580,18 @@ function LoginRegister() {
             celular: userFromList.celular,
             fechaNacimiento: userFromList.fechaNacimiento
           };
-          
-          // Guardar en localStorage
+         
           localStorage.setItem('user', JSON.stringify(user));
           localStorage.setItem('isAuthenticated', 'true');
           localStorage.setItem('userRole', user.role.toString());
           localStorage.setItem('userEmail', user.email);
-          
-          // Mensaje de bienvenida personalizado
-          const welcomeMessage = user.role === 2 
-            ? `¡Bienvenido Administrador ${user.firstName}!` 
+         
+          const welcomeMessage = user.role === 2
+            ? `¡Bienvenido Administrador ${user.firstName}!`
             : `¡Bienvenido de nuevo ${user.firstName} ${user.lastName}!`;
-          
+         
           showSuccessAlert('Inicio de sesión exitoso', welcomeMessage);
-          
-          // Redirigir según el rol
+         
           setTimeout(() => {
             if (user.role === 2) {
               navigate("/admin-dashboard");
@@ -496,50 +599,44 @@ function LoginRegister() {
               navigate("/dashboard");
             }
           }, 1500);
-          
+         
         } else {
-          // Si no encontramos el usuario en la lista, crear un objeto básico
-          console.log('⚠️ Usuario no encontrado en lista, creando objeto básico');
           const user = {
             firstName: loginEmail.split('@')[0],
             email: loginEmail,
             role: 1,
             isVerified: true
           };
-          
+         
           localStorage.setItem('user', JSON.stringify(user));
           localStorage.setItem('isAuthenticated', 'true');
           localStorage.setItem('userRole', '1');
           localStorage.setItem('userEmail', loginEmail);
-          
+         
           showSuccessAlert('Inicio de sesión exitoso', `¡Bienvenido de nuevo!`);
-          
+         
           setTimeout(() => {
             navigate("/dashboard");
           }, 1500);
         }
       } else {
-        // Si el login falla
         showErrorAlert('Error en el login', loginResult?.mensaje || 'Credenciales incorrectas');
       }
     } catch (error) {
       console.error('❌ Error durante el login:', error);
-      
-      // Manejo específico de errores
-      if (error.message.includes('No se pudo encontrar') || 
-          error.message.includes('no existe') || 
+     
+      if (error.message.includes('No se pudo encontrar') ||
+          error.message.includes('no existe') ||
           error.message.includes('no registrado')) {
         showErrorAlert('Usuario no encontrado', 'No existe una cuenta con este correo electrónico.');
-      } else if (error.message.includes('contraseña') || 
-                 error.message.includes('credenciales') || 
-                 error.message.includes('clave') || 
+      } else if (error.message.includes('contraseña') ||
+                 error.message.includes('credenciales') ||
+                 error.message.includes('clave') ||
                  error.message.includes('Password')) {
         showErrorAlert('Contraseña incorrecta', 'La contraseña ingresada es incorrecta.');
-      } else if (error.message.includes('inactivo') || 
+      } else if (error.message.includes('inactivo') ||
                  error.message.includes('desactivada')) {
         showErrorAlert('Cuenta inactiva', 'Tu cuenta está desactivada. Contacta al administrador.');
-      } else if (error.message.includes('Código enviado')) {
-        showSuccessAlert('Código enviado', 'Se ha enviado un código de verificación a tu correo. Por favor verifica tu email.');
       } else {
         showErrorAlert('Error de conexión', error.message || 'No se pudo conectar con el servidor. Intenta más tarde.');
       }
@@ -548,7 +645,7 @@ function LoginRegister() {
     }
   };
 
-  // Función de registro
+  // Función de Registro
   const validateRegisterForm = () => {
     let newErrors = {};
     let isValid = true;
@@ -620,14 +717,14 @@ function LoginRegister() {
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    
+   
     if (!validateRegisterForm()) {
       showErrorAlert('Error en el formulario', 'Por favor corrige los errores marcados en el formulario');
       return;
     }
 
     setIsLoading(true);
-    
+   
     try {
       const userData = {
         tipoDocumento: tipoDocumento,
@@ -643,11 +740,10 @@ function LoginRegister() {
       };
 
       const result = await registerWithAPI(userData);
-      
+     
       if (result) {
         showSuccessAlert('¡Registro exitoso!', 'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.');
-        
-        // Cambiar al formulario de login
+       
         setTimeout(() => {
           handleShowLogin();
         }, 2000);
@@ -675,6 +771,9 @@ function LoginRegister() {
     setCelular(value.replace(/[^0-9+]/g, ''));
   };
 
+  // Imagen de fondo para formularios (misma que el inicio)
+  const backgroundImage = "https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80";
+
   return (
     <>
       {/* NAV */}
@@ -684,37 +783,26 @@ function LoginRegister() {
           top: 0,
           left: 0,
           width: "100%",
-          backgroundColor: "#2E5939",
-          paddingTop: "10px",
-          paddingBottom: "10px",
+          backgroundColor: "rgba(46, 89, 57, 0.95)",
+          backdropFilter: "blur(10px)",
+          padding: "15px 0",
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
           zIndex: 1000,
-          boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
         }}
       >
-        <div
-          style={{
-            fontWeight: "bold",
-            fontSize: "1.8rem",
-            color: "#E8F5E9",
-            userSelect: "none",
-            marginLeft: "20px",
-          }}
-        >
-          <img src="/images/Logo.png" alt="" width="35px" /> Bosque Sagrado
-        </div>
         <ul
           style={{
             display: "flex",
-            gap: "1.5rem",
+            gap: "2rem",
             listStyle: "none",
             margin: 0,
             padding: 0,
-            flexWrap: "wrap",
-            justifyContent: "center",
-            marginRight: "20px",
+            marginRight: "40px",
+            alignItems: "center",
           }}
         >
           <li>
@@ -724,9 +812,20 @@ function LoginRegister() {
                 cursor: "pointer",
                 color: "#E8F5E9",
                 textDecoration: "none",
-                fontWeight: "600",
-                userSelect: "none",
-                margin: "0 10px",
+                fontWeight: "500",
+                fontSize: "1.1rem",
+                padding: "10px 15px",
+                borderRadius: "25px",
+                transition: "all 0.3s ease",
+                border: "1px solid transparent",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.borderColor = "transparent";
               }}
             >
               Inicio
@@ -739,9 +838,20 @@ function LoginRegister() {
                 cursor: "pointer",
                 color: "#E8F5E9",
                 textDecoration: "none",
-                fontWeight: "600",
-                userSelect: "none",
-                margin: "0 10px",
+                fontWeight: "500",
+                fontSize: "1.1rem",
+                padding: "10px 15px",
+                borderRadius: "25px",
+                transition: "all 0.3s ease",
+                border: "1px solid transparent",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.borderColor = "transparent";
               }}
             >
               Quienes Somos
@@ -754,9 +864,20 @@ function LoginRegister() {
                 cursor: "pointer",
                 color: "#E8F5E9",
                 textDecoration: "none",
-                fontWeight: "600",
-                userSelect: "none",
-                margin: "0 10px",
+                fontWeight: "500",
+                fontSize: "1.1rem",
+                padding: "10px 15px",
+                borderRadius: "25px",
+                transition: "all 0.3s ease",
+                border: "1px solid transparent",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.borderColor = "transparent";
               }}
             >
               Iniciar Sesión
@@ -767,11 +888,23 @@ function LoginRegister() {
               onClick={handleShowRegister}
               style={{
                 cursor: "pointer",
-                color: "#E8F5E9",
+                backgroundColor: "#E8F5E9",
+                color: "#2E5939",
                 textDecoration: "none",
                 fontWeight: "600",
-                userSelect: "none",
-                margin: "0 10px",
+                fontSize: "1.1rem",
+                padding: "12px 25px",
+                borderRadius: "25px",
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 15px rgba(232, 245, 233, 0.3)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 6px 20px rgba(232, 245, 233, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 15px rgba(232, 245, 233, 0.3)";
               }}
             >
               Registrarse
@@ -780,28 +913,14 @@ function LoginRegister() {
         </ul>
       </nav>
 
-      {/* MAIN CONTENEDOR PRINCIPAL */}
+      {/* MAIN CONTENT */}
       <div style={{
         minHeight: "100vh",
         backgroundColor: "#f8faf8",
-        paddingTop: "70px",
-        display: "flex",
-        flexDirection: "column",
+        paddingTop: "70px", // Para compensar el navbar fijo
       }}>
-        <main
-          style={{
-            flex: 1,
-            maxWidth: "1200px",
-            margin: "0 auto",
-            padding: "1rem",
-            width: "100%",
-            color: "#2E3A30",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          {/* POPUP PARA PAQUETES */}
+        <main style={{ width: "100%" }}>
+          {/* POPUPS ACTUALIZADOS */}
           {showPopup && selectedPackage && (
             <div
               style={{
@@ -826,7 +945,6 @@ function LoginRegister() {
                   maxWidth: "500px",
                   width: "90%",
                   boxShadow: "0 5px 25px rgba(0,0,0,0.2)",
-                  position: "relative",
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -849,7 +967,6 @@ function LoginRegister() {
                 <button
                   onClick={handleClosePopup}
                   style={{
-                    display: "block",
                     width: "100%",
                     padding: "0.8rem",
                     backgroundColor: "#2E5939",
@@ -866,7 +983,6 @@ function LoginRegister() {
             </div>
           )}
 
-          {/* POPUP PARA CABINAS */}
           {showPopup && selectedCabin && (
             <div
               style={{
@@ -875,7 +991,7 @@ function LoginRegister() {
                 left: 0,
                 width: "100%",
                 height: "100%",
-                backgroundColor: "rgba(0,0,0,0.5)",
+                backgroundColor: "rgba(0,0,0,0.8)",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
@@ -888,29 +1004,151 @@ function LoginRegister() {
                   backgroundColor: "#fff",
                   padding: "2rem",
                   borderRadius: "15px",
-                  maxWidth: "500px",
+                  maxWidth: "800px",
                   width: "90%",
+                  maxHeight: "90vh",
+                  overflowY: "auto",
                   boxShadow: "0 5px 25px rgba(0,0,0,0.2)",
                   position: "relative",
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <h2 style={{ color: "#2E5939", textAlign: "center", marginBottom: "1rem" }}>{selectedCabin.name}</h2>
-                <img
-                  src={selectedCabin.img}
-                  alt={selectedCabin.name}
-                  style={{
-                    width: "100%",
-                    height: "200px",
-                    objectFit: "cover",
-                    borderRadius: "10px",
-                    marginBottom: "1rem",
-                  }}
-                />
-                <p style={{ lineHeight: "1.6", color: "#2E3A30", marginBottom: "1rem" }}>{selectedCabin.description}</p>
-                <h4 style={{ color: "#3E7E5C", textAlign: "center", fontSize: "1.5rem", marginBottom: "1.5rem" }}>
+                <h2 style={{ color: "#2E5939", textAlign: "center", marginBottom: "1.5rem" }}>{selectedCabin.name}</h2>
+               
+                {/* Carrusel de imágenes */}
+                <div style={{ position: "relative", marginBottom: "1.5rem" }}>
+                  <img
+                    src={selectedCabin.imagenes[cabinImageIndex]}
+                    alt={selectedCabin.name}
+                    style={{
+                      width: "100%",
+                      height: "400px",
+                      objectFit: "cover",
+                      borderRadius: "10px",
+                    }}
+                  />
+                  {selectedCabin.imagenes.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevImage}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "15px",
+                          transform: "translateY(-50%)",
+                          backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          border: "none",
+                          color: "#2E5939",
+                          fontSize: "1.5rem",
+                          width: "50px",
+                          height: "50px",
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FaChevronLeft />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          right: "15px",
+                          transform: "translateY(-50%)",
+                          backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          border: "none",
+                          color: "#2E5939",
+                          fontSize: "1.5rem",
+                          width: "50px",
+                          height: "50px",
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FaChevronRight />
+                      </button>
+                      <div style={{
+                        position: "absolute",
+                        bottom: "15px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        display: "flex",
+                        gap: "0.5rem",
+                      }}>
+                        {selectedCabin.imagenes.map((_, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              borderRadius: "50%",
+                              backgroundColor: index === cabinImageIndex ? "#2E5939" : "rgba(255,255,255,0.5)",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => setCabinImageIndex(index)}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Información detallada */}
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63" }}>
+                        <FaMapMarkerAlt /> {selectedCabin.sede}
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63" }}>
+                        <FaHome /> {selectedCabin.tipo}
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63" }}>
+                        <FaUsers /> {selectedCabin.capacidad} personas
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63" }}>
+                        <FaBed /> {selectedCabin.habitaciones} habitación{selectedCabin.habitaciones > 1 ? 'es' : ''}
+                      </span>
+                    </div>
+                  </div>
+                 
+                  <p style={{ lineHeight: "1.6", color: "#2E3A30", marginBottom: "1rem" }}>
+                    {selectedCabin.description}
+                  </p>
+
+                  {/* Comodidades */}
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ color: "#2E5939", marginBottom: "0.5rem" }}>Comodidades:</h4>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                      {selectedCabin.comodidades.map((comodidad, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            backgroundColor: "#E8F5E9",
+                            color: "#2E5939",
+                            padding: "0.3rem 0.8rem",
+                            borderRadius: "15px",
+                            fontSize: "0.9rem",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {comodidad}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <h4 style={{ color: "#3E7E5C", textAlign: "center", fontSize: "1.8rem", marginBottom: "1.5rem" }}>
                   Precio: {selectedCabin.price}
                 </h4>
+               
                 <div style={{ display: "flex", gap: "1rem" }}>
                   <button
                     onClick={handleReserveCabin}
@@ -923,6 +1161,7 @@ function LoginRegister() {
                       borderRadius: "8px",
                       cursor: "pointer",
                       fontWeight: "bold",
+                      fontSize: "1.1rem",
                     }}
                   >
                     Reservar
@@ -938,6 +1177,7 @@ function LoginRegister() {
                       borderRadius: "8px",
                       cursor: "pointer",
                       fontWeight: "bold",
+                      fontSize: "1.1rem",
                     }}
                   >
                     Cerrar
@@ -947,999 +1187,1078 @@ function LoginRegister() {
             </div>
           )}
 
-          {/* QUIENES SOMOS VIEW */}
+          {/* QUIENES SOMOS */}
           {showAboutUs && (
-            <section
-              style={{
-                width: "100%",
-                marginTop: "0",
-                marginBottom: "3rem",
-                backgroundColor: "#f8faf8",
-                color: "#2E3A30",
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: "900px",
-                  margin: "0 auto 3rem",
-                  padding: "2rem",
+            <section style={{ padding: "4rem 2rem", backgroundColor: "#f8faf8" }}>
+              <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+                <div style={{
                   backgroundColor: "#fff",
-                  borderRadius: "10px",
-                  boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-                }}
-              >
-                <h2 style={{ fontSize: "2rem", color: "#2E5939", marginBottom: "1.5rem", textAlign: "center" }}>
-                  Nuestra Historia
-                </h2>
-                <div style={{ display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap", justifyContent: "center" }}>
-                  <div style={{ flex: 1, minWidth: "300px", textAlign: "left" }}>
-                    <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#2E3A30", marginBottom: "1rem" }}>
-                      En Bosque Sagrado, creemos que la conexión con la naturaleza no debe estar reñida con el lujo y la comodidad. Somos un santuario de glamping ubicado en Antioquia, Colombia, dedicados a ofrecerte una escapada mágica, donde el susurro del bosque y el confort de una cabaña lujosa se entrelazan para crear una experiencia inolvidable.
-                    </p>
-                    <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#2E3A30" }}>
-                      Nuestro objetivo es brindarte un refugio lejos del bullicio de la ciudad, un lugar para reconectar contigo mismo, con tu pareja o con tus seres queridos, rodeado de la belleza y la tranquilidad del entorno natural. Cada una de nuestras sedes ha sido cuidadosamente diseñada para ofrecerte privacidad y una experiencia única, con jacuzzis privados y vistas que te quitarán el aliento.
-                    </p>
-                  </div>
-                  <div style={{ flex: 1, minWidth: "300px" }}>
-                    <img
-                      src="/images/cabana.jpg"
-                      alt="Interior de una cabaña de glamping"
-                      style={{ width: "100%", height: "auto", borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" }}
-                    />
+                  padding: "3rem",
+                  borderRadius: "20px",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                  marginBottom: "3rem"
+                }}>
+                  <h2 style={{
+                    fontSize: "3rem",
+                    color: "#2E5939",
+                    marginBottom: "2rem",
+                    textAlign: "center",
+                    fontFamily: "Georgia, serif"
+                  }}>
+                    Nuestra Historia
+                  </h2>
+                  <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ flex: 1, minWidth: "300px" }}>
+                      <p style={{ fontSize: "1.2rem", lineHeight: "1.8", marginBottom: "1.5rem",color: "black" }}>
+                        En <strong>Bosque Sagrado</strong>, creemos que la conexión con la naturaleza no debe estar reñida con el lujo y la comodidad. Somos un santuario de glamping ubicado en Antioquia, Colombia, dedicados a ofrecerte una escapada mágica.
+                      </p>
+                      <p style={{ fontSize: "1.2rem", lineHeight: "1.8", color:"black" }}>
+                        Nuestro objetivo es brindarte un refugio lejos del bullicio de la ciudad, un lugar para reconectar contigo mismo, con tu pareja o con tus seres queridos, rodeado de la belleza y la tranquilidad del entorno natural.
+                      </p>
+                    </div>
+                    <div style={{ flex: 1, minWidth: "300px" }}>
+                      <img
+                        src="images/cabana.jpg"
+                        alt="Glamping"
+                        style={{
+                          width: "80%",
+                          borderRadius: "15px",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.1)"
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: "2rem",
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                  maxWidth: "900px",
-                  margin: "0 auto",
-                  padding: "2rem",
-                }}
-              >
-                <div
-                  style={{
+                <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", justifyContent: "center" }}>
+                  <div style={{
                     flex: 1,
                     minWidth: "280px",
                     backgroundColor: "#fff",
-                    padding: "2rem",
-                    borderRadius: "10px",
+                    padding: "2.5rem",
+                    borderRadius: "15px",
                     textAlign: "center",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-                  }}
-                >
-                  <FaLightbulb size={50} color="#3E7E5C" style={{ marginBottom: "1rem" }} />
-                  <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>
-                    Nuestra Misión
-                  </h3>
-                  <p style={{ fontSize: "1rem", lineHeight: "1.6", color: "#2E3A30" }}>
-                    Nuestra misión es ofrecer una experiencia de glamping inolvidable, combinando el lujo y la comodidad con la serenidad de la naturaleza. Buscamos ser un refugio donde nuestros huéspedes puedan desconectar de la rutina y reconectar con el entorno natural.
-                  </p>
-                </div>
-                <div
-                  style={{
+                    boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
+                  }}>
+                    <FaLightbulb size={60} color="#3E7E5C" style={{ marginBottom: "1.5rem" }} />
+                    <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>Nuestra Misión</h3>
+                    <p style={{ color: "#000000ff", fontSize: "1.2rem" }}>Ofrecer una experiencia de glamping inolvidable, combinando el lujo y la comodidad con la serenidad de la naturaleza.</p>
+                  </div>
+                  <div style={{
                     flex: 1,
                     minWidth: "280px",
                     backgroundColor: "#fff",
-                    padding: "2rem",
-                    borderRadius: "10px",
+                    padding: "2.5rem",
+                    borderRadius: "15px",
                     textAlign: "center",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-                  }}
-                >
-                  <FaEye size={50} color="#3E7E5C" style={{ marginBottom: "1rem" }} />
-                  <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>
-                    Nuestra Visión
-                  </h3>
-                  <p style={{ fontSize: "1rem", lineHeight: "1.6", color: "#2E3A30" }}>
-                    Nuestra visión es convertirnos en el destino de glamping líder en Colombia, reconocidos por nuestra excelencia en el servicio, la sostenibilidad y la creación de experiencias únicas que promuevan el bienestar y el respeto por el medio ambiente.
-                  </p>
+                    boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
+                  }}>
+                    <FaEye size={60} color="#3E7E5C" style={{ marginBottom: "1.5rem" }} />
+                    <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>Nuestra Visión</h3>
+                    <p style={{ color: "#000000ff", fontSize: "1.2rem" }}>Convertirnos en el destino de glamping líder en Colombia, reconocidos por nuestra excelencia en el servicio y la sostenibilidad.</p>
+                  </div>
                 </div>
               </div>
             </section>
           )}
 
-          {/* VISTA DE CABINAS POR SEDE */}
-          {showCabins && selectedSede && (
-            <section
-              style={{
-                width: "100%",
-                maxWidth: "900px",
-                marginBottom: "3rem",
-                backgroundColor: "#fff",
-                padding: "2rem",
-                borderRadius: "15px",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", marginBottom: "2rem" }}>
-                <button
-                  onClick={() => setShowCabins(false)}
-                  style={{
-                    backgroundColor: "#2E5939",
-                    color: "#fff",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                    marginRight: "1rem",
-                  }}
-                >
-                  ← Volver
-                </button>
-                <h2 style={{ fontSize: "2rem", color: "#2E5939", margin: 0 }}>
-                  Cabañas en {selectedSede.name}
-                </h2>
-              </div>
-              
-              <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1.5rem" }}>
-                {cabañasPorSede[selectedSede.id]?.map((cabin, index) => (
-                  <div
-                    key={index}
+          {/* LANDING PAGE ACTUALIZADA CON CARRUSEL INTEGRADO Y FILTROS SIMPLIFICADOS */}
+          {!showForm && !showAboutUs && !showCabins && (
+            <>
+              {/* CARRUSEL INTEGRADO CON NAVBAR */}
+              <section
+                style={{
+                  width: "100%",
+                  height: "90vh",
+                  background: "linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url('https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textAlign: "center",
+                  color: "#fff",
+                  padding: "0 2rem",
+                }}
+              >
+                <div style={{ marginBottom: "2rem" }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "2rem"
+                  }}>
+                    <img
+                      src="/images/Logo.png"
+                      alt="Bosque Sagrado"
+                      style={{
+                        width: "120px",
+                        height: "120px",
+                        filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))"
+                      }}
+                    />
+                  </div>
+                  <h1 style={{
+                    fontSize: "4.5rem",
+                    marginBottom: "1rem",
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                    fontWeight: "700",
+                    textShadow: "2px 2px 8px rgba(0,0,0,0.5)"
+                  }}>
+                    Bosque Sagrado
+                  </h1>
+                  <p style={{ fontSize: "1.8rem", marginBottom: "2rem", textShadow: "1px 1px 4px rgba(0,0,0,0.5)" }}>
+                    Donde el lujo se encuentra con la naturaleza
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}>
+                  <button
+                    onClick={handleShowRegister}
                     style={{
-                      backgroundColor: "#3E7E5C",
-                      color: "#fff",
-                      borderRadius: "10px",
-                      overflow: "hidden",
-                      width: "calc(33.33% - 1rem)",
-                      minWidth: "250px",
-                      boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                      textAlign: "center",
+                      backgroundColor: "#E8F5E9",
+                      color: "#2E5939",
+                      border: "none",
+                      padding: "18px 35px",
+                      borderRadius: "30px",
+                      fontWeight: "600",
+                      fontSize: "1.2rem",
+                      cursor: "pointer",
                     }}
                   >
-                    <img src={cabin.img} alt={cabin.name} style={{ width: "100%", height: "200px", objectFit: "cover" }} />
-                    <div style={{ padding: "1.5rem" }}>
-                      <h3 style={{ margin: "0 0 0.5rem" }}>{cabin.name}</h3>
-                      <p style={{ fontSize: "0.9rem", lineHeight: "1.4", marginBottom: "1rem" }}>
-                        {cabin.description}
-                      </p>
-                      <p style={{ fontSize: "1rem", fontWeight: "bold", marginBottom: "1rem" }}>
-                        {cabin.price}
-                      </p>
-                      <button
-                        onClick={() => handleShowCabinDetails(cabin)}
+                    Descubre la Magia
+                  </button>
+                  <button
+                    onClick={handleShowAboutUs}
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "#E8F5E9",
+                      border: "2px solid #E8F5E9",
+                      padding: "18px 35px",
+                      borderRadius: "30px",
+                      fontWeight: "600",
+                      fontSize: "1.2rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Nuestra Historia
+                  </button>
+                </div>
+              </section>
+
+              {/* CARRUSEL DE SEDES - SOLO COPACABANA Y SAN FELIX */}
+              <section style={{ padding: "5rem 0", backgroundColor: "#fff" }}>
+                <div style={{ width: "100%" }}>
+                  <h2 style={{
+                    fontSize: "3rem",
+                    color: "#2E5939",
+                    textAlign: "center",
+                    marginBottom: "3rem",
+                    fontFamily: "'Playfair Display', serif"
+                  }}>
+                    Nuestras Sedes
+                  </h2>
+                  <div style={{ position: "relative", width: "100%", height: "600px", overflow: "hidden" }}>
+                    {/* Solo mostrar Copacabana y San Felix */}
+                    {cabañas.filter(cabin => cabin.sede === "Copacabana" || cabin.sede === "San Felix").map((cabin, index) => (
+                      <div
+                        key={index}
                         style={{
-                          backgroundColor: "#E8F5E9",
-                          color: "#2E5939",
-                          border: "none",
-                          padding: "0.8rem 1.5rem",
-                          borderRadius: "20px",
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                          transition: "background-color 0.3s, transform 0.2s",
+                          position: "absolute",
+                          top: 0,
+                          left: `${(index - carouselIndex) * 100}%`,
+                          width: "100%",
+                          height: "100%",
+                          transition: "left 0.5s ease-in-out",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                       >
-                        Ver más
+                        <img
+                          src={cabin.img}
+                          alt={cabin.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            width: "100%",
+                            background: "linear-gradient(transparent 0%, rgba(0,0,0,0.7) 100%)",
+                            color: "#fff",
+                            padding: "3rem",
+                          }}
+                        >
+                          <h3 style={{ fontSize: "2.5rem", margin: "0 0 1rem" }}>{cabin.name}</h3>
+                          <p style={{ margin: "0 0 0.5rem", fontSize: "1.2rem" }}>
+                            <FaMapMarkerAlt style={{ marginRight: "0.5rem" }} /> {cabin.sede}
+                          </p>
+                          <p style={{ margin: "0.5rem 0 0", fontSize: "1.1rem" }}>{cabin.description}</p>
+                          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "1rem" }}>
+                            <span style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{cabin.price}</span>
+                            <button
+                              onClick={() => handleShowCabinDetails(cabin)}
+                              style={{
+                                backgroundColor: "#E8F5E9",
+                                color: "#2E5939",
+                                border: "none",
+                                padding: "12px 25px",
+                                borderRadius: "25px",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                              }}
+                            >
+                              Ver Detalles
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={prevSlide}
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "30px",
+                        transform: "translateY(-50%)",
+                        backgroundColor: "rgba(255, 255, 255, 0.9)",
+                        border: "none",
+                        color: "#2E5939",
+                        fontSize: "1.5rem",
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <FaChevronLeft />
+                    </button>
+
+                    <button
+                      onClick={nextSlide}
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        right: "30px",
+                        transform: "translateY(-50%)",
+                        backgroundColor: "rgba(255, 255, 255, 0.9)",
+                        border: "none",
+                        color: "#2E5939",
+                        fontSize: "1.5rem",
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <FaChevronRight />
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* FILTROS SIMPLIFICADOS - SOLO SEDE, TIPO Y CAPACIDAD */}
+              <section style={{ padding: "3rem 2rem", backgroundColor: "#f8faf8" }}>
+                <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+                  <div style={{
+                    backgroundColor: "#fff",
+                    padding: "2rem",
+                    borderRadius: "15px",
+                    boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
+                    marginBottom: "2rem"
+                  }}>
+                    <h3 style={{ color: "#2E5939", marginBottom: "1.5rem", textAlign: "center" }}>
+                      Encuentra tu Cabaña Ideal
+                    </h3>
+                   
+                    {/* Filtros SOLO sede, tipo y capacidad */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "1rem" }}>
+                      {/* Filtro por sede */}
+                      <div>
+                        <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
+                          <FaMapMarkerAlt style={{ marginRight: "0.5rem" }} /> Sede
+                        </label>
+                        <select
+                          value={filtroSede}
+                          onChange={(e) => setFiltroSede(e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "0.8rem",
+                            border: "1px solid #e0e0e0",
+                            borderRadius: "8px",
+                            fontSize: "1rem",
+                            outline: "none",
+                          }}
+                        >
+                          <option value="">Todas las sedes</option>
+                          {sedesUnicas.map((sede, index) => (
+                            <option key={index} value={sede}>{sede}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Filtro por tipo */}
+                      <div>
+                        <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
+                          <FaHome style={{ marginRight: "0.5rem" }} /> Tipo
+                        </label>
+                        <select
+                          value={filtroTipo}
+                          onChange={(e) => setFiltroTipo(e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "0.8rem",
+                            border: "1px solid #e0e0e0",
+                            borderRadius: "8px",
+                            fontSize: "1rem",
+                            outline: "none",
+                          }}
+                        >
+                          <option value="">Todos los tipos</option>
+                          {tiposUnicos.map((tipo, index) => (
+                            <option key={index} value={tipo}>{tipo}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Filtro por capacidad */}
+                      <div>
+                        <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
+                          <FaUsers style={{ marginRight: "0.5rem" }} /> Capacidad mínima
+                        </label>
+                        <select
+                          value={filtroCapacidad}
+                          onChange={(e) => setFiltroCapacidad(e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "0.8rem",
+                            border: "1px solid #e0e0e0",
+                            borderRadius: "8px",
+                            fontSize: "1rem",
+                            outline: "none",
+                          }}
+                        >
+                          <option value="">Cualquier capacidad</option>
+                          {capacidadesUnicas.map((capacidad, index) => (
+                            <option key={index} value={capacidad}>{capacidad} personas</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Botón limpiar */}
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      <button
+                        onClick={limpiarFiltros}
+                        style={{
+                          padding: "0.8rem 1.5rem",
+                          backgroundColor: "#e0e0e0",
+                          color: "#333",
+                          border: "none",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Limpiar Filtros
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
 
-          {/* LANDING PAGE CONTENT */}
-          {!showForm && !showAboutUs && !showCabins && (
-            <>
-              {/* HERO */}
-              <section
-                style={{
-                  textAlign: "center",
-                  marginTop: "2rem",
-                  marginBottom: "3rem",
-                  maxWidth: "700px",
-                  padding: "0 1rem",
-                }}
-              >
-                <h1 style={{ fontSize: "3rem", marginBottom: "0.5rem", color: "#2E5939" }}>
-                  Vive la naturaleza con lujo
-                </h1>
-                <p style={{ fontSize: "1.3rem", color: "#3E7E5C" }}>
-                  Descubre una experiencia única en nuestro glamping ecológico.
-                </p>
+                  {/* Resultados de búsqueda */}
+                  <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                    <p style={{ color: "#5D6D63", fontSize: "1.1rem" }}>
+                      {cabañasFiltradas.length} cabaña{cabañasFiltradas.length !== 1 ? 's' : ''} encontrada{cabañasFiltradas.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
               </section>
 
-              {/* SECCIÓN NUESTRAS SEDES (CARRUSEL) */}
-              <section
-                style={{
-                  width: "100%",
-                  maxWidth: "900px",
-                  marginBottom: "3rem",
-                  backgroundColor: "#fff",
-                  padding: "2rem",
-                  borderRadius: "15px",
-                  boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                }}
-              >
-                <h2 style={{ fontSize: "2rem", color: "#2E5939", textAlign: "center", marginBottom: "2rem" }}>
-                  Nuestras Sedes
-                </h2>
-                <div
-                  style={{
-                    position: "relative",
-                    width: "100%",
-                    height: "450px",
-                    borderRadius: "10px",
-                    overflow: "hidden",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  {sedes.map((sede, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: `${(index - sedeCarouselIndex) * 100}%`,
-                        width: "100%",
-                        height: "100%",
-                        transition: "left 0.5s ease-in-out",
-                      }}
-                    >
-                      <img
-                        src={sede.img}
-                        alt={sede.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
+              {/* CABINAS DESTACADAS CON FILTROS APLICADOS */}
+              <section style={{ padding: "2rem 2rem 5rem", backgroundColor: "#f8faf8" }}>
+                <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+                  <h2 style={{
+                    fontSize: "3rem",
+                    color: "#2E5939",
+                    textAlign: "center",
+                    marginBottom: "3rem",
+                    fontFamily: "'Playfair Display', serif"
+                  }}>
+                    Todas Nuestras Cabañas
+                  </h2>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
+                    {cabañasFiltradas.map((cabin, index) => (
                       <div
+                        key={index}
                         style={{
-                          position: "absolute",
-                          bottom: "0",
-                          left: "0",
-                          width: "100%",
-                          backgroundColor: "rgba(46, 89, 57, 0.7)",
-                          color: "#fff",
-                          padding: "1.5rem",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
+                          backgroundColor: "#fff",
+                          borderRadius: "20px",
+                          overflow: "hidden",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                          cursor: "pointer",
+                          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                        }}
+                        onClick={() => handleShowCabinDetails(cabin)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-5px)";
+                          e.currentTarget.style.boxShadow = "0 15px 40px rgba(0,0,0,0.15)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.1)";
                         }}
                       >
-                        <div style={{ paddingRight: "1rem" }}>
-                          <h3 style={{ fontSize: "1.5rem", margin: "0" }}>{sede.name}</h3>
-                          <p style={{ margin: "0.5rem 0 0" }}>{sede.description}</p>
+                        <img
+                          src={cabin.img}
+                          alt={cabin.name}
+                          style={{
+                            width: "100%",
+                            height: "250px",
+                            objectFit: "cover"
+                          }}
+                        />
+                        <div style={{ padding: "2rem" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                            <h3 style={{ margin: "0", color: "#2E5939" }}>{cabin.name}</h3>
+                            <div style={{ display: "flex", alignItems: "center", color: "#FFD700" }}>
+                              <FaStar />
+                              <FaStar />
+                              <FaStar />
+                              <FaStar />
+                              <FaStar />
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
+                              <FaMapMarkerAlt /> {cabin.sede}
+                            </span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
+                              <FaHome /> {cabin.tipo}
+                            </span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
+                              <FaUsers /> {cabin.capacidad} personas
+                            </span>
+                          </div>
+                          <p style={{ color: "#5D6D63", marginBottom: "1.5rem" }}>{cabin.description}</p>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "1.3rem", fontWeight: "bold", color: "#3E7E5C" }}>{cabin.price}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShowCabinDetails(cabin);
+                              }}
+                              style={{
+                                backgroundColor: "#2E5939",
+                                color: "#fff",
+                                border: "none",
+                                padding: "10px 20px",
+                                borderRadius: "20px",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                              }}
+                            >
+                              Ver Detalles
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => handleShowCabins(sede)}
-                          style={{
-                            backgroundColor: "#fff",
-                            color: "#2E5939",
-                            border: "none",
-                            padding: "0.8rem 1.5rem",
-                            borderRadius: "20px",
-                            fontWeight: "bold",
-                            cursor: "pointer",
-                            transition: "background-color 0.3s, transform 0.2s",
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          Ver Cabañas
-                        </button>
                       </div>
+                    ))}
+                  </div>
+
+                  {cabañasFiltradas.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "3rem", color: "#5D6D63" }}>
+                      <h3 style={{ marginBottom: "1rem" }}>No se encontraron cabañas</h3>
+                      <p>Intenta ajustar los filtros de búsqueda</p>
                     </div>
-                  ))}
-
-                  <button
-                    onClick={prevSedeSlide}
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "15px",
-                      transform: "translateY(-50%)",
-                      backgroundColor: "rgba(255, 255, 255, 0.7)",
-                      border: "none",
-                      color: "#2E5939",
-                      fontSize: "1.2rem",
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "50%",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-                    }}
-                    aria-label="Sede anterior"
-                  >
-                    <FaChevronLeft />
-                  </button>
-
-                  <button
-                    onClick={nextSedeSlide}
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      right: "15px",
-                      transform: "translateY(-50%)",
-                      backgroundColor: "rgba(255, 255, 255, 0.7)",
-                      border: "none",
-                      color: "#2E5939",
-                      fontSize: "1.2rem",
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "50%",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-                    }}
-                    aria-label="Sede siguiente"
-                  >
-                    <FaChevronRight />
-                  </button>
+                  )}
                 </div>
               </section>
 
-              {/* SECCIÓN TODAS LAS CABINAS EN EL HOME */}
-              <section
-                style={{
-                  width: "100%",
-                  maxWidth: "900px",
-                  marginBottom: "3rem",
-                }}
-              >
-                <h2 style={{ fontSize: "2rem", color: "#2E5939", textAlign: "center", marginBottom: "2rem" }}>
-                  Nuestras Cabañas
-                </h2>
-                <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1.5rem" }}>
-                  {todasLasCabañas.map((cabin, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        backgroundColor: "#3E7E5C",
-                        color: "#fff",
-                        borderRadius: "10px",
-                        overflow: "hidden",
-                        width: "calc(33.33% - 1rem)",
-                        minWidth: "250px",
-                        boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                        textAlign: "center",
-                      }}
-                    >
-                      <img src={cabin.img} alt={cabin.name} style={{ width: "100%", height: "200px", objectFit: "cover" }} />
-                      <div style={{ padding: "1.5rem" }}>
-                        <h3 style={{ margin: "0 0 0.5rem" }}>{cabin.name}</h3>
-                        <p style={{ fontSize: "0.9rem", lineHeight: "1.4", marginBottom: "1rem" }}>
-                          {cabin.description}
-                        </p>
-                        <p style={{ fontSize: "1rem", fontWeight: "bold", marginBottom: "1rem" }}>
-                          {cabin.price}
-                        </p>
-                        <button
-                          onClick={() => handleShowCabinDetails(cabin)}
+              {/* SERVICIOS CON IMAGEN INMEDIATA */}
+              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff" }}>
+                <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+                  <h2 style={{
+                    fontSize: "3rem",
+                    color: "#2E5939",
+                    textAlign: "center",
+                    marginBottom: "3rem",
+                    fontFamily: "'Playfair Display', serif"
+                  }}>
+                    Servicios Exclusivos
+                  </h2>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
+                    {paquetes.map((paquete, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          backgroundColor: "#f8faf8",
+                          borderRadius: "20px",
+                          overflow: "hidden",
+                          boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+                        }}
+                      >
+                        <img
+                          src={paquete.img}
+                          alt={paquete.name}
                           style={{
-                            backgroundColor: "#E8F5E9",
-                            color: "#2E5939",
-                            border: "none",
-                            padding: "0.8rem 1.5rem",
-                            borderRadius: "20px",
-                            fontWeight: "bold",
-                            cursor: "pointer",
-                            transition: "background-color 0.3s, transform 0.2s",
+                            width: "100%",
+                            height: "200px",
+                            objectFit: "cover",
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          Ver más
-                        </button>
+                        />
+                        <div style={{ padding: "2rem", textAlign: "center" }}>
+                          <h3 style={{ color: "#2E5939", marginBottom: "1rem", fontSize: "1.5rem" }}>{paquete.name}</h3>
+                          <p style={{ color: "#5D6D63", marginBottom: "1.5rem" }}>{paquete.description}</p>
+                          <div style={{ fontSize: "1.4rem", fontWeight: "bold", color: "#3E7E5C", marginBottom: "1.5rem" }}>
+                            {paquete.price}
+                          </div>
+                          <button
+                            onClick={() => handleShowDetails(paquete)}
+                            style={{
+                              backgroundColor: "#2E5939",
+                              color: "#fff",
+                              border: "none",
+                              padding: "12px 25px",
+                              borderRadius: "25px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                              width: "100%",
+                            }}
+                          >
+                            Más Información
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </section>
 
-              {/* INFORMACIÓN SOBRE EL GLAMPING */}
-              <section
-                style={{
-                  width: "100%",
-                  maxWidth: "900px",
-                  backgroundColor: "rgba(232, 245, 233, 0.4)",
-                  padding: "2rem",
-                  borderRadius: "15px",
-                  marginBottom: "3rem",
-                  boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                }}
-              >
-                <h2 style={{ fontSize: "2rem", color: "#2E5939", textAlign: "center", marginBottom: "1rem" }}>
-                  ¡Conecta con la naturaleza sin perder el lujo!
-                </h2>
-                <p style={{ fontSize: "1.1rem", lineHeight: "1.6", color: "#2E3A30" }}>
-                  "Bienvenido a Bosque Sagrado, estamos ubicados en Antioquia, con tres sedes estratégicas: una en Copacabana, otra en San Félix and la última en el Cerro de las Tres Cruces, a tan solo dos horas de Medellín.
-                </p>
-                <p style={{ fontSize: "1.1rem", lineHeight: "1.6", color: "#2E3A30" }}>
-                  En medio de paisajes naturales únicos, Bosque Sagrado es un lugar mágico ideal para vivir experiencias inolvidables con tu pareja, familia o amigos. Disfruta de un entorno natural y relajante, rodeado de belleza, en nuestras exclusivas instalaciones diseñadas especialmente para ti. Contamos con espacios modernos y confortables que incluyen actividades diversas para hacer tu estancia aún más especial. Cada una de nuestras sedes ofrece habitaciones equipadas con jacuzzi privado, para que disfrutes al máximo de tu experiencia en el corazón de la naturaleza."
-                </p>
-              </section>
-
-              {/* SECCIÓN PAQUETES */}
-              <section
-                style={{
-                  width: "100%",
-                  maxWidth: "900px",
-                  marginBottom: "3rem",
-                }}
-              >
-                <h2 style={{ fontSize: "2rem", color: "#2E5939", textAlign: "center", marginBottom: "2rem" }}>
-                  Complementa tu plan ideal con nuestros paquetes
-                </h2>
-                <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "1.5rem" }}>
-                  {paquetes.map((paquete, index) => (
-                    <div
-                      key={index}
+              {/* CALL TO ACTION */}
+              <section style={{ padding: "5rem 2rem", background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", color: "#fff", textAlign: "center" }}>
+                <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+                  <h2 style={{ fontSize: "3rem", marginBottom: "1.5rem" }}>¿Listo para tu Aventura?</h2>
+                  <p style={{ fontSize: "1.3rem", marginBottom: "2.5rem" }}>
+                    Únete a la familia Bosque Sagrado y descubre la magia de conectar con la naturaleza sin sacrificar el confort.
+                  </p>
+                  <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", flexWrap: "wrap" }}>
+                    <button
+                      onClick={handleShowRegister}
                       style={{
-                        backgroundColor: "#3E7E5C",
-                        color: "#fff",
-                        borderRadius: "10px",
-                        overflow: "hidden",
-                        width: "calc(33.33% - 1rem)",
-                        minWidth: "250px",
-                        boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                        textAlign: "center",
+                        backgroundColor: "#E8F5E9",
+                        color: "#2E5939",
+                        border: "none",
+                        padding: "18px 35px",
+                        borderRadius: "30px",
+                        fontWeight: "600",
+                        fontSize: "1.2rem",
+                        cursor: "pointer",
                       }}
                     >
-                      <img src={paquete.img} alt={paquete.name} style={{ width: "100%", height: "200px", objectFit: "cover" }} />
-                      <div style={{ padding: "1.5rem" }}>
-                        <h3 style={{ margin: "0 0 0.5rem" }}>{paquete.name}</h3>
-                        <p style={{ fontSize: "0.9rem", lineHeight: "1.4", marginBottom: "1rem" }}>
-                          {paquete.description}
-                        </p>
-                        <button
-                          onClick={() => handleShowDetails(paquete)}
-                          style={{
-                            backgroundColor: "#E8F5E9",
-                            color: "#2E5939",
-                            border: "none",
-                            padding: "0.8rem 1.5rem",
-                            borderRadius: "20px",
-                            fontWeight: "bold",
-                            cursor: "pointer",
-                            transition: "background-color 0.3s, transform 0.2s",
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          Ver más
-                        </button>
-                    </div>
-                    </div>
-                  ))}
+                      Crear Cuenta
+                    </button>
+                    <button
+                      onClick={handleShowLogin}
+                      style={{
+                        backgroundColor: "transparent",
+                        color: "#E8F5E9",
+                        border: "2px solid #E8F5E9",
+                        padding: "18px 35px",
+                        borderRadius: "30px",
+                        fontWeight: "600",
+                        fontSize: "1.2rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Iniciar Sesión
+                    </button>
+                  </div>
                 </div>
               </section>
             </>
           )}
 
-          {/* FORMULARIOS DE LOGIN Y REGISTRO */}
+          {/* FORMULARIOS CON MISMA IMAGEN DE FONDO */}
           {showForm && (
-            <div
-              style={{
-                width: "100%",
-                maxWidth: isRegisterActive ? "500px" : "400px",
+            <div style={{
+              padding: "4rem 2rem",
+              background: `linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url(${backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              minHeight: "100vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center"
+            }}>
+              <div style={{
                 backgroundColor: "#fff",
-                padding: "2rem",
-                borderRadius: "12px",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                margin: "2rem 0",
-              }}
-            >
-              {/* Formulario Login */}
-              {!showForgotPassword && !isRegisterActive && (
-                <form
-                  style={{
-                    width: "100%",
-                  }}
-                  onSubmit={handleLoginSubmit}
-                >
-                  <h3
-                    style={{
-                      marginBottom: "1.5rem",
-                      textAlign: "center",
-                      color: "#2E5939",
-                    }}
-                  >
-                    Iniciar sesión
-                  </h3>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginBottom: "1rem",
-                      border: "1px solid #ddd",
-                      padding: "0.8rem",
-                      borderRadius: "8px",
-                      transition: "border-color 0.3s",
-                    }}
-                  >
-                    <FaEnvelope style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                    <input
-                      type="email"
-                      placeholder="Correo electrónico"
-                      required
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
+                padding: "3rem",
+                borderRadius: "20px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+                width: "100%",
+                maxWidth: isRegisterActive ? "500px" : "450px"
+              }}>
+               
+                {!isRegisterActive ? (
+                  // LOGIN FORM
+                  <form onSubmit={handleLoginSubmit}>
+                    <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                      <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
+                        <img
+                          src="/images/Logo.png"
+                          alt="Bosque Sagrado"
+                          style={{ width: "80px", height: "80px" }}
+                        />
+                      </div>
+                      <h3 style={{ marginBottom: "0.5rem", color: "#2E5939", fontSize: "2rem", fontFamily: "'Playfair Display', serif" }}>Bienvenido de Nuevo</h3>
+                      <p style={{ color: "#5D6D63", margin: 0 }}>Ingresa a tu cuenta para continuar</p>
+                    </div>
+                   
+                    <div style={{ marginBottom: "1.5rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem" }}>
+                        <FaEnvelope style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                        <input
+                          type="email"
+                          placeholder="Correo electrónico"
+                          required
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                        <FaLock style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                        <input
+                          type="password"
+                          placeholder="Contraseña"
+                          required
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
                       style={{
-                        flex: 1,
+                        width: "100%",
+                        padding: "1.2rem",
+                        backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
+                        color: "#fff",
+                        fontWeight: "600",
                         border: "none",
-                        outline: "none",
-                        fontSize: "1rem",
-                        backgroundColor: "transparent",
-                        color: "#2E3A30",
+                        borderRadius: "12px",
+                        cursor: isLoading ? "not-allowed" : "pointer",
+                        fontSize: "1.1rem",
+                        marginBottom: "1.5rem",
                       }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginBottom: "1.5rem",
-                      border: "1px solid #ddd",
-                      padding: "0.8rem",
-                      borderRadius: "8px",
-                      transition: "border-color 0.3s",
-                    }}
-                  >
-                    <FaLock style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                    <input
-                      type="password"
-                      placeholder="Contraseña"
-                      required
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
+                    >
+                      {isLoading ? "Iniciando Sesión..." : "Iniciar Sesión"}
+                    </button>
+
+                    <p style={{ textAlign: "center", color: "#5D6D63" }}>
+                      ¿No tienes cuenta?{" "}
+                      <span style={{ color: "#2E5939", fontWeight: "600", cursor: "pointer" }} onClick={handleShowRegister}>
+                        Regístrate aquí
+                      </span>
+                    </p>
+                  </form>
+                ) : (
+                  // REGISTER FORM - 2 COLUMNAS
+                  <form onSubmit={handleRegisterSubmit}>
+                    <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                      <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
+                        <img
+                          src="/images/Logo.png"
+                          alt="Bosque Sagrado"
+                          style={{ width: "80px", height: "80px" }}
+                        />
+                      </div>
+                      <h3 style={{ marginBottom: "0.5rem", color: "#2E5939", fontSize: "2rem", fontFamily: "'Playfair Display', serif" }}>Únete a Nosotros</h3>
+                      <p style={{ color: "#5D6D63", margin: 0 }}>Crea tu cuenta y comienza tu aventura</p>
+                    </div>
+
+                    <div style={{ marginBottom: "2rem" }}>
+                      {/* Fila 1: Tipo Documento y Número Documento */}
+                      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaIdCard style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <select
+                              value={tipoDocumento}
+                              onChange={(e) => setTipoDocumento(e.target.value)}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "transparent" }}
+                            >
+                              {tiposDocumento.map((tipo) => (
+                                <option key={tipo} value={tipo}>{tipo}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaIdCard style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <input
+                              type="text"
+                              placeholder="Número Documento"
+                              required
+                              value={numeroDocumento}
+                              onChange={handleDocumentNumberChange}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Fila 2: Nombre y Apellido */}
+                      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaUser style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <input
+                              type="text"
+                              placeholder="Nombre"
+                              required
+                              value={firstName}
+                              onChange={(e) => handleTextInputChange(e, setFirstName)}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaUser style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <input
+                              type="text"
+                              placeholder="Apellido"
+                              required
+                              value={lastName}
+                              onChange={(e) => handleTextInputChange(e, setLastName)}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Fila 3: Celular y Fecha Nacimiento */}
+                      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaPhone style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <input
+                              type="text"
+                              placeholder="Celular"
+                              required
+                              value={celular}
+                              onChange={handlePhoneChange}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaCalendarAlt style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <input
+                              type="date"
+                              required
+                              value={fechaNacimiento}
+                              onChange={(e) => setFechaNacimiento(e.target.value)}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Email */}
+                      <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem" }}>
+                        <FaEnvelope style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                        <input
+                          type="email"
+                          placeholder="Correo electrónico"
+                          required
+                          value={registerEmail}
+                          onChange={(e) => setRegisterEmail(e.target.value)}
+                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                        />
+                      </div>
+
+                      {/* Fila 4: Contraseña y Confirmar Contraseña */}
+                      <div style={{ display: "flex", gap: "1rem" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaLock style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <input
+                              type="password"
+                              placeholder="Contraseña"
+                              required
+                              value={registerPassword}
+                              onChange={(e) => setRegisterPassword(e.target.value)}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                            <FaLock style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                            <input
+                              type="password"
+                              placeholder="Confirmar Contraseña"
+                              required
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
                       style={{
-                        flex: 1,
+                        width: "100%",
+                        padding: "1.2rem",
+                        backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
+                        color: "#fff",
+                        fontWeight: "600",
                         border: "none",
-                        outline: "none",
-                        fontSize: "1rem",
-                        backgroundColor: "transparent",
-                        color: "#2E3A30",
-                      }}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    style={{
-                      width: "100%",
-                      padding: "0.9rem",
-                      backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
-                      color: "#fff",
-                      fontWeight: "600",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: isLoading ? "not-allowed" : "pointer",
-                      fontSize: "1rem",
-                      marginBottom: "1rem",
-                      transition: "background-color 0.3s",
-                    }}
-                    onMouseEnter={(e) => !isLoading && (e.currentTarget.style.backgroundColor = "#244A30")}
-                    onMouseLeave={(e) => !isLoading && (e.currentTarget.style.backgroundColor = "#2E5939")}
-                  >
-                    {isLoading ? "Verificando..." : "Iniciar sesión"}
-                  </button>
-                  
-                  <p
-                    style={{
-                      color: "#3E7E5C",
-                      fontWeight: "500",
-                      cursor: "pointer",
-                      textAlign: "center",
-                      userSelect: "none",
-                    }}
-                    onClick={handleShowRegister}
-                  >
-                    ¿No tienes cuenta? <span style={{textDecoration: "underline"}}>Regístrate aquí</span>
-                  </p>
-                </form>
-              )}
-
-              {/* Formulario Registro */}
-              {!showForgotPassword && isRegisterActive && (
-                <form
-                  style={{
-                    width: "100%",
-                  }}
-                  onSubmit={handleRegisterSubmit}
-                >
-                  <h3
-                    style={{
-                      marginBottom: "1.5rem",
-                      textAlign: "center",
-                      color: "#2E5939",
-                    }}
-                  >
-                    Registrarse
-                  </h3>
-
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    {/* Tipo de Documento */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.tipoDocumento ? "0.5rem" : "1rem",
-                        border: errors.tipoDocumento ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
+                        borderRadius: "12px",
+                        cursor: isLoading ? "not-allowed" : "pointer",
+                        fontSize: "1.1rem",
+                        marginBottom: "1.5rem",
                       }}
                     >
-                      <FaIdCard style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <select
-                        value={tipoDocumento}
-                        onChange={(e) => setTipoDocumento(e.target.value)}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {tiposDocumento.map((tipo) => (
-                          <option key={tipo} value={tipo}>
-                            {tipo}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {errors.tipoDocumento && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.tipoDocumento}
-                      </p>
-                    )}
+                      {isLoading ? "Creando Cuenta..." : "Crear Cuenta"}
+                    </button>
 
-                    {/* Número de Documento */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.numeroDocumento ? "0.5rem" : "1rem",
-                        border: errors.numeroDocumento ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaIdCard style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="text"
-                        placeholder="Número de Documento"
-                        required
-                        value={numeroDocumento}
-                        onChange={handleDocumentNumberChange}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.numeroDocumento && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.numeroDocumento}
-                      </p>
-                    )}
-
-                    {/* Nombre */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.firstName ? "0.5rem" : "1rem",
-                        border: errors.firstName ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaUser style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="text"
-                        placeholder="Nombre"
-                        required
-                        value={firstName}
-                        onChange={(e) => handleTextInputChange(e, setFirstName)}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.firstName && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.firstName}
-                      </p>
-                    )}
-
-                    {/* Apellido */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.lastName ? "0.5rem" : "1rem",
-                        border: errors.lastName ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaUser style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="text"
-                        placeholder="Apellido"
-                        required
-                        value={lastName}
-                        onChange={(e) => handleTextInputChange(e, setLastName)}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.lastName && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.lastName}
-                      </p>
-                    )}
-
-                    {/* Celular */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.celular ? "0.5rem" : "1rem",
-                        border: errors.celular ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaPhone style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="text"
-                        placeholder="Número de Celular"
-                        required
-                        value={celular}
-                        onChange={handlePhoneChange}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.celular && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.celular}
-                      </p>
-                    )}
-
-                    {/* Fecha de Nacimiento */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.fechaNacimiento ? "0.5rem" : "1rem",
-                        border: errors.fechaNacimiento ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaCalendarAlt style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="date"
-                        required
-                        value={fechaNacimiento}
-                        onChange={(e) => setFechaNacimiento(e.target.value)}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.fechaNacimiento && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.fechaNacimiento}
-                      </p>
-                    )}
-
-                    {/* Email */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.registerEmail ? "0.5rem" : "1rem",
-                        border: errors.registerEmail ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaEnvelope style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="email"
-                        placeholder="Correo Electrónico"
-                        required
-                        value={registerEmail}
-                        onChange={(e) => setRegisterEmail(e.target.value)}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.registerEmail && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.registerEmail}
-                      </p>
-                    )}
-
-                    {/* Contraseña */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.registerPassword ? "0.5rem" : "1rem",
-                        border: errors.registerPassword ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaLock style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="password"
-                        placeholder="Contraseña"
-                        required
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.registerPassword && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.registerPassword}
-                      </p>
-                    )}
-
-                    {/* Confirmar Contraseña */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: errors.confirmPassword ? "0.5rem" : "1rem",
-                        border: errors.confirmPassword ? "1px solid #e74c3c" : "1px solid #ddd",
-                        padding: "0.8rem",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <FaLock style={{ marginRight: "10px", color: "#3E7E5C" }} />
-                      <input
-                        type="password"
-                        placeholder="Confirmar Contraseña"
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          fontSize: "1rem",
-                          backgroundColor: "transparent",
-                          color: "#2E3A30",
-                        }}
-                      />
-                    </div>
-                    {errors.confirmPassword && (
-                      <p style={{ color: "#e74c3c", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                        {errors.confirmPassword}
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    style={{
-                      width: "100%",
-                      padding: "0.9rem",
-                      backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
-                      color: "#fff",
-                      fontWeight: "600",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: isLoading ? "not-allowed" : "pointer",
-                      fontSize: "1rem",
-                      marginBottom: "0.5rem",
-                      transition: "background-color 0.3s",
-                    }}
-                    onMouseEnter={(e) => !isLoading && (e.currentTarget.style.backgroundColor = "#244A30")}
-                    onMouseLeave={(e) => !isLoading && (e.currentTarget.style.backgroundColor = "#2E5939")}
-                  >
-                    {isLoading ? "Registrando..." : "Registrarse"}
-                  </button>
-
-                  <p
-                    style={{
-                      fontSize: "0.9rem",
-                      color: "#3E7E5C",
-                      textAlign: "center",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                    }}
-                    onClick={handleShowLogin}
-                  >
-                    ¿Ya tienes cuenta? Inicia sesión aquí
-                  </p>
-                </form>
-              )}
+                    <p style={{ textAlign: "center", color: "#5D6D63" }}>
+                      ¿Ya tienes cuenta?{" "}
+                      <span style={{ color: "#2E5939", fontWeight: "600", cursor: "pointer" }} onClick={handleShowLogin}>
+                        Inicia sesión aquí
+                      </span>
+                    </p>
+                  </form>
+                )}
+              </div>
             </div>
           )}
         </main>
 
-        {/* FOOTER */}
+        {/* FOOTER COMPLETO */}
         <footer
           style={{
             backgroundColor: "#2E5939",
             color: "#fff",
-            textAlign: "center",
-            padding: "2rem",
+            padding: "4rem 2rem 2rem",
+            marginTop: "auto",
           }}
         >
-          <div style={{ marginBottom: "1rem" }}>
-            <img src="/images/Logo.png" alt="Bosque Sagrado" style={{ width: "100px", filter: "invert(1) grayscale(1) brightness(2)" }} />
+          <div style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "3rem",
+            marginBottom: "3rem"
+          }}>
+            {/* Logo y descripción */}
+            <div>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: "1.5rem"
+              }}>
+                <img
+                  src="/images/Logo.png"
+                  alt="Bosque Sagrado"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    marginRight: "1rem",
+                    filter: "brightness(0) invert(1)"
+                  }}
+                />
+                <span style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: "bold",
+                  fontSize: "2rem"
+                }}>
+                  Bosque Sagrado
+                </span>
+              </div>
+              <p style={{
+                lineHeight: "1.6",
+                color: "rgba(255,255,255,0.8)",
+                marginBottom: "1.5rem"
+              }}>
+                Donde el lujo se encuentra con la naturaleza. Experimenta la magia del glamping en los paisajes más espectaculares de Antioquia.
+              </p>
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <a href="#" style={{
+                  color: "#fff",
+                  fontSize: "1.5rem",
+                  padding: "0.5rem",
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  transition: "all 0.3s ease"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                >
+                  <FaFacebook />
+                </a>
+                <a href="#" style={{
+                  color: "#fff",
+                  fontSize: "1.5rem",
+                  padding: "0.5rem",
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  transition: "all 0.3s ease"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                >
+                  <FaInstagram />
+                </a>
+                <a href="#" style={{
+                  color: "#fff",
+                  fontSize: "1.5rem",
+                  padding: "0.5rem",
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  transition: "all 0.3s ease"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                >
+                  <FaWhatsapp />
+                </a>
+              </div>
+            </div>
+
+            {/* Enlaces rápidos */}
+            <div>
+              <h4 style={{
+                marginBottom: "1.5rem",
+                fontSize: "1.3rem",
+                fontFamily: "'Playfair Display', serif"
+              }}>
+                Enlaces Rápidos
+              </h4>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                <li style={{ marginBottom: "0.8rem" }}>
+                  <a
+                    onClick={handleShowLanding}
+                    style={{
+                      color: "rgba(255,255,255,0.8)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "color 0.3s ease"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#fff"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                  >
+                    Inicio
+                  </a>
+                </li>
+                <li style={{ marginBottom: "0.8rem" }}>
+                  <a
+                    onClick={handleShowAboutUs}
+                    style={{
+                      color: "rgba(255,255,255,0.8)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "color 0.3s ease"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#fff"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                  >
+                    Quiénes Somos
+                  </a>
+                </li>
+                <li style={{ marginBottom: "0.8rem" }}>
+                  <a
+                    onClick={handleShowLogin}
+                    style={{
+                      color: "rgba(255,255,255,0.8)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "color 0.3s ease"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#fff"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                  >
+                    Iniciar Sesión
+                  </a>
+                </li>
+                <li style={{ marginBottom: "0.8rem" }}>
+                  <a
+                    onClick={handleShowRegister}
+                    style={{
+                      color: "rgba(255,255,255,0.8)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "color 0.3s ease"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#fff"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                  >
+                    Registrarse
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contacto */}
+            <div>
+              <h4 style={{
+                marginBottom: "1.5rem",
+                fontSize: "1.3rem",
+                fontFamily: "'Playfair Display', serif"
+              }}>
+                Contacto
+              </h4>
+              <div style={{ color: "rgba(255,255,255,0.8)", lineHeight: "1.6" }}>
+                <p style={{ margin: "0 0 1rem" }}>📞 +57 300 123 4567</p>
+                <p style={{ margin: "0 0 1rem" }}>✉️ info@bosquesagrado.com</p>
+                <p style={{ margin: "0" }}>📍 Antioquia, Colombia</p>
+              </div>
+            </div>
           </div>
-          <p style={{ margin: "0.5rem 0", fontSize: "1.2rem" }}>Bosque Sagrado</p>
-          <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginTop: "1rem" }}>
-            <a href="#" style={{ color: "#fff", fontSize: "1.5rem" }}>
-              <FaFacebook />
-            </a>
-            <a href="#" style={{ color: "#fff", fontSize: "1.5rem" }}>
-              <FaInstagram />
-            </a>
-            <a href="#" style={{ color: "#fff", fontSize: "1.5rem" }}>
-              <FaWhatsapp />
-            </a>
+
+          {/* Línea divisoria */}
+          <div style={{
+            borderTop: "1px solid rgba(255,255,255,0.2)",
+            paddingTop: "2rem",
+            textAlign: "center",
+            color: "rgba(255,255,255,0.6)"
+          }}>
+            <p style={{ margin: 0 }}>
+              © 2024 Bosque Sagrado. Todos los derechos reservados.
+            </p>
           </div>
         </footer>
       </div>
+
+      {/* Estilos CSS para fuentes */}
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+        `}
+      </style>
     </>
   );
 }
 
-export default LoginRegister;
+export default LoginRegister

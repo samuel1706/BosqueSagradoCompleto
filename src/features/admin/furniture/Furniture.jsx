@@ -395,7 +395,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}>*</span>}
+        {required && <span style={{ color: "red" }}></span>}
       </label>
       {type === "textarea" ? (
         <div>

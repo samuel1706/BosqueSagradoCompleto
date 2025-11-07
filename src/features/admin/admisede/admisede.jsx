@@ -411,7 +411,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}>*</span>}
+        {required && <span style={{ color: "red" }}></span>}
       </label>
       
       {type === "select" ? (
@@ -1631,27 +1631,6 @@ const Admisede = () => {
                     maxLength={VALIDATION_RULES.celular.exactLength}
                     placeholder="10 dígitos, comenzando con 3"
                     touched={touchedFields.celular}
-                  />
-                </div>
-
-                <div>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newItem.estado}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "Activa" },
-                      { value: "false", label: "Inactiva" }
-                    ]}
-                    touched={touchedFields.estado}
                   />
                 </div>
 

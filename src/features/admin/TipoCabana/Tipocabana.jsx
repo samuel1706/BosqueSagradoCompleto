@@ -1448,23 +1448,6 @@ const TipoCabana = () => {
                 touched={touchedFields.descripcion}
               />
 
-              <FormField
-                label="Estado"
-                name="estado"
-                type="select"
-                value={newTipoCabana.estado.toString()}
-                onChange={handleChange}
-                error={formErrors.estado}
-                success={formSuccess.estado}
-                required={true}
-                disabled={loading}
-                options={[
-                  { value: "true", label: "Activo" },
-                  { value: "false", label: "Inactivo" }
-                ]}
-                touched={touchedFields.estado}
-              />
-
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>
                 <button
                   type="submit"

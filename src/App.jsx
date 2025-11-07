@@ -19,25 +19,7 @@ import Marca from "./features/admin/marca/marca";
 import Temporada from "./features/admin/Temporada/Temporada";
 import TipoCabana from "./features/admin/TipoCabana/Tipocabana";
 import Disponibilidad from "./features/admin/Disponibilidad/Disponibilidad";
-
-
-// 🆕 Importamos el módulo de ventas (por ahora placeholder)
-const Ventas = () => (
-  <div style={{
-    padding: '40px',
-    textAlign: 'center',
-    color: '#2E5939',
-    backgroundColor: '#f5f8f2',
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'column'
-  }}>
-    <h1 style={{ fontSize: '2.5rem', margin: 0 }}>🛒 Gestión de Ventas</h1>
-    <p style={{ fontSize: '1.2rem', color: '#679750' }}>Módulo de ventas en desarrollo</p>
-  </div>
-);
+import Ventas from "./features/admin/Ventas/Ventas"; // 🆕 Cambiado a mayúscula
 
 // ✅ Componente placeholder reutilizable
 const Placeholder = ({ title }) => (
@@ -82,7 +64,7 @@ function LayoutWithSidebar() {
           <Route path="/reservas/sedes" element={<Admisede />} />
           <Route path="/reservas/gestion-reservas" element={<GestionReserva />} />
           <Route path="/reservas/muebles" element={<Furniture />} />
-          <Route path="/reservas/Temporada" element={<Temporada />} />
+          <Route path="/reservas/temporada" element={<Temporada />} />
 
           {/* 🛍️ Compras */}
           <Route path="/compras/gestion-categoria-producto" element={<CategoriaProducto />} />
@@ -90,14 +72,14 @@ function LayoutWithSidebar() {
           <Route path="/compras/proveedores" element={<Proveedores />} />
           <Route path="/compras/compras" element={<Compras />} />
           <Route path="/compras/gestion-marca" element={<Marca />} />
-          <Route path="/compras" element={<Placeholder title="Gestión de Compras" />} />
 
           {/* 🆕 🛒 Ventas */}
-          <Route path="/ventas" element={<Ventas />} />
           <Route path="/ventas/ventas" element={<Ventas />} />
 
           {/* 🚧 Rutas vacías opcionales */}
           <Route path="/reservas" element={<Placeholder title="Gestión de Reservas" />} />
+          <Route path="/compras" element={<Placeholder title="Gestión de Compras" />} />
+          <Route path="/ventas" element={<Ventas />} /> {/* Ruta principal de ventas */}
 
           {/* 🏠 Ruta por defecto */}
           <Route path="/" element={<Dashboard />} />

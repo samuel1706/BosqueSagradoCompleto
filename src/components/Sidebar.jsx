@@ -114,13 +114,13 @@ function Sidebar() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/reservas/disponibilidad">
-                    <FaCalendarAlt /> &nbsp; Disponibilidad
+                  <Link to="/reservas/temporada">
+                    <FaCalendar /> &nbsp; Temporada
                   </Link>
                 </li>
                 <li>
-                  <Link to="/reservas/temporada">
-                    <FaCalendar /> &nbsp; Temporada
+                  <Link to="/reservas/disponibilidad">
+                    <FaHome /> &nbsp; Disponibilidad
                   </Link>
                 </li>
                 <li>

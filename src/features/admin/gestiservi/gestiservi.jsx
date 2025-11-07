@@ -2295,27 +2295,6 @@ const Gestiservi = () => {
                   />
                 </div>
 
-                <div>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newServicio.estado}
-                    onChange={handleChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "Activo" },
-                      { value: "false", label: "Inactivo" }
-                    ]}
-                    touched={touchedFields.estado}
-                  />
-                </div>
-
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

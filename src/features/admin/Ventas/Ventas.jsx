@@ -1,9 +1,11 @@
+// src/components/Ventas.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { 
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, 
   FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaCreditCard, 
   FaReceipt, FaShoppingCart, FaFilter, FaSort, FaSortUp, FaSortDown,
-  FaPrint, FaFileExport, FaChartBar, FaStore, FaUser, FaClipboardList
+  FaPrint, FaFileExport, FaChartBar, FaStore, FaUser, FaClipboardList,
+  FaBox, FaConciergeBell, FaSlidersH
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -252,6 +254,9 @@ const VALIDATION_RULES = {
 // ===============================================
 const API_VENTAS = "http://localhost:5272/api/Ventas";
 const API_RESERVAS = "http://localhost:5272/api/Reservas";
+const API_DETALLE_VENTA = "http://localhost:5272/api/DetalleVenta";
+const API_PRODUCTOS = "http://localhost:5272/api/Productos";
+const API_SERVICIOS = "http://localhost:5272/api/Servicios";
 const ITEMS_PER_PAGE = 10;
 
 // Métodos de pago predefinidos
@@ -497,7 +502,10 @@ const FormField = ({
 // ===============================================
 const Ventas = () => {
   const [ventas, setVentas] = useState([]);
+  const [detallesVenta, setDetallesVenta] = useState([]);
   const [reservas, setReservas] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [servicios, setServicios] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -517,14 +525,17 @@ const Ventas = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
 
-  // Estados para filtros
-  const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [filtroMetodoPago, setFiltroMetodoPago] = useState("todos");
-  const [filtroFechaInicio, setFiltroFechaInicio] = useState("");
-  const [filtroFechaFin, setFiltroFechaFin] = useState("");
+  // Estados para filtros - MEJORADO COMO EN TIPO CABAÑA
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: "all",
+    metodoPago: "all",
+    fechaDesde: "",
+    fechaHasta: ""
+  });
+
   const [ordenarPor, setOrdenarPor] = useState("fecha");
   const [ordenDireccion, setOrdenDireccion] = useState("desc");
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   // Estado inicial basado en la estructura de la API
   const [newVenta, setNewVenta] = useState({
@@ -565,6 +576,17 @@ const Ventas = () => {
         to {
           transform: translateX(0);
           opacity: 1;
+        }
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `;
@@ -721,6 +743,38 @@ const Ventas = () => {
   };
 
   // ===============================================
+  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN TIPO CABAÑA
+  // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      metodoPago: "all",
+      fechaDesde: "",
+      fechaHasta: ""
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.metodoPago !== "all") count++;
+    if (filters.fechaDesde) count++;
+    if (filters.fechaHasta) count++;
+    return count;
+  }, [filters]);
+
+  // ===============================================
   // FUNCIONES DE LA API
   // ===============================================
   const fetchAllData = async () => {
@@ -729,7 +783,10 @@ const Ventas = () => {
     try {
       await Promise.all([
         fetchVentas(),
-        fetchReservas()
+        fetchDetallesVenta(),
+        fetchReservas(),
+        fetchProductos(),
+        fetchServicios()
       ]);
     } catch (error) {
       console.error("❌ Error al cargar datos:", error);
@@ -760,6 +817,24 @@ const Ventas = () => {
     }
   };
 
+  const fetchDetallesVenta = async () => {
+    try {
+      const res = await axios.get(API_DETALLE_VENTA, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setDetallesVenta(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener detalles de venta:", error);
+    }
+  };
+
   const fetchReservas = async () => {
     try {
       const res = await axios.get(API_RESERVAS, {
@@ -775,6 +850,42 @@ const Ventas = () => {
       }
     } catch (error) {
       console.error("❌ Error al obtener reservas:", error);
+    }
+  };
+
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(API_PRODUCTOS, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener productos:", error);
+    }
+  };
+
+  const fetchServicios = async () => {
+    try {
+      const res = await axios.get(API_SERVICIOS, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (Array.isArray(res.data)) {
+        setServicios(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener servicios:", error);
     }
   };
 
@@ -903,6 +1014,37 @@ const Ventas = () => {
     };
   };
 
+  // Función para obtener detalles de una venta
+  const getDetallesVenta = (idVenta) => {
+    return detallesVenta.filter(detalle => detalle.idVenta === idVenta);
+  };
+
+  // Función para obtener información de producto/servicio
+  const getItemInfo = (idProducto, idServicio) => {
+    if (idProducto && idProducto > 0) {
+      const producto = productos.find(p => p.idProducto === idProducto);
+      return {
+        tipo: 'producto',
+        nombre: producto?.nombreProducto || 'Producto no encontrado',
+        precio: producto?.precio || 0
+      };
+    } else if (idServicio && idServicio > 0) {
+      const servicio = servicios.find(s => s.idServicio === idServicio);
+      return {
+        tipo: 'servicio',
+        nombre: servicio?.nombreServicio || 'Servicio no encontrado',
+        precio: servicio?.precio || 0
+      };
+    }
+    return { tipo: 'desconocido', nombre: 'Item no especificado', precio: 0 };
+  };
+
+  // Calcular total de una venta
+  const calcularTotalVenta = (idVenta) => {
+    const detalles = getDetallesVenta(idVenta);
+    return detalles.reduce((total, detalle) => total + (detalle.valorTotal || 0), 0);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewVenta((prev) => ({
@@ -995,41 +1137,43 @@ const Ventas = () => {
   // FUNCIONES DE FILTRADO Y ORDENAMIENTO MEJORADAS
   // ===============================================
   const filteredVentas = useMemo(() => {
-    let filtered = ventas.filter(venta =>
-      venta.idVenta.toString().includes(searchTerm.toLowerCase()) ||
-      venta.idReserva.toString().includes(searchTerm.toLowerCase()) ||
-      venta.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let filtered = ventas.filter(venta => {
+      // Búsqueda general
+      const matchesSearch = 
+        venta.idVenta.toString().includes(searchTerm.toLowerCase()) ||
+        venta.idReserva.toString().includes(searchTerm.toLowerCase()) ||
+        venta.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Aplicar filtro por estado
-    if (filtroEstado !== "todos") {
-      const estadoFiltro = filtroEstado === "activas";
-      filtered = filtered.filter(venta => venta.estado === estadoFiltro);
-    }
+      if (!matchesSearch) return false;
 
-    // Aplicar filtro por método de pago
-    if (filtroMetodoPago !== "todos") {
-      filtered = filtered.filter(venta => venta.metodoPago === filtroMetodoPago);
-    }
+      // Filtro por estado
+      if (filters.estado !== "all") {
+        const estadoFilter = filters.estado === "activo";
+        if (venta.estado !== estadoFilter) return false;
+      }
 
-    // Aplicar filtro por fecha de inicio
-    if (filtroFechaInicio) {
-      const fechaInicio = new Date(filtroFechaInicio);
-      filtered = filtered.filter(venta => {
+      // Filtro por método de pago
+      if (filters.metodoPago !== "all") {
+        if (venta.metodoPago !== filters.metodoPago) return false;
+      }
+
+      // Filtro por fecha de inicio
+      if (filters.fechaDesde) {
+        const fechaDesde = new Date(filters.fechaDesde);
         const fechaVenta = new Date(venta.fechaVenta);
-        return fechaVenta >= fechaInicio;
-      });
-    }
+        if (fechaVenta < fechaDesde) return false;
+      }
 
-    // Aplicar filtro por fecha de fin
-    if (filtroFechaFin) {
-      const fechaFin = new Date(filtroFechaFin);
-      fechaFin.setHours(23, 59, 59, 999); // Incluir todo el día
-      filtered = filtered.filter(venta => {
+      // Filtro por fecha de fin
+      if (filters.fechaHasta) {
+        const fechaHasta = new Date(filters.fechaHasta);
+        fechaHasta.setHours(23, 59, 59, 999); // Incluir todo el día
         const fechaVenta = new Date(venta.fechaVenta);
-        return fechaVenta <= fechaFin;
-      });
-    }
+        if (fechaVenta > fechaHasta) return false;
+      }
+
+      return true;
+    });
 
     // Aplicar ordenamiento
     filtered.sort((a, b) => {
@@ -1069,7 +1213,7 @@ const Ventas = () => {
     });
 
     return filtered;
-  }, [ventas, searchTerm, filtroEstado, filtroMetodoPago, filtroFechaInicio, filtroFechaFin, ordenarPor, ordenDireccion]);
+  }, [ventas, searchTerm, filters, ordenarPor, ordenDireccion]);
 
   const totalPages = Math.ceil(filteredVentas.length / ITEMS_PER_PAGE);
 
@@ -1098,16 +1242,6 @@ const Ventas = () => {
     return ordenDireccion === "asc" ? <FaSortUp /> : <FaSortDown />;
   };
 
-  // Función para limpiar filtros
-  const limpiarFiltros = () => {
-    setFiltroEstado("todos");
-    setFiltroMetodoPago("todos");
-    setFiltroFechaInicio("");
-    setFiltroFechaFin("");
-    setSearchTerm("");
-    setCurrentPage(1);
-  };
-
   // Función para obtener estadísticas
   const getEstadisticas = () => {
     const totalVentas = ventas.length;
@@ -1126,11 +1260,19 @@ const Ventas = () => {
       ? Object.keys(metodosPagoCount).reduce((a, b) => metodosPagoCount[a] > metodosPagoCount[b] ? a : b)
       : "N/A";
 
+    // Calcular ingresos totales
+    const ingresosTotales = ventas.reduce((total, venta) => {
+      const detalles = getDetallesVenta(venta.idVenta);
+      const totalVenta = detalles.reduce((sum, detalle) => sum + (detalle.valorTotal || 0), 0);
+      return total + totalVenta;
+    }, 0);
+
     return {
       totalVentas,
       ventasActivas,
       ventasAnuladas,
-      metodoMasUtilizado
+      metodoMasUtilizado,
+      ingresosTotales
     };
   };
 
@@ -1139,6 +1281,8 @@ const Ventas = () => {
   // ===============================================
   const DetallesVenta = ({ venta }) => {
     const reservaInfo = getReservaInfo(venta.idReserva);
+    const detalles = getDetallesVenta(venta.idVenta);
+    const totalVenta = calcularTotalVenta(venta.idVenta);
     
     return (
       <div>
@@ -1207,249 +1351,86 @@ const Ventas = () => {
           </div>
         </div>
 
-        {/* Información adicional */}
-        <div style={detailItemStyle}>
-          <div style={detailLabelStyle}>Información Adicional</div>
-          <div style={{
-            backgroundColor: '#F7F4EA',
-            padding: '15px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            lineHeight: '1.5'
-          }}>
-            <div style={{ marginBottom: '8px' }}>
-              <strong>ID de la venta:</strong> {venta.idVenta}
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <strong>ID de la reserva:</strong> {venta.idReserva}
-            </div>
-            <div>
-              <strong>Fecha de registro:</strong> {formatDate(venta.fechaVenta)}
+        {/* Detalles de la venta */}
+        {detalles.length > 0 && (
+          <div style={detailItemStyle}>
+            <div style={detailLabelStyle}>Detalles de la Venta</div>
+            <div style={{
+              backgroundColor: '#F7F4EA',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #E8F5E8'
+            }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #679750' }}>
+                    <th style={{ padding: '8px', textAlign: 'left', color: '#2E5939' }}>Item</th>
+                    <th style={{ padding: '8px', textAlign: 'center', color: '#2E5939' }}>Tipo</th>
+                    <th style={{ padding: '8px', textAlign: 'center', color: '#2E5939' }}>Cantidad</th>
+                    <th style={{ padding: '8px', textAlign: 'right', color: '#2E5939' }}>Valor Unitario</th>
+                    <th style={{ padding: '8px', textAlign: 'right', color: '#2E5939' }}>Valor Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detalles.map((detalle, index) => {
+                    const itemInfo = getItemInfo(detalle.idProducto, detalle.idServicio);
+                    return (
+                      <tr key={detalle.idDetalleVenta} style={{ borderBottom: '1px solid #ddd' }}>
+                        <td style={{ padding: '8px' }}>{itemInfo.nombre}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <span style={{
+                            backgroundColor: itemInfo.tipo === 'producto' ? '#4caf50' : '#2196f3',
+                            color: 'white',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px'
+                          }}>
+                            {itemInfo.tipo === 'producto' ? 'Producto' : 'Servicio'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>{detalle.cantidad}</td>
+                        <td style={{ padding: '8px', textAlign: 'right' }}>{formatPrice(detalle.valorUnitario)}</td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
+                          {formatPrice(detalle.valorTotal)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ borderTop: '2px solid #679750' }}>
+                    <td colSpan="4" style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
+                      Total Venta:
+                    </td>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#2E5939' }}>
+                      {formatPrice(totalVenta)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
-        </div>
+        )}
+
+        {detalles.length === 0 && (
+          <div style={detailItemStyle}>
+            <div style={detailLabelStyle}>Detalles de la Venta</div>
+            <div style={{
+              backgroundColor: '#fff3cd',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid #ffeaa7',
+              textAlign: 'center',
+              color: '#856404'
+            }}>
+              <FaInfoCircle style={{ marginRight: '8px' }} />
+              No hay detalles registrados para esta venta
+            </div>
+          </div>
+        )}
       </div>
     );
   };
-
-  // ===============================================
-  // COMPONENTE DE FILTROS
-  // ===============================================
-  const FiltrosSection = () => (
-    <div style={{
-      backgroundColor: '#fff',
-      padding: '20px',
-      borderRadius: '10px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      marginBottom: '20px',
-      border: '1px solid #E8F5E8'
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '15px'
-      }}>
-        <h3 style={{ margin: 0, color: '#2E5939', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FaFilter />
-          Filtros y Ordenamiento
-        </h3>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={limpiarFiltros}
-            style={{
-              backgroundColor: '#6c757d',
-              color: 'white',
-              padding: '8px 16px',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            Limpiar Filtros
-          </button>
-          <button
-            onClick={() => setMostrarFiltros(!mostrarFiltros)}
-            style={{
-              backgroundColor: '#2E5939',
-              color: 'white',
-              padding: '8px 16px',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-          >
-            {mostrarFiltros ? 'Ocultar' : 'Mostrar'} Filtros
-          </button>
-        </div>
-      </div>
-
-      {mostrarFiltros && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '15px',
-          padding: '15px',
-          backgroundColor: '#F7F4EA',
-          borderRadius: '8px'
-        }}>
-          {/* Filtro por estado */}
-          <div>
-            <label style={{ ...labelStyle, fontSize: '14px' }}>Estado</label>
-            <select
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="activas">Solo activas</option>
-              <option value="anuladas">Solo anuladas</option>
-            </select>
-          </div>
-
-          {/* Filtro por método de pago */}
-          <div>
-            <label style={{ ...labelStyle, fontSize: '14px' }}>Método de Pago</label>
-            <select
-              value={filtroMetodoPago}
-              onChange={(e) => setFiltroMetodoPago(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="todos">Todos los métodos</option>
-              {METODOS_PAGO.map(metodo => (
-                <option key={metodo} value={metodo}>{metodo}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro por fecha de inicio */}
-          <div>
-            <label style={{ ...labelStyle, fontSize: '14px' }}>Fecha Inicio</label>
-            <input
-              type="date"
-              value={filtroFechaInicio}
-              onChange={(e) => setFiltroFechaInicio(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          {/* Filtro por fecha de fin */}
-          <div>
-            <label style={{ ...labelStyle, fontSize: '14px' }}>Fecha Fin</label>
-            <input
-              type="date"
-              value={filtroFechaFin}
-              onChange={(e) => setFiltroFechaFin(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          {/* Ordenamiento */}
-          <div>
-            <label style={{ ...labelStyle, fontSize: '14px' }}>Ordenar por</label>
-            <select
-              value={ordenarPor}
-              onChange={(e) => setOrdenarPor(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="fecha">Fecha</option>
-              <option value="id">ID Venta</option>
-              <option value="reserva">ID Reserva</option>
-              <option value="metodo">Método Pago</option>
-              <option value="estado">Estado</option>
-            </select>
-          </div>
-
-          {/* Dirección del ordenamiento */}
-          <div>
-            <label style={{ ...labelStyle, fontSize: '14px' }}>Dirección</label>
-            <select
-              value={ordenDireccion}
-              onChange={(e) => setOrdenDireccion(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="desc">Más reciente primero</option>
-              <option value="asc">Más antiguo primero</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Resumen de filtros aplicados */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '10px',
-        marginTop: '15px',
-        alignItems: 'center'
-      }}>
-        <span style={{ fontWeight: 'bold', color: '#2E5939' }}>Filtros activos:</span>
-        
-        {filtroEstado !== "todos" && (
-          <span style={{
-            backgroundColor: '#E8F5E8',
-            color: '#2E5939',
-            padding: '4px 8px',
-            borderRadius: '12px',
-            fontSize: '12px',
-            border: '1px solid #679750'
-          }}>
-            Estado: {filtroEstado === "activas" ? "Activas" : "Anuladas"}
-          </span>
-        )}
-        
-        {filtroMetodoPago !== "todos" && (
-          <span style={{
-            backgroundColor: '#E8F5E8',
-            color: '#2E5939',
-            padding: '4px 8px',
-            borderRadius: '12px',
-            fontSize: '12px',
-            border: '1px solid #679750'
-          }}>
-            Método: {filtroMetodoPago}
-          </span>
-        )}
-        
-        {filtroFechaInicio && (
-          <span style={{
-            backgroundColor: '#E8F5E8',
-            color: '#2E5939',
-            padding: '4px 8px',
-            borderRadius: '12px',
-            fontSize: '12px',
-            border: '1px solid #679750'
-          }}>
-            Desde: {new Date(filtroFechaInicio).toLocaleDateString('es-ES')}
-          </span>
-        )}
-        
-        {filtroFechaFin && (
-          <span style={{
-            backgroundColor: '#E8F5E8',
-            color: '#2E5939',
-            padding: '4px 8px',
-            borderRadius: '12px',
-            fontSize: '12px',
-            border: '1px solid #679750'
-          }}>
-            Hasta: {new Date(filtroFechaFin).toLocaleDateString('es-ES')}
-          </span>
-        )}
-
-        {filtroEstado === "todos" && filtroMetodoPago === "todos" && !filtroFechaInicio && !filtroFechaFin && (
-          <span style={{ color: '#679750', fontStyle: 'italic' }}>
-            No hay filtros activos
-          </span>
-        )}
-      </div>
-    </div>
-  );
 
   // ===============================================
   // RENDERIZADO
@@ -1535,7 +1516,6 @@ const Ventas = () => {
           <h2 style={{ margin: 0, color: "#2E5939" }}>Gestión de Ventas</h2>
           <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
             {ventas.length} ventas registradas • {estadisticas.ventasActivas} activas
-            {filteredVentas.length !== ventas.length && ` • ${filteredVentas.length} filtradas`}
           </p>
         </div>
         <button
@@ -1584,115 +1564,308 @@ const Ventas = () => {
       {/* Tarjetas de Estadísticas */}
       {!loading && ventas.length > 0 && (
         <div style={{
-          marginBottom: '20px',
+          marginBottom: '25px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '15px'
         }}>
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #679750',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {estadisticas.totalVentas}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#679750', fontWeight: '600' }}>
               Total Ventas
             </div>
           </div>
           
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+            border: '2px solid #4caf50',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {estadisticas.ventasActivas}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
+            <div style={{ fontSize: '16px', color: '#4caf50', fontWeight: '600' }}>
               Ventas Activas
             </div>
           </div>
           
           <div style={{
-            backgroundColor: '#fff8e1',
-            padding: '15px',
-            borderRadius: '10px',
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #ffd54f'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff9800' }}>
+            border: '2px solid #e57373',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
               {estadisticas.ventasAnuladas}
             </div>
-            <div style={{ fontSize: '14px', color: '#ff9800' }}>
+            <div style={{ fontSize: '16px', color: '#e57373', fontWeight: '600' }}>
               Ventas Anuladas
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2E5939', marginBottom: '5px' }}>
-              {estadisticas.metodoMasUtilizado}
+            border: '2px solid #2196f3',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {formatPrice(estadisticas.ingresosTotales)}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Método Más Usado
+            <div style={{ fontSize: '16px', color: '#2196f3', fontWeight: '600' }}>
+              Ingresos Totales
             </div>
           </div>
 
           <div style={{
             backgroundColor: '#E8F5E8',
-            padding: '15px',
-            borderRadius: '10px',
+            padding: '20px',
+            borderRadius: '12px',
             textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-              {reservas.length}
+            border: '2px solid ',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2E5939', marginBottom: '8px' }}>
+              {estadisticas.metodoMasUtilizado}
             </div>
-            <div style={{ fontSize: '14px', color: '#679750' }}>
-              Reservas Disponibles
+            <div style={{ fontSize: '16px', color: '#9C27B0', fontWeight: '600' }}>
+              Método Más Usado
             </div>
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: "relative", maxWidth: 500 }}>
-          <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
-          <input
-            type="text"
-            placeholder="Buscar por ID venta, ID reserva o método de pago..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: "12px 12px 12px 40px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              width: "100%",
-              backgroundColor: "#F7F4EA",
-              color: "#2E5939",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            }}
-          />
-        </div>
-      </div>
+      {/* Barra de búsqueda y filtros - MEJORADO COMO EN TIPO CABAÑA */}
+      <div style={{ 
+        marginBottom: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: showFilters ? '15px' : '0'
+        }}>
+          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+            <input
+              type="text"
+              placeholder="Buscar por ID venta, ID reserva o método de pago..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: "12px 12px 12px 40px",
+                borderRadius: 10,
+                border: "1px solid #ccc",
+                width: "100%",
+                backgroundColor: "#F7F4EA",
+                color: "#2E5939",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+          </div>
 
-      {/* Sección de Filtros */}
-      <FiltrosSection />
+          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            style={{
+              backgroundColor: activeFiltersCount > 0 ? "#4caf50" : "#2E5939",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: "600",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginLeft: '50px'
+            }}
+          >
+            <FaSlidersH />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </button>
+
+          {/* Mostrar filtros activos */}
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              style={{
+                backgroundColor: "transparent",
+                color: "#e57373",
+                padding: "8px 12px",
+                border: "1px solid #e57373",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: '14px'
+              }}
+            >
+              Limpiar Filtros
+            </button>
+          )}
+        </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div style={{
+            padding: '15px',
+            backgroundColor: '#FBFDF9',
+            borderRadius: '8px',
+            border: '1px solid rgba(103,151,80,0.2)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#2E5939', fontSize: '16px' }}>
+              Filtros Avanzados
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '15px'
+            }}>
+              {/* Filtro por estado */}
+              <div>
+                <label style={labelStyle}>Estado</label>
+                <select
+                  name="estado"
+                  value={filters.estado}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="activo">Activas</option>
+                  <option value="inactivo">Anuladas</option>
+                </select>
+              </div>
+
+              {/* Filtro por método de pago */}
+              <div>
+                <label style={labelStyle}>Método de Pago</label>
+                <select
+                  name="metodoPago"
+                  value={filters.metodoPago}
+                  onChange={handleFilterChange}
+                  style={{
+                    ...inputStyle,
+                    width: '100%'
+                  }}
+                >
+                  <option value="all">Todos los métodos</option>
+                  {METODOS_PAGO.map(metodo => (
+                    <option key={metodo} value={metodo}>{metodo}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por fecha de inicio */}
+              <div>
+                <label style={labelStyle}>Fecha Desde</label>
+                <input
+                  type="date"
+                  name="fechaDesde"
+                  value={filters.fechaDesde}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Fecha Hasta</label>
+                <input
+                  type="date"
+                  name="fechaHasta"
+                  value={filters.fechaHasta}
+                  onChange={handleFilterChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Ordenamiento */}
+              <div>
+                <label style={labelStyle}>Ordenar por</label>
+                <select
+                  value={ordenarPor}
+                  onChange={(e) => setOrdenarPor(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="fecha">Fecha</option>
+                  <option value="id">ID Venta</option>
+                  <option value="reserva">ID Reserva</option>
+                  <option value="metodo">Método Pago</option>
+                  <option value="estado">Estado</option>
+                </select>
+              </div>
+
+              {/* Dirección del ordenamiento */}
+              <div>
+                <label style={labelStyle}>Dirección</label>
+                <select
+                  value={ordenDireccion}
+                  onChange={(e) => setOrdenDireccion(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="desc">Más reciente primero</option>
+                  <option value="asc">Más antiguo primero</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Información de resultados filtrados */}
+        {filteredVentas.length !== ventas.length && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#E8F5E8',
+            borderRadius: '6px',
+            color: '#2E5939',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            Mostrando {filteredVentas.length} de {ventas.length} ventas
+            {activeFiltersCount > 0 && ` (filtros aplicados: ${activeFiltersCount})`}
+          </div>
+        )}
+      </div>
 
       {/* Formulario de agregar/editar */}
       {showForm && (
@@ -1767,27 +1940,6 @@ const Ventas = () => {
                   />
                 </div>
 
-                <div>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newVenta.estado}
-                    onChange={handleChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "Activa" },
-                      { value: "false", label: "Anulada" }
-                    ]}
-                    touched={touchedFields.estado}
-                  />
-                </div>
-
                 <div style={{ gridColumn: '1 / -1' }}>
                   <FormField
                     label={
@@ -1832,6 +1984,7 @@ const Ventas = () => {
                   <li>Verifique que el ID de reserva exista en el sistema</li>
                   <li>La fecha de venta no puede ser futura</li>
                   <li>Una venta anulada no se puede reactivar automáticamente</li>
+                  <li>Los detalles de venta (productos/servicios) se gestionan por separado</li>
                 </ul>
               </div>
 
@@ -2112,6 +2265,11 @@ const Ventas = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaInfoCircle size={30} color="#679750" />
                       {ventas.length === 0 ? "No hay ventas registradas" : "No se encontraron resultados con los filtros aplicados"}
+                      {activeFiltersCount > 0 && (
+                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                          Filtros activos: {activeFiltersCount}
+                        </div>
+                      )}
                       {ventas.length === 0 && (
                         <button
                           onClick={() => setShowForm(true)}
@@ -2130,9 +2288,9 @@ const Ventas = () => {
                           Registrar Primera Venta
                         </button>
                       )}
-                      {ventas.length > 0 && (
+                      {ventas.length > 0 && activeFiltersCount > 0 && (
                         <button
-                          onClick={limpiarFiltros}
+                          onClick={clearFilters}
                           style={{
                             backgroundColor: "#2E5939",
                             color: "white",
@@ -2141,7 +2299,7 @@ const Ventas = () => {
                             borderRadius: 8,
                             cursor: "pointer",
                             fontWeight: "600",
-                            marginTop: '10px'
+                            marginTop: '10px',
                           }}
                         >
                           Limpiar Filtros
@@ -2152,7 +2310,10 @@ const Ventas = () => {
                 </tr>
               ) : (
                 paginatedVentas.map((venta) => (
-                  <tr key={venta.idVenta} style={{ borderBottom: "1px solid #eee" }}>
+                  <tr key={venta.idVenta} style={{ 
+                    borderBottom: "1px solid #eee",
+                    backgroundColor: venta.estado ? '#fff' : '#f9f9f9'
+                  }}>
                     <td style={{ padding: "15px", fontWeight: "600" }}>
                       #{venta.idVenta}
                     </td>

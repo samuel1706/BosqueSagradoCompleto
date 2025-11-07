@@ -1719,27 +1719,7 @@ const Admiprovee = () => {
                   touched={touchedFields.direccion}
                   icon={<FaMapMarkerAlt />}
                 />
-
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newProveedor.estado}
-                    onChange={handleChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "Activo" },
-                      { value: "false", label: "Inactivo" }
-                    ]}
-                    touched={touchedFields.estado}
-                  />
-                </div>
+                
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>

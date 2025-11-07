@@ -1411,26 +1411,6 @@ const Rol = () => {
                   />
                 </div>
 
-                <div>
-                  <FormField
-                    label="Estado"
-                    name="estado"
-                    type="select"
-                    value={newItem.estado}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    required={true}
-                    disabled={loading}
-                    options={[
-                      { value: "true", label: "🟢 Activo" },
-                      { value: "false", label: "🔴 Inactivo" }
-                    ]}
-                    touched={touchedFields.estado}
-                  />
-                </div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>

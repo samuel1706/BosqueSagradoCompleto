@@ -1447,23 +1447,6 @@ const Disponibilidad = () => {
                 min={new Date().toISOString().split('T')[0]}
               />
 
-              <FormField
-                label="Estado"
-                name="estado"
-                type="select"
-                value={newDisponibilidad.estado}
-                onChange={handleChange}
-                error={formErrors.estado}
-                success={formSuccess.estado}
-                warning={formWarnings.estado}
-                options={[
-                  { value: "true", label: "🟢 Disponible" },
-                  { value: "false", label: "🔴 No Disponible" }
-                ]}
-                required={true}
-                disabled={loading}
-              />
-
               <div style={{ display: "flex", gap: 10, marginTop: 30 }}>
                 <button
                   type="submit"
