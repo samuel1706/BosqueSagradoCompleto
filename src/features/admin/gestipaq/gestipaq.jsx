@@ -1,7 +1,8 @@
 // src/components/Gestipaq.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaImage, FaUpload, FaCamera, FaConciergeBell, FaMapMarkerAlt, FaList, FaHotel, FaBoxOpen, FaPercent, FaSlidersH } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaUsers, FaCalendarDay, FaTag, FaImage, FaUpload, FaCamera, FaConciergeBell, FaMapMarkerAlt, FaList, FaHotel, FaBoxOpen, FaPercent, FaSlidersH, FaBox, FaBuilding, FaGift, FaClipboardList } from "react-icons/fa";
 import axios from "axios";
+import { useCloudinary } from '../../../hooks/useCloudinary';
 
 // ===============================================
 // ESTILOS MEJORADOS (CONSISTENTES CON SERVICIOS)
@@ -155,7 +156,7 @@ const detailsModalStyle = {
   maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '80vh',
+  maxHeight: '90vh',
   overflowY: 'auto',
   border: "2px solid #679750",
 };
@@ -169,7 +170,8 @@ const detailItemStyle = {
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5
+  marginBottom: 5,
+  fontSize: "14px"
 };
 
 const detailValueStyle = {
@@ -201,7 +203,7 @@ const warningValidationStyle = {
 };
 
 // ===============================================
-// ESTILOS PARA IMÁGENES
+// ESTILOS MEJORADOS PARA IMÁGENES CON CLOUDINARY (CONSISTENTES CON SERVICIOS)
 // ===============================================
 const imageUploadStyle = {
   border: '2px dashed #679750',
@@ -214,19 +216,58 @@ const imageUploadStyle = {
   marginBottom: '15px'
 };
 
+const imagePreviewContainerStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '15px',
+  marginTop: '15px'
+};
+
 const imagePreviewStyle = {
   position: 'relative',
-  borderRadius: '8px',
+  borderRadius: '12px',
   overflow: 'hidden',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  maxWidth: '200px'
+  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  maxWidth: '300px',
+  margin: '0 auto'
 };
 
 const imageStyle = {
   width: '100%',
-  height: '120px',
+  height: 'auto',
+  maxHeight: '200px',
+  objectFit: 'contain',
+  display: 'block',
+  backgroundColor: '#f8f9fa'
+};
+
+const imageRemoveButtonStyle = {
+  position: 'absolute',
+  top: '8px',
+  right: '8px',
+  background: 'rgba(229, 115, 115, 0.9)',
+  color: 'white',
+  border: 'none',
+  borderRadius: '50%',
+  width: '28px',
+  height: '28px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '14px',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+  transition: 'all 0.2s ease'
+};
+
+const tableImageStyle = {
+  width: '60px',
+  height: '60px',
+  borderRadius: '8px',
   objectFit: 'cover',
-  display: 'block'
+  border: '2px solid #e0e0e0',
+  backgroundColor: '#f8f9fa'
 };
 
 // ===============================================
@@ -273,7 +314,6 @@ const selectorListStyle = {
 // ===============================================
 const VALIDATION_PATTERNS = {
   nombrePaquete: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]+$/,
-  imagen: /^[a-zA-Z0-9\-_\.\/:]+$/
 };
 
 const VALIDATION_RULES = {
@@ -331,15 +371,6 @@ const VALIDATION_RULES = {
       min: "El descuento mínimo es 0%.",
       max: "El descuento máximo es 50%.",
       invalid: "El descuento debe ser un valor numérico válido."
-    }
-  },
-  imagen: {
-    maxLength: 500,
-    required: false,
-    pattern: VALIDATION_PATTERNS.imagen,
-    errorMessages: {
-      maxLength: "La URL de la imagen no puede exceder los 500 caracteres.",
-      pattern: "La URL de la imagen contiene caracteres no válidos."
     }
   },
   estado: {
@@ -421,12 +452,6 @@ const FormField = ({
       if (name === 'precioPaquete' && parts.length === 2 && parts[1].length > 2) {
         filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
       }
-    } else if (name === 'imagen') {
-      if (value === "" || VALIDATION_PATTERNS.imagen.test(value)) {
-        filteredValue = value;
-      } else {
-        return;
-      }
     } else {
       filteredValue = value;
     }
@@ -485,7 +510,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}></span>}
+        {required && <span style={{ color: "red" }}>*</span>}
       </label>
       {type === "select" ? (
         <select
@@ -681,7 +706,7 @@ const SelectorMultiple = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Gestipaq MEJORADO
+// COMPONENTE PRINCIPAL Gestipaq MEJORADO CON CLOUDINARY
 // ===============================================
 const Gestipaq = () => {
   const [paquetes, setPaquetes] = useState([]);
@@ -708,11 +733,15 @@ const Gestipaq = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
-  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   // Estados para selección múltiple - CORREGIDOS
   const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
   const [sedesSeleccionadas, setSedesSeleccionadas] = useState([]);
+
+  // Estados para imágenes con Cloudinary
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
+  const [imagenAEliminar, setImagenAEliminar] = useState(null);
 
   // Estados para filtros
   const [showFilters, setShowFilters] = useState(false);
@@ -727,6 +756,9 @@ const Gestipaq = () => {
     descuentoMin: "",
     descuentoMax: ""
   });
+
+  // Hook de Cloudinary
+  const { uploadImage, deleteImage: deleteCloudinaryImage, uploading: cloudinaryUploading } = useCloudinary();
 
   // Estado inicial basado en la estructura de tu API
   const [newPaquete, setNewPaquete] = useState({
@@ -912,6 +944,99 @@ const Gestipaq = () => {
   };
 
   // ===============================================
+  // FUNCIONES PARA MANEJO DE IMÁGENES CON CLOUDINARY - CORREGIDAS
+  // ===============================================
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      displayAlert("La imagen es demasiado grande. El tamaño máximo es 5MB.", "error");
+      return;
+    }
+
+    setUploadingImages(true);
+
+    try {
+      // Subir imagen a Cloudinary
+      const uploadResult = await uploadImage(file);
+      
+      if (!uploadResult.success) {
+        displayAlert("Error al subir la imagen. Inténtalo de nuevo.", "error");
+        return;
+      }
+
+      // Crear objeto de imagen para previsualización
+      const nuevaImagen = {
+        url: uploadResult.url,
+        publicId: uploadResult.publicId,
+        descripcion: `Imagen de ${newPaquete.nombrePaquete || 'paquete'}`,
+        isNew: true,
+        isCloudinary: true
+      };
+
+      setImagenSeleccionada(nuevaImagen);
+      
+      // Actualizar el campo de imagen en el formulario con la URL de Cloudinary
+      setNewPaquete(prev => ({
+        ...prev,
+        imagen: uploadResult.url
+      }));
+
+      displayAlert("Imagen subida exitosamente", "success");
+      
+    } catch (error) {
+      console.error("Error en la subida de imagen:", error);
+      displayAlert("Error al subir la imagen", "error");
+    } finally {
+      setUploadingImages(false);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  const removeImage = () => {
+    if (imagenSeleccionada) {
+      // Si la imagen es existente (no nueva), marcarla para eliminación
+      if (!imagenSeleccionada.isNew && imagenSeleccionada.publicId) {
+        setImagenAEliminar(imagenSeleccionada);
+      }
+      
+      // Si la imagen es nueva y de Cloudinary, eliminarla de Cloudinary
+      if (imagenSeleccionada.isNew && imagenSeleccionada.isCloudinary && imagenSeleccionada.publicId) {
+        deleteCloudinaryImage(imagenSeleccionada.publicId).catch(error => {
+          console.error("Error al eliminar imagen de Cloudinary:", error);
+        });
+      }
+    }
+    
+    setImagenSeleccionada(null);
+    setNewPaquete(prev => ({
+      ...prev,
+      imagen: ""
+    }));
+  };
+
+  const deleteImageFromCloudinary = async () => {
+    if (imagenAEliminar && imagenAEliminar.isCloudinary && imagenAEliminar.publicId) {
+      try {
+        await deleteCloudinaryImage(imagenAEliminar.publicId);
+        console.log("Imagen eliminada de Cloudinary correctamente");
+      } catch (error) {
+        console.error("Error al eliminar imagen de Cloudinary:", error);
+      }
+    }
+  };
+
+  // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
   // ===============================================
   const validateField = (fieldName, value) => {
@@ -966,12 +1091,10 @@ const Gestipaq = () => {
       success = value === "true" ? "Paquete activo" : "Paquete inactivo";
     }
     else if (trimmedValue) {
-      success = `${fieldName === 'nombrePaquete' ? 'Nombre' : fieldName === 'imagen' ? 'Imagen' : 'Campo'} válido.`;
+      success = `${fieldName === 'nombrePaquete' ? 'Nombre' : 'Campo'} válido.`;
       
       if (fieldName === 'nombrePaquete' && trimmedValue.length > 50) {
         warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
-      } else if (fieldName === 'imagen' && !trimmedValue.startsWith('http')) {
-        warning = "La URL de la imagen debería comenzar con http:// o https://";
       }
     }
 
@@ -1001,8 +1124,7 @@ const Gestipaq = () => {
       personas: true,
       dias: true,
       descuento: true,
-      estado: true,
-      imagen: true
+      estado: true
     };
     setTouchedFields(allFieldsTouched);
 
@@ -1013,10 +1135,7 @@ const Gestipaq = () => {
     const descuentoValid = validateField('descuento', newPaquete.descuento);
     const estadoValid = validateField('estado', newPaquete.estado);
 
-    // La imagen es opcional según la API
-    const imagenValid = !newPaquete.imagen || validateField('imagen', newPaquete.imagen);
-
-    const isValid = nombreValid && precioValid && personasValid && diasValid && descuentoValid && estadoValid && imagenValid;
+    const isValid = nombreValid && precioValid && personasValid && diasValid && descuentoValid && estadoValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -1036,55 +1155,6 @@ const Gestipaq = () => {
     setTouchedFields(prev => ({
       ...prev,
       [fieldName]: true
-    }));
-  };
-
-  // ===============================================
-  // FUNCIONES PARA MANEJO DE IMÁGENES - CORREGIDAS
-  // ===============================================
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validar tipo de archivo
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
-      return;
-    }
-
-    // Validar tamaño (máximo 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      displayAlert("La imagen es demasiado grande. El tamaño máximo es 5MB.", "error");
-      return;
-    }
-
-    // Crear URL para previsualización
-    const imageUrl = URL.createObjectURL(file);
-    setImagenSeleccionada({
-      file,
-      preview: imageUrl,
-      isNew: true
-    });
-
-    // También actualizar el campo de imagen en el formulario con la URL temporal
-    setNewPaquete(prev => ({
-      ...prev,
-      imagen: imageUrl
-    }));
-
-    e.target.value = ''; // Reset input
-  };
-
-  const removeImage = () => {
-    if (imagenSeleccionada && imagenSeleccionada.isNew) {
-      URL.revokeObjectURL(imagenSeleccionada.preview);
-    }
-    setImagenSeleccionada(null);
-    setNewPaquete(prev => ({
-      ...prev,
-      imagen: ""
     }));
   };
 
@@ -1176,7 +1246,7 @@ const Gestipaq = () => {
   }, [filters]);
 
   // ===============================================
-  // FUNCIONES CRUD PARA PAQUETES - CORREGIDAS
+  // FUNCIONES CRUD PARA PAQUETES - CORREGIDAS CON CLOUDINARY
   // ===============================================
   const handleAddPaquete = async (e) => {
     e.preventDefault();
@@ -1206,25 +1276,14 @@ const Gestipaq = () => {
     setLoading(true);
     
     try {
-      // Preparar datos del paquete - CORREGIDO: Usar la URL de imagen correcta
-      let imagenFinal = newPaquete.imagen;
-      
-      // Si hay una imagen nueva subida, aquí deberías subirla a tu servidor
-      // y obtener la URL final. Por ahora usamos la URL temporal o la existente
-      if (imagenSeleccionada && imagenSeleccionada.isNew) {
-        // En un caso real, aquí subirías el archivo y obtendrías la URL
-        // imagenFinal = await uploadImage(imagenSeleccionada.file);
-        // Por ahora usamos la URL temporal para demostración
-        imagenFinal = imagenSeleccionada.preview;
-      }
-
+      // Preparar datos del paquete - CORREGIDO: Usar la URL de Cloudinary
       const paqueteData = {
         nombrePaquete: newPaquete.nombrePaquete.trim(),
         precioPaquete: parseFloat(newPaquete.precioPaquete),
         personas: parseInt(newPaquete.personas),
         dias: parseInt(newPaquete.dias),
         descuento: parseFloat(newPaquete.descuento),
-        imagen: imagenFinal?.trim() || null,
+        imagen: newPaquete.imagen?.trim() || null, // URL de Cloudinary
         estado: newPaquete.estado === "true"
       };
 
@@ -1235,6 +1294,12 @@ const Gestipaq = () => {
         paqueteData.idPaquete = parseInt(newPaquete.idPaquete);
         await axios.put(`${API_PAQUETES}/${newPaquete.idPaquete}`, paqueteData);
         idPaqueteCreado = newPaquete.idPaquete;
+        
+        // Eliminar imagen anterior si fue marcada para eliminación
+        if (imagenAEliminar) {
+          await deleteImageFromCloudinary();
+        }
+        
         displayAlert("Paquete actualizado exitosamente.", "success");
       } else {
         // Crear nuevo paquete
@@ -1252,6 +1317,12 @@ const Gestipaq = () => {
       await fetchPaquetes();
       await fetchServiciosPorPaquete();
       await fetchSedesPorPaquete();
+      
+      // Limpiar imagen a eliminar después de una edición exitosa
+      if (isEditing) {
+        setImagenAEliminar(null);
+      }
+      
       closeForm();
     } catch (error) {
       console.error("❌ Error al guardar paquete:", error);
@@ -1321,6 +1392,22 @@ const Gestipaq = () => {
         const relacionesSedes = sedesPorPaquete.filter(sp => sp.idPaquete === paqueteToDelete.idPaquete);
         for (const relacion of relacionesSedes) {
           await axios.delete(`${API_SEDE_POR_PAQUETE}/${relacion.idSedePorPaquete}`);
+        }
+
+        // Eliminar imagen de Cloudinary si existe
+        if (paqueteToDelete.imagen) {
+          // Extraer public_id de la URL de Cloudinary si es posible
+          const urlParts = paqueteToDelete.imagen.split('/');
+          const publicIdWithExtension = urlParts[urlParts.length - 1];
+          const publicId = publicIdWithExtension.split('.')[0];
+          
+          if (publicId && publicId !== 'image') { // Evitar eliminar placeholders
+            try {
+              await deleteCloudinaryImage(publicId);
+            } catch (error) {
+              console.error("Error al eliminar imagen de Cloudinary:", error);
+            }
+          }
         }
 
         // Luego eliminar el paquete
@@ -1425,6 +1512,7 @@ const Gestipaq = () => {
     setFormWarnings({});
     setTouchedFields({});
     setImagenSeleccionada(null);
+    setImagenAEliminar(null);
     setServiciosSeleccionados([]);
     setSedesSeleccionadas([]);
     setNewPaquete({
@@ -1468,6 +1556,7 @@ const Gestipaq = () => {
     // Cargar imagen existente si hay una - CORREGIDO
     if (paquete.imagen) {
       setImagenSeleccionada({
+        url: paquete.imagen,
         preview: paquete.imagen,
         isNew: false
       });
@@ -1652,6 +1741,7 @@ const Gestipaq = () => {
             setFormWarnings({});
             setTouchedFields({});
             setImagenSeleccionada(null);
+            setImagenAEliminar(null);
             setServiciosSeleccionados([]);
             setSedesSeleccionadas([]);
             setNewPaquete({
@@ -2170,13 +2260,14 @@ const Gestipaq = () => {
                   />
                 </div>
 
+                {/* Gestión de Imágenes con Cloudinary - MEJORADA */}
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <FaImage />
                       Imagen del Paquete
                       <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
-                        (Opcional)
+                        (Opcional - Se subirá a Cloudinary)
                       </span>
                     </div>
                   </label>
@@ -2227,35 +2318,18 @@ const Gestipaq = () => {
                     </label>
                   </div>
 
-                  {/* Campo para URL de imagen */}
-                  <FormField
-                    label="URL de la Imagen"
-                    name="imagen"
-                    value={newPaquete.imagen}
-                    onChange={handleChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.imagen}
-                    success={formSuccess.imagen}
-                    warning={formWarnings.imagen}
-                    required={false}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.imagen.maxLength}
-                    showCharCount={true}
-                    placeholder="https://ejemplo.com/imagen-paquete.jpg"
-                    touched={touchedFields.imagen}
-                  />
-
-                  {/* Previsualización de imagen - CORREGIDO */}
-                  {(imagenSeleccionada || newPaquete.imagen) && (
-                    <div>
+                  {/* Previsualización de imagen - MEJORADA */}
+                  {imagenSeleccionada && (
+                    <div style={imagePreviewContainerStyle}>
                       <div style={{ 
                         display: 'flex', 
                         justifyContent: 'space-between', 
                         alignItems: 'center',
-                        marginBottom: '10px'
+                        width: '100%',
+                        maxWidth: '300px'
                       }}>
                         <span style={{ fontWeight: '600', color: '#2E5939' }}>
-                          Vista previa
+                          Vista previa {imagenSeleccionada.isNew && '(Nueva imagen)'}
                         </span>
                         <button
                           type="button"
@@ -2264,10 +2338,19 @@ const Gestipaq = () => {
                             background: '#e57373',
                             color: 'white',
                             border: 'none',
-                            padding: '5px 10px',
+                            padding: '6px 12px',
                             borderRadius: '5px',
                             cursor: 'pointer',
-                            fontSize: '12px'
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}
+                          onMouseOver={(e) => {
+                            e.target.style.backgroundColor = '#d32f2f';
+                            e.target.style.transform = 'scale(1.05)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.backgroundColor = '#e57373';
+                            e.target.style.transform = 'scale(1)';
                           }}
                         >
                           Eliminar imagen
@@ -2275,13 +2358,28 @@ const Gestipaq = () => {
                       </div>
                       <div style={imagePreviewStyle}>
                         <img 
-                          src={imagenSeleccionada ? imagenSeleccionada.preview : newPaquete.imagen} 
+                          src={imagenSeleccionada.url || imagenSeleccionada.preview} 
                           alt="Preview del paquete"
                           style={imageStyle}
                           onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/200x120/679750/FFFFFF?text=Imagen+No+Disponible';
+                            e.target.src = 'https://via.placeholder.com/300x200/679750/FFFFFF?text=Imagen+No+Disponible';
                           }}
                         />
+                        {!imagenSeleccionada.isNew && (
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '8px',
+                            left: '8px',
+                            background: 'rgba(46, 89, 57, 0.9)',
+                            color: 'white',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: '600'
+                          }}>
+                            Imagen existente
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -2366,45 +2464,47 @@ const Gestipaq = () => {
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
                   type="submit"
-                  disabled={loading || isSubmitting}
+                  disabled={loading || isSubmitting || uploadingImages}
                   style={{
-                    backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting || uploadingImages) ? "#ccc" : "#2E5939",
                     color: "#fff",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting || uploadingImages) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
                     flex: 1
                   }}
                   onMouseOver={(e) => {
-                    if (!loading && !isSubmitting) {
+                    if (!loading && !isSubmitting && !uploadingImages) {
                       e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
                       e.target.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (!loading && !isSubmitting) {
+                    if (!loading && !isSubmitting && !uploadingImages) {
                       e.target.style.background = "#2E5939";
                       e.target.style.transform = "translateY(0)";
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar Paquete" : "Guardar Paquete")}
+                  {uploadingImages ? "Subiendo imagen..." : 
+                   loading ? "Guardando..." : 
+                   (isEditing ? "Actualizar Paquete" : "Guardar Paquete")}
                 </button>
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={loading || isSubmitting}
+                  disabled={loading || isSubmitting || uploadingImages}
                   style={{
                     backgroundColor: "#ccc",
                     color: "#333",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting || uploadingImages) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     flex: 1
@@ -2418,7 +2518,7 @@ const Gestipaq = () => {
         </div>
       )}
 
-      {/* Modal de detalles */}
+      {/* Modal de detalles - CORREGIDO PARA MOSTRAR IMAGEN COMO EN SERVICIOS */}
       {showDetails && selectedPaquete && (
         <div style={modalOverlayStyle}>
           <div style={detailsModalStyle}>
@@ -2477,6 +2577,34 @@ const Gestipaq = () => {
                 </div>
               </div>
 
+              {/* Imagen del paquete - CORREGIDO: MOSTRAR COMO EN SERVICIOS */}
+              {selectedPaquete.imagen && (
+                <div style={detailItemStyle}>
+                  <div style={detailLabelStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaImage />
+                      Imagen del Paquete
+                    </div>
+                  </div>
+                  <div style={detailValueStyle}>
+                    <div style={imagePreviewStyle}>
+                      <img 
+                        src={selectedPaquete.imagen} 
+                        alt={selectedPaquete.nombrePaquete}
+                        style={{
+                          ...imageStyle,
+                          width: '100%',
+                          maxWidth: '400px'
+                        }}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/400x250/679750/FFFFFF?text=Imagen+No+Disponible';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Servicios asociados - CORREGIDO */}
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>
@@ -2528,30 +2656,6 @@ const Gestipaq = () => {
                   )}
                 </div>
               </div>
-
-              {/* Imagen del paquete - CORREGIDO */}
-              {selectedPaquete.imagen && (
-                <div style={detailItemStyle}>
-                  <div style={detailLabelStyle}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FaImage />
-                      Imagen del Paquete
-                    </div>
-                  </div>
-                  <div style={detailValueStyle}>
-                    <div style={imagePreviewStyle}>
-                      <img 
-                        src={selectedPaquete.imagen} 
-                        alt={selectedPaquete.nombrePaquete}
-                        style={imageStyle}
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/200x120/679750/FFFFFF?text=Imagen+No+Disponible';
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
@@ -2772,22 +2876,20 @@ const Gestipaq = () => {
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                           {paquete.imagen && (
                             <div style={{
-                              width: '50px',
-                              height: '50px',
+                              width: '60px',
+                              height: '60px',
                               borderRadius: '8px',
                               overflow: 'hidden',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              border: '2px solid #e0e0e0',
+                              backgroundColor: '#f8f9fa'
                             }}>
                               <img 
                                 src={paquete.imagen} 
                                 alt={paquete.nombrePaquete}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover'
-                                }}
+                                style={tableImageStyle}
                                 onError={(e) => {
-                                  e.target.src = 'https://via.placeholder.com/50x50/679750/FFFFFF?text=P';
+                                  e.target.src = 'https://via.placeholder.com/60x60/679750/FFFFFF?text=P';
                                 }}
                               />
                             </div>

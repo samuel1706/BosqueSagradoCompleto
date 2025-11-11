@@ -10,7 +10,7 @@ import { usePDF } from 'react-to-pdf';
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES CON EL SISTEMA)
+// ESTILOS MEJORADOS
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -49,27 +49,6 @@ const inputStyle = {
   transition: "all 0.3s ease",
 };
 
-const navBtnStyle = (disabled) => ({
-  cursor: disabled ? "not-allowed" : "pointer",
-  padding: "8px 12px",
-  borderRadius: 8,
-  border: "1px solid #ccc",
-  backgroundColor: disabled ? "#e0e0e0" : "#F7F4EA",
-  color: "#2E5939",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-});
-
-const pageBtnStyle = (active) => ({
-  cursor: "pointer",
-  padding: "8px 12px",
-  borderRadius: 8,
-  border: "1px solid #2E5939",
-  backgroundColor: active ? "#2E5939" : "#F7F4EA",
-  color: active ? "white" : "#2E5939",
-  fontWeight: "600",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-});
-
 const modalOverlayStyle = {
   position: "fixed",
   top: 0,
@@ -98,7 +77,6 @@ const modalContentStyle = {
   border: "2px solid #679750",
 };
 
-// Estilos mejorados para alertas
 const alertStyle = {
   position: 'fixed',
   top: 20,
@@ -117,11 +95,6 @@ const alertStyle = {
   animation: 'slideInRight 0.3s ease-out',
   borderLeft: '5px solid',
   backdropFilter: 'blur(10px)',
-};
-
-const alertIconStyle = {
-  fontSize: '20px',
-  flexShrink: 0,
 };
 
 const alertSuccessStyle = {
@@ -157,25 +130,6 @@ const detailsModalStyle = {
   maxHeight: '80vh',
   overflowY: 'auto',
   border: "2px solid #679750",
-};
-
-const detailItemStyle = {
-  marginBottom: 15,
-  paddingBottom: 15,
-  borderBottom: "1px solid rgba(46, 89, 57, 0.1)"
-};
-
-const detailLabelStyle = {
-  fontWeight: "bold",
-  color: "#2E5939",
-  marginBottom: 5,
-  fontSize: "14px"
-};
-
-const detailValueStyle = {
-  fontSize: 16,
-  color: "#2E5939",
-  fontWeight: "500"
 };
 
 const validationMessageStyle = {
@@ -289,7 +243,7 @@ const totalValueStyle = {
 };
 
 // ===============================================
-// VALIDACIONES Y PATRONES
+// VALIDACIONES
 // ===============================================
 const VALIDATION_RULES = {
   idProveedor: {
@@ -339,7 +293,7 @@ const IVA_RATE = 0.19;
 const ITEMS_PER_PAGE = 10;
 
 // ===============================================
-// COMPONENTE FormField MEJORADO
+// COMPONENTE FormField
 // ===============================================
 const FormField = ({ 
   label, 
@@ -347,6 +301,7 @@ const FormField = ({
   type = "text", 
   value, 
   onChange, 
+  onBlur,
   error, 
   success,
   warning,
@@ -453,6 +408,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={onChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled || readOnly}
@@ -473,6 +429,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={(name === 'cantidad' || name === 'precioUnitario') ? handleFilteredInputChange : onChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled || readOnly}
@@ -490,7 +447,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL AdminCompras CON FILTROS MEJORADOS
+// COMPONENTE PRINCIPAL AdminCompras
 // ===============================================
 const AdminCompras = () => {
   const [compras, setCompras] = useState([]);
@@ -524,7 +481,7 @@ const AdminCompras = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
   
-  // Estados para filtros - MEJORADO COMO EN TIPO CABAÑA
+  // Estados para filtros
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     estado: "all",
@@ -546,7 +503,6 @@ const AdminCompras = () => {
     fetchDetalleCompras();
   }, []);
 
-  // Validar formulario en tiempo real solo para campos tocados
   useEffect(() => {
     if (showForm) {
       Object.keys(touchedFields).forEach(fieldName => {
@@ -556,11 +512,6 @@ const AdminCompras = () => {
       });
     }
   }, [newCompra, showForm, touchedFields]);
-
-  // Calcular totales cuando cambian los productos
-  useEffect(() => {
-    calcularTotales();
-  }, [productosCompra]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -595,7 +546,7 @@ const AdminCompras = () => {
   }, []);
 
   // ===============================================
-  // FUNCIONES DE ALERTAS MEJORADAS
+  // FUNCIONES DE ALERTAS
   // ===============================================
   const displayAlert = (message, type = "success") => {
     setAlertMessage(message);
@@ -610,13 +561,13 @@ const AdminCompras = () => {
   const getAlertIcon = (type) => {
     switch (type) {
       case "success":
-        return <FaCheck style={alertIconStyle} />;
+        return <FaCheck style={{ fontSize: '20px', flexShrink: 0 }} />;
       case "error":
-        return <FaExclamationTriangle style={alertIconStyle} />;
+        return <FaExclamationTriangle style={{ fontSize: '20px', flexShrink: 0 }} />;
       case "warning":
-        return <FaExclamationTriangle style={alertIconStyle} />;
+        return <FaExclamationTriangle style={{ fontSize: '20px', flexShrink: 0 }} />;
       default:
-        return <FaInfoCircle style={alertIconStyle} />;
+        return <FaInfoCircle style={{ fontSize: '20px', flexShrink: 0 }} />;
     }
   };
 
@@ -634,7 +585,7 @@ const AdminCompras = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE LA API CORREGIDAS
+  // FUNCIONES DE LA API
   // ===============================================
   const fetchCompras = async () => {
     setLoading(true);
@@ -718,7 +669,7 @@ const AdminCompras = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE VALIDACIÓN MEJORADAS
+  // FUNCIONES DE VALIDACIÓN
   // ===============================================
   const validateField = (fieldName, value) => {
     const rules = VALIDATION_RULES[fieldName];
@@ -733,12 +684,6 @@ const AdminCompras = () => {
     if (rules.required && !trimmedValue) {
       error = rules.errorMessages.required;
     }
-    else if (trimmedValue && rules.minLength && trimmedValue.length < rules.minLength) {
-      error = rules.errorMessages.minLength;
-    }
-    else if (trimmedValue && rules.maxLength && trimmedValue.length > rules.maxLength) {
-      error = rules.errorMessages.maxLength;
-    }
     else if (trimmedValue && (fieldName === 'cantidad' || fieldName === 'precioUnitario')) {
       const numericValue = fieldName === 'cantidad' ? parseInt(trimmedValue) : parseFloat(trimmedValue);
       
@@ -751,7 +696,6 @@ const AdminCompras = () => {
       } else {
         success = `${fieldName === 'cantidad' ? 'Cantidad' : 'Precio'} válido.`;
         
-        // Advertencias específicas
         if (fieldName === 'precioUnitario' && numericValue > 1000000) {
           warning = "El precio es bastante alto. Verifique que sea correcto.";
         } else if (fieldName === 'cantidad' && numericValue > 100) {
@@ -771,7 +715,6 @@ const AdminCompras = () => {
   };
 
   const validateForm = () => {
-    // Marcar todos los campos como tocados al enviar el formulario
     const allFieldsTouched = {
       idProveedor: true,
       metodoPago: true
@@ -781,7 +724,6 @@ const AdminCompras = () => {
     const proveedorValid = validateField('idProveedor', newCompra.idProveedor);
     const metodoPagoValid = validateField('metodoPago', newCompra.metodoPago);
 
-    // Validar productos
     if (productosCompra.length === 0) {
       displayAlert("Debe agregar al menos un producto a la compra.", "error");
       return false;
@@ -811,7 +753,6 @@ const AdminCompras = () => {
     return isValid;
   };
 
-  // Función para marcar campo como tocado
   const markFieldAsTouched = (fieldName) => {
     setTouchedFields(prev => ({
       ...prev,
@@ -819,136 +760,127 @@ const AdminCompras = () => {
     }));
   };
 
-  const handleAddCompra = async (e) => {
-    e.preventDefault();
-    
-    if (isSubmitting) {
-      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
-      return;
-    }
+  // ===============================================
+  // FUNCIONES PRINCIPALES
+  // ===============================================
+const handleAddCompra = async (e) => {
+  e.preventDefault();
+  
+  if (isSubmitting) {
+    displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
+    return;
+  }
 
-    if (!validateForm()) {
-      return;
-    }
+  if (!validateForm()) {
+    return;
+  }
 
-    setIsSubmitting(true);
-    setLoading(true);
-    
-    try {
-      // Calcular totales finales
-      const { subtotal, iva, total } = calcularTotales();
+  setIsSubmitting(true);
+  setLoading(true);
+  
+  try {
+    const { subtotal, iva, total } = calcularTotales();
 
-      const compraData = {
-        idProveedor: parseInt(newCompra.idProveedor),
-        metodoPago: newCompra.metodoPago,
-        estado: newCompra.estado,
-        subtotal: subtotal,
-        iva: iva,
-        total: total
-      };
+    const compraData = {
+      idCompra: isEditing ? parseInt(newCompra.idCompra) : 0,
+      idProveedor: parseInt(newCompra.idProveedor),
+      metodoPago: newCompra.metodoPago,
+      estado: newCompra.estado,
+      subtotal: subtotal,
+      iva: iva,
+      total: total,
+      fechaCompra: isEditing ? newCompra.fechaCompra : new Date().toISOString()
+    };
 
-      console.log("📤 Enviando datos de compra:", compraData);
+    console.log("📤 Enviando datos de compra:", compraData);
 
-      let compraId;
+    let compraId;
 
-      if (isEditing) {
-        // Actualizar compra existente
-        await axios.put(`${API_COMPRAS}/${newCompra.idCompra}`, compraData, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        compraId = newCompra.idCompra;
-        
-        // Eliminar detalles existentes y crear nuevos
-        try {
-          const detallesExistentes = await fetchDetalleComprasByCompraId(compraId);
-          for (const detalle of detallesExistentes) {
-            await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
-          }
-        } catch (error) {
-          console.warn("No se pudieron eliminar los detalles existentes:", error);
+    if (isEditing) {
+      // Actualizar compra existente
+      const response = await axios.put(`${API_COMPRAS}/${newCompra.idCompra}`, compraData, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
-        
-        displayAlert("Compra actualizada exitosamente.", "success");
-      } else {
-        // Crear nueva compra
-        const response = await axios.post(API_COMPRAS, compraData, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        compraId = response.data.idCompra;
-        displayAlert("Compra agregada exitosamente.", "success");
-      }
-
-      // Crear detalles de compra
-      for (const producto of productosCompra) {
-        const subtotalProducto = parseFloat(producto.subtotal);
-        const ivaProducto = subtotalProducto * IVA_RATE;
-        const totalProducto = subtotalProducto + ivaProducto;
-        
-        const detalleData = {
-          idCompra: compraId,
-          idProducto: parseInt(producto.idProducto),
-          cantidad: parseInt(producto.cantidad),
-          subtotal: subtotalProducto,
-          iva: ivaProducto,
-          total: totalProducto
-        };
-
-        console.log("📤 Enviando detalle:", detalleData);
-
-        await axios.post(API_DETALLE_COMPRAS, detalleData, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      await fetchCompras();
-      await fetchDetalleCompras();
-      closeForm();
-    } catch (error) {
-      console.error("❌ Error al guardar compra:", error);
-      handleApiError(error, isEditing ? "actualizar la compra" : "agregar la compra");
-    } finally {
-      setLoading(false);
-      setIsSubmitting(false);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (compraToDelete) {
-      setLoading(true);
+      });
+      compraId = newCompra.idCompra;
+      
+      // Eliminar detalles existentes y crear nuevos
       try {
-        // Primero eliminar los detalles de compra
-        try {
-          const detallesAsociados = await fetchDetalleComprasByCompraId(compraToDelete.idCompra);
-          for (const detalle of detallesAsociados) {
-            await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
-          }
-        } catch (error) {
-          console.warn("No se pudieron eliminar los detalles de la compra:", error);
-        }
-        
-        // Luego eliminar la compra
-        await axios.delete(`${API_COMPRAS}/${compraToDelete.idCompra}`);
-        displayAlert("Compra eliminada exitosamente.", "success");
-        
-        await fetchCompras();
-        await fetchDetalleCompras();
-        
-        if (paginatedCompras.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
+        const detallesExistentes = await fetchDetalleComprasByCompraId(compraId);
+        for (const detalle of detallesExistentes) {
+          await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
         }
       } catch (error) {
-        console.error("❌ Error al eliminar compra:", error);
-        handleApiError(error, "eliminar la compra");
-      } finally {
-        setLoading(false);
-        setCompraToDelete(null);
-        setShowDeleteConfirm(false);
+        console.warn("No se pudieron eliminar los detalles existentes:", error);
       }
+      
+      displayAlert("Compra actualizada exitosamente.", "success");
+    } else {
+      // Crear nueva compra
+      const response = await axios.post(API_COMPRAS, compraData, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      compraId = response.data.idCompra;
+      displayAlert("Compra agregada exitosamente.", "success");
     }
-  };
+
+    // Crear detalles de compra
+    for (const producto of productosCompra) {
+      const subtotalProducto = parseFloat(producto.subtotal);
+      const ivaProducto = subtotalProducto * IVA_RATE;
+      const totalProducto = subtotalProducto + ivaProducto;
+      
+      const detalleData = {
+        idCompra: compraId,
+        idProducto: parseInt(producto.idProducto),
+        cantidad: parseInt(producto.cantidad),
+        subtotal: subtotalProducto,
+        iva: ivaProducto,
+        total: totalProducto
+      };
+
+      console.log("📤 Enviando detalle:", detalleData);
+
+      await axios.post(API_DETALLE_COMPRAS, detalleData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    await fetchCompras();
+    await fetchDetalleCompras();
+    closeForm();
+  } catch (error) {
+    console.error("❌ Error al guardar compra:", error);
+    
+    // Mostrar más detalles del error
+    let errorMessage = "Error al guardar la compra";
+    
+    if (error.response) {
+      // El servidor respondió con un código de error
+      console.log("📋 Detalles del error:", error.response.data);
+      errorMessage = error.response.data || `Error ${error.response.status}: ${error.response.statusText}`;
+    } else if (error.request) {
+      // La petición fue hecha pero no se recibió respuesta
+      errorMessage = "No se recibió respuesta del servidor";
+    } else {
+      // Algo pasó al configurar la petición
+      errorMessage = error.message;
+    }
+    
+    displayAlert(errorMessage, "error");
+  } finally {
+    setLoading(false);
+    setIsSubmitting(false);
+  }
+};
 
   // ===============================================
-  // FUNCIONES AUXILIARES MEJORADAS
+  // FUNCIONES AUXILIARES
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
@@ -989,7 +921,6 @@ const AdminCompras = () => {
     }));
   };
 
-  // Nueva función para manejar el blur (cuando el campo pierde el foco)
   const handleInputBlur = (e) => {
     const { name } = e.target;
     markFieldAsTouched(name);
@@ -1050,25 +981,34 @@ const AdminCompras = () => {
   };
 
   const handleEdit = async (compra) => {
-    setNewCompra({
-      ...compra,
-      idProveedor: compra.idProveedor.toString()
-    });
-    
-    const detalles = await fetchDetalleComprasByCompraId(compra.idCompra);
-    setProductosCompra(detalles.map(detalle => ({
-      idProducto: detalle.idProducto.toString(),
-      cantidad: detalle.cantidad.toString(),
-      precioUnitario: (detalle.subtotal / detalle.cantidad).toFixed(2),
-      subtotal: detalle.subtotal
-    })));
-    
-    setIsEditing(true);
-    setShowForm(true);
-    setFormErrors({});
-    setFormSuccess({});
-    setFormWarnings({});
-    setTouchedFields({});
+    setLoading(true);
+    try {
+      const detalles = await fetchDetalleComprasByCompraId(compra.idCompra);
+      
+      setNewCompra({
+        ...compra,
+        idProveedor: compra.idProveedor.toString()
+      });
+      
+      setProductosCompra(detalles.map(detalle => ({
+        idProducto: detalle.idProducto.toString(),
+        cantidad: detalle.cantidad.toString(),
+        precioUnitario: (detalle.subtotal / detalle.cantidad).toFixed(2),
+        subtotal: detalle.subtotal
+      })));
+      
+      setIsEditing(true);
+      setShowForm(true);
+      setFormErrors({});
+      setFormSuccess({});
+      setFormWarnings({});
+      setTouchedFields({});
+    } catch (error) {
+      console.error("Error al cargar datos para editar:", error);
+      displayAlert("Error al cargar los datos de la compra", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteClick = (compra) => {
@@ -1095,7 +1035,7 @@ const AdminCompras = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE GESTIÓN DE PRODUCTOS EN COMPRA
+  // FUNCIONES DE GESTIÓN DE PRODUCTOS
   // ===============================================
   const addProducto = () => {
     if (productos.length === 0) {
@@ -1150,7 +1090,7 @@ const AdminCompras = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN TIPO CABAÑA
+  // FUNCIONES DE FILTRADO
   // ===============================================
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -1246,7 +1186,7 @@ const AdminCompras = () => {
   ];
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
   const filteredCompras = useMemo(() => {
     return compras.filter(compra => {
@@ -1387,7 +1327,7 @@ const AdminCompras = () => {
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
       
-      {/* Alerta Mejorada */}
+      {/* Alerta */}
       {showAlert && (
         <div style={getAlertStyle(alertType)}>
           {getAlertIcon(alertType)}
@@ -1589,7 +1529,7 @@ const AdminCompras = () => {
         </div>
       )}
 
-      {/* Barra de búsqueda y filtros - MEJORADO COMO EN TIPO CABAÑA */}
+      {/* Barra de búsqueda y filtros */}
       <div style={{ 
         marginBottom: '20px',
         backgroundColor: '#fff',
@@ -1597,7 +1537,6 @@ const AdminCompras = () => {
         padding: '20px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
         <div style={{ 
           display: 'flex', 
           gap: '15px', 
@@ -1627,7 +1566,6 @@ const AdminCompras = () => {
             />
           </div>
 
-          {/* Botón para mostrar/ocultar filtros avanzados - AL LADO DE LA BÚSQUEDA */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             style={{
@@ -1649,7 +1587,6 @@ const AdminCompras = () => {
             Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
           </button>
 
-          {/* Mostrar filtros activos */}
           {activeFiltersCount > 0 && (
             <button
               onClick={clearFilters}
@@ -1669,7 +1606,6 @@ const AdminCompras = () => {
           )}
         </div>
 
-        {/* Filtros avanzados */}
         {showFilters && (
           <div style={{
             padding: '15px',
@@ -1686,7 +1622,6 @@ const AdminCompras = () => {
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '15px'
             }}>
-              {/* Filtro por estado */}
               <div>
                 <label style={labelStyle}>Estado</label>
                 <select
@@ -1704,7 +1639,6 @@ const AdminCompras = () => {
                 </select>
               </div>
 
-              {/* Filtro por método de pago */}
               <div>
                 <label style={labelStyle}>Método de Pago</label>
                 <select
@@ -1724,7 +1658,6 @@ const AdminCompras = () => {
                 </select>
               </div>
 
-              {/* Filtro por proveedor */}
               <div>
                 <label style={labelStyle}>Proveedor</label>
                 <select
@@ -1745,7 +1678,6 @@ const AdminCompras = () => {
                 </select>
               </div>
 
-              {/* Filtro por fecha de creación */}
               <div>
                 <label style={labelStyle}>Fecha Desde</label>
                 <input
@@ -1771,7 +1703,6 @@ const AdminCompras = () => {
           </div>
         )}
 
-        {/* Información de resultados filtrados */}
         {filteredCompras.length !== compras.length && (
           <div style={{
             marginTop: '10px',
@@ -1835,7 +1766,6 @@ const AdminCompras = () => {
                     label: `${proveedor.nombre} - ${proveedor.celular}`
                   }))}
                   placeholder="Seleccionar proveedor"
-                  touched={touchedFields.idProveedor}
                   icon={<FaUser />}
                 />
 
@@ -1851,7 +1781,6 @@ const AdminCompras = () => {
                   warning={formWarnings.metodoPago}
                   required={true}
                   options={metodoPagoOptions}
-                  touched={touchedFields.metodoPago}
                   icon={<FaDollarSign />}
                 />
               </div>
@@ -2082,20 +2011,20 @@ const AdminCompras = () => {
             </div>
             
             <div>
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Proveedor</div>
-                <div style={detailValueStyle}>{getProveedorNombre(selectedCompra.idProveedor)}</div>
+              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid rgba(46, 89, 57, 0.1)" }}>
+                <div style={{ fontWeight: "bold", color: "#2E5939", marginBottom: 5, fontSize: "14px" }}>Proveedor</div>
+                <div style={{ fontSize: 16, color: "#2E5939", fontWeight: "500" }}>{getProveedorNombre(selectedCompra.idProveedor)}</div>
               </div>
               
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Método de Pago</div>
-                <div style={detailValueStyle}>{selectedCompra.metodoPago}</div>
+              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid rgba(46, 89, 57, 0.1)" }}>
+                <div style={{ fontWeight: "bold", color: "#2E5939", marginBottom: 5, fontSize: "14px" }}>Método de Pago</div>
+                <div style={{ fontSize: 16, color: "#2E5939", fontWeight: "500" }}>{selectedCompra.metodoPago}</div>
               </div>
 
               {/* Productos de la compra */}
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Productos ({selectedDetalleCompras.length})</div>
-                <div style={detailValueStyle}>
+              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid rgba(46, 89, 57, 0.1)" }}>
+                <div style={{ fontWeight: "bold", color: "#2E5939", marginBottom: 5, fontSize: "14px" }}>Productos ({selectedDetalleCompras.length})</div>
+                <div style={{ fontSize: 16, color: "#2E5939", fontWeight: "500" }}>
                   {selectedDetalleCompras.length > 0 ? (
                     <div style={{ marginTop: '10px' }}>
                       {selectedDetalleCompras.map((detalle, index) => (
@@ -2132,27 +2061,25 @@ const AdminCompras = () => {
                 </div>
               </div>
 
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Subtotal</div>
-                <div style={detailValueStyle}>${selectedCompra.subtotal.toLocaleString('es-CO')}</div>
+              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid rgba(46, 89, 57, 0.1)" }}>
+                <div style={{ fontWeight: "bold", color: "#2E5939", marginBottom: 5, fontSize: "14px" }}>Subtotal</div>
+                <div style={{ fontSize: 16, color: "#2E5939", fontWeight: "500" }}>${selectedCompra.subtotal.toLocaleString('es-CO')}</div>
               </div>
 
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>IVA (19%)</div>
-                <div style={detailValueStyle}>${selectedCompra.iva.toLocaleString('es-CO')}</div>
+              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid rgba(46, 89, 57, 0.1)" }}>
+                <div style={{ fontWeight: "bold", color: "#2E5939", marginBottom: 5, fontSize: "14px" }}>IVA (19%)</div>
+                <div style={{ fontSize: 16, color: "#2E5939", fontWeight: "500" }}>${selectedCompra.iva.toLocaleString('es-CO')}</div>
               </div>
 
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Total</div>
-                <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750', fontSize: '1.2em'}}>
-                  ${selectedCompra.total.toLocaleString('es-CO')}
-                </div>
+              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid rgba(46, 89, 57, 0.1)" }}>
+                <div style={{ fontWeight: "bold", color: "#2E5939", marginBottom: 5, fontSize: "14px" }}>Total</div>
+                <div style={{ fontSize: 18, color: "#679750", fontWeight: "bold" }}>${selectedCompra.total.toLocaleString('es-CO')}</div>
               </div>
 
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Estado</div>
+              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid rgba(46, 89, 57, 0.1)" }}>
+                <div style={{ fontWeight: "bold", color: "#2E5939", marginBottom: 5, fontSize: "14px" }}>Estado</div>
                 <div style={{
-                  ...detailValueStyle,
+                  fontSize: 16,
                   color: selectedCompra.estado ? '#4caf50' : '#e57373',
                   fontWeight: 'bold'
                 }}>
@@ -2327,7 +2254,6 @@ const AdminCompras = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         overflow: 'hidden'
       }}>
-        {/* Loading */}
         {loading && (
           <div style={{ 
             textAlign: "center", 
@@ -2340,7 +2266,6 @@ const AdminCompras = () => {
           </div>
         )}
 
-        {/* Tabla */}
         {!loading && (
           <table style={{
             width: "100%",
@@ -2508,7 +2433,15 @@ const AdminCompras = () => {
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
-            style={navBtnStyle(currentPage === 1)}
+            style={{
+              cursor: currentPage === 1 ? "not-allowed" : "pointer",
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              backgroundColor: currentPage === 1 ? "#e0e0e0" : "#F7F4EA",
+              color: "#2E5939",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            }}
           >
             Anterior
           </button>
@@ -2529,7 +2462,16 @@ const AdminCompras = () => {
                   <button
                     key={i}
                     onClick={() => goToPage(i)}
-                    style={pageBtnStyle(currentPage === i)}
+                    style={{
+                      cursor: "pointer",
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #2E5939",
+                      backgroundColor: currentPage === i ? "#2E5939" : "#F7F4EA",
+                      color: currentPage === i ? "white" : "#2E5939",
+                      fontWeight: "600",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    }}
                   >
                     {i}
                   </button>
@@ -2542,7 +2484,15 @@ const AdminCompras = () => {
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
-            style={navBtnStyle(currentPage === totalPages)}
+            style={{
+              cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              backgroundColor: currentPage === totalPages ? "#e0e0e0" : "#F7F4EA",
+              color: "#2E5939",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            }}
           >
             Siguiente
           </button>

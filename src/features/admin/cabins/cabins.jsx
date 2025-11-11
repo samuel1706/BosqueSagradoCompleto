@@ -654,6 +654,7 @@ const Cabins = () => {
   });
 
   const [imagenesSeleccionadas, setImagenesSeleccionadas] = useState([]);
+  const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
 
   // ===============================================
   // EFECTOS
@@ -937,116 +938,137 @@ const Cabins = () => {
   };
 
   // ===============================================
-  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // FUNCIONES PARA MANEJO DE IMÁGENES - CORREGIDAS
   // ===============================================
-  const { uploadImage, uploadMultipleImages, uploading: cloudinaryUploading } = useCloudinary();
+  const { uploadImage, uploadMultipleImages, uploading: cloudinaryUploading, deleteImage: deleteCloudinaryImage } = useCloudinary();
 
-// Reemplaza la función handleImageUpload existente con esta:
-const handleImageUpload = async (e) => {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-  // Validar tipos de archivo
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  const invalidFiles = files.filter(file => !validTypes.includes(file.type));
-  
-  if (invalidFiles.length > 0) {
-    displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
-    return;
-  }
-
-  // Validar tamaño (máximo 5MB por imagen)
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  const oversizedFiles = files.filter(file => file.size > maxSize);
-  
-  if (oversizedFiles.length > 0) {
-    displayAlert("Algunas imágenes son demasiado grandes. El tamaño máximo por imagen es 5MB.", "error");
-    return;
-  }
-
-  setUploadingImages(true);
-
-  try {
-    // Subir imágenes a Cloudinary
-    const uploadResults = await uploadMultipleImages(files);
+    // Validar tipos de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
     
-    const successfulUploads = uploadResults.filter(result => result.success);
-    
-    if (successfulUploads.length === 0) {
-      displayAlert("Error al subir las imágenes. Inténtalo de nuevo.", "error");
+    if (invalidFiles.length > 0) {
+      displayAlert("Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP)", "error");
       return;
     }
 
-    // Crear objetos de imagen para previsualización
-    const newImages = successfulUploads.map(result => ({
-      url: result.url,
-      publicId: result.publicId,
-      descripcion: `Imagen de ${newCabin.nombre || 'cabaña'}`,
-      isNew: true,
-      isCloudinary: true // Marcar que viene de Cloudinary
-    }));
-
-    setImagenesSeleccionadas(prev => [...prev, ...newImages]);
-    displayAlert(`${successfulUploads.length} imagen(es) subida(s) exitosamente`, "success");
+    // Validar tamaño (máximo 5MB por imagen)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const oversizedFiles = files.filter(file => file.size > maxSize);
     
-  } catch (error) {
-    console.error("Error en la subida de imágenes:", error);
-    displayAlert("Error al subir las imágenes", "error");
-  } finally {
-    setUploadingImages(false);
-    e.target.value = ''; // Reset input
-  }
-};
+    if (oversizedFiles.length > 0) {
+      displayAlert("Algunas imágenes son demasiado grandes. El tamaño máximo por imagen es 5MB.", "error");
+      return;
+    }
+
+    setUploadingImages(true);
+
+    try {
+      // Subir imágenes a Cloudinary
+      const uploadResults = await uploadMultipleImages(files);
+      
+      const successfulUploads = uploadResults.filter(result => result.success);
+      
+      if (successfulUploads.length === 0) {
+        displayAlert("Error al subir las imágenes. Inténtalo de nuevo.", "error");
+        return;
+      }
+
+      // Crear objetos de imagen para previsualización
+      const newImages = successfulUploads.map(result => ({
+        url: result.url,
+        publicId: result.publicId,
+        descripcion: `Imagen de ${newCabin.nombre || 'cabaña'}`,
+        isNew: true,
+        isCloudinary: true
+      }));
+
+      setImagenesSeleccionadas(prev => [...prev, ...newImages]);
+      displayAlert(`${successfulUploads.length} imagen(es) subida(s) exitosamente`, "success");
+      
+    } catch (error) {
+      console.error("Error en la subida de imágenes:", error);
+      displayAlert("Error al subir las imágenes", "error");
+    } finally {
+      setUploadingImages(false);
+      e.target.value = ''; // Reset input
+    }
+  };
 
   const removeImage = (index) => {
-  setImagenesSeleccionadas(prev => {
-    const newImages = [...prev];
-    // Si la imagen es nueva y de Cloudinary, podrías eliminarla de Cloudinary también
-    // Pero por simplicidad, solo la removemos del estado local
-    newImages.splice(index, 1);
-    return newImages;
-  });
-};
+    setImagenesSeleccionadas(prev => {
+      const imageToRemove = prev[index];
+      const newImages = [...prev];
+      
+      // Si la imagen es existente (no nueva), agregarla a la lista de imágenes a eliminar
+      if (!imageToRemove.isNew && imageToRemove.idImagen) {
+        setImagenesAEliminar(prev => [...prev, imageToRemove]);
+      }
+      
+      // Si la imagen es nueva y de Cloudinary, eliminarla de Cloudinary
+      if (imageToRemove.isNew && imageToRemove.isCloudinary && imageToRemove.publicId) {
+        deleteCloudinaryImage(imageToRemove.publicId).catch(error => {
+          console.error("Error al eliminar imagen de Cloudinary:", error);
+        });
+      }
+      
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
 
-const uploadImagesToServer = async (cabanaId) => {
-  if (imagenesSeleccionadas.length === 0) return;
+  const uploadImagesToServer = async (cabanaId) => {
+    if (imagenesSeleccionadas.length === 0) return;
 
-  setUploadingImages(true);
-  
-  try {
-    // Filtrar solo las imágenes nuevas que necesitan ser guardadas en tu base de datos
-    const nuevasImagenes = imagenesSeleccionadas.filter(img => img.isNew);
-
-    for (const imagen of nuevasImagenes) {
-      const imagenData = {
-        idCabana: cabanaId,
-        rutaImagen: imagen.url, // Ahora usamos la URL de Cloudinary
-        descripcion: imagen.descripcion
-      };
-
-      await axios.post(API_IMAGENES, imagenData, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 15000
-      });
-    }
+    setUploadingImages(true);
     
-    displayAlert("Imágenes guardadas exitosamente", "success");
-  } catch (error) {
-    console.error("Error al guardar imágenes en la base de datos:", error);
-    throw error;
-  } finally {
-    setUploadingImages(false);
-  }
-};
-
-  const deleteImage = async (imageId) => {
     try {
-      await axios.delete(`${API_IMAGENES}/${imageId}`);
-      await fetchImagenes();
-      displayAlert("Imagen eliminada exitosamente", "success");
+      // Filtrar solo las imágenes nuevas que necesitan ser guardadas en tu base de datos
+      const nuevasImagenes = imagenesSeleccionadas.filter(img => img.isNew);
+
+      for (const imagen of nuevasImagenes) {
+        const imagenData = {
+          idCabana: cabanaId,
+          rutaImagen: imagen.url, // Ahora usamos la URL de Cloudinary
+          descripcion: imagen.descripcion
+        };
+
+        await axios.post(API_IMAGENES, imagenData, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 15000
+        });
+      }
+      
+      displayAlert("Imágenes guardadas exitosamente", "success");
     } catch (error) {
-      console.error("Error al eliminar imagen:", error);
-      handleApiError(error, "eliminar la imagen");
+      console.error("Error al guardar imágenes en la base de datos:", error);
+      throw error;
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const deleteImagesFromServer = async () => {
+    if (imagenesAEliminar.length === 0) return;
+
+    try {
+      for (const imagen of imagenesAEliminar) {
+        // Eliminar de la base de datos
+        await axios.delete(`${API_IMAGENES}/${imagen.idImagen}`);
+        
+        // Si la imagen está en Cloudinary, eliminarla de allí también
+        if (imagen.isCloudinary && imagen.publicId) {
+          await deleteCloudinaryImage(imagen.publicId);
+        }
+      }
+      
+      console.log(`${imagenesAEliminar.length} imagen(es) eliminada(s) correctamente`);
+    } catch (error) {
+      console.error("Error al eliminar imágenes:", error);
+      throw error;
     }
   };
 
@@ -1234,6 +1256,12 @@ const uploadImagesToServer = async (cabanaId) => {
           headers: { 'Content-Type': 'application/json' }
         });
         cabanaId = newCabin.idCabana;
+        
+        // Eliminar imágenes marcadas para eliminación
+        if (imagenesAEliminar.length > 0) {
+          await deleteImagesFromServer();
+        }
+        
         displayAlert("Cabaña actualizada exitosamente.", "success");
       } else {
         const response = await axios.post(API_CABANAS, cabinData, {
@@ -1254,6 +1282,12 @@ const uploadImagesToServer = async (cabanaId) => {
       await fetchCabins();
       await fetchCabanaComodidades();
       await fetchImagenes();
+      
+      // Limpiar lista de imágenes a eliminar después de una edición exitosa
+      if (isEditing) {
+        setImagenesAEliminar([]);
+      }
+      
       closeForm();
     } catch (error) {
       console.error("Error al guardar cabaña:", error);
@@ -1303,6 +1337,11 @@ const uploadImagesToServer = async (cabanaId) => {
         // Primero eliminar las imágenes asociadas
         const imagenesCabin = imagenes.filter(img => img.idCabana === cabinToDelete.idCabana);
         for (const imagen of imagenesCabin) {
+          // Eliminar de Cloudinary si es necesario
+          if (imagen.isCloudinary && imagen.publicId) {
+            await deleteCloudinaryImage(imagen.publicId);
+          }
+          // Eliminar de la base de datos
           await axios.delete(`${API_IMAGENES}/${imagen.idImagen}`);
         }
 
@@ -1411,6 +1450,7 @@ const uploadImagesToServer = async (cabanaId) => {
     setFormWarnings({});
     setTouchedFields({});
     setImagenesSeleccionadas([]);
+    setImagenesAEliminar([]);
     setNewCabin({
       nombre: "",
       idTipoCabana: "",
@@ -1479,8 +1519,10 @@ const uploadImagesToServer = async (cabanaId) => {
     // Cargar imágenes existentes de la cabaña
     const imagenesExistentes = getImagenesPorCabana(cabin.idCabana).map(img => ({
       ...img,
+      url: img.rutaImagen,
       preview: img.rutaImagen,
-      isNew: false
+      isNew: false,
+      idImagen: img.idImagen
     }));
 
     // Asegurar que todos los campos se carguen correctamente
@@ -1498,6 +1540,7 @@ const uploadImagesToServer = async (cabanaId) => {
     });
     
     setImagenesSeleccionadas(imagenesExistentes);
+    setImagenesAEliminar([]); // Limpiar imágenes a eliminar al iniciar edición
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
@@ -1708,6 +1751,7 @@ const uploadImagesToServer = async (cabanaId) => {
             setFormWarnings({});
             setTouchedFields({});
             setImagenesSeleccionadas([]);
+            setImagenesAEliminar([]);
             setNewCabin({
               nombre: "",
               idTipoCabana: "",
@@ -2333,7 +2377,7 @@ const uploadImagesToServer = async (cabanaId) => {
                 </div>
               </div>
 
-              {/* Gestión de Imágenes */}
+              {/* Gestión de Imágenes - MEJORADA */}
               <div style={{ marginBottom: '20px' }}>
                 <label style={labelStyle}>
                   Imágenes de la Cabaña
@@ -2400,10 +2444,27 @@ const uploadImagesToServer = async (cabanaId) => {
                     }}>
                       <span style={{ fontWeight: '600', color: '#2E5939' }}>
                         Imágenes seleccionadas ({imagenesSeleccionadas.length})
+                        {imagenesAEliminar.length > 0 && (
+                          <span style={{ 
+                            color: '#e57373', 
+                            fontSize: '0.8rem', 
+                            marginLeft: '10px',
+                            fontWeight: 'normal'
+                          }}>
+                            ({imagenesAEliminar.length} marcadas para eliminar)
+                          </span>
+                        )}
                       </span>
                       <button
                         type="button"
-                        onClick={() => setImagenesSeleccionadas([])}
+                        onClick={() => {
+                          // Si estamos editando, marcar todas las imágenes existentes para eliminación
+                          if (isEditing) {
+                            const imagenesExistentes = imagenesSeleccionadas.filter(img => !img.isNew);
+                            setImagenesAEliminar(prev => [...prev, ...imagenesExistentes]);
+                          }
+                          setImagenesSeleccionadas([]);
+                        }}
                         style={{
                           background: '#e57373',
                           color: 'white',
@@ -2421,7 +2482,7 @@ const uploadImagesToServer = async (cabanaId) => {
                       {imagenesSeleccionadas.map((imagen, index) => (
                         <div key={index} style={imagePreviewStyle}>
                           <img 
-                            src={imagen.preview} 
+                            src={imagen.url || imagen.preview} 
                             alt={`Preview ${index + 1}`}
                             style={imageStyle}
                           />
@@ -2433,6 +2494,20 @@ const uploadImagesToServer = async (cabanaId) => {
                           >
                             <FaTimes size={10} />
                           </button>
+                          {!imagen.isNew && (
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '5px',
+                              left: '5px',
+                              background: 'rgba(46, 89, 57, 0.8)',
+                              color: 'white',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '10px'
+                            }}>
+                              Existente
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

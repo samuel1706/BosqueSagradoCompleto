@@ -1,6 +1,8 @@
+// src/components/Gestiservi.jsx
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaDollarSign, FaSlidersH, FaBox, FaBuilding, FaGift, FaClipboardList } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaClock, FaTag, FaImage, FaUpload, FaCamera, FaBox, FaBuilding, FaGift, FaClipboardList, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
+import { useCloudinary } from '../../../hooks/useCloudinary';
 
 // ===============================================
 // ESTILOS MEJORADOS (CONSISTENTES)
@@ -273,7 +275,6 @@ const galleryImageStyle = {
 const VALIDATION_PATTERNS = {
   nombreServicio: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&]+$/,
   descripcion: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_.,!?@#$%&*()+=:;"'{}[\]<>/\\|~`^]+$/,
-  imagen: /^[a-zA-Z0-9\-_\.\/:]+$/ // Patrón básico para URLs de imágenes
 };
 
 const VALIDATION_RULES = {
@@ -309,15 +310,6 @@ const VALIDATION_RULES = {
       min: "El precio mínimo es $1,000 COP.",
       max: "El precio máximo es $10,000,000 COP.",
       invalid: "El precio debe ser un valor numérico válido."
-    }
-  },
-  imagen: {
-    maxLength: 500,
-    required: false,
-    pattern: VALIDATION_PATTERNS.imagen,
-    errorMessages: {
-      maxLength: "La URL de la imagen no puede exceder los 500 caracteres.",
-      pattern: "La URL de la imagen contiene caracteres no válidos."
     }
   },
   estado: {
@@ -378,7 +370,9 @@ const FormField = ({
   max,
   step,
   touched = false,
-  icon
+  icon,
+  textarea = false,
+  rows = 4
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
@@ -408,12 +402,6 @@ const FormField = ({
       }
       if (parts.length === 2 && parts[1].length > 2) {
         filteredValue = parts[0] + '.' + parts[1].substring(0, 2);
-      }
-    } else if (name === 'imagen') {
-      if (value === "" || VALIDATION_PATTERNS.imagen.test(value)) {
-        filteredValue = value;
-      } else {
-        return;
       }
     } else {
       filteredValue = value;
@@ -473,7 +461,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}></span>}
+        {required && <span style={{ color: "red" }}>*</span>}
       </label>
       {type === "select" ? (
         <select
@@ -495,7 +483,7 @@ const FormField = ({
             </option>
           ))}
         </select>
-      ) : type === "textarea" ? (
+      ) : textarea ? (
         <div>
           <textarea
             name={name}
@@ -504,14 +492,16 @@ const FormField = ({
             onBlur={onBlur}
             style={{
               ...getInputStyle(),
-              minHeight: "80px",
-              resize: "vertical",
-              fontFamily: "inherit"
+              minHeight: `${rows * 20}px`,
+              resize: 'vertical',
+              fontFamily: 'inherit',
+              paddingLeft: '12px'
             }}
             required={required}
             disabled={disabled}
             maxLength={maxLength}
             placeholder={placeholder}
+            rows={rows}
           />
           {showCharCount && maxLength && (
             <div style={{
@@ -573,7 +563,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Gestiservi MEJORADO
+// COMPONENTE PRINCIPAL Gestiservi MEJORADO CON CLOUDINARY
 // ===============================================
 const Gestiservi = () => {
   const [servicios, setServicios] = useState([]);
@@ -603,10 +593,9 @@ const Gestiservi = () => {
   const [formWarnings, setFormWarnings] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
-  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Estados para filtros - MEJORADO COMO EN PAQUETES
+  // Estados para filtros
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     estado: "all",
@@ -614,6 +603,18 @@ const Gestiservi = () => {
     precioMax: "",
     relacionesMin: "",
     relacionesMax: ""
+  });
+
+  // Hook de Cloudinary
+  const { uploadImage, uploading: cloudinaryUploading, deleteImage: deleteCloudinaryImage } = useCloudinary();
+
+  // Estado para manejar la imagen del servicio
+  const [imagenServicio, setImagenServicio] = useState({
+    file: null,
+    preview: null,
+    isNew: false,
+    publicId: null,
+    isCloudinary: false
   });
 
   // Estado inicial basado en la estructura de tu API
@@ -772,7 +773,7 @@ const Gestiservi = () => {
       success = value ? "Servicio activo" : "Servicio inactivo";
     }
     else if (trimmedValue) {
-      success = `${fieldName === 'nombreServicio' ? 'Nombre' : fieldName === 'descripcion' ? 'Descripción' : fieldName === 'imagen' ? 'Imagen' : 'Campo'} válido.`;
+      success = `${fieldName === 'nombreServicio' ? 'Nombre' : fieldName === 'descripcion' ? 'Descripción' : 'Campo'} válido.`;
       
       if (fieldName === 'nombreServicio' && trimmedValue.length > 50) {
         warning = "El nombre es bastante largo. Considere un nombre más corto si es posible.";
@@ -780,8 +781,6 @@ const Gestiservi = () => {
         warning = "La descripción es muy larga. Considere ser más conciso.";
       } else if (fieldName === 'descripcion' && trimmedValue.length < 20 && trimmedValue.length > 0) {
         warning = "La descripción es muy breve. Sea más descriptivo.";
-      } else if (fieldName === 'imagen' && !trimmedValue.startsWith('http')) {
-        warning = "La URL de la imagen debería comenzar con http:// o https://";
       }
     }
 
@@ -809,8 +808,7 @@ const Gestiservi = () => {
       nombreServicio: true,
       precioServicio: true,
       estado: true,
-      descripcion: true,
-      imagen: true
+      descripcion: true
     };
     setTouchedFields(allFieldsTouched);
 
@@ -818,11 +816,10 @@ const Gestiservi = () => {
     const precioValid = validateField('precioServicio', newServicio.precioServicio);
     const estadoValid = validateField('estado', newServicio.estado);
 
-    // La descripción e imagen son opcionales según la API
+    // La descripción es opcional según la API
     const descripcionValid = !newServicio.descripcion || validateField('descripcion', newServicio.descripcion);
-    const imagenValid = !newServicio.imagen || validateField('imagen', newServicio.imagen);
 
-    const isValid = nombreValid && precioValid && estadoValid && descripcionValid && imagenValid;
+    const isValid = nombreValid && precioValid && estadoValid && descripcionValid;
     
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
@@ -846,9 +843,9 @@ const Gestiservi = () => {
   };
 
   // ===============================================
-  // FUNCIONES PARA MANEJO DE IMÁGENES
+  // FUNCIONES PARA MANEJO DE IMÁGENES CON CLOUDINARY
   // ===============================================
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -866,28 +863,61 @@ const Gestiservi = () => {
       return;
     }
 
-    // Crear URL para previsualización
-    const imageUrl = URL.createObjectURL(file);
-    setImagenSeleccionada({
-      file,
-      preview: imageUrl,
-      isNew: true
-    });
+    setUploadingImage(true);
 
-    // También actualizar el campo de imagen en el formulario
-    setNewServicio(prev => ({
-      ...prev,
-      imagen: imageUrl // URL temporal para previsualización
-    }));
+    try {
+      // Subir imagen a Cloudinary
+      const uploadResult = await uploadImage(file);
+      
+      if (uploadResult.success) {
+        // Crear objeto de imagen para previsualización
+        const nuevaImagen = {
+          file,
+          preview: uploadResult.url,
+          isNew: true,
+          publicId: uploadResult.publicId,
+          isCloudinary: true
+        };
 
-    e.target.value = ''; // Reset input
+        setImagenServicio(nuevaImagen);
+        
+        // Actualizar el campo de imagen en el formulario con la URL de Cloudinary
+        setNewServicio(prev => ({
+          ...prev,
+          imagen: uploadResult.url
+        }));
+
+        displayAlert("Imagen subida exitosamente", "success");
+      } else {
+        displayAlert("Error al subir la imagen. Inténtalo de nuevo.", "error");
+      }
+    } catch (error) {
+      console.error("Error en la subida de imagen:", error);
+      displayAlert("Error al subir la imagen", "error");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = ''; // Reset input
+    }
   };
 
-  const removeImage = () => {
-    if (imagenSeleccionada && imagenSeleccionada.isNew) {
-      URL.revokeObjectURL(imagenSeleccionada.preview);
+  const removeImage = async () => {
+    // Si la imagen es nueva y de Cloudinary, eliminarla de Cloudinary
+    if (imagenServicio.isNew && imagenServicio.isCloudinary && imagenServicio.publicId) {
+      try {
+        await deleteCloudinaryImage(imagenServicio.publicId);
+      } catch (error) {
+        console.error("Error al eliminar imagen de Cloudinary:", error);
+      }
     }
-    setImagenSeleccionada(null);
+
+    setImagenServicio({
+      file: null,
+      preview: null,
+      isNew: false,
+      publicId: null,
+      isCloudinary: false
+    });
+
     setNewServicio(prev => ({
       ...prev,
       imagen: ""
@@ -895,7 +925,7 @@ const Gestiservi = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO MEJORADAS - IGUAL QUE EN PAQUETES
+  // FUNCIONES DE FILTRADO MEJORADAS
   // ===============================================
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -1155,6 +1185,21 @@ const Gestiservi = () => {
           return;
         }
 
+        // Si el servicio tiene imagen en Cloudinary, eliminarla
+        if (servicioToDelete.imagen && servicioToDelete.imagen.includes('cloudinary')) {
+          try {
+            // Extraer public_id de la URL de Cloudinary (esto es un ejemplo, ajusta según tu estructura)
+            const urlParts = servicioToDelete.imagen.split('/');
+            const publicIdWithExtension = urlParts[urlParts.length - 1];
+            const publicId = publicIdWithExtension.split('.')[0];
+            
+            await deleteCloudinaryImage(publicId);
+          } catch (cloudinaryError) {
+            console.error("Error al eliminar imagen de Cloudinary:", cloudinaryError);
+            // Continuar con la eliminación del servicio aunque falle la eliminación de la imagen
+          }
+        }
+
         await axios.delete(`${API_SERVICIOS}/${servicioToDelete.idServicio}`);
         displayAlert("Servicio eliminado exitosamente.", "success");
         await fetchAllData();
@@ -1362,7 +1407,13 @@ const Gestiservi = () => {
     setFormSuccess({});
     setFormWarnings({});
     setTouchedFields({});
-    setImagenSeleccionada(null);
+    setImagenServicio({
+      file: null,
+      preview: null,
+      isNew: false,
+      publicId: null,
+      isCloudinary: false
+    });
     setNewServicio({
       idServicio: 0,
       nombreServicio: "",
@@ -1389,19 +1440,23 @@ const Gestiservi = () => {
   };
 
   const handleEdit = (servicio) => {
+    console.log("Editando servicio:", servicio);
+    
     setNewServicio({
       ...servicio,
       precioServicio: servicio.precioServicio.toString(),
       imagen: servicio.imagen || "", // Manejar null
       descripcion: servicio.descripcion || "", // Manejar null
-      estado: servicio.estado ? "true" : "false"
+      estado: servicio.estado
     });
 
     // Cargar imagen existente si hay una
     if (servicio.imagen) {
-      setImagenSeleccionada({
+      setImagenServicio({
         preview: servicio.imagen,
-        isNew: false
+        isNew: false,
+        isCloudinary: servicio.imagen.includes('cloudinary'),
+        publicId: null // No tenemos el publicId para imágenes existentes
       });
     }
 
@@ -1915,7 +1970,13 @@ const Gestiservi = () => {
             setFormSuccess({});
             setFormWarnings({});
             setTouchedFields({});
-            setImagenSeleccionada(null);
+            setImagenServicio({
+              file: null,
+              preview: null,
+              isNew: false,
+              publicId: null,
+              isCloudinary: false
+            });
             setNewServicio({
               idServicio: 0,
               nombreServicio: "",
@@ -2034,7 +2095,7 @@ const Gestiservi = () => {
         </div>
       )}
 
-      {/* Barra de búsqueda y filtros - MEJORADO COMO EN PAQUETES */}
+      {/* Barra de búsqueda y filtros */}
       <div style={{ 
         marginBottom: '20px',
         backgroundColor: '#fff',
@@ -2226,7 +2287,7 @@ const Gestiservi = () => {
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{...modalContentStyle, maxWidth: 700}}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
                 {isEditing ? "Editar Servicio" : "Agregar Nuevo Servicio"}
@@ -2295,13 +2356,34 @@ const Gestiservi = () => {
                   />
                 </div>
 
+                <div>
+                  <FormField
+                    label="Estado del Servicio"
+                    name="estado"
+                    type="select"
+                    value={newServicio.estado}
+                    onChange={handleChange}
+                    onBlur={handleInputBlur}
+                    error={formErrors.estado}
+                    success={formSuccess.estado}
+                    warning={formWarnings.estado}
+                    options={[
+                      { value: true, label: "Activo" },
+                      { value: false, label: "Inactivo" }
+                    ]}
+                    required={true}
+                    disabled={loading}
+                    touched={touchedFields.estado}
+                  />
+                </div>
+
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <FaImage />
                       Imagen del Servicio
                       <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
-                        (Opcional)
+                        (Opcional - Se subirá a Cloudinary)
                       </span>
                     </div>
                   </label>
@@ -2343,7 +2425,7 @@ const Gestiservi = () => {
                       <FaUpload size={30} color="#679750" />
                       <div>
                         <div style={{ fontWeight: 'bold', color: '#2E5939', marginBottom: '5px' }}>
-                          Haz clic o arrastra una imagen aquí
+                          {uploadingImage ? "Subiendo imagen..." : "Haz clic o arrastra una imagen aquí"}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#679750' }}>
                           Formatos: JPEG, PNG, GIF, WebP (Máx. 5MB)
@@ -2352,26 +2434,8 @@ const Gestiservi = () => {
                     </label>
                   </div>
 
-                  {/* Campo para URL de imagen */}
-                  <FormField
-                    label="URL de la Imagen"
-                    name="imagen"
-                    value={newServicio.imagen}
-                    onChange={handleChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.imagen}
-                    success={formSuccess.imagen}
-                    warning={formWarnings.imagen}
-                    required={false}
-                    disabled={loading}
-                    maxLength={VALIDATION_RULES.imagen.maxLength}
-                    showCharCount={true}
-                    placeholder="https://ejemplo.com/imagen-servicio.jpg"
-                    touched={touchedFields.imagen}
-                  />
-
                   {/* Previsualización de imagen */}
-                  {(imagenSeleccionada || newServicio.imagen) && (
+                  {(imagenServicio.preview || newServicio.imagen) && (
                     <div>
                       <div style={{ 
                         display: 'flex', 
@@ -2380,7 +2444,7 @@ const Gestiservi = () => {
                         marginBottom: '10px'
                       }}>
                         <span style={{ fontWeight: '600', color: '#2E5939' }}>
-                          Vista previa
+                          Vista previa {imagenServicio.isNew && "(Nueva imagen)"}
                         </span>
                         <button
                           type="button"
@@ -2401,7 +2465,7 @@ const Gestiservi = () => {
                       <div style={imagePreviewContainerStyle}>
                         <div style={imagePreviewStyle}>
                           <img 
-                            src={imagenSeleccionada ? imagenSeleccionada.preview : newServicio.imagen} 
+                            src={imagenServicio.preview || newServicio.imagen} 
                             alt="Preview del servicio"
                             style={imageStyle}
                             onError={(e) => {
@@ -2418,7 +2482,6 @@ const Gestiservi = () => {
                   <FormField
                     label="Descripción"
                     name="descripcion"
-                    type="textarea"
                     value={newServicio.descripcion}
                     onChange={handleChange}
                     onBlur={handleInputBlur}
@@ -2431,6 +2494,8 @@ const Gestiservi = () => {
                     showCharCount={true}
                     placeholder="Descripción detallada del servicio (opcional)..."
                     touched={touchedFields.descripcion}
+                    textarea={true}
+                    rows={4}
                   />
                 </div>
               </div>
@@ -2438,45 +2503,47 @@ const Gestiservi = () => {
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
                   type="submit"
-                  disabled={loading || isSubmitting}
+                  disabled={loading || isSubmitting || uploadingImage || cloudinaryUploading}
                   style={{
-                    backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
+                    backgroundColor: (loading || isSubmitting || uploadingImage || cloudinaryUploading) ? "#ccc" : "#2E5939",
                     color: "#fff",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting || uploadingImage || cloudinaryUploading) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
                     flex: 1
                   }}
                   onMouseOver={(e) => {
-                    if (!loading && !isSubmitting) {
+                    if (!loading && !isSubmitting && !uploadingImage && !cloudinaryUploading) {
                       e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
                       e.target.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (!loading && !isSubmitting) {
+                    if (!loading && !isSubmitting && !uploadingImage && !cloudinaryUploading) {
                       e.target.style.background = "#2E5939";
                       e.target.style.transform = "translateY(0)";
                     }
                   }}
                 >
-                  {loading ? "Guardando..." : (isEditing ? "Actualizar Servicio" : "Guardar Servicio")}
+                  {uploadingImage || cloudinaryUploading ? "Subiendo imagen..." : 
+                   loading ? "Guardando..." : 
+                   (isEditing ? "Actualizar Servicio" : "Guardar Servicio")}
                 </button>
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={loading || isSubmitting}
+                  disabled={loading || isSubmitting || uploadingImage || cloudinaryUploading}
                   style={{
                     backgroundColor: "#ccc",
                     color: "#333",
                     padding: "12px 25px",
                     border: "none",
                     borderRadius: 10,
-                    cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
+                    cursor: (loading || isSubmitting || uploadingImage || cloudinaryUploading) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     flex: 1
