@@ -3,29 +3,28 @@ import {
   FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaCalendarAlt,
   FaBed, FaCalendarCheck, FaCalendarTimes, FaFilter,
-  FaHome, FaCouch, FaMountain
+  FaHome, FaCouch, FaMountain, FaChevronLeft, FaChevronRight
 } from "react-icons/fa";
 import axios from "axios";
 
 // ===============================================
-// ESTILOS MEJORADOS Y RESPONSIVOS
+// ESTILOS MEJORADOS - VERSIÓN COMPACTA
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
-  marginRight: 6,
+  marginRight: 4,
   cursor: "pointer",
-  padding: "8px 12px",
-  borderRadius: 8,
+  padding: "6px 10px",
+  borderRadius: 6,
   border: `1px solid ${borderColor}`,
   backgroundColor: bg,
   color: borderColor,
   fontWeight: "600",
-  fontSize: "16px",
+  fontSize: "12px",
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '5px',
-  transition: "all 0.3s ease",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+  gap: '4px',
+  transition: "all 0.2s ease",
 });
 
 const labelStyle = {
@@ -33,44 +32,21 @@ const labelStyle = {
   fontWeight: "600",
   marginBottom: 4,
   color: "#2E5939",
-  fontSize: "14px",
+  fontSize: "12px",
 };
 
 const inputStyle = {
   width: "100%",
-  padding: "10px 12px",
-  border: "1px solid #ccc",
-  borderRadius: 8,
+  padding: "8px 10px",
+  border: "1px solid #e0e0e0",
+  borderRadius: 6,
   backgroundColor: "#F7F4EA",
   color: "#2E5939",
   boxSizing: 'border-box',
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-  transition: "all 0.3s ease",
-  fontSize: "14px",
+  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  transition: "all 0.2s ease",
+  fontSize: "12px",
 };
-
-const navBtnStyle = (disabled) => ({
-  cursor: disabled ? "not-allowed" : "pointer",
-  padding: "8px 12px",
-  borderRadius: 8,
-  border: "1px solid #ccc",
-  backgroundColor: disabled ? "#e0e0e0" : "#F7F4EA",
-  color: "#2E5939",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-  fontSize: "14px",
-});
-
-const pageBtnStyle = (active) => ({
-  cursor: "pointer",
-  padding: "8px 12px",
-  borderRadius: 8,
-  border: "1px solid #2E5939",
-  backgroundColor: active ? "#2E5939" : "#F7F4EA",
-  color: active ? "white" : "#2E5939",
-  fontWeight: "600",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-  fontSize: "14px",
-});
 
 const modalOverlayStyle = {
   position: "fixed",
@@ -83,116 +59,116 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
-  padding: "20px",
+  padding: "15px",
 };
 
 const modalContentStyle = {
   backgroundColor: "#fff",
-  padding: "30px",
-  borderRadius: 12,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+  padding: "20px",
+  borderRadius: 10,
+  boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
   width: "90%",
-  maxWidth: "600px",
+  maxWidth: "500px",
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '90vh',
+  maxHeight: '85vh',
   overflowY: 'auto',
   position: 'relative',
-  border: "2px solid #679750",
+  border: "1px solid #679750",
 };
 
 // Estilos para alertas
 const alertStyle = {
   position: 'fixed',
-  top: 20,
-  right: 20,
-  padding: '15px 20px',
-  borderRadius: '10px',
-  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+  top: 15,
+  right: 15,
+  padding: '12px 16px',
+  borderRadius: '8px',
+  boxShadow: '0 3px 10px rgba(0,0,0,0.15)',
   zIndex: 10000,
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
+  gap: '10px',
   fontWeight: '600',
-  fontSize: '16px',
-  minWidth: '300px',
-  maxWidth: '500px',
-  borderLeft: '5px solid',
+  fontSize: '14px',
+  minWidth: '250px',
+  maxWidth: '400px',
+  borderLeft: '4px solid',
   backdropFilter: 'blur(10px)',
 };
 
 const alertIconStyle = {
-  fontSize: '20px',
+  fontSize: '16px',
   flexShrink: 0,
 };
 
 const alertSuccessStyle = {
   ...alertStyle,
-  backgroundColor: '#d4edda',
-  color: '#155724',
+  backgroundColor: '#f0f9f0',
+  color: '#1e7e34',
   borderLeftColor: '#28a745',
 };
 
 const alertErrorStyle = {
   ...alertStyle,
-  backgroundColor: '#f8d7da',
-  color: '#721c24',
-  borderLeftColor: '#dc3545',
+  backgroundColor: '#fdf2f2',
+  color: '#c53030',
+  borderLeftColor: '#e53e3e',
 };
 
 const alertWarningStyle = {
   ...alertStyle,
-  backgroundColor: '#fff3cd',
-  color: '#856404',
-  borderLeftColor: '#ffc107',
+  backgroundColor: '#fffaf0',
+  color: '#b7791f',
+  borderLeftColor: '#ed8936',
 };
 
 const alertInfoStyle = {
   ...alertStyle,
-  backgroundColor: '#d1ecf1',
-  color: '#0c5460',
-  borderLeftColor: '#17a2b8',
+  backgroundColor: '#f0f9ff',
+  color: '#1e40af',
+  borderLeftColor: '#3b82f6',
 };
 
 const detailsModalStyle = {
   backgroundColor: "#fff",
-  padding: "30px",
-  borderRadius: 12,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+  padding: "20px",
+  borderRadius: 10,
+  boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
   width: "90%",
-  maxWidth: "600px",
+  maxWidth: "500px",
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '80vh',
+  maxHeight: '75vh',
   overflowY: 'auto',
-  border: "2px solid #679750",
+  border: "1px solid #679750",
 };
 
 const detailItemStyle = {
-  marginBottom: 15,
-  paddingBottom: 15,
+  marginBottom: 12,
+  paddingBottom: 12,
   borderBottom: "1px solid rgba(46, 89, 57, 0.1)"
 };
 
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5,
-  fontSize: "14px"
+  marginBottom: 4,
+  fontSize: "12px"
 };
 
 const detailValueStyle = {
-  fontSize: 16,
+  fontSize: 14,
   color: "#2E5939",
   fontWeight: "500",
 };
 
 const validationMessageStyle = {
-  fontSize: "0.8rem",
-  marginTop: "4px",
+  fontSize: "0.7rem",
+  marginTop: "3px",
   display: "flex",
   alignItems: "center",
-  gap: "5px"
+  gap: "4px"
 };
 
 const successValidationStyle = {
@@ -209,6 +185,157 @@ const warningValidationStyle = {
   ...validationMessageStyle,
   color: "#ff9800"
 };
+
+// ===============================================
+// ESTILOS ESPECÍFICOS PARA CALENDARIO COMPACTO
+// ===============================================
+const calendarHeaderStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '15px',
+  padding: '12px 15px',
+  backgroundColor: '#fff',
+  borderRadius: '8px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+};
+
+const calendarNavButtonStyle = {
+  backgroundColor: '#2E5939',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  padding: '8px 12px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  fontWeight: '600',
+  fontSize: '12px',
+  transition: 'all 0.2s ease',
+};
+
+const calendarTitleStyle = {
+  fontSize: '18px',
+  fontWeight: 'bold',
+  color: '#2E5939',
+  margin: 0,
+};
+
+const calendarGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(7, 1fr)',
+  gap: '6px',
+  marginBottom: '15px',
+};
+
+const dayHeaderStyle = {
+  padding: '8px 4px',
+  textAlign: 'center',
+  fontWeight: 'bold',
+  color: '#2E5939',
+  backgroundColor: '#f8fbf8',
+  borderRadius: '6px',
+  fontSize: '11px',
+  border: '1px solid #e8f0e8',
+};
+
+const dayCellStyle = (isCurrentMonth, isToday) => ({
+  backgroundColor: isCurrentMonth ? (isToday ? '#e8f5e8' : '#fff') : '#fafafa',
+  border: `1px solid ${isCurrentMonth ? '#e8f0e8' : '#f0f0f0'}`,
+  borderRadius: '6px',
+  padding: '6px',
+  minHeight: '80px',
+  display: 'flex',
+  flexDirection: 'column',
+  transition: 'all 0.2s ease',
+  cursor: 'pointer',
+  position: 'relative',
+  overflow: 'hidden',
+});
+
+const dayNumberStyle = (isCurrentMonth, isToday) => ({
+  fontWeight: 'bold',
+  fontSize: '12px',
+  marginBottom: '4px',
+  color: isToday ? '#fff' : (isCurrentMonth ? '#333' : '#bbb'),
+  backgroundColor: isToday ? '#2E5939' : 'transparent',
+  borderRadius: '50%',
+  width: '22px',
+  height: '22px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  alignSelf: 'flex-start',
+});
+
+const availabilityItemStyle = (estado) => ({
+  backgroundColor: estado ? '#f0f9f0' : '#fdf2f2',
+  border: `1px solid ${estado ? '#c6f6d5' : '#fed7d7'}`,
+  borderRadius: '4px',
+  padding: '3px 5px',
+  marginBottom: '3px',
+  fontSize: '10px',
+  color: estado ? '#2E5939' : '#c53030',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '3px',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const cabanaSelectorStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+  gap: '10px',
+  marginBottom: '15px',
+};
+
+const cabanaCardStyle = (selected) => ({
+  backgroundColor: selected ? '#f0f7f0' : '#fff',
+  border: `1px solid ${selected ? '#2E5939' : '#e0e0e0'}`,
+  borderRadius: '8px',
+  padding: '10px',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+});
+
+const filterSectionStyle = {
+  backgroundColor: '#fff',
+  borderRadius: '8px',
+  padding: '15px',
+  marginBottom: '15px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+  border: '1px solid #e8f0e8',
+};
+
+const filterGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+  gap: '12px',
+  alignItems: 'end',
+};
+
+const filterButtonStyle = (active) => ({
+  padding: '8px 12px',
+  borderRadius: '6px',
+  border: 'none',
+  backgroundColor: active ? '#2E5939' : '#f8fbf8',
+  color: active ? 'white' : '#2E5939',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '12px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  transition: 'all 0.2s ease',
+  border: `1px solid ${active ? '#2E5939' : '#e8f0e8'}`,
+});
 
 // ===============================================
 // VALIDACIONES Y PATRONES
@@ -240,7 +367,6 @@ const VALIDATION_RULES = {
 // ===============================================
 const API_DISPONIBILIDAD = "http://localhost:5272/api/Disponibilidad";
 const API_CABANAS = "http://localhost:5272/api/Cabanas";
-const ITEMS_PER_PAGE = 10;
 
 // ===============================================
 // COMPONENTE FormField PARA DISPONIBILIDAD
@@ -271,7 +397,7 @@ const FormField = ({
   }, [options, type, required]);
 
   const getInputStyle = () => {
-    let borderColor = "#ccc";
+    let borderColor = "#e0e0e0";
     if (error) borderColor = "#e57373";
     else if (success) borderColor = "#4caf50";
     else if (warning) borderColor = "#ff9800";
@@ -279,7 +405,7 @@ const FormField = ({
     return {
       ...inputStyle,
       border: `1px solid ${borderColor}`,
-      borderLeft: `4px solid ${borderColor}`,
+      borderLeft: `3px solid ${borderColor}`,
     };
   };
 
@@ -287,7 +413,7 @@ const FormField = ({
     if (error) {
       return (
         <div style={errorValidationStyle}>
-          <FaExclamationTriangle size={12} />
+          <FaExclamationTriangle size={10} />
           {error}
         </div>
       );
@@ -295,7 +421,7 @@ const FormField = ({
     if (success) {
       return (
         <div style={successValidationStyle}>
-          <FaCheck size={12} />
+          <FaCheck size={10} />
           {success}
         </div>
       );
@@ -303,7 +429,7 @@ const FormField = ({
     if (warning) {
       return (
         <div style={warningValidationStyle}>
-          <FaInfoCircle size={12} />
+          <FaInfoCircle size={10} />
           {warning}
         </div>
       );
@@ -312,7 +438,7 @@ const FormField = ({
   };
 
   return (
-    <div style={{ marginBottom: '15px', ...style }}>
+    <div style={{ marginBottom: '12px', ...style }}>
       <label style={labelStyle}>
         {label}
         {required && <span style={{ color: "red" }}>*</span>}
@@ -363,11 +489,9 @@ const FormField = ({
 const Disponibilidad = () => {
   const [disponibilidades, setDisponibilidades] = useState([]);
   const [cabanas, setCabanas] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCabana, setSelectedCabana] = useState("todas");
   const [filterEstado, setFilterEstado] = useState("todos");
-  const [filterCabana, setFilterCabana] = useState("todos");
-  const [filterFecha, setFilterFecha] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedDisponibilidad, setSelectedDisponibilidad] = useState(null);
@@ -391,7 +515,7 @@ const Disponibilidad = () => {
     idCabana: ""
   });
 
-  // Responsive helpers: evita que un margin fijo o minWidth rompa el layout en pantallas pequeñas
+  // Responsive helpers
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   useEffect(() => {
     const onResize = () => setWindowWidth(window.innerWidth);
@@ -401,8 +525,8 @@ const Disponibilidad = () => {
   const showSidebarOffset = windowWidth >= 992;
   const containerStyle = {
     position: "relative",
-    padding: windowWidth < 600 ? "12px" : "20px",
-    backgroundColor: "#f5f8f2",
+    padding: windowWidth < 600 ? "10px" : "15px",
+    backgroundColor: "#f8fbf8",
     minHeight: "100vh",
     marginLeft: showSidebarOffset ? "260px" : 0,
     boxSizing: "border-box"
@@ -417,13 +541,13 @@ const Disponibilidad = () => {
   };
 
   const getCabanaIcon = (cabanaNombre) => {
-    if (!cabanaNombre) return <FaBed color="#679750" />;
+    if (!cabanaNombre) return <FaBed color="#679750" size={14} />;
     
     const nombre = cabanaNombre.toLowerCase();
-    if (nombre.includes('lujo') || nombre.includes('premium')) return <FaCouch color="#FFD700" />;
-    if (nombre.includes('familiar')) return <FaHome color="#4CAF50" />;
-    if (nombre.includes('montaña') || nombre.includes('montana')) return <FaMountain color="#795548" />;
-    return <FaBed color="#679750" />;
+    if (nombre.includes('lujo') || nombre.includes('premium')) return <FaCouch color="#FFD700" size={14} />;
+    if (nombre.includes('familiar')) return <FaHome color="#4CAF50" size={14} />;
+    if (nombre.includes('montaña') || nombre.includes('montana')) return <FaMountain color="#795548" size={14} />;
+    return <FaBed color="#679750" size={14} />;
   };
 
   const formatFecha = (fecha) => {
@@ -431,7 +555,7 @@ const Disponibilidad = () => {
     try {
       return new Date(fecha).toLocaleDateString('es-ES', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric'
       });
     } catch {
@@ -439,22 +563,58 @@ const Disponibilidad = () => {
     }
   };
 
-  const formatFechaCorta = (fecha) => {
-    if (!fecha) return "N/A";
-    try {
-      return new Date(fecha).toLocaleDateString('es-ES');
-    } catch {
-      return fecha;
-    }
+  // ===============================================
+  // FUNCIONES DEL CALENDARIO
+  // ===============================================
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
-  const getMesFromFecha = (fecha) => {
-    if (!fecha) return "N/A";
-    try {
-      return new Date(fecha).toLocaleDateString('es-ES', { month: 'long' });
-    } catch {
-      return fecha.substring(5, 7) || "N/A";
+  const getFirstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const navigateMonth = (direction) => {
+    setCurrentDate(prevDate => {
+      const newDate = new Date(prevDate);
+      newDate.setMonth(prevDate.getMonth() + direction);
+      return newDate;
+    });
+  };
+
+  const getMonthYearString = (date) => {
+    return date.toLocaleDateString('es-ES', { 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  };
+
+  const getDayAvailability = (day, month, year) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    let filtered = disponibilidades.filter(d => 
+      d.dia.includes(dateStr)
+    );
+
+    // Aplicar filtro de cabaña
+    if (selectedCabana !== "todas") {
+      filtered = filtered.filter(d => d.idCabana.toString() === selectedCabana);
     }
+
+    // Aplicar filtro de estado
+    if (filterEstado !== "todos") {
+      const estadoFilter = filterEstado === "activo";
+      filtered = filtered.filter(d => d.estado === estadoFilter);
+    }
+
+    return filtered;
+  };
+
+  const isToday = (day, month, year) => {
+    const today = new Date();
+    return day === today.getDate() && 
+           month === today.getMonth() && 
+           year === today.getFullYear();
   };
 
   // ===============================================
@@ -464,46 +624,6 @@ const Disponibilidad = () => {
     console.log("🔍 Componente Disponibilidad montado, cargando datos...");
     fetchDisponibilidades();
     fetchCabanas();
-  }, []);
-
-  // Efecto para agregar estilos de animación
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideInRight {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      
-      @media (max-width: 768px) {
-        .table-container {
-          overflow-x: auto;
-        }
-        
-        .mobile-hidden {
-          display: none;
-        }
-        
-        .mobile-stack {
-          flex-direction: column;
-        }
-        
-        .mobile-full {
-          width: 100%;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
   }, []);
 
   // ===============================================
@@ -726,7 +846,7 @@ const Disponibilidad = () => {
     setTimeout(() => {
       setShowAlert(false);
       setAlertMessage("");
-    }, 5000);
+    }, 4000);
   };
 
   const getAlertIcon = (type) => {
@@ -814,11 +934,6 @@ const Disponibilidad = () => {
         await axios.delete(`${API_DISPONIBILIDAD}/${disponibilidadToDelete.idDisponibilidad}`);
         displayAlert("Disponibilidad eliminada exitosamente.", "success");
         await fetchDisponibilidades();
-        
-        // Ajustar página si es necesario
-        if (paginatedDisponibilidades.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        }
       } catch (error) {
         console.error("❌ Error al eliminar:", error);
         handleApiError(error, "eliminar la disponibilidad");
@@ -865,38 +980,89 @@ const Disponibilidad = () => {
     setSelectedDisponibilidad(null);
   };
 
-  // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN
-  // ===============================================
-  const filteredDisponibilidades = useMemo(() => {
-    return disponibilidades.filter(disp => {
-      const matchesSearch = 
-        getCabanaNombre(disp.idCabana)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        disp.dia?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesEstado = filterEstado === "todos" || 
-        (filterEstado === "activo" && disp.estado) || 
-        (filterEstado === "inactivo" && !disp.estado);
-      
-      const matchesCabana = filterCabana === "todos" || 
-        disp.idCabana?.toString() === filterCabana;
-      
-      const matchesFecha = !filterFecha || 
-        disp.dia?.includes(filterFecha);
-
-      return matchesSearch && matchesEstado && matchesCabana && matchesFecha;
+  const handleDayClick = (day, month, year) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    setNewDisponibilidad({
+      dia: dateStr,
+      estado: true,
+      idCabana: selectedCabana !== "todas" ? selectedCabana : (cabanas.length > 0 ? cabanas[0].idCabana.toString() : "")
     });
-  }, [disponibilidades, searchTerm, filterEstado, filterCabana, filterFecha, cabanas]);
+    setIsEditing(false);
+    setShowForm(true);
+  };
 
-  const totalPages = Math.ceil(filteredDisponibilidades.length / ITEMS_PER_PAGE);
-
-  const paginatedDisponibilidades = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredDisponibilidades.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredDisponibilidades, currentPage]);
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  // ===============================================
+  // RENDERIZADO DEL CALENDARIO
+  // ===============================================
+  const renderCalendar = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = getDaysInMonth(currentDate);
+    const firstDay = getFirstDayOfMonth(currentDate);
+    
+    const days = [];
+    
+    // Días del mes anterior
+    const prevMonthDays = getDaysInMonth(new Date(year, month - 1, 1));
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = prevMonthDays - i;
+      days.push(
+        <div 
+          key={`prev-${day}`} 
+          style={dayCellStyle(false, false)}
+        >
+          <div style={dayNumberStyle(false, false)}>{day}</div>
+        </div>
+      );
+    }
+    
+    // Días del mes actual
+    for (let day = 1; day <= daysInMonth; day++) {
+      const availability = getDayAvailability(day, month, year);
+      const today = isToday(day, month, year);
+      
+      days.push(
+        <div 
+          key={`current-${day}`} 
+          style={dayCellStyle(true, today)}
+          onClick={() => handleDayClick(day, month, year)}
+        >
+          <div style={dayNumberStyle(true, today)}>{day}</div>
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {availability.map(disp => (
+              <div 
+                key={disp.idDisponibilidad}
+                style={availabilityItemStyle(disp.estado)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleView(disp);
+                }}
+              >
+                {disp.estado ? <FaCalendarCheck size={8} /> : <FaCalendarTimes size={8} />}
+                {getCabanaNombre(disp.idCabana)}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    
+    // Días del próximo mes
+    const totalCells = 42; // 6 semanas * 7 días
+    const nextMonthDays = totalCells - days.length;
+    for (let day = 1; day <= nextMonthDays; day++) {
+      days.push(
+        <div 
+          key={`next-${day}`} 
+          style={dayCellStyle(false, false)}
+        >
+          <div style={dayNumberStyle(false, false)}>{day}</div>
+        </div>
+      );
+    }
+    
+    return days;
   };
 
   // ===============================================
@@ -919,7 +1085,7 @@ const Disponibilidad = () => {
               border: 'none', 
               color: 'inherit', 
               cursor: 'pointer',
-              fontSize: '16px',
+              fontSize: '14px',
               padding: 0,
             }}
           >
@@ -933,15 +1099,15 @@ const Disponibilidad = () => {
         display: "flex", 
         justifyContent: "space-between", 
         alignItems: "center", 
-        marginBottom: 20,
+        marginBottom: 15,
         flexWrap: 'wrap',
-        gap: '15px'
+        gap: '10px'
       }}>
-        <div style={{ minWidth: '250px' }}>
-          <h1 style={{ margin: 0, color: "#2E5939", fontSize: "28px" }}>
-            Gestión de Disponibilidad
+        <div style={{ minWidth: '200px' }}>
+          <h1 style={{ margin: 0, color: "#2E5939", fontSize: "22px" }}>
+            Calendario de Disponibilidad
           </h1>
-          <p style={{ margin: "5px 0 0 0", color: "#679750", fontSize: "14px" }}>
+          <p style={{ margin: "3px 0 0 0", color: "#679750", fontSize: "12px" }}>
             {disponibilidades.length} registros • {cabanas.length} cabañas
           </p>
         </div>
@@ -958,174 +1124,94 @@ const Disponibilidad = () => {
           style={{
             backgroundColor: "#2E5939",
             color: "white",
-            padding: "12px 20px",
+            padding: "8px 15px",
             border: "none",
-            borderRadius: 10,
+            borderRadius: 6,
             cursor: "pointer",
             fontWeight: "600",
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            fontSize: "14px",
+            gap: '6px',
+            fontSize: "12px",
             whiteSpace: 'nowrap',
-            transition: "all 0.3s ease",
+            transition: "all 0.2s ease",
           }}
           onMouseOver={(e) => {
             e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-            e.target.style.transform = "translateY(-2px)";
+            e.target.style.transform = "translateY(-1px)";
           }}
           onMouseOut={(e) => {
             e.target.style.background = "#2E5939";
             e.target.style.transform = "translateY(0)";
           }}
         >
-          <FaPlus /> Nueva Disponibilidad
+          <FaPlus size={12} /> Nueva Disponibilidad
         </button>
       </div>
 
-      {/* Filtros */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '15px', 
-        marginBottom: '20px',
-        backgroundColor: '#fff',
-        padding: '20px',
-        borderRadius: '10px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      }}>
-        <div>
-          <label style={{...labelStyle, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px'}}>
-            <FaSearch />
-            Buscar
-          </label>
-          <input
-            type="text"
-            placeholder="Buscar por cabaña o fecha..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={inputStyle}
-          />
+      {/* Filtros Mejorados */}
+      <div style={filterSectionStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <FaFilter color="#2E5939" size={14} />
+          <h3 style={{ margin: 0, color: "#2E5939", fontSize: "14px" }}>Filtros</h3>
         </div>
-
-        <div>
-          <label style={{...labelStyle, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px'}}>
-            <FaFilter />
-            Estado
-          </label>
-          <select
-            value={filterEstado}
-            onChange={(e) => {
-              setFilterEstado(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={inputStyle}
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
-        </div>
-
-        <div>
-          <label style={{...labelStyle, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px'}}>
-            <FaBed />
-            Cabaña
-          </label>
-          <select
-            value={filterCabana}
-            onChange={(e) => {
-              setFilterCabana(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={inputStyle}
-          >
-            <option value="todos">Todas las cabañas</option>
-            {cabanas.map(cabana => (
-              <option key={cabana.idCabana} value={cabana.idCabana.toString()}>
-                {cabana.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label style={{...labelStyle, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px'}}>
-            <FaCalendarAlt />
-            Fecha
-          </label>
-          <input
-            type="date"
-            value={filterFecha}
-            onChange={(e) => {
-              setFilterFecha(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={inputStyle}
-          />
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        gap: '15px',
-        marginBottom: '20px',
-      }}>
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '15px',
-          borderRadius: '10px',
-          textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          borderLeft: '4px solid #679750'
-        }}>
-          <div style={{ fontSize: '12px', color: '#679750', fontWeight: '600' }}>TOTAL</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-            {disponibilidades.length}
+        
+        <div style={filterGridStyle}>
+          <div>
+            <label style={labelStyle}>Cabaña</label>
+            <select
+              value={selectedCabana}
+              onChange={(e) => setSelectedCabana(e.target.value)}
+              style={inputStyle}
+            >
+              <option value="todas">Todas las Cabañas</option>
+              {cabanas.map(cabana => (
+                <option key={cabana.idCabana} value={cabana.idCabana.toString()}>
+                  {cabana.nombre}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '15px',
-          borderRadius: '10px',
-          textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          borderLeft: '4px solid #4caf50'
-        }}>
-          <div style={{ fontSize: '12px', color: '#4caf50', fontWeight: '600' }}>DISPONIBLES</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-            {disponibilidades.filter(d => d.estado).length}
+
+          <div>
+            <label style={labelStyle}>Estado</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setFilterEstado("todos")}
+                style={filterButtonStyle(filterEstado === "todos")}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFilterEstado("activo")}
+                style={filterButtonStyle(filterEstado === "activo")}
+              >
+                <FaCalendarCheck size={10} /> Disponible
+              </button>
+              <button
+                onClick={() => setFilterEstado("inactivo")}
+                style={filterButtonStyle(filterEstado === "inactivo")}
+              >
+                <FaCalendarTimes size={10} /> No Disponible
+              </button>
+            </div>
           </div>
-        </div>
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '15px',
-          borderRadius: '10px',
-          textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          borderLeft: '4px solid #e57373'
-        }}>
-          <div style={{ fontSize: '12px', color: '#e57373', fontWeight: '600' }}>NO DISPONIBLES</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-            {disponibilidades.filter(d => !d.estado).length}
-          </div>
-        </div>
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '15px',
-          borderRadius: '10px',
-          textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          borderLeft: '4px solid #2196F3'
-        }}>
-          <div style={{ fontSize: '12px', color: '#2196F3', fontWeight: '600' }}>CABAÑAS</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
-            {cabanas.length}
+
+          <div>
+            <label style={labelStyle}>Acciones Rápidas</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={fetchDisponibilidades}
+                style={{
+                  ...filterButtonStyle(false),
+                  backgroundColor: '#f0f9ff',
+                  color: '#1e40af',
+                  border: '1px solid #3b82f6'
+                }}
+              >
+                <FaSearch size={10} /> Actualizar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1134,17 +1220,18 @@ const Disponibilidad = () => {
       {loading && (
         <div style={{ 
           textAlign: "center", 
-          padding: "40px", 
+          padding: "30px", 
           color: "#2E5939",
           backgroundColor: '#fff',
-          borderRadius: '10px',
-          marginBottom: '20px'
+          borderRadius: '8px',
+          marginBottom: '15px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ fontSize: '18px', marginBottom: '10px' }}>
+          <div style={{ fontSize: '16px', marginBottom: '8px' }}>
             🔄 Cargando disponibilidades...
           </div>
-          <div style={{ fontSize: '14px', color: '#679750' }}>
-            Obteniendo información actualizada del servidor
+          <div style={{ fontSize: '12px', color: '#679750' }}>
+            Obteniendo información actualizada
           </div>
         </div>
       )}
@@ -1152,30 +1239,31 @@ const Disponibilidad = () => {
       {/* Error */}
       {error && !loading && (
         <div style={{
-          backgroundColor: '#fff3cd',
+          backgroundColor: '#fffaf0',
           border: '1px solid #ffeaa7',
-          borderRadius: '10px',
-          padding: '20px',
-          marginBottom: '20px',
-          color: '#856404'
+          borderRadius: '8px',
+          padding: '15px',
+          marginBottom: '15px',
+          color: '#b7791f',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-            <FaExclamationTriangle />
-            <strong style={{ fontSize: '16px' }}>Error de Conexión</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <FaExclamationTriangle size={14} />
+            <strong style={{ fontSize: '14px' }}>Error de Conexión</strong>
           </div>
-          <p style={{ margin: '10px 0', fontSize: '14px' }}>{error}</p>
+          <p style={{ margin: '8px 0', fontSize: '12px' }}>{error}</p>
           <button
             onClick={fetchDisponibilidades}
             style={{
               backgroundColor: '#2E5939',
               color: 'white',
-              padding: '10px 20px',
+              padding: '8px 15px',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '6px',
               cursor: 'pointer',
               fontWeight: '600',
-              fontSize: '14px',
-              transition: 'all 0.3s ease'
+              fontSize: '12px',
+              transition: 'all 0.2s ease'
             }}
             onMouseOver={(e) => {
               e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
@@ -1189,192 +1277,97 @@ const Disponibilidad = () => {
         </div>
       )}
 
-      {/* Tabla */}
+      {/* Navegación del Calendario */}
+      <div style={calendarHeaderStyle}>
+        <button
+          onClick={() => navigateMonth(-1)}
+          style={calendarNavButtonStyle}
+          onMouseOver={(e) => {
+            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = "#2E5939";
+          }}
+        >
+          <FaChevronLeft size={10} /> Anterior
+        </button>
+        
+        <h2 style={calendarTitleStyle}>
+          {getMonthYearString(currentDate)}
+        </h2>
+        
+        <button
+          onClick={() => navigateMonth(1)}
+          style={calendarNavButtonStyle}
+          onMouseOver={(e) => {
+            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = "#2E5939";
+          }}
+        >
+          Siguiente <FaChevronRight size={10} />
+        </button>
+      </div>
+
+      {/* Calendario */}
       {!loading && !error && (
         <div style={{
           backgroundColor: '#fff',
-          borderRadius: '10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          borderRadius: '8px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+          padding: '15px',
           overflow: 'hidden'
         }}>
-          {/* contenedor con scroll horizontal en pantallas pequeñas */}
-          <div className="table-container" style={{ overflowX: 'auto', padding: windowWidth < 480 ? '8px' : '0' }}>
-            <table style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              backgroundColor: "#fff",
-              color: "#2E5939",
-              minWidth: windowWidth < 720 ? '700px' : '0' // permitir scroll en móviles pero no forzar blanco
-            }}>
-               <thead>
-                 <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
-                   <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold", fontSize: "14px" }}>Cabaña</th>
-                   <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold", fontSize: "14px" }}>Fecha</th>
-                   <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", fontSize: "14px" }} className="mobile-hidden">Mes</th>
-                   <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", fontSize: "14px" }} className="mobile-hidden">Año</th>
-                   <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", fontSize: "14px" }}>Estado</th>
-                   <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", fontSize: "14px" }}>Acciones</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {filteredDisponibilidades.length === 0 ? (
-                   <tr>
-                     <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                       <div style={{ fontSize: "16px", marginBottom: "10px" }}>
-                         {disponibilidades.length === 0 ? "No hay disponibilidades registradas" : "No se encontraron resultados"}
-                       </div>
-                       <div style={{ fontSize: "14px", color: "#679750" }}>
-                         {disponibilidades.length === 0 ? 
-                           "Haz clic en 'Nueva Disponibilidad' para agregar la primera" : 
-                           "Intenta con otros términos de búsqueda o filtros"}
-                       </div>
-                     </td>
-                   </tr>
-                 ) : (
-                   paginatedDisponibilidades.map((disp) => (
-                    <tr key={disp.idDisponibilidad} style={{ borderBottom: "1px solid #eee" }}>
-                      <td style={{ padding: "15px", fontWeight: "500" }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {getCabanaIcon(getCabanaNombre(disp.idCabana))}
-                          <div>
-                            <div style={{ fontWeight: '600' }}>{getCabanaNombre(disp.idCabana)}</div>
-                            <div style={{ fontSize: '12px', color: '#679750' }} className="mobile-hidden">
-                              ID: {disp.idCabana}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: "15px" }}>
-                        <div style={{ fontWeight: '500' }}>{formatFechaCorta(disp.dia)}</div>
-                        <div style={{ fontSize: '12px', color: '#679750' }} className="mobile-hidden">
-                          {formatFecha(disp.dia)}
-                        </div>
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }} className="mobile-hidden">
-                        {getMesFromFecha(disp.dia)}
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }} className="mobile-hidden">
-                        {disp.anio || "N/A"}
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>
-                        <button
-                          onClick={() => toggleEstado(disp)}
-                          style={{
-                            cursor: "pointer",
-                            padding: "8px 12px",
-                            borderRadius: "20px",
-                            border: "none",
-                            backgroundColor: disp.estado ? "#4caf50" : "#e57373",
-                            color: "white",
-                            fontWeight: "600",
-                            fontSize: "12px",
-                            minWidth: "120px",
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '5px',
-                            transition: 'all 0.3s ease'
-                          }}
-                          onMouseOver={(e) => {
-                            e.target.style.transform = "scale(1.05)";
-                          }}
-                          onMouseOut={(e) => {
-                            e.target.style.transform = "scale(1)";
-                          }}
-                        >
-                          {disp.estado ? 
-                            <><FaCalendarCheck /> Disponible</> : 
-                            <><FaCalendarTimes /> No Disponible</>
-                          }
-                        </button>
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => handleView(disp)}
-                            style={btnAccion("#F7F4EA", "#2E5939")}
-                            title="Ver Detalles"
-                          >
-                            <FaEye />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(disp)}
-                            style={btnAccion("#F7F4EA", "#2E5939")}
-                            title="Editar"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(disp)}
-                            style={btnAccion("#fbe9e7", "#e57373")}
-                            title="Eliminar"
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          {/* Encabezados de días */}
+          <div style={calendarGridStyle}>
+            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+              <div key={day} style={dayHeaderStyle}>
+                {day}
+              </div>
+            ))}
           </div>
-        </div>
-      )}
-
-      {/* Paginación */}
-      {totalPages > 1 && (
-        <div style={{ 
-          marginTop: 20, 
-          display: "flex", 
-          justifyContent: "center", 
-          alignItems: "center",
-          gap: 10,
-          flexWrap: 'wrap'
-        }}>
-          <button
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            style={navBtnStyle(currentPage === 1)}
-          >
-            Anterior
-          </button>
           
-          {/* Mostrar máximo 5 páginas alrededor de la actual */}
-          {(() => {
-            const pages = [];
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, currentPage + 2);
-            
-            for (let i = startPage; i <= endPage; i++) {
-              pages.push(
-                <button
-                  key={i}
-                  onClick={() => goToPage(i)}
-                  style={pageBtnStyle(currentPage === i)}
-                >
-                  {i}
-                </button>
-              );
-            }
-            return pages;
-          })()}
+          {/* Grid de días */}
+          <div style={calendarGridStyle}>
+            {renderCalendar()}
+          </div>
           
-          <button
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            style={navBtnStyle(currentPage === totalPages)}
-          >
-            Siguiente
-          </button>
-          
-          <div style={{ 
-            fontSize: '14px', 
-            color: '#2E5939', 
-            marginLeft: '15px',
-            fontWeight: '500'
+          {/* Leyenda */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '15px',
+            marginTop: '15px',
+            flexWrap: 'wrap'
           }}>
-            Página {currentPage} de {totalPages}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                backgroundColor: '#4caf50',
+                borderRadius: '2px'
+              }}></div>
+              <span style={{ fontSize: '11px', color: '#2E5939' }}>Disponible</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                backgroundColor: '#e53e3e',
+                borderRadius: '2px'
+              }}></div>
+              <span style={{ fontSize: '11px', color: '#2E5939' }}>No Disponible</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                backgroundColor: '#2E5939',
+                borderRadius: '50%'
+              }}></div>
+              <span style={{ fontSize: '11px', color: '#2E5939' }}>Hoy</span>
+            </div>
           </div>
         </div>
       )}
@@ -1383,8 +1376,8 @@ const Disponibilidad = () => {
       {showForm && (
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", fontSize: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
+              <h2 style={{ margin: 0, color: "#2E5939", fontSize: "18px" }}>
                 {isEditing ? "Editar Disponibilidad" : "Nueva Disponibilidad"}
               </h2>
               <button
@@ -1393,11 +1386,11 @@ const Disponibilidad = () => {
                   background: "none",
                   border: "none",
                   color: "#2E5939",
-                  fontSize: "20px",
+                  fontSize: "16px",
                   cursor: "pointer",
-                  padding: "5px",
-                  borderRadius: "5px",
-                  transition: "all 0.3s ease"
+                  padding: "4px",
+                  borderRadius: "4px",
+                  transition: "all 0.2s ease"
                 }}
                 onMouseOver={(e) => {
                   e.target.style.backgroundColor = "#f0f0f0";
@@ -1430,8 +1423,8 @@ const Disponibilidad = () => {
 
               <FormField
                 label={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaCalendarAlt />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <FaCalendarAlt size={12} />
                     Fecha de Disponibilidad
                   </div>
                 }
@@ -1447,26 +1440,26 @@ const Disponibilidad = () => {
                 min={new Date().toISOString().split('T')[0]}
               />
 
-              <div style={{ display: "flex", gap: 10, marginTop: 30 }}>
+              <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
                 <button
                   type="submit"
                   disabled={loading || isSubmitting}
                   style={{
                     backgroundColor: (loading || isSubmitting) ? "#ccc" : "#2E5939",
                     color: "#fff",
-                    padding: "12px 25px",
+                    padding: "10px 20px",
                     border: "none",
-                    borderRadius: 10,
+                    borderRadius: 6,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     flex: 1,
-                    fontSize: "14px",
-                    transition: "all 0.3s ease"
+                    fontSize: "12px",
+                    transition: "all 0.2s ease"
                   }}
                   onMouseOver={(e) => {
                     if (!loading && !isSubmitting) {
                       e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                      e.target.style.transform = "translateY(-2px)";
+                      e.target.style.transform = "translateY(-1px)";
                     }
                   }}
                   onMouseOut={(e) => {
@@ -1483,15 +1476,15 @@ const Disponibilidad = () => {
                   onClick={closeForm}
                   disabled={loading || isSubmitting}
                   style={{
-                    backgroundColor: "#ccc",
+                    backgroundColor: "#e0e0e0",
                     color: "#333",
-                    padding: "12px 25px",
+                    padding: "10px 20px",
                     border: "none",
-                    borderRadius: 10,
+                    borderRadius: 6,
                     cursor: (loading || isSubmitting) ? "not-allowed" : "pointer",
                     fontWeight: "600",
                     flex: 1,
-                    fontSize: "14px"
+                    fontSize: "12px"
                   }}
                 >
                   Cancelar
@@ -1506,19 +1499,19 @@ const Disponibilidad = () => {
       {showDetails && selectedDisponibilidad && (
         <div style={modalOverlayStyle}>
           <div style={detailsModalStyle}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939", fontSize: "24px" }}>Detalles de Disponibilidad</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
+              <h2 style={{ margin: 0, color: "#2E5939", fontSize: "18px" }}>Detalles de Disponibilidad</h2>
               <button
                 onClick={closeDetailsModal}
                 style={{
                   background: "none",
                   border: "none",
                   color: "#2E5939",
-                  fontSize: "20px",
+                  fontSize: "16px",
                   cursor: "pointer",
-                  padding: "5px",
-                  borderRadius: "5px",
-                  transition: "all 0.3s ease"
+                  padding: "4px",
+                  borderRadius: "4px",
+                  transition: "all 0.2s ease"
                 }}
                 onMouseOver={(e) => {
                   e.target.style.backgroundColor = "#f0f0f0";
@@ -1540,11 +1533,11 @@ const Disponibilidad = () => {
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Cabaña</div>
                 <div style={detailValueStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {getCabanaIcon(getCabanaNombre(selectedDisponibilidad.idCabana))}
                     <div>
-                      <div style={{ fontWeight: '600' }}>{getCabanaNombre(selectedDisponibilidad.idCabana)}</div>
-                      <div style={{ fontSize: '14px', color: '#679750' }}>
+                      <div style={{ fontWeight: '600', fontSize: '14px' }}>{getCabanaNombre(selectedDisponibilidad.idCabana)}</div>
+                      <div style={{ fontSize: '12px', color: '#679750' }}>
                         ID: {selectedDisponibilidad.idCabana}
                       </div>
                     </div>
@@ -1558,57 +1551,97 @@ const Disponibilidad = () => {
               </div>
 
               <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Mes</div>
-                <div style={detailValueStyle}>{getMesFromFecha(selectedDisponibilidad.dia)}</div>
-              </div>
-
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Año</div>
-                <div style={detailValueStyle}>{selectedDisponibilidad.anio || "No especificado"}</div>
-              </div>
-
-              <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
                   ...detailValueStyle,
-                  color: selectedDisponibilidad.estado ? '#4caf50' : '#e57373',
+                  color: selectedDisponibilidad.estado ? '#4caf50' : '#e53e3e',
                   fontWeight: 'bold',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '6px'
                 }}>
                   {selectedDisponibilidad.estado ? 
-                    <><FaCalendarCheck /> Disponible</> : 
-                    <><FaCalendarTimes /> No Disponible</>
+                    <><FaCalendarCheck size={12} /> Disponible</> : 
+                    <><FaCalendarTimes size={12} /> No Disponible</>
                   }
                 </div>
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", marginTop: 30 }}>
+            <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginTop: 20 }}>
               <button
-                onClick={closeDetailsModal}
+                onClick={() => {
+                  closeDetailsModal();
+                  handleEdit(selectedDisponibilidad);
+                }}
                 style={{
                   backgroundColor: "#2E5939",
                   color: "#fff",
-                  padding: "12px 30px",
+                  padding: "8px 15px",
                   border: "none",
-                  borderRadius: 10,
+                  borderRadius: 6,
                   cursor: "pointer",
                   fontWeight: "600",
-                  fontSize: "14px",
-                  transition: "all 0.3s ease"
+                  fontSize: "12px",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: "all 0.2s ease"
                 }}
                 onMouseOver={(e) => {
                   e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.transform = "translateY(-1px)";
                 }}
                 onMouseOut={(e) => {
                   e.target.style.background = "#2E5939";
                   e.target.style.transform = "translateY(0)";
                 }}
               >
-                Cerrar Detalles
+                <FaEdit size={12} /> Editar
+              </button>
+              <button
+                onClick={() => {
+                  closeDetailsModal();
+                  handleDeleteClick(selectedDisponibilidad);
+                }}
+                style={{
+                  backgroundColor: "#e53e3e",
+                  color: "#fff",
+                  padding: "8px 15px",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "12px",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: "all 0.2s ease"
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = "translateY(-1px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                }}
+              >
+                <FaTrash size={12} /> Eliminar
+              </button>
+              <button
+                onClick={closeDetailsModal}
+                style={{
+                  backgroundColor: "#e0e0e0",
+                  color: "#333",
+                  padding: "8px 15px",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "12px",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Cerrar
               </button>
             </div>
           </div>
@@ -1618,61 +1651,61 @@ const Disponibilidad = () => {
       {/* Modal de confirmación de eliminación */}
       {showDeleteConfirm && disponibilidadToDelete && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...modalContentStyle, maxWidth: 500, textAlign: 'center' }}>
-            <div style={{ marginBottom: 20 }}>
+          <div style={{ ...modalContentStyle, maxWidth: 400, textAlign: 'center' }}>
+            <div style={{ marginBottom: 15 }}>
               <FaExclamationTriangle 
                 style={{ 
-                  fontSize: '48px', 
-                  color: '#e57373',
-                  marginBottom: '15px'
+                  fontSize: '36px', 
+                  color: '#e53e3e',
+                  marginBottom: '10px'
                 }} 
               />
-              <h3 style={{ marginBottom: 15, color: "#2E5939", fontSize: "22px" }}>
+              <h3 style={{ marginBottom: 12, color: "#2E5939", fontSize: "16px" }}>
                 Confirmar Eliminación
               </h3>
             </div>
             
-            <p style={{ marginBottom: 25, fontSize: '16px', color: "#2E5939", lineHeight: '1.5' }}>
+            <p style={{ marginBottom: 20, fontSize: '14px', color: "#2E5939", lineHeight: '1.4' }}>
               ¿Estás seguro de eliminar la disponibilidad de<br />
               "<strong>{getCabanaNombre(disponibilidadToDelete.idCabana)}</strong>"<br />
               para la fecha "<strong>{formatFecha(disponibilidadToDelete.dia)}</strong>"?
             </p>
 
             <div style={{ 
-              backgroundColor: '#fff3cd', 
+              backgroundColor: '#fffaf0', 
               border: '1px solid #ffeaa7',
-              borderRadius: '8px',
-              padding: '15px',
-              marginBottom: '25px'
+              borderRadius: '6px',
+              padding: '12px',
+              marginBottom: '20px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <FaInfoCircle style={{ color: '#856404' }} />
-                <strong style={{ color: '#856404', fontSize: '14px' }}>Importante</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <FaInfoCircle style={{ color: '#b7791f' }} size={12} />
+                <strong style={{ color: '#b7791f', fontSize: '12px' }}>Importante</strong>
               </div>
-              <p style={{ color: '#856404', margin: 0, fontSize: '13px', lineHeight: '1.4' }}>
-                Esta acción no se puede deshacer. La disponibilidad será eliminada permanentemente del sistema.
+              <p style={{ color: '#b7791f', margin: 0, fontSize: '11px', lineHeight: '1.3' }}>
+                Esta acción no se puede deshacer. La disponibilidad será eliminada permanentemente.
               </p>
             </div>
 
-            <div style={{ display: "flex", gap: 15, justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
                 style={{
-                  backgroundColor: loading ? "#ccc" : "#e57373",
+                  backgroundColor: loading ? "#ccc" : "#e53e3e",
                   color: "white",
-                  padding: "12px 25px",
+                  padding: "8px 20px",
                   border: "none",
-                  borderRadius: 10,
+                  borderRadius: 6,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
-                  fontSize: "14px",
-                  minWidth: "120px",
-                  transition: "all 0.3s ease"
+                  fontSize: "12px",
+                  minWidth: "100px",
+                  transition: "all 0.2s ease"
                 }}
                 onMouseOver={(e) => {
                   if (!loading) {
-                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.transform = "translateY(-1px)";
                   }
                 }}
                 onMouseOut={(e) => {
@@ -1689,19 +1722,19 @@ const Disponibilidad = () => {
                 style={{
                   backgroundColor: "#2E5939",
                   color: "#fff",
-                  padding: "12px 25px",
+                  padding: "8px 20px",
                   border: "none",
-                  borderRadius: 10,
+                  borderRadius: 6,
                   cursor: loading ? "not-allowed" : "pointer",
                   fontWeight: "600",
-                  fontSize: "14px",
-                  minWidth: "120px",
-                  transition: "all 0.3s ease"
+                  fontSize: "12px",
+                  minWidth: "100px",
+                  transition: "all 0.2s ease"
                 }}
                 onMouseOver={(e) => {
                   if (!loading) {
                     e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.transform = "translateY(-1px)";
                   }
                 }}
                 onMouseOut={(e) => {

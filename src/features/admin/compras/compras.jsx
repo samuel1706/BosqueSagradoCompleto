@@ -763,121 +763,146 @@ const AdminCompras = () => {
   // ===============================================
   // FUNCIONES PRINCIPALES
   // ===============================================
-const handleAddCompra = async (e) => {
-  e.preventDefault();
-  
-  if (isSubmitting) {
-    displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
-    return;
-  }
-
-  if (!validateForm()) {
-    return;
-  }
-
-  setIsSubmitting(true);
-  setLoading(true);
-  
-  try {
-    const { subtotal, iva, total } = calcularTotales();
-
-    const compraData = {
-      idCompra: isEditing ? parseInt(newCompra.idCompra) : 0,
-      idProveedor: parseInt(newCompra.idProveedor),
-      metodoPago: newCompra.metodoPago,
-      estado: newCompra.estado,
-      subtotal: subtotal,
-      iva: iva,
-      total: total,
-      fechaCompra: isEditing ? newCompra.fechaCompra : new Date().toISOString()
-    };
-
-    console.log("📤 Enviando datos de compra:", compraData);
-
-    let compraId;
-
-    if (isEditing) {
-      // Actualizar compra existente
-      const response = await axios.put(`${API_COMPRAS}/${newCompra.idCompra}`, compraData, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      compraId = newCompra.idCompra;
-      
-      // Eliminar detalles existentes y crear nuevos
-      try {
-        const detallesExistentes = await fetchDetalleComprasByCompraId(compraId);
-        for (const detalle of detallesExistentes) {
-          await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
-        }
-      } catch (error) {
-        console.warn("No se pudieron eliminar los detalles existentes:", error);
-      }
-      
-      displayAlert("Compra actualizada exitosamente.", "success");
-    } else {
-      // Crear nueva compra
-      const response = await axios.post(API_COMPRAS, compraData, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      compraId = response.data.idCompra;
-      displayAlert("Compra agregada exitosamente.", "success");
+  const handleAddCompra = async (e) => {
+    e.preventDefault();
+    
+    if (isSubmitting) {
+      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
+      return;
     }
 
-    // Crear detalles de compra
-    for (const producto of productosCompra) {
-      const subtotalProducto = parseFloat(producto.subtotal);
-      const ivaProducto = subtotalProducto * IVA_RATE;
-      const totalProducto = subtotalProducto + ivaProducto;
-      
-      const detalleData = {
-        idCompra: compraId,
-        idProducto: parseInt(producto.idProducto),
-        cantidad: parseInt(producto.cantidad),
-        subtotal: subtotalProducto,
-        iva: ivaProducto,
-        total: totalProducto
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setLoading(true);
+    
+    try {
+      const { subtotal, iva, total } = calcularTotales();
+
+      const compraData = {
+        idCompra: isEditing ? parseInt(newCompra.idCompra) : 0,
+        idProveedor: parseInt(newCompra.idProveedor),
+        metodoPago: newCompra.metodoPago,
+        estado: newCompra.estado,
+        subtotal: subtotal,
+        iva: iva,
+        total: total,
+        fechaCompra: isEditing ? newCompra.fechaCompra : new Date().toISOString()
       };
 
-      console.log("📤 Enviando detalle:", detalleData);
+      console.log("📤 Enviando datos de compra:", compraData);
 
-      await axios.post(API_DETALLE_COMPRAS, detalleData, {
+      let compraId;
+
+      if (isEditing) {
+        // Actualizar compra existente
+        const response = await axios.put(`${API_COMPRAS}/${newCompra.idCompra}`, compraData, {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        compraId = newCompra.idCompra;
+        
+        // Eliminar detalles existentes y crear nuevos
+        try {
+          const detallesExistentes = await fetchDetalleComprasByCompraId(compraId);
+          for (const detalle of detallesExistentes) {
+            await axios.delete(`${API_DETALLE_COMPRAS}/${detalle.idDetalleCompra}`);
+          }
+        } catch (error) {
+          console.warn("No se pudieron eliminar los detalles existentes:", error);
+        }
+        
+        displayAlert("Compra actualizada exitosamente.", "success");
+      } else {
+        // Crear nueva compra
+        const response = await axios.post(API_COMPRAS, compraData, {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        compraId = response.data.idCompra;
+        displayAlert("Compra agregada exitosamente.", "success");
+      }
+
+      // Crear detalles de compra
+      for (const producto of productosCompra) {
+        const subtotalProducto = parseFloat(producto.subtotal);
+        const ivaProducto = subtotalProducto * IVA_RATE;
+        const totalProducto = subtotalProducto + ivaProducto;
+        
+        const detalleData = {
+          idCompra: compraId,
+          idProducto: parseInt(producto.idProducto),
+          cantidad: parseInt(producto.cantidad),
+          subtotal: subtotalProducto,
+          iva: ivaProducto,
+          total: totalProducto
+        };
+
+        console.log("📤 Enviando detalle:", detalleData);
+
+        await axios.post(API_DETALLE_COMPRAS, detalleData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      await fetchCompras();
+      await fetchDetalleCompras();
+      closeForm();
+    } catch (error) {
+      console.error("❌ Error al guardar compra:", error);
+      
+      // Mostrar más detalles del error
+      let errorMessage = "Error al guardar la compra";
+      
+      if (error.response) {
+        // El servidor respondió con un código de error
+        console.log("📋 Detalles del error:", error.response.data);
+        errorMessage = error.response.data || `Error ${error.response.status}: ${error.response.statusText}`;
+      } else if (error.request) {
+        // La petición fue hecha pero no se recibió respuesta
+        errorMessage = "No se recibió respuesta del servidor";
+      } else {
+        // Algo pasó al configurar la petición
+        errorMessage = error.message;
+      }
+      
+      displayAlert(errorMessage, "error");
+    } finally {
+      setLoading(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  // ===============================================
+  // FUNCION AUXILIAR PARA ELIMINAR COMPRA
+  // ===============================================
+  const confirmDelete = async () => {
+    if (!compraToDelete) return;
+    
+    setLoading(true);
+    try {
+      await axios.delete(`${API_COMPRAS}/${compraToDelete.idCompra}`, {
         headers: { 'Content-Type': 'application/json' }
       });
+      
+      displayAlert("Compra eliminada exitosamente.", "success");
+      await fetchCompras();
+      await fetchDetalleCompras();
+    } catch (error) {
+      console.error("❌ Error al eliminar compra:", error);
+      handleApiError(error, "eliminar la compra");
+    } finally {
+      setLoading(false);
+      setShowDeleteConfirm(false);
+      setCompraToDelete(null);
     }
-
-    await fetchCompras();
-    await fetchDetalleCompras();
-    closeForm();
-  } catch (error) {
-    console.error("❌ Error al guardar compra:", error);
-    
-    // Mostrar más detalles del error
-    let errorMessage = "Error al guardar la compra";
-    
-    if (error.response) {
-      // El servidor respondió con un código de error
-      console.log("📋 Detalles del error:", error.response.data);
-      errorMessage = error.response.data || `Error ${error.response.status}: ${error.response.statusText}`;
-    } else if (error.request) {
-      // La petición fue hecha pero no se recibió respuesta
-      errorMessage = "No se recibió respuesta del servidor";
-    } else {
-      // Algo pasó al configurar la petición
-      errorMessage = error.message;
-    }
-    
-    displayAlert(errorMessage, "error");
-  } finally {
-    setLoading(false);
-    setIsSubmitting(false);
-  }
-};
+  };
 
   // ===============================================
   // FUNCIONES AUXILIARES
@@ -990,13 +1015,19 @@ const handleAddCompra = async (e) => {
         idProveedor: compra.idProveedor.toString()
       });
       
-      setProductosCompra(detalles.map(detalle => ({
-        idProducto: detalle.idProducto.toString(),
-        cantidad: detalle.cantidad.toString(),
-        precioUnitario: (detalle.subtotal / detalle.cantidad).toFixed(2),
-        subtotal: detalle.subtotal
-      })));
+      // Mapear correctamente los productos para edición
+      const productosEdit = detalles.map(detalle => {
+        const productoInfo = productos.find(p => p.idProducto === detalle.idProducto);
+        return {
+          idProducto: detalle.idProducto.toString(),
+          cantidad: detalle.cantidad.toString(),
+          precioUnitario: (detalle.subtotal / detalle.cantidad).toFixed(2),
+          subtotal: detalle.subtotal,
+          nombre: productoInfo ? productoInfo.nombre : `Producto ${detalle.idProducto}`
+        };
+      });
       
+      setProductosCompra(productosEdit);
       setIsEditing(true);
       setShowForm(true);
       setFormErrors({});

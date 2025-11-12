@@ -30,7 +30,13 @@ function Sidebar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("usuario");
+    // Limpiar toda la información de autenticación
+    localStorage.removeItem("user");
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userToken");
+    
+    // Redirigir al landing page (página principal)
     navigate("/");
   };
 
@@ -206,7 +212,7 @@ function Sidebar() {
         </div>
       </div>
 
-      {/* Botón Cerrar Sesión */}
+      {/* Botón Cerrar Sesión - CORREGIDO */}
       <div style={{ padding: "10px", marginBottom: "15px" }}>
         <button
           onClick={handleLogout}
@@ -223,6 +229,12 @@ function Sidebar() {
             cursor: "pointer",
             fontWeight: "bold",
             transition: "background-color 0.3s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "rgba(232, 245, 233, 1)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "rgba(240, 252, 241, 1)";
           }}
           aria-label="Cerrar sesión"
         >

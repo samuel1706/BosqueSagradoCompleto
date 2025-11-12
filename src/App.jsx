@@ -1,5 +1,6 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { getUser } from "./utils/auth";
 import Sidebar from "./components/Sidebar";
 import Cabins from "./features/admin/cabins/cabins";
 import Gestiservi from "./features/admin/gestiservi/gestiservi";
@@ -20,6 +21,12 @@ import Temporada from "./features/admin/Temporada/Temporada";
 import TipoCabana from "./features/admin/TipoCabana/Tipocabana";
 import Disponibilidad from "./features/admin/Disponibilidad/Disponibilidad";
 import Ventas from "./features/admin/Ventas/Ventas";
+
+// ✅ Componentes del Cliente
+import HomeCliente from "./features/cliente/HomeCliente";
+import Landing from "./features/Cliente/Landing";
+import MisReservas from "./features/Cliente/MisReservas";
+import ReservaForm from "./features/Cliente/ReservaForm";
 
 // ✅ Cloudinary Configuration
 import { Cloudinary } from '@cloudinary/url-gen';
@@ -200,8 +207,15 @@ const Placeholder = ({ title }) => (
   </div>
 );
 
-// ✅ Layout con Sidebar
+// ✅ Layout con Sidebar (Solo para Admin)
 function LayoutWithSidebar() {
+  const user = getUser();
+  
+  // Si no es admin, redirigir al home del cliente
+  if (!user || user.rol !== "Admin") {
+    return <Navigate to="/home" replace />;
+  }
+
   return (
     <div className="flex">
       <Sidebar />
@@ -248,10 +262,66 @@ function LayoutWithSidebar() {
   );
 }
 
+// ✅ Layout del Cliente (Sin Sidebar)
+function ClienteLayout() {
+  const user = getUser();
+  
+  // Si no está autenticado, redirigir al login
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Si es admin, redirigir al dashboard
+  if (user.rol === "Admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f8faf8]">
+      <Routes>
+        <Route path="/home" element={<HomeCliente />} />
+        <Route path="/mis-reservas" element={<MisReservas />} />
+        <Route path="/reservar" element={<ReservaForm />} />
+        <Route path="/landing" element={<Landing />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
+    </div>
+  );
+}
+
+// ✅ Componente de redirección basado en el rol
+function RoleBasedRedirect() {
+  const user = getUser();
+  
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (user.rol === "Admin") {
+    return <Navigate to="/dashboard" replace />;
+  } else {
+    return <Navigate to="/home" replace />;
+  }
+}
+
 // ✅ App principal
 function App() {
   const location = useLocation();
+  const user = getUser();
+  
+  // Determinar qué layout mostrar basado en la ruta y el rol del usuario
   const isLoginPage = location.pathname === "/";
+  const isAdminRoute = location.pathname.startsWith('/dashboard') || 
+                       location.pathname.startsWith('/reservas') ||
+                       location.pathname.startsWith('/compras') ||
+                       location.pathname.startsWith('/ventas') ||
+                       location.pathname.startsWith('/roles') ||
+                       location.pathname.startsWith('/usuarios');
+  
+  const isClienteRoute = location.pathname.startsWith('/home') ||
+                        location.pathname.startsWith('/mis-reservas') ||
+                        location.pathname.startsWith('/reservar') ||
+                        location.pathname.startsWith('/landing');
 
   return (
     <>
@@ -259,8 +329,13 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginRegister />} />
         </Routes>
-      ) : (
+      ) : isAdminRoute ? (
         <LayoutWithSidebar />
+      ) : isClienteRoute ? (
+        <ClienteLayout />
+      ) : (
+        // Redirección por defecto basada en el rol
+        <RoleBasedRedirect />
       )}
     </>
   );
