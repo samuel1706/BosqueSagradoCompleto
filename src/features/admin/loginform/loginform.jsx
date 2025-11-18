@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye, FaCrown, FaMapMarkerAlt, FaStar, FaSearch, FaUsers, FaHome, FaBed } from "react-icons/fa";
+import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye, FaCrown, FaMapMarkerAlt, FaStar, FaSearch, FaUsers, FaHome, FaBed, FaArrowUp } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-import { getUser, saveUser } from "../../../utils/auth";
 
 // Datos de las cabañas actualizados - solo Copacabana y San Felix
 const cabañas = [
@@ -10,16 +9,16 @@ const cabañas = [
     id: 101,
     name: "Cabaña Ambar Room",
     description: "Amplia cabaña con jacuzzi privado. Ideal para parejas que buscan privacidad y lujo.",
-    img: "/images/C_Ambar_Room/img1.jpg",
+    img: "images/C_Ambar_Room/img1.jpg",
     price: "$395.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Ambar_Room/img2.jpg",
-      "/images/C_Ambar_Room/img3.jpg",
-      "/images/C_Ambar_Room/img4.jpg"
+      "images/C_Ambar_Room/img2.jpg",
+      "images/C_Ambar_Room/img3.jpg",
+      "images/C_Ambar_Room/img4.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -27,18 +26,18 @@ const cabañas = [
     id: 102,
     name: "Cabaña Bali Suite",
     description: "Cabaña Premium. Perfecta para una escapada romántica con todas las comodidades.",
-    img: "/images/C_Bali_Suite/img1.jpg",
+    img: "images/C_Bali_Suite/img1.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Bali_Suite/img2.jpg",
-      "/images/C_Bali_Suite/img3.jpg",
-      "/images/C_Bali_Suite/img4.jpg",
-      "/images/C_Bali_Suite/img5.jpg",
-      "/images/C_Bali_Suite/img6.jpg",
+      "images/C_Bali_Suite/img2.jpg",
+      "images/C_Bali_Suite/img3.jpg",
+      "images/C_Bali_Suite/img4.jpg",
+      "images/C_Bali_Suite/img5.jpg",
+      "images/C_Bali_Suite/img6.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -46,19 +45,19 @@ const cabañas = [
     id: 103,
     name: "Cabaña Habana Room",
     description: "Espaciosa cabaña ideal para familias, Perfecta para vacaciones familiares inolvidables.",
-    img: "/images/C_Habana_Room/img1.jpg",
+    img: "images/C_Habana_Room/img1.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Familiar",
     capacidad: 6,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Habana_Room/img2.jpg",
-      "/images/C_Habana_Room/img3.jpg",
-      "/images/C_Habana_Room/img4.jpg",
-      "/images/C_Habana_Room/img5.jpg",
-      "/images/C_Habana_Room/img6.jpg",
-      "/images/C_Habana_Room/img7.jpg"
+      "images/C_Habana_Room/img2.jpg",
+      "images/C_Habana_Room/img3.jpg",
+      "images/C_Habana_Room/img4.jpg",
+      "images/C_Habana_Room/img5.jpg",
+      "images/C_Habana_Room/img6.jpg",
+      "images/C_Habana_Room/img7.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Piscina Privada", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -66,17 +65,17 @@ const cabañas = [
     id: 104,
     name: "Cabaña Mikonos Suite",
     description: "Lujosa cabaña con diseño moderno y jacuzzi con vista a las montañas. Experiencia de lujo en un entorno natural privilegiado.",
-    img: "/images/C_Mikonos_Suite/img1.jpg",
+    img: "images/C_Mikonos_Suite/img1.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Mikonos_Suite/img2.jpg",
-      "/images/C_Mikonos_Suite/img3.jpg",
-      "/images/C_Mikonos_Suite/img4.jpg",
-      "/images/C_Mikonos_Suite/img5.jpg",
+      "images/C_Mikonos_Suite/img2.jpg",
+      "images/C_Mikonos_Suite/img3.jpg",
+      "images/C_Mikonos_Suite/img4.jpg",
+      "images/C_Mikonos_Suite/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -84,15 +83,15 @@ const cabañas = [
     id: 201,
     name: "Chalets",
     description: "Ideal para parejas, con cama king. Un refugio íntimo para reconectar con tu pareja.",
-    img: "/images/S_Chalets/img1.jpg",
+    img: "images/S_Chalets/img1.jpg",
     price: "$380.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Chalets/img2.jpg",
-      "/images/S_Chalets/img3.jpg"
+      "images/S_Chalets/img2.jpg",
+      "images/S_Chalets/img3.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -100,32 +99,32 @@ const cabañas = [
     id: 202,
     name: "Cabaña Crystal Garden",
     description: "Perfecta para una escapada romántica con todas las comodidades.",
-    img: "/images/S_Crystal_Garden/img1.jpg",
+    img: "images/S_Crystal_Garden/img1.jpg",
     price: "$495.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Crystal_Garden/img2.jpg",
-      "/images/S_Crystal_Garden/img3.jpg"
+      "images/S_Crystal_Garden/img2.jpg",
+      "images/S_Crystal_Garden/img3.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
   {
     id: 203,
-    name: "Domo Alaska",
+    name: "Domo Alaska ",
     description: "rodeada de naturaleza, ideal para desconectarte del ruido y descansar.",
-    img: "/images/S_Domo_Alaska/img1.jpg",
+    img: "images/S_Domo_Alaska/img1.jpg",
     price: "$460.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Domo_Alaska/img2.jpg",
-      "/images/S_Domo_Alaska/img3.jpg",
-      "/images/S_Domo_Alaska/img4.jpg",
+      "images/S_Domo_Alaska/img2.jpg",
+      "images/S_Domo_Alaska/img3.jpg",
+      "images/S_Domo_Alaska/img4.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -133,34 +132,33 @@ const cabañas = [
     id: 204,
     name: "Domo Ataraxia",
     description: "Disfruta amaneceres entre la neblina y el sonido de los pájaros.",
-    img: "/images/S_Domo_Ataraxia/img1.jpg",
+    img: "images/S_Domo_Ataraxia/img1.jpg",
     price: "$460.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Domo_Ataraxia/img2.jpg",
-      "/images/S_Domo_Ataraxia/img3.jpg",
-      "/images/S_Domo_Ataraxia/img4.jpg",
+      "images/S_Domo_Ataraxia/img2.jpg",
+      "images/S_Domo_Ataraxia/img3.jpg",
+      "images/S_Domo_Ataraxia/img4.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
-  },
-  {
+  },{
     id: 205,
     name: "Cabaña Golden Suite",
     description: "Espacio íntimo y moderno, diseñado para parejas que buscan tranquilidad.",
-    img: "/images/S_Golden_Suite/img1.jpg",
+    img: "images/S_Golden_Suite/img1.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Golden_Suite/img2.jpg",
-      "/images/S_Golden_Suite/img3.jpg",
-      "/images/S_Golden_Suite/img4.jpg",
-      "/images/S_Golden_Suite/img5.jpg",
+      "images/S_Golden_Suite/img2.jpg",
+      "images/S_Golden_Suite/img3.jpg",
+      "images/S_Golden_Suite/img4.jpg",
+      "images/S_Golden_Suite/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -168,17 +166,17 @@ const cabañas = [
     id: 206,
     name: "Cabaña Natural Suite",
     description: "Perfecta para quienes aman despertar con vistas a la montaña.",
-    img: "/images/S_Natural_Suite/img1.jpg",
+    img: "images/S_Natural_Suite/img1.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Natural_Suite/img2.jpg",
-      "/images/S_Natural_Suite/img3.jpg",
-      "/images/S_Natural_Suite/img4.jpg",
-      "/images/S_Natural_Suite/img5.jpg",
+      "images/S_Natural_Suite/img2.jpg",
+      "images/S_Natural_Suite/img3.jpg",
+      "images/S_Natural_Suite/img4.jpg",
+      "images/S_Natural_Suite/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -186,17 +184,17 @@ const cabañas = [
     id: 207,
     name: "Cabaña Villa Guadalupe",
     description: "Combina el encanto natural con toques artesanales y confort total.",
-    img: "/images/S_Villa_Guadalupe/img1.jpg",
+    img: "images/S_Villa_Guadalupe/img1.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Villa_Guadalupe/img2.jpg",
-      "/images/S_Villa_Guadalupe/img3.jpg",
-      "/images/S_Villa_Guadalupe/img4.jpg",
-      "/images/S_Villa_Guadalupe/img5.jpg",
+      "images/S_Villa_Guadalupe/img2.jpg",
+      "images/S_Villa_Guadalupe/img3.jpg",
+      "images/S_Villa_Guadalupe/img4.jpg",
+      "images/S_Villa_Guadalupe/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   }
@@ -205,33 +203,28 @@ const cabañas = [
 const paquetes = [
   {
     name: "Kit de Asado",
-    img: "/images/comida.png",
-    description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes. Es la opción ideal para los amantes de un buen asado.",
+    img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes.",
     price: "$150.000 COP",
   },
   {
-    name: "Paquete de Alcohol",
-    img: "/images/licores.png",
-    description: "Una selección de cócteles vibrantes y coloridos, preparados por expertos para refrescar y animar cualquier ocasión. Este paquete es la elección perfecta para quienes buscan variedad y sabor en sus bebidas.",
+    name: "Paquete de Bebidas",
+    img: "https://images.unsplash.com/photo-1544145945-f90425340c7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    description: "Una selección de cócteles vibrantes y coloridos, preparados por expertos para refrescar y animar cualquier ocasión.",
     price: "$150.000 COP",
   },
   {
     name: "Masaje relajante",
-    img: "/images/masaje.png",
-    description: "Escapa del estrés diario con un masaje profesional diseñado para liberar la tensión muscular. Una experiencia de bienestar que te dejará sintiéndote completamente renovado y en paz.",
+    img: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    description: "Escapa del estrés diario con un masaje profesional diseñado para liberar la tensión muscular.",
     price: "$150.000 COP",
   },
 ];
 
-// URL base de la API
-const API_BASE_URL = 'http://localhost:5272/api';
-
 // Funciones API
 const loginWithAPI = async (email, password) => {
   try {
-    console.log('🔐 Intentando login con:', { email, password });
-   
-    const response = await fetch(`${API_BASE_URL}/Usuarios/Login`, {
+    const response = await fetch('http://localhost:5095/api/Usuarios/Login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -241,8 +234,6 @@ const loginWithAPI = async (email, password) => {
         contrasena: password
       })
     });
-
-    console.log("📩 Respuesta del servidor:", response.status, response.statusText);
 
     if (!response.ok) {
       let errorMessage = 'Error en el login';
@@ -261,23 +252,16 @@ const loginWithAPI = async (email, password) => {
     }
 
     const result = await response.json();
-    console.log('✅ Login exitoso:', result);
     return result;
   } catch (error) {
     console.error('❌ Error en login:', error);
-    
-    // Manejo específico de errores de conexión
-    if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
-      throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:5272');
-    }
-    
     throw error;
   }
 };
 
 const getAllUsers = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/Usuarios`, {
+    const response = await fetch('http://localhost:5095/api/Usuarios', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -296,27 +280,6 @@ const getAllUsers = async () => {
   }
 };
 
-const getAllRoles = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/Rol`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Error obteniendo roles');
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error obteniendo roles:', error);
-    throw error;
-  }
-};
-
 const findUserInList = async (email) => {
   try {
     const allUsers = await getAllUsers();
@@ -328,51 +291,15 @@ const findUserInList = async (email) => {
   }
 };
 
-const getUserRoleInfo = async (idRol) => {
-  try {
-    const allRoles = await getAllRoles();
-    const role = allRoles.find(r => r.idRol === idRol);
-    return role;
-  } catch (error) {
-    console.error('Error obteniendo información del rol:', error);
-    return null;
-  }
-};
-
-const checkServerConnection = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/Usuarios`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('❌ Servidor no disponible:', error);
-    return false;
-  }
-};
-
 const registerWithAPI = async (userData) => {
   try {
-    console.log('📝 Intentando registrar usuario:', userData);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
-
-    const response = await fetch(`${API_BASE_URL}/Usuarios`, {
+    const response = await fetch('http://localhost:5095/api/Usuarios', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(userData),
-      signal: controller.signal
+      body: JSON.stringify(userData)
     });
-
-    clearTimeout(timeoutId);
-
-    console.log('📡 Respuesta del registro:', response.status, response.statusText);
 
     if (!response.ok) {
       let errorMessage = 'Error en el registro';
@@ -392,19 +319,160 @@ const registerWithAPI = async (userData) => {
     }
 
     const result = await response.json();
-    console.log('✅ Registro exitoso:', result);
     return result;
   } catch (error) {
     console.error('❌ Error en registro:', error);
-    
-    if (error.name === 'AbortError') {
-      throw new Error('La conexión con el servidor tardó demasiado tiempo. Verifica que el backend esté funcionando correctamente.');
+    throw error;
+  }
+};
+
+// MODIFICADA: Función para enviar código de verificación (más tolerante a errores)
+const sendVerificationCode = async (email) => {
+  try {
+    console.log('📤 Enviando código de verificación a:', email);
+    const response = await fetch('http://localhost:5095/api/Usuarios/SendVerificationCode', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ correo: email })
+    });
+
+    console.log('📨 Respuesta del servidor:', response.status, response.statusText);
+
+    if (!response.ok) {
+      console.warn('⚠️ Respuesta no OK al enviar código:', response.status, response.statusText);
+      // En lugar de lanzar error, retornamos un objeto con exito: false
+      return { exito: false, mensaje: `Error ${response.status}: ${response.statusText}` };
     }
-    
-    if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
-      throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:5272');
+
+    const result = await response.json();
+    console.log('✅ Resultado del envío de código:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error enviando código:', error);
+    // No lanzamos el error, retornamos un objeto con el error
+    return { exito: false, mensaje: error.message };
+  }
+};
+
+// MODIFICADA: Función para verificar código (más tolerante a errores)
+const verifyCode = async (email, code) => {
+  try {
+    console.log('🔐 Verificando código para:', email);
+    console.log('📝 Código ingresado:', code);
+   
+    const response = await fetch('http://localhost:5095/api/Usuarios/VerificarCodigo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        correo: email,
+        codigo: code
+      })
+    });
+
+    console.log('📨 Respuesta del servidor (verify):', response.status, response.statusText);
+
+    if (!response.ok) {
+      console.warn('⚠️ Respuesta no OK al verificar código:', response.status, response.statusText);
+     
+      let errorMessage = 'Error verificando código';
+      try {
+        const errorText = await response.text();
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      } catch (e) {
+        // Si no podemos leer el texto de error, usar el status
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+     
+      return { exito: false, mensaje: errorMessage };
     }
-    
+
+    const result = await response.json();
+    console.log('✅ Resultado de la verificación:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error verificando código:', error);
+    return { exito: false, mensaje: error.message };
+  }
+};
+
+// NUEVA FUNCIÓN: Olvidó contraseña - enviar código
+const forgotPassword = async (email) => {
+  try {
+    const response = await fetch('http://localhost:5095/api/Usuarios/OlvidoContrasena', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        correo: email
+      })
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Error enviando código de recuperación';
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.mensaje) {
+          errorMessage = errorData.mensaje;
+        }
+      } catch (e) {
+        const errorText = await response.text();
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('❌ Error en olvidó contraseña:', error);
+    throw error;
+  }
+};
+
+// NUEVA FUNCIÓN: Restablecer contraseña
+const resetPassword = async (email, code, newPassword) => {
+  try {
+    const response = await fetch('http://localhost:5095/api/Usuarios/RestablecerClave', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        correo: email,
+        codigo: code,
+        nuevaContrasena: newPassword
+      })
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Error restableciendo contraseña';
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.mensaje) {
+          errorMessage = errorData.mensaje;
+        }
+      } catch (e) {
+        const errorText = await response.text();
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('❌ Error restableciendo contraseña:', error);
     throw error;
   }
 };
@@ -417,18 +485,28 @@ function LoginRegister() {
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedCabin, setSelectedCabin] = useState(null);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [isServerOnline, setIsServerOnline] = useState(true);
-
-  const [showCabins, setShowCabins] = useState(false);
   const [selectedSede, setSelectedSede] = useState(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [showCabins, setShowCabins] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+
+  // NUEVOS ESTADOS PARA OLVIDÓ CONTRASEÑA
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetPasswordCode, setResetPasswordCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   // Nuevos estados para filtros - SOLO sede, tipo y capacidad
   const [filtroSede, setFiltroSede] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroCapacidad, setFiltroCapacidad] = useState("");
   const [cabinImageIndex, setCabinImageIndex] = useState(0);
+  const [sedeImageIndex, setSedeImageIndex] = useState(0);
 
   // Estados para registro
   const [tipoDocumento, setTipoDocumento] = useState("Cédula de Ciudadanía");
@@ -454,6 +532,33 @@ function LoginRegister() {
     "Cédula de Extranjería",
     "Pasaporte",
     "Tarjeta de Identidad"
+  ];
+
+  // Datos de las sedes para la galería
+  const sedes = [
+    {
+      name: "Copacabana",
+      description: "Disfruta de una experiencia única en nuestras cabañas premium ubicadas en Copacabana, rodeadas de naturaleza y comodidades exclusivas.",
+      images: [
+        "images/C_Ambar_Room/img1.jpg",
+        "images/C_Bali_Suite/img1.jpg",
+        "images/C_Habana_Room/img1.jpg",
+        "images/C_Mikonos_Suite/img1.jpg"
+      ],
+      cabañasCount: cabañas.filter(c => c.sede === "Copacabana").length
+    },
+    {
+      name: "San Felix",
+      description: "Vive momentos inolvidables en San Felix, donde la tranquilidad y el confort se fusionan para crear la escapada perfecta.",
+      images: [
+        "images/S_Chalets/img1.jpg",
+        "images/S_Crystal_Garden/img1.jpg",
+        "images/S_Domo_Alaska/img1.jpg",
+        "images/S_Domo_Ataraxia/img1.jpg",
+        "images/S_Golden_Suite/img1.jpg"
+      ],
+      cabañasCount: cabañas.filter(c => c.sede === "San Felix").length
+    }
   ];
 
   // Obtener opciones únicas para filtros
@@ -484,6 +589,11 @@ function LoginRegister() {
         prev === selectedCabin.imagenes.length - 1 ? 0 : prev + 1
       );
     }
+    if (selectedSede) {
+      setSedeImageIndex((prev) =>
+        prev === selectedSede.images.length - 1 ? 0 : prev + 1
+      );
+    }
   };
 
   const prevImage = () => {
@@ -492,35 +602,46 @@ function LoginRegister() {
         prev === 0 ? selectedCabin.imagenes.length - 1 : prev - 1
       );
     }
+    if (selectedSede) {
+      setSedeImageIndex((prev) =>
+        prev === 0 ? selectedSede.images.length - 1 : prev - 1
+      );
+    }
   };
 
-  // ✅ VERIFICACIÓN DE AUTENTICACIÓN AL CARGAR EL COMPONENTE
+  // Efecto para mostrar el botón de scroll to top
   useEffect(() => {
-    const user = getUser();
-
-    if (!user) return; // si no hay usuario, no hace nada
-
-    // 🔒 Evita bucles de redirección
-    if (window.location.pathname === "/home" && user.rol === "Cliente") return;
-    if (window.location.pathname === "/dashboard" && user.rol === "Admin") return;
-
-    // 🔁 Redirige según el rol
-    if (user.rol === "Cliente") {
-      navigate("/home", { replace: true });
-    } else if (user.rol === "Admin") {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [navigate]);
-
-  // Verificar estado del servidor al cargar el componente
-  useEffect(() => {
-    const checkServerStatus = async () => {
-      const online = await checkServerConnection();
-      setIsServerOnline(online);
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
     };
-    
-    checkServerStatus();
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Función para scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Función para manejar clics en enlaces del footer
+  const handleFooterLinkClick = (action) => {
+    action();
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }, 100);
+  };
+
+  // MODIFICADA: Función para abrir enlaces de redes sociales en nueva ventana
+  const handleSocialMediaClick = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const showAlert = (title, text, icon, timer = 3000) => {
     Swal.fire({
@@ -561,22 +682,26 @@ function LoginRegister() {
   };
 
   const handleShowLogin = () => {
-    setShowForgotPassword(false);
     setIsRegisterActive(false);
     setShowForm(true);
     setShowAboutUs(false);
     setShowCabins(false);
+    setShowVerification(false);
+    setShowForgotPassword(false);
+    setShowResetPassword(false);
     setErrors({});
     setLoginEmail("");
     setLoginPassword("");
   };
 
   const handleShowRegister = () => {
-    setShowForgotPassword(false);
     setIsRegisterActive(true);
     setShowForm(true);
     setShowAboutUs(false);
     setShowCabins(false);
+    setShowVerification(false);
+    setShowForgotPassword(false);
+    setShowResetPassword(false);
     setErrors({});
     setTipoDocumento("Cédula de Ciudadanía");
     setNumeroDocumento("");
@@ -592,14 +717,19 @@ function LoginRegister() {
   const handleShowLanding = () => {
     setShowForm(false);
     setShowAboutUs(false);
-    setShowForgotPassword(false);
     setShowCabins(false);
+    setShowVerification(false);
+    setShowForgotPassword(false);
+    setShowResetPassword(false);
   };
 
   const handleShowAboutUs = () => {
     setShowAboutUs(true);
     setShowForm(false);
     setShowCabins(false);
+    setShowVerification(false);
+    setShowForgotPassword(false);
+    setShowResetPassword(false);
   };
 
   const handleShowDetails = (paquete) => {
@@ -614,11 +744,20 @@ function LoginRegister() {
     setShowPopup(true);
   };
 
+  // Nueva función para mostrar galería de sede
+  const handleShowSedeGallery = (sede) => {
+    setSelectedSede(sede);
+    setSedeImageIndex(0);
+    setShowPopup(true);
+  };
+
   const handleClosePopup = () => {
     setShowPopup(false);
     setSelectedPackage(null);
     setSelectedCabin(null);
+    setSelectedSede(null);
     setCabinImageIndex(0);
+    setSedeImageIndex(0);
   };
 
   const handleReserveCabin = () => {
@@ -632,13 +771,6 @@ function LoginRegister() {
 
   const prevSlide = () => {
     setCarouselIndex((prev) => (prev - 1 + cabañas.length) % cabañas.length);
-  };
-
-  const handleShowCabins = (sede) => {
-    setSelectedSede(sede);
-    setShowCabins(true);
-    setShowForm(false);
-    setShowAboutUs(false);
   };
 
   const isValidEmail = (email) => {
@@ -663,72 +795,283 @@ function LoginRegister() {
     return selectedDate < today;
   };
 
-  const handleLogin = async (e) => {
+  // NUEVA FUNCIÓN: Manejar olvidé contraseña
+  const handleForgotPassword = () => {
+    if (!loginEmail) {
+      showErrorAlert('Correo requerido', 'Por favor ingresa tu correo electrónico para recuperar tu contraseña');
+      return;
+    }
+
+    if (!isValidEmail(loginEmail)) {
+      showErrorAlert('Correo inválido', 'Por favor ingresa un correo electrónico válido');
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Primero mostrar el formulario para ingresar el código
+    setForgotPasswordEmail(loginEmail);
+    setShowForgotPassword(true);
+    setShowForm(false);
+
+    // Luego enviar el código
+    forgotPassword(loginEmail)
+      .then(result => {
+        if (result && result.exito) {
+          showSuccessAlert('Código enviado', result.mensaje || 'Se ha enviado un código de verificación a tu correo electrónico');
+        } else {
+          showErrorAlert('Error', result?.mensaje || 'No se pudo enviar el código de recuperación');
+        }
+      })
+      .catch(error => {
+        console.error('❌ Error en olvidó contraseña:', error);
+        showErrorAlert('Error', error.message || 'No se pudo enviar el código de recuperación. Intenta más tarde.');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  // NUEVA FUNCIÓN: Verificar código de recuperación
+  const handleVerifyResetCode = async (e) => {
     e.preventDefault();
-    
-    if (!isServerOnline) {
-      showErrorAlert(
-        'Servidor no disponible', 
-        'El servidor no está disponible. Verifica que el backend esté corriendo en http://localhost:5272'
-      );
+   
+    if (!resetPasswordCode) {
+      showErrorAlert('Código requerido', 'Por favor ingresa el código de verificación');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const result = await loginWithAPI(loginEmail, loginPassword);
+      // Si el código no está vacío, pasamos al siguiente paso
+      setShowResetPassword(true);
+      setShowForgotPassword(false);
+      showSuccessAlert('Código aceptado', 'Ahora puedes establecer tu nueva contraseña');
+    } catch (error) {
+      console.error('Error verificando código:', error);
+      showErrorAlert('Error', 'El código de verificación es incorrecto o ha expirado');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (result && result.exito && result.usuario) {
-        const user = result.usuario;
-        console.log("👤 Usuario logueado:", user);
+  // NUEVA FUNCIÓN: Restablecer contraseña
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+   
+    if (!newPassword || !confirmNewPassword) {
+      showErrorAlert('Campos requeridos', 'Por favor completa todos los campos');
+      return;
+    }
 
-        // Consultar el usuario completo desde la BD para obtener el rol
-        const userFromDB = await findUserInList(user.correo);
+    if (newPassword.length < 6) {
+      showErrorAlert('Contraseña muy corta', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
 
-        if (!userFromDB) {
-          throw new Error('Usuario no encontrado en la base de datos');
-        }
+    if (newPassword !== confirmNewPassword) {
+      showErrorAlert('Contraseñas no coinciden', 'Las contraseñas ingresadas no coinciden');
+      return;
+    }
 
-        // Obtener información del rol
-        const roleInfo = await getUserRoleInfo(userFromDB.idRol);
-        
-        // Determinar el rol basado en idRol
-        let rol = "Cliente"; // Por defecto
-        let nombreRol = "Cliente";
-        
-        if (userFromDB.idRol === 1) {
-          rol = "Admin";
-          nombreRol = roleInfo?.nombreRol || "Administrador";
-        } else if (userFromDB.idRol === 2) {
-          rol = "Cliente";
-          nombreRol = roleInfo?.nombreRol || "Cliente";
-        }
+    setIsLoading(true);
 
-        console.log("🎯 Rol del usuario:", { idRol: userFromDB.idRol, rol, nombreRol });
-
-        // Guardar usuario en localStorage usando util
-        saveUser({
-          ...user,
-          rol,
-          nombreRol,
-          idRol: userFromDB.idRol
-        });
-
-        // Mensaje y redirección según rol
-        if (rol === "Admin") {
-          showSuccessAlert('Inicio de sesión', `¡Bienvenido Administrador ${user.nombre || ''}!`);
-          navigate("/dashboard");
-        } else {
-          showSuccessAlert('Inicio de sesión', `¡Bienvenido ${user.nombre || ''}!`);
-          navigate("/home");
-        }
-      } else {
-        showErrorAlert('Error en el login', result?.mensaje || 'Credenciales incorrectas');
+    try {
+      const result = await resetPassword(forgotPasswordEmail, resetPasswordCode, newPassword);
+     
+      if (result) {
+        showSuccessAlert('Contraseña restablecida', 'Tu contraseña ha sido actualizada correctamente. Ahora puedes iniciar sesión.');
+       
+        // Regresar al login
+        setTimeout(() => {
+          setShowResetPassword(false);
+          setShowForm(true);
+          setIsRegisterActive(false);
+          setResetPasswordCode("");
+          setNewPassword("");
+          setConfirmNewPassword("");
+        }, 2000);
       }
     } catch (error) {
-      console.error("❌ Error en login:", error);
-      showErrorAlert('Error', error?.message || 'Error al iniciar sesión');
+      console.error('❌ Error restableciendo contraseña:', error);
+      showErrorAlert('Error', error.message || 'No se pudo restablecer la contraseña. Verifica el código e intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // MODIFICADA: Función de Login - SIEMPRE redirige a verificación después de login exitoso
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    if (!loginEmail || !loginPassword) {
+      showErrorAlert('Campos requeridos', 'Por favor ingresa tu correo electrónico y contraseña');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(loginEmail)) {
+      showErrorAlert('Correo inválido', 'Por favor ingresa un correo electrónico válido');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log('🔐 Iniciando proceso de login para:', loginEmail);
+      const loginResult = await loginWithAPI(loginEmail, loginPassword);
+     
+      if (loginResult && loginResult.exito) {
+        console.log('✅ Login exitoso, procediendo a verificación');
+        // Guardar email para verificación
+        setUserEmail(loginEmail);
+       
+        // Enviar código de verificación
+        const verificationResult = await sendVerificationCode(loginEmail);
+       
+        // MOSTRAR PANTALLA DE VERIFICACIÓN INMEDIATAMENTE - SIN IMPORTAR EL RESULTADO
+        console.log('🔄 Activando pantalla de verificación...');
+        setShowVerification(true);
+        setShowForm(false);
+        setShowAboutUs(false);
+        setShowCabins(false);
+        setShowForgotPassword(false);
+        setShowResetPassword(false);
+       
+        console.log('📱 Estado actual - showVerification:', true);
+        console.log('📧 Email guardado para verificación:', loginEmail);
+       
+        if (verificationResult && verificationResult.exito) {
+          showSuccessAlert('Código enviado', 'Se ha enviado un código de verificación a tu correo electrónico');
+        } else {
+          showAlert(
+            'Revisa tu correo',
+            'El código podría haberse enviado. Por favor revisa tu bandeja de entrada y spam.',
+            'info',
+            5000
+          );
+        }
+       
+      } else {
+        showErrorAlert('Error en el login', loginResult?.mensaje || 'Credenciales incorrectas');
+      }
+    } catch (error) {
+      console.error('❌ Error durante el login:', error);
+     
+      if (error.message.includes('No se pudo encontrar') ||
+          error.message.includes('no existe') ||
+          error.message.includes('no registrado')) {
+        showErrorAlert('Usuario no encontrado', 'No existe una cuenta con este correo electrónico.');
+      } else if (error.message.includes('contraseña') ||
+                 error.message.includes('credenciales') ||
+                 error.message.includes('clave') ||
+                 error.message.includes('Password')) {
+        showErrorAlert('Contraseña incorrecta', 'La contraseña ingresada es incorrecta.');
+      } else if (error.message.includes('inactivo') ||
+                 error.message.includes('desactivada')) {
+        showErrorAlert('Cuenta inactiva', 'Tu cuenta está desactivada. Contacta al administrador.');
+      } else {
+        showErrorAlert('Error de conexión', error.message || 'No se pudo conectar con el servidor. Intenta más tarde.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // FUNCIÓN CORREGIDA: Manejar verificación de código
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+   
+    if (!verificationCode) {
+      showErrorAlert('Código requerido', 'Por favor ingresa el código de verificación');
+      return;
+    }
+
+    if (verificationCode.length !== 6) {
+      showErrorAlert('Código inválido', 'El código debe tener 6 dígitos');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      console.log('🔐 Verificando código:', verificationCode, 'para:', userEmail);
+     
+      const verificationResult = await verifyCode(userEmail, verificationCode);
+     
+      console.log('📊 Resultado completo de verificación:', verificationResult);
+     
+      // MODIFICACIÓN CLAVE: Verificar si la verificación fue exitosa (ambas posibles propiedades)
+      const isSuccess = verificationResult &&
+                       (verificationResult.exito === true || verificationResult.exito === true);
+     
+      if (isSuccess) {
+        console.log('✅ Verificación exitosa, procediendo a buscar usuario...');
+       
+        // Buscar el usuario en la lista
+        const userFromList = await findUserInList(userEmail);
+       
+        if (userFromList) {
+          // Verificar si la cuenta está activa
+          if (!userFromList.estado) {
+            showErrorAlert('Cuenta inactiva', 'Tu cuenta está desactivada. Contacta al administrador.');
+            setIsLoading(false);
+            return;
+          }
+
+          // Crear objeto de usuario
+          const user = {
+            id: userFromList.idUsuario,
+            firstName: userFromList.nombre || '',
+            lastName: userFromList.apellido || '',
+            email: userFromList.correo || userEmail,
+            role: userFromList.idRol || 1,
+            isVerified: true,
+            tipoDocumento: userFromList.tipoDocumento,
+            numeroDocumento: userFromList.numeroDocumento,
+            celular: userFromList.celular,
+            fechaNacimiento: userFromList.fechaNacimiento
+          };
+         
+          // Guardar en localStorage
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('userRole', user.role.toString());
+          localStorage.setItem('userEmail', user.email);
+         
+          // Mensaje de bienvenida personalizado
+          const welcomeMessage = user.role === 2
+            ? `¡Bienvenido Administrador ${user.firstName}!`
+            : `¡Bienvenido de nuevo ${user.firstName} ${user.lastName}!`;
+         
+          showSuccessAlert('Verificación exitosa', welcomeMessage);
+         
+          // Redirigir después de éxito
+          setTimeout(() => {
+            if (user.role === 2) {
+              navigate("/admin-dashboard");
+            } else {
+              navigate("/dashboard");
+            }
+          }, 1500);
+         
+        } else {
+          // Si no se encuentra el usuario
+          console.error('❌ Usuario no encontrado en la lista');
+          showErrorAlert('Error', 'No se pudo encontrar la información del usuario. Contacta al administrador.');
+        }
+      } else {
+        // Si la verificación falla
+        console.error('❌ Verificación fallida:', verificationResult);
+        const errorMessage = verificationResult?.mensaje ||
+                            verificationResult?.mensaje ||
+                            'El código de verificación es incorrecto o ha expirado.';
+        showErrorAlert('Código incorrecto', errorMessage);
+      }
+    } catch (error) {
+      console.error('❌ Error en verificación:', error);
+      showErrorAlert('Error de verificación', error.message || 'No se pudo verificar el código. Intenta más tarde.');
     } finally {
       setIsLoading(false);
     }
@@ -806,26 +1149,14 @@ function LoginRegister() {
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-  
+   
     if (!validateRegisterForm()) {
       showErrorAlert('Error en el formulario', 'Por favor corrige los errores marcados en el formulario');
       return;
     }
 
-    // Verificar conexión con el servidor antes de intentar registrar
-    if (!isServerOnline) {
-      showErrorAlert(
-        'Servidor no disponible', 
-        'El servidor de registro no está disponible. Por favor:\n\n' +
-        '1. Verifica que el backend .NET esté corriendo\n' +
-        '2. Asegúrate de que esté en el puerto 5272\n' +
-        '3. Intenta nuevamente en unos momentos'
-      );
-      return;
-    }
-
     setIsLoading(true);
-  
+   
     try {
       const userData = {
         tipoDocumento: tipoDocumento,
@@ -836,15 +1167,15 @@ function LoginRegister() {
         fechaNacimiento: fechaNacimiento,
         correo: registerEmail.trim(),
         contrasena: registerPassword,
-        idRol: 2, // Cliente por defecto
+        idRol: 1,
         estado: true
       };
 
       const result = await registerWithAPI(userData);
-    
+     
       if (result) {
         showSuccessAlert('¡Registro exitoso!', 'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.');
-      
+       
         setTimeout(() => {
           handleShowLogin();
         }, 2000);
@@ -888,7 +1219,7 @@ function LoginRegister() {
           backdropFilter: "blur(10px)",
           padding: "15px 0",
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "center",
           alignItems: "center",
           zIndex: 1000,
           boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
@@ -902,13 +1233,12 @@ function LoginRegister() {
             listStyle: "none",
             margin: 0,
             padding: 0,
-            marginRight: "40px",
             alignItems: "center",
           }}
         >
           <li>
             <a
-              onClick={handleShowLanding}
+              onClick={() => handleFooterLinkClick(handleShowLanding)}
               style={{
                 cursor: "pointer",
                 color: "#E8F5E9",
@@ -934,7 +1264,7 @@ function LoginRegister() {
           </li>
           <li>
             <a
-              onClick={handleShowAboutUs}
+              onClick={() => handleFooterLinkClick(handleShowAboutUs)}
               style={{
                 cursor: "pointer",
                 color: "#E8F5E9",
@@ -960,7 +1290,7 @@ function LoginRegister() {
           </li>
           <li>
             <a
-              onClick={handleShowLogin}
+              onClick={() => handleFooterLinkClick(handleShowLogin)}
               style={{
                 cursor: "pointer",
                 color: "#E8F5E9",
@@ -986,7 +1316,7 @@ function LoginRegister() {
           </li>
           <li>
             <a
-              onClick={handleShowRegister}
+              onClick={() => handleFooterLinkClick(handleShowRegister)}
               style={{
                 cursor: "pointer",
                 backgroundColor: "#E8F5E9",
@@ -1014,33 +1344,14 @@ function LoginRegister() {
         </ul>
       </nav>
 
-      {/* Indicador de estado del servidor */}
-      {!isServerOnline && (
-        <div style={{
-          position: "fixed",
-          top: "70px",
-          left: 0,
-          width: "100%",
-          backgroundColor: "#ff6b6b",
-          color: "white",
-          padding: "10px",
-          textAlign: "center",
-          zIndex: 999,
-          fontSize: "14px",
-          fontWeight: "bold"
-        }}>
-          ⚠️ El servidor no está disponible. Verifica que el backend esté corriendo en http://localhost:5272
-        </div>
-      )}
-
       {/* MAIN CONTENT */}
       <div style={{
         minHeight: "100vh",
         backgroundColor: "#f8faf8",
-        paddingTop: isServerOnline ? "70px" : "90px", // Ajustar según el estado del servidor
-        margin: 0,
+        paddingTop: "70px", // Para compensar el navbar fijo
+        overflowX: "hidden", // Eliminar scroll horizontal
       }}>
-        <main style={{ width: "100%", margin: 0, padding: 0 }}>
+        <main style={{ width: "100%", overflowX: "hidden" }}>
           {/* POPUPS ACTUALIZADOS */}
           {showPopup && selectedPackage && (
             <div
@@ -1308,9 +1619,150 @@ function LoginRegister() {
             </div>
           )}
 
+          {/* POPUP PARA GALERÍA DE SEDES */}
+          {showPopup && selectedSede && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "rgba(0,0,0,0.8)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 2000,
+              }}
+              onClick={handleClosePopup}
+            >
+              <div
+                style={{
+                  backgroundColor: "#fff",
+                  padding: "2rem",
+                  borderRadius: "15px",
+                  maxWidth: "800px",
+                  width: "90%",
+                  maxHeight: "90vh",
+                  overflowY: "auto",
+                  boxShadow: "0 5px 25px rgba(0,0,0,0.2)",
+                  position: "relative",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h2 style={{ color: "#2E5939", textAlign: "center", marginBottom: "1.5rem" }}>Galería - {selectedSede.name}</h2>
+               
+                {/* Carrusel de imágenes */}
+                <div style={{ position: "relative", marginBottom: "1.5rem" }}>
+                  <img
+                    src={selectedSede.images[sedeImageIndex]}
+                    alt={selectedSede.name}
+                    style={{
+                      width: "100%",
+                      height: "400px",
+                      objectFit: "cover",
+                      borderRadius: "10px",
+                    }}
+                  />
+                  {selectedSede.images.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevImage}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "15px",
+                          transform: "translateY(-50%)",
+                          backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          border: "none",
+                          color: "#2E5939",
+                          fontSize: "1.5rem",
+                          width: "50px",
+                          height: "50px",
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FaChevronLeft />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          right: "15px",
+                          transform: "translateY(-50%)",
+                          backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          border: "none",
+                          color: "#2E5939",
+                          fontSize: "1.5rem",
+                          width: "50px",
+                          height: "50px",
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FaChevronRight />
+                      </button>
+                      <div style={{
+                        position: "absolute",
+                        bottom: "15px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        display: "flex",
+                        gap: "0.5rem",
+                      }}>
+                        {selectedSede.images.map((_, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              borderRadius: "50%",
+                              backgroundColor: index === sedeImageIndex ? "#2E5939" : "rgba(255,255,255,0.5)",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => setSedeImageIndex(index)}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <p style={{ lineHeight: "1.6", color: "#2E3A30", marginBottom: "1.5rem", textAlign: "center" }}>
+                  {selectedSede.cabañasCount} cabaña{selectedSede.cabañasCount !== 1 ? 's' : ''} disponible{selectedSede.cabañasCount !== 1 ? 's' : ''}
+                </p>
+
+                <button
+                  onClick={handleClosePopup}
+                  style={{
+                    width: "100%",
+                    padding: "0.8rem",
+                    backgroundColor: "#2E5939",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  Cerrar Galería
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* QUIENES SOMOS */}
           {showAboutUs && (
-            <section style={{ padding: "4rem 2rem", backgroundColor: "#f8faf8", margin: 0 }}>
+            <section style={{ padding: "4rem 2rem", backgroundColor: "#f8faf8" }}>
               <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                 <div style={{
                   backgroundColor: "#fff",
@@ -1339,7 +1791,7 @@ function LoginRegister() {
                     </div>
                     <div style={{ flex: 1, minWidth: "300px" }}>
                       <img
-                        src="/images/cabana.jpg"
+                        src="images/cabana.jpg"
                         alt="Glamping"
                         style={{
                           width: "80%",
@@ -1383,14 +1835,332 @@ function LoginRegister() {
             </section>
           )}
 
-          {/* LANDING PAGE ACTUALIZADA CON CARRUSEL INTEGRADO Y FILTROS SIMPLIFICADOS */}
-          {!showForm && !showAboutUs && !showCabins && (
+          {/* VERIFICACIÓN DE CÓDIGO PARA LOGIN - SIEMPRE DESPUÉS DEL LOGIN */}
+          {showVerification && (
+            <div style={{
+              padding: "4rem 2rem",
+              background: `linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url(${backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              minHeight: "100vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center"
+            }}>
+              <div style={{
+                backgroundColor: "#fff",
+                padding: "3rem",
+                borderRadius: "20px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+                width: "100%",
+                maxWidth: "450px"
+              }}>
+                <form onSubmit={handleVerifyCode}>
+                  <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
+                      <img
+                        src="/images/Logo.png"
+                        alt="Bosque Sagrado"
+                        style={{ width: "80px", height: "80px" }}
+                      />
+                    </div>
+                    <h3 style={{ marginBottom: "0.5rem", color: "#2E5939", fontSize: "2rem", fontFamily: "'Playfair Display', serif" }}>Verifica tu identidad</h3>
+                    <p style={{ color: "#5D6D63", margin: 0 }}>Por seguridad, hemos enviado un código a:</p>
+                    <p style={{ color: "#3E7E5C", margin: "0.5rem 0 0", fontWeight: "500", fontSize: "1.1rem" }}>{userEmail}</p>
+                  </div>
+                 
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
+                      Código de verificación
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", border: "2px solid #e0e0e0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem", transition: "border-color 0.3s ease" }}>
+                      <FaCheck style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                      <input
+                        type="text"
+                        placeholder="Ingresa el código de 6 dígitos"
+                        required
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1.1rem", letterSpacing: "2px" }}
+                        maxLength={6}
+                      />
+                    </div>
+                    <p style={{ fontSize: "0.9rem", color: "#5D6D63", textAlign: "center" }}>
+                      Revisa tu bandeja de entrada y spam
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    style={{
+                      width: "100%",
+                      padding: "1.2rem",
+                      backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
+                      color: "#fff",
+                      fontWeight: "600",
+                      border: "none",
+                      borderRadius: "12px",
+                      cursor: isLoading ? "not-allowed" : "pointer",
+                      fontSize: "1.1rem",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    {isLoading ? "Verificando..." : "Verificar Código"}
+                  </button>
+
+                  <div style={{ textAlign: "center" }}>
+                    <p style={{ color: "#5D6D63", fontSize: "0.9rem" }}>
+                      ¿No recibiste el código?{" "}
+                      <span
+                        style={{
+                          color: "#2E5939",
+                          cursor: "pointer",
+                          fontWeight: "500"
+                        }}
+                        onClick={async () => {
+                          try {
+                            await sendVerificationCode(userEmail);
+                            showSuccessAlert('Código reenviado', 'Se ha enviado un nuevo código a tu correo electrónico');
+                          } catch (error) {
+                            showErrorAlert('Error', 'No se pudo reenviar el código. Intenta más tarde.');
+                          }
+                        }}
+                      >
+                        Reenviar código
+                      </span>
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVerification(false);
+                      setShowForm(true);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "1rem",
+                      backgroundColor: "transparent",
+                      color: "#2E5939",
+                      fontWeight: "600",
+                      border: "2px solid #2E5939",
+                      borderRadius: "12px",
+                      cursor: "pointer",
+                      fontSize: "1rem",
+                      marginTop: "1rem",
+                    }}
+                  >
+                    Volver al Login
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* NUEVO: FORMULARIO OLVIDÓ CONTRASEÑA - INGRESAR CÓDIGO */}
+          {showForgotPassword && (
+            <div style={{
+              padding: "4rem 2rem",
+              background: `linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url(${backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              minHeight: "100vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center"
+            }}>
+              <div style={{
+                backgroundColor: "#fff",
+                padding: "3rem",
+                borderRadius: "20px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+                width: "100%",
+                maxWidth: "450px"
+              }}>
+                <form onSubmit={handleVerifyResetCode}>
+                  <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
+                      <img
+                        src="/images/Logo.png"
+                        alt="Bosque Sagrado"
+                        style={{ width: "80px", height: "80px" }}
+                      />
+                    </div>
+                    <h3 style={{ marginBottom: "0.5rem", color: "#2E5939", fontSize: "2rem", fontFamily: "'Playfair Display', serif" }}>Verificar Código</h3>
+                    <p style={{ color: "#5D6D63", margin: 0 }}>Ingresa el código enviado a tu correo</p>
+                    <p style={{ color: "#3E7E5C", margin: "0.5rem 0 0", fontWeight: "500" }}>{forgotPasswordEmail}</p>
+                  </div>
+                 
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem" }}>
+                      <FaCheck style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                      <input
+                        type="text"
+                        placeholder="Código de verificación"
+                        required
+                        value={resetPasswordCode}
+                        onChange={(e) => setResetPasswordCode(e.target.value.replace(/[^0-9]/g, ''))}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                        maxLength={6}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    style={{
+                      width: "100%",
+                      padding: "1.2rem",
+                      backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
+                      color: "#fff",
+                      fontWeight: "600",
+                      border: "none",
+                      borderRadius: "12px",
+                      cursor: isLoading ? "not-allowed" : "pointer",
+                      fontSize: "1.1rem",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    {isLoading ? "Verificando..." : "Verificar Código"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setShowForm(true);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "1rem",
+                      backgroundColor: "transparent",
+                      color: "#2E5939",
+                      fontWeight: "600",
+                      border: "2px solid #2E5939",
+                      borderRadius: "12px",
+                      cursor: "pointer",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    Volver al Login
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* NUEVO: FORMULARIO RESTABLECER CONTRASEÑA */}
+          {showResetPassword && (
+            <div style={{
+              padding: "4rem 2rem",
+              background: `linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url(${backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              minHeight: "100vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center"
+            }}>
+              <div style={{
+                backgroundColor: "#fff",
+                padding: "3rem",
+                borderRadius: "20px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+                width: "100%",
+                maxWidth: "450px"
+              }}>
+                <form onSubmit={handleResetPassword}>
+                  <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
+                      <img
+                        src="/images/Logo.png"
+                        alt="Bosque Sagrado"
+                        style={{ width: "80px", height: "80px" }}
+                      />
+                    </div>
+                    <h3 style={{ marginBottom: "0.5rem", color: "#2E5939", fontSize: "2rem", fontFamily: "'Playfair Display', serif" }}>Nueva Contraseña</h3>
+                    <p style={{ color: "#5D6D63", margin: 0 }}>Ingresa tu nueva contraseña</p>
+                  </div>
+                 
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem" }}>
+                      <FaLock style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                      <input
+                        type="password"
+                        placeholder="Nueva contraseña"
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                      />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
+                      <FaLock style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                      <input
+                        type="password"
+                        placeholder="Confirmar nueva contraseña"
+                        required
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    style={{
+                      width: "100%",
+                      padding: "1.2rem",
+                      backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
+                      color: "#fff",
+                      fontWeight: "600",
+                      border: "none",
+                      borderRadius: "12px",
+                      cursor: isLoading ? "not-allowed" : "pointer",
+                      fontSize: "1.1rem",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    {isLoading ? "Restableciendo..." : "Restablecer Contraseña"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResetPassword(false);
+                      setShowForgotPassword(true);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "1rem",
+                      backgroundColor: "transparent",
+                      color: "#2E5939",
+                      fontWeight: "600",
+                      border: "2px solid #2E5939",
+                      borderRadius: "12px",
+                      cursor: "pointer",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    Volver Atrás
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* LANDING PAGE ACTUALIZADA */}
+          {!showForm && !showAboutUs && !showCabins && !showVerification && !showForgotPassword && !showResetPassword && (
             <>
-              {/* HERO SECTION SIN ESPACIOS BLANCOS */}
+              {/* HERO SECTION */}
               <section
                 style={{
                   width: "100%",
-                  height: "100vh",
+                  height: "90vh",
                   background: "linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url('https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
                   backgroundSize: "cover",
                   backgroundPosition: "center",
@@ -1401,7 +2171,6 @@ function LoginRegister() {
                   textAlign: "center",
                   color: "#fff",
                   padding: "0 2rem",
-                  margin: 0,
                 }}
               >
                 <div style={{ marginBottom: "2rem" }}>
@@ -1469,9 +2238,9 @@ function LoginRegister() {
                 </div>
               </section>
 
-              {/* CARRUSEL DE SEDES - SOLO COPACABANA Y SAN FELIX */}
-              <section style={{ padding: "5rem 0", backgroundColor: "#fff", margin: 0 }}>
-                <div style={{ width: "100%", margin: 0 }}>
+              {/* SEDES - 2 CARTAS CENTRADAS */}
+              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff" }}>
+                <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <h2 style={{
                     fontSize: "3rem",
                     color: "#2E5939",
@@ -1481,114 +2250,100 @@ function LoginRegister() {
                   }}>
                     Nuestras Sedes
                   </h2>
-                  <div style={{ position: "relative", width: "100%", height: "600px", overflow: "hidden" }}>
-                    {/* Solo mostrar Copacabana y San Felix */}
-                    {cabañas.filter(cabin => cabin.sede === "Copacabana" || cabin.sede === "San Felix").map((cabin, index) => (
+                  <div style={{
+                    display: "flex",
+                    gap: "3rem",
+                    justifyContent: "center",
+                    flexWrap: "wrap"
+                  }}>
+                    {sedes.map((sede, index) => (
                       <div
                         key={index}
                         style={{
-                          position: "absolute",
-                          top: 0,
-                          left: `${(index - carouselIndex) * 100}%`,
+                          backgroundColor: "#fff",
+                          borderRadius: "20px",
+                          overflow: "hidden",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
                           width: "100%",
-                          height: "100%",
-                          transition: "left 0.5s ease-in-out",
+                          maxWidth: "500px",
+                          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-5px)";
+                          e.currentTarget.style.boxShadow = "0 15px 40px rgba(0,0,0,0.15)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.1)";
                         }}
                       >
                         <img
-                          src={cabin.img}
-                          alt={cabin.name}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                        <div
+                          src={sede.images[0]}
+                          alt={sede.name}
                           style={{
-                            position: "absolute",
-                            bottom: 0,
-                            left: 0,
                             width: "100%",
-                            background: "linear-gradient(transparent 0%, rgba(0,0,0,0.7) 100%)",
-                            color: "#fff",
-                            padding: "3rem",
+                            height: "300px",
+                            objectFit: "cover"
                           }}
-                        >
-                          <h3 style={{ fontSize: "2.5rem", margin: "0 0 1rem" }}>{cabin.name}</h3>
-                          <p style={{ margin: "0 0 0.5rem", fontSize: "1.2rem" }}>
-                            <FaMapMarkerAlt style={{ marginRight: "0.5rem" }} /> {cabin.sede}
+                        />
+                        <div style={{ padding: "2.5rem" }}>
+                          <h3 style={{
+                            margin: "0 0 1rem",
+                            color: "#2E5939",
+                            fontSize: "2rem",
+                            textAlign: "center"
+                          }}>
+                            {sede.name}
+                          </h3>
+                          <p style={{
+                            color: "#5D6D63",
+                            marginBottom: "2rem",
+                            lineHeight: "1.6",
+                            textAlign: "center"
+                          }}>
+                            {sede.description}
                           </p>
-                          <p style={{ margin: "0.5rem 0 0", fontSize: "1.1rem" }}>{cabin.description}</p>
-                          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "1rem" }}>
-                            <span style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{cabin.price}</span>
+                          <div style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            gap: "1rem"
+                          }}>
                             <button
-                              onClick={() => handleShowCabinDetails(cabin)}
+                              onClick={() => handleShowSedeGallery(sede)}
                               style={{
-                                backgroundColor: "#E8F5E9",
-                                color: "#2E5939",
+                                backgroundColor: "#2E5939",
+                                color: "#fff",
                                 border: "none",
                                 padding: "12px 25px",
                                 borderRadius: "25px",
                                 fontWeight: "600",
                                 cursor: "pointer",
+                                fontSize: "1rem",
                               }}
                             >
-                              Ver Detalles
+                              Ver Galería
                             </button>
                           </div>
                         </div>
                       </div>
                     ))}
-
-                    <button
-                      onClick={prevSlide}
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "30px",
-                        transform: "translateY(-50%)",
-                        backgroundColor: "rgba(255, 255, 255, 0.9)",
-                        border: "none",
-                        color: "#2E5939",
-                        fontSize: "1.5rem",
-                        width: "60px",
-                        height: "60px",
-                        borderRadius: "50%",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <FaChevronLeft />
-                    </button>
-
-                    <button
-                      onClick={nextSlide}
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        right: "30px",
-                        transform: "translateY(-50%)",
-                        backgroundColor: "rgba(255, 255, 255, 0.9)",
-                        border: "none",
-                        color: "#2E5939",
-                        fontSize: "1.5rem",
-                        width: "60px",
-                        height: "60px",
-                        borderRadius: "50%",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <FaChevronRight />
-                    </button>
                   </div>
                 </div>
               </section>
 
-              {/* FILTROS SIMPLIFICADOS - SOLO SEDE, TIPO Y CAPACIDAD */}
-              <section style={{ padding: "3rem 2rem", backgroundColor: "#f8faf8", margin: 0 }}>
+              {/* TODAS NUESTRAS CABAÑAS CON FILTROS */}
+              <section style={{ padding: "3rem 2rem", backgroundColor: "#f8faf8" }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+                  <h2 style={{
+                    fontSize: "3rem",
+                    color: "#2E5939",
+                    textAlign: "center",
+                    marginBottom: "2rem",
+                    fontFamily: "'Playfair Display', serif"
+                  }}>
+                    Todas Nuestras Cabañas
+                  </h2>
+                 
                   <div style={{
                     backgroundColor: "#fff",
                     padding: "2rem",
@@ -1705,17 +2460,8 @@ function LoginRegister() {
               </section>
 
               {/* CABINAS DESTACADAS CON FILTROS APLICADOS */}
-              <section style={{ padding: "2rem 2rem 5rem", backgroundColor: "#f8faf8", margin: 0 }}>
+              <section style={{ padding: "0 2rem 5rem", backgroundColor: "#f8faf8" }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-                  <h2 style={{
-                    fontSize: "3rem",
-                    color: "#2E5939",
-                    textAlign: "center",
-                    marginBottom: "3rem",
-                    fontFamily: "'Playfair Display', serif"
-                  }}>
-                    Todas Nuestras Cabañas
-                  </h2>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
                     {cabañasFiltradas.map((cabin, index) => (
                       <div
@@ -1805,7 +2551,7 @@ function LoginRegister() {
               </section>
 
               {/* SERVICIOS CON IMAGEN INMEDIATA */}
-              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff", margin: 0 }}>
+              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff" }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <h2 style={{
                     fontSize: "3rem",
@@ -1865,7 +2611,7 @@ function LoginRegister() {
               </section>
 
               {/* CALL TO ACTION */}
-              <section style={{ padding: "5rem 2rem", background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", color: "#fff", textAlign: "center", margin: 0 }}>
+              <section style={{ padding: "5rem 2rem", background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", color: "#fff", textAlign: "center" }}>
                 <div style={{ maxWidth: "800px", margin: "0 auto" }}>
                   <h2 style={{ fontSize: "3rem", marginBottom: "1.5rem" }}>¿Listo para tu Aventura?</h2>
                   <p style={{ fontSize: "1.3rem", marginBottom: "2.5rem" }}>
@@ -1909,7 +2655,7 @@ function LoginRegister() {
           )}
 
           {/* FORMULARIOS CON MISMA IMAGEN DE FONDO */}
-          {showForm && (
+          {showForm && !showVerification && !showForgotPassword && !showResetPassword && (
             <div style={{
               padding: "4rem 2rem",
               background: `linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url(${backgroundImage})`,
@@ -1918,8 +2664,7 @@ function LoginRegister() {
               minHeight: "100vh",
               display: "flex",
               justifyContent: "center",
-              alignItems: "center",
-              margin: 0,
+              alignItems: "center"
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -1932,7 +2677,7 @@ function LoginRegister() {
                
                 {!isRegisterActive ? (
                   // LOGIN FORM
-                  <form onSubmit={handleLogin}>
+                  <form onSubmit={handleLoginSubmit}>
                     <div style={{ textAlign: "center", marginBottom: "2rem" }}>
                       <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
                         <img
@@ -1970,39 +2715,39 @@ function LoginRegister() {
                       </div>
                     </div>
 
+                    {/* Olvidé contraseña */}
+                    <div style={{ textAlign: "right", marginBottom: "1.5rem" }}>
+                      <span
+                        style={{
+                          color: "#2E5939",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                          fontWeight: "500"
+                        }}
+                        onClick={handleForgotPassword}
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </span>
+                    </div>
+
                     <button
                       type="submit"
-                      disabled={isLoading || !isServerOnline}
+                      disabled={isLoading}
                       style={{
                         width: "100%",
                         padding: "1.2rem",
-                        backgroundColor: isLoading || !isServerOnline ? "#7a9c87" : "#2E5939",
+                        backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
                         color: "#fff",
                         fontWeight: "600",
                         border: "none",
                         borderRadius: "12px",
-                        cursor: isLoading || !isServerOnline ? "not-allowed" : "pointer",
+                        cursor: isLoading ? "not-allowed" : "pointer",
                         fontSize: "1.1rem",
                         marginBottom: "1.5rem",
                       }}
                     >
                       {isLoading ? "Iniciando Sesión..." : "Iniciar Sesión"}
                     </button>
-
-                    {!isServerOnline && (
-                      <div style={{
-                        backgroundColor: "#fff3cd",
-                        border: "1px solid #ffeaa7",
-                        borderRadius: "8px",
-                        padding: "1rem",
-                        marginBottom: "1rem",
-                        textAlign: "center"
-                      }}>
-                        <p style={{ color: "#856404", margin: 0, fontSize: "0.9rem" }}>
-                          ⚠️ El servidor no está disponible. Verifica que el backend esté corriendo.
-                        </p>
-                      </div>
-                    )}
 
                     <p style={{ textAlign: "center", color: "#5D6D63" }}>
                       ¿No tienes cuenta?{" "}
@@ -2161,33 +2906,18 @@ function LoginRegister() {
                       </div>
                     </div>
 
-                    {!isServerOnline && (
-                      <div style={{
-                        backgroundColor: "#fff3cd",
-                        border: "1px solid #ffeaa7",
-                        borderRadius: "8px",
-                        padding: "1rem",
-                        marginBottom: "1rem",
-                        textAlign: "center"
-                      }}>
-                        <p style={{ color: "#856404", margin: 0, fontSize: "0.9rem" }}>
-                          ⚠️ El servidor no está disponible. No podrás registrarte hasta que el backend esté corriendo.
-                        </p>
-                      </div>
-                    )}
-
                     <button
                       type="submit"
-                      disabled={isLoading || !isServerOnline}
+                      disabled={isLoading}
                       style={{
                         width: "100%",
                         padding: "1.2rem",
-                        backgroundColor: isLoading || !isServerOnline ? "#7a9c87" : "#2E5939",
+                        backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
                         color: "#fff",
                         fontWeight: "600",
                         border: "none",
                         borderRadius: "12px",
-                        cursor: isLoading || !isServerOnline ? "not-allowed" : "pointer",
+                        cursor: isLoading ? "not-allowed" : "pointer",
                         fontSize: "1.1rem",
                         marginBottom: "1.5rem",
                       }}
@@ -2207,6 +2937,42 @@ function LoginRegister() {
             </div>
           )}
         </main>
+
+        {/* BOTÓN SCROLL TO TOP */}
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            style={{
+              position: "fixed",
+              bottom: "30px",
+              right: "30px",
+              width: "50px",
+              height: "50px",
+              borderRadius: "50%",
+              backgroundColor: "#2E5939",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.2rem",
+              boxShadow: "0 4px 15px rgba(46, 89, 57, 0.3)",
+              zIndex: 1000,
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-3px)";
+              e.currentTarget.style.boxShadow = "0 6px 20px rgba(46, 89, 57, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 4px 15px rgba(46, 89, 57, 0.3)";
+            }}
+          >
+            <FaArrowUp />
+          </button>
+        )}
 
         {/* FOOTER COMPLETO */}
         <footer
@@ -2236,10 +3002,10 @@ function LoginRegister() {
                   src="/images/Logo.png"
                   alt="Bosque Sagrado"
                   style={{
-                    width: "50px",
-                    height: "50px",
+                    width: "80px",
+                    height: "80px",
                     marginRight: "1rem",
-                    filter: "brightness(0) invert(1)"
+                   
                   }}
                 />
                 <span style={{
@@ -2258,42 +3024,51 @@ function LoginRegister() {
                 Donde el lujo se encuentra con la naturaleza. Experimenta la magia del glamping en los paisajes más espectaculares de Antioquia.
               </p>
               <div style={{ display: "flex", gap: "1rem" }}>
-                <a href="#" style={{
-                  color: "#fff",
-                  fontSize: "1.5rem",
-                  padding: "0.5rem",
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                <a
+                  onClick={() => handleSocialMediaClick("https://www.facebook.com/glampingbosquesagrado/?ref=_xav_ig_profile_page_web#")}
+                  style={{
+                    color: "#fff",
+                    fontSize: "1.5rem",
+                    padding: "0.5rem",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
                 >
                   <FaFacebook />
                 </a>
-                <a href="#" style={{
-                  color: "#fff",
-                  fontSize: "1.5rem",
-                  padding: "0.5rem",
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                <a
+                  onClick={() => handleSocialMediaClick("https://www.instagram.com/bosquesagradoglamping/")}
+                  style={{
+                    color: "#fff",
+                    fontSize: "1.5rem",
+                    padding: "0.5rem",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
                 >
                   <FaInstagram />
                 </a>
-                <a href="#" style={{
-                  color: "#fff",
-                  fontSize: "1.5rem",
-                  padding: "0.5rem",
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                <a
+                  onClick={() => handleSocialMediaClick("https://api.whatsapp.com/send?phone=573145894884&text=Bienvenid%40%20a%20Bosque%20Sagrado%20Glamping.%20%0AMi%20nombre%20es%20Olga%20P%C3%A9rez%2C%20asesora%20autorizada.%20Ser%C3%A1%20un%20gusto%20asesorarte%20para%20que%20vivas%20una%20experiencia%20%C3%BAnica%20y%20hagas%20una%20excelente%20elecci%C3%B3n%20%F0%9F%8C%B3%F0%9F%8C%99%E2%98%80%EF%B8%8F")}
+                  style={{
+                    color: "#fff",
+                    fontSize: "1.5rem",
+                    padding: "0.5rem",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
                 >
                   <FaWhatsapp />
                 </a>
@@ -2312,7 +3087,7 @@ function LoginRegister() {
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 <li style={{ marginBottom: "0.8rem" }}>
                   <a
-                    onClick={handleShowLanding}
+                    onClick={() => handleFooterLinkClick(handleShowLanding)}
                     style={{
                       color: "rgba(255,255,255,0.8)",
                       textDecoration: "none",
@@ -2327,7 +3102,7 @@ function LoginRegister() {
                 </li>
                 <li style={{ marginBottom: "0.8rem" }}>
                   <a
-                    onClick={handleShowAboutUs}
+                    onClick={() => handleFooterLinkClick(handleShowAboutUs)}
                     style={{
                       color: "rgba(255,255,255,0.8)",
                       textDecoration: "none",
@@ -2342,7 +3117,7 @@ function LoginRegister() {
                 </li>
                 <li style={{ marginBottom: "0.8rem" }}>
                   <a
-                    onClick={handleShowLogin}
+                    onClick={() => handleFooterLinkClick(handleShowLogin)}
                     style={{
                       color: "rgba(255,255,255,0.8)",
                       textDecoration: "none",
@@ -2357,7 +3132,7 @@ function LoginRegister() {
                 </li>
                 <li style={{ marginBottom: "0.8rem" }}>
                   <a
-                    onClick={handleShowRegister}
+                    onClick={() => handleFooterLinkClick(handleShowRegister)}
                     style={{
                       color: "rgba(255,255,255,0.8)",
                       textDecoration: "none",
@@ -2383,9 +3158,9 @@ function LoginRegister() {
                 Contacto
               </h4>
               <div style={{ color: "rgba(255,255,255,0.8)", lineHeight: "1.6" }}>
-                <p style={{ margin: "0 0 1rem" }}>📞 +57 300 123 4567</p>
+                <p style={{ margin: "0 0 1rem" }}>📞 +57 314 589 4884</p>
                 <p style={{ margin: "0 0 1rem" }}>✉️ info@bosquesagrado.com</p>
-                <p style={{ margin: "0" }}>📍 Antioquia, Colombia</p>
+                <p style={{ margin: "0" }}>📍 Copacabana, Antioquia</p>
               </div>
             </div>
           </div>

@@ -89,7 +89,7 @@ const Dashboard = () => {
           `http://localhost:5272/api/reportes/cabanas-populares/${filtro}`
         );
         if (responseCabañas.ok) {
-          const dataCabañas = await responseCabañas.json(); // CORREGIDO: responseCabañas
+          const dataCabañas = await responseCabañas.json();
           setDatosCabañas(dataCabañas);
         }
 
@@ -107,7 +107,7 @@ const Dashboard = () => {
     };
 
     fetchDatosGraficos();
-  }, [filtro]); // CORREGIDO: solo depende del filtro, no de la sede
+  }, [filtro]);
 
   // 🔹 Obtener reservas por fecha
   const obtenerReservasPorFecha = async (fecha) => {
@@ -138,6 +138,12 @@ const Dashboard = () => {
     const primerDia = new Date(año, mes, 1);
     const ultimoDia = new Date(año, mes + 1, 0);
     const dias = [];
+
+    // Rellenar días vacíos al inicio del mes
+    const primerDiaSemana = primerDia.getDay();
+    for (let i = 0; i < primerDiaSemana; i++) {
+      dias.push({ fecha: null, dia: "" });
+    }
 
     for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
       dias.push({
@@ -536,7 +542,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 🔹 Estadísticas Rápidas - Sin "Sede Activa" */}
+      {/* 🔹 Estadísticas Rápidas */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
@@ -572,20 +578,20 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 🔹 Contenido Principal - Tres Gráficos y Calendario */}
+      {/* 🔹 Contenido Principal - Nueva Distribución */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "1fr 400px",
+        gridTemplateColumns: "2fr 1fr",
         gap: 20,
         alignItems: "start"
       }}>
-        {/* Columna de Gráficos */}
+        {/* Columna Izquierda - Gráficos */}
         <div style={{
-          display: "flex",
-          flexDirection: "column",
+          display: "grid",
+          gridTemplateRows: "auto auto",
           gap: 20
         }}>
-          {/* Gráfico de Barras Principal Mejorado */}
+          {/* Gráfico de Barras Principal */}
           <div
             style={{
               backgroundColor: "#fff",
@@ -619,7 +625,7 @@ const Dashboard = () => {
                 borderRadius: 12,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 border: "2px solid #679750",
-                height: "300px"
+                height: "350px"
               }}
             >
               {datosCabañas && datosCabañas.length > 0 ? (
@@ -639,7 +645,7 @@ const Dashboard = () => {
                 borderRadius: 12,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 border: "2px solid #679750",
-                height: "300px"
+                height: "350px"
               }}
             >
               {datosSedes && datosSedes.length > 0 ? (
@@ -653,17 +659,26 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Calendario y Reservas */}
+        {/* Columna Derecha - Calendario Mejorado */}
         <div
           style={{
             backgroundColor: "#fff",
-            padding: 20,
+            padding: 25,
             borderRadius: 12,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            border: "2px solid #679750",
+            boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
+            border: "3px solid #2E5939",
+            height: "fit-content",
+            position: "sticky",
+            top: 20
           }}
         >
-          <h3 style={{ color: "#2E5939", marginBottom: 15, textAlign: "center" }}>
+          <h3 style={{ 
+            color: "#2E5939", 
+            marginBottom: 20, 
+            textAlign: "center",
+            fontSize: "20px",
+            fontWeight: "bold"
+          }}>
             Calendario - {meses[fechaActual.getMonth()]} {fechaActual.getFullYear()}
           </h3>
           
@@ -671,43 +686,69 @@ const Dashboard = () => {
           <div style={{ 
             display: "grid", 
             gridTemplateColumns: "repeat(7, 1fr)", 
-            gap: 4,
-            marginBottom: 20
+            gap: 6,
+            marginBottom: 25
           }}>
             {nombresDias.map((dia) => (
               <div key={dia} style={{ 
                 textAlign: "center", 
                 fontWeight: "bold", 
                 color: "#2E5939",
-                padding: "8px 4px",
-                fontSize: "12px"
+                padding: "10px 4px",
+                fontSize: "13px",
+                backgroundColor: "#f0f7f0",
+                borderRadius: 6
               }}>
                 {dia}
               </div>
             ))}
             {diasDelMes.map(({ fecha, dia }) => {
               const esHoy = fecha === new Date().toISOString().split('T')[0];
+              const esSeleccionado = fecha === fechaSeleccionada;
+              const tieneReservas = reservasCalendario && reservasCalendario.length > 0 && fecha === fechaSeleccionada;
+              
               return (
                 <button
-                  key={fecha}
+                  key={fecha || `empty-${dia}`}
                   onClick={() => {
-                    setFechaSeleccionada(fecha);
-                    obtenerReservasPorFecha(fecha);
+                    if (fecha) {
+                      setFechaSeleccionada(fecha);
+                      obtenerReservasPorFecha(fecha);
+                    }
                   }}
+                  disabled={!fecha}
                   style={{
-                    padding: "8px 4px",
-                    border: "1px solid #e0e0e0",
+                    padding: "10px 4px",
+                    border: esSeleccionado ? "3px solid #2E5939" : 
+                           esHoy ? "2px solid #4CAF50" : "1px solid #e0e0e0",
                     backgroundColor: esHoy ? "#2E5939" : 
-                                    fecha === fechaSeleccionada ? "#4CAF50" : "transparent",
-                    color: esHoy || fecha === fechaSeleccionada ? "white" : "#2E5939",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    fontSize: "12px",
+                                    esSeleccionado ? "#4CAF50" : 
+                                    "transparent",
+                    color: esHoy || esSeleccionado ? "white" : "#2E5939",
+                    borderRadius: 8,
+                    cursor: fecha ? "pointer" : "default",
+                    fontSize: "13px",
                     fontWeight: "bold",
-                    transition: "all 0.2s ease"
+                    transition: "all 0.2s ease",
+                    position: "relative",
+                    minHeight: "40px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
                   }}
                 >
                   {dia}
+                  {tieneReservas && (
+                    <span style={{
+                      position: "absolute",
+                      top: 2,
+                      right: 2,
+                      width: 8,
+                      height: 8,
+                      backgroundColor: "#FF5722",
+                      borderRadius: "50%"
+                    }}></span>
+                  )}
                 </button>
               );
             })}
@@ -715,31 +756,53 @@ const Dashboard = () => {
           
           {/* Lista de reservas para la fecha seleccionada */}
           <div style={{ marginTop: 20 }}>
-            <h4 style={{ color: "#2E5939", marginBottom: 10 }}>
-              Reservas para {new Date(fechaSeleccionada).toLocaleDateString('es-ES')}
+            <h4 style={{ 
+              color: "#2E5939", 
+              marginBottom: 15,
+              fontSize: "16px",
+              fontWeight: "bold",
+              borderBottom: "2px solid #f0f7f0",
+              paddingBottom: 8
+            }}>
+              Reservas para {new Date(fechaSeleccionada).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </h4>
             {reservasCalendario && reservasCalendario.length > 0 ? (
-              <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+              <div style={{ 
+                maxHeight: "300px", 
+                overflowY: "auto",
+                borderRadius: 8,
+                border: "1px solid #e0e0e0"
+              }}>
                 {reservasCalendario.map((reserva, index) => (
                   <div
                     key={index}
                     style={{
-                      padding: "8px 12px",
-                      marginBottom: 8,
-                      backgroundColor: "#f0f7f0",
-                      borderRadius: 6,
-                      borderLeft: "4px solid #2E5939"
+                      padding: "12px 15px",
+                      marginBottom: 0,
+                      backgroundColor: index % 2 === 0 ? "#f9f9f9" : "#fff",
+                      borderBottom: "1px solid #f0f0f0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center"
                     }}
                   >
-                    <strong>{reserva.hora}</strong> - {reserva.cliente || "Reserva"}
+                    <div>
+                      <div style={{ fontWeight: "bold", color: "#2E5939" }}>
+                        {reserva.hora}
+                      </div>
+                      <div style={{ fontSize: "13px", color: "#666" }}>
+                        {reserva.cliente || "Reserva"}
+                      </div>
+                    </div>
                     {reserva.estado && (
                       <span style={{ 
-                        float: "right", 
-                        backgroundColor: reserva.estado === "confirmada" ? "#4CAF50" : "#FF9800",
+                        backgroundColor: reserva.estado === "confirmada" ? "#4CAF50" : 
+                                       reserva.estado === "pendiente" ? "#FF9800" : "#F44336",
                         color: "white",
-                        padding: "2px 8px",
+                        padding: "4px 10px",
                         borderRadius: 12,
-                        fontSize: "12px"
+                        fontSize: "12px",
+                        fontWeight: "bold"
                       }}>
                         {reserva.estado}
                       </span>
@@ -748,9 +811,18 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <p style={{ color: "#666", textAlign: "center" }}>
-                No hay reservas para esta fecha
-              </p>
+              <div style={{ 
+                textAlign: "center", 
+                padding: "30px 20px",
+                backgroundColor: "#f9f9f9",
+                borderRadius: 8,
+                color: "#666",
+                border: "1px dashed #ddd"
+              }}>
+                <p style={{ margin: 0, fontSize: "14px" }}>
+                  No hay reservas para esta fecha
+                </p>
+              </div>
             )}
           </div>
         </div>
