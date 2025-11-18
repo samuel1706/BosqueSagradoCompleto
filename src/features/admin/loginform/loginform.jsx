@@ -9,16 +9,16 @@ const cabañas = [
     id: 101,
     name: "Cabaña Ambar Room",
     description: "Amplia cabaña con jacuzzi privado. Ideal para parejas que buscan privacidad y lujo.",
-    img: "images/C_Ambar_Room/img1.jpg",
+    img: "/images/C_Ambar_Room/img1.jpg",
     price: "$395.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/C_Ambar_Room/img2.jpg",
-      "images/C_Ambar_Room/img3.jpg",
-      "images/C_Ambar_Room/img4.jpg"
+      "/images/C_Ambar_Room/img2.jpg",
+      "/images/C_Ambar_Room/img3.jpg",
+      "/images/C_Ambar_Room/img4.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -26,18 +26,18 @@ const cabañas = [
     id: 102,
     name: "Cabaña Bali Suite",
     description: "Cabaña Premium. Perfecta para una escapada romántica con todas las comodidades.",
-    img: "images/C_Bali_Suite/img1.jpg",
+    img: "/images/C_Bali_Suite/img1.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/C_Bali_Suite/img2.jpg",
-      "images/C_Bali_Suite/img3.jpg",
-      "images/C_Bali_Suite/img4.jpg",
-      "images/C_Bali_Suite/img5.jpg",
-      "images/C_Bali_Suite/img6.jpg",
+      "/images/C_Bali_Suite/img2.jpg",
+      "/images/C_Bali_Suite/img3.jpg",
+      "/images/C_Bali_Suite/img4.jpg",
+      "/images/C_Bali_Suite/img5.jpg",
+      "/images/C_Bali_Suite/img6.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -45,19 +45,19 @@ const cabañas = [
     id: 103,
     name: "Cabaña Habana Room",
     description: "Espaciosa cabaña ideal para familias, Perfecta para vacaciones familiares inolvidables.",
-    img: "images/C_Habana_Room/img1.jpg",
+    img: "/images/C_Habana_Room/img1.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Familiar",
     capacidad: 6,
     habitaciones: 1,
     imagenes: [
-      "images/C_Habana_Room/img2.jpg",
-      "images/C_Habana_Room/img3.jpg",
-      "images/C_Habana_Room/img4.jpg",
-      "images/C_Habana_Room/img5.jpg",
-      "images/C_Habana_Room/img6.jpg",
-      "images/C_Habana_Room/img7.jpg"
+      "/images/C_Habana_Room/img2.jpg",
+      "/images/C_Habana_Room/img3.jpg",
+      "/images/C_Habana_Room/img4.jpg",
+      "/images/C_Habana_Room/img5.jpg",
+      "/images/C_Habana_Room/img6.jpg",
+      "/images/C_Habana_Room/img7.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Piscina Privada", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -65,17 +65,17 @@ const cabañas = [
     id: 104,
     name: "Cabaña Mikonos Suite",
     description: "Lujosa cabaña con diseño moderno y jacuzzi con vista a las montañas. Experiencia de lujo en un entorno natural privilegiado.",
-    img: "images/C_Mikonos_Suite/img1.jpg",
+    img: "/images/C_Mikonos_Suite/img1.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/C_Mikonos_Suite/img2.jpg",
-      "images/C_Mikonos_Suite/img3.jpg",
-      "images/C_Mikonos_Suite/img4.jpg",
-      "images/C_Mikonos_Suite/img5.jpg",
+      "/images/C_Mikonos_Suite/img2.jpg",
+      "/images/C_Mikonos_Suite/img3.jpg",
+      "/images/C_Mikonos_Suite/img4.jpg",
+      "/images/C_Mikonos_Suite/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -83,15 +83,15 @@ const cabañas = [
     id: 201,
     name: "Chalets",
     description: "Ideal para parejas, con cama king. Un refugio íntimo para reconectar con tu pareja.",
-    img: "images/S_Chalets/img1.jpg",
+    img: "/images/S_Chalets/img1.jpg",
     price: "$380.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/S_Chalets/img2.jpg",
-      "images/S_Chalets/img3.jpg"
+      "/images/S_Chalets/img2.jpg",
+      "/images/S_Chalets/img3.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -99,32 +99,32 @@ const cabañas = [
     id: 202,
     name: "Cabaña Crystal Garden",
     description: "Perfecta para una escapada romántica con todas las comodidades.",
-    img: "images/S_Crystal_Garden/img1.jpg",
+    img: "/images/S_Crystal_Garden/img1.jpg",
     price: "$495.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/S_Crystal_Garden/img2.jpg",
-      "images/S_Crystal_Garden/img3.jpg"
+      "/images/S_Crystal_Garden/img2.jpg",
+      "/images/S_Crystal_Garden/img3.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
   {
     id: 203,
-    name: "Domo Alaska ",
+    name: "Domo Alaska",
     description: "rodeada de naturaleza, ideal para desconectarte del ruido y descansar.",
-    img: "images/S_Domo_Alaska/img1.jpg",
+    img: "/images/S_Domo_Alaska/img1.jpg",
     price: "$460.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/S_Domo_Alaska/img2.jpg",
-      "images/S_Domo_Alaska/img3.jpg",
-      "images/S_Domo_Alaska/img4.jpg",
+      "/images/S_Domo_Alaska/img2.jpg",
+      "/images/S_Domo_Alaska/img3.jpg",
+      "/images/S_Domo_Alaska/img4.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -132,33 +132,34 @@ const cabañas = [
     id: 204,
     name: "Domo Ataraxia",
     description: "Disfruta amaneceres entre la neblina y el sonido de los pájaros.",
-    img: "images/S_Domo_Ataraxia/img1.jpg",
+    img: "/images/S_Domo_Ataraxia/img1.jpg",
     price: "$460.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/S_Domo_Ataraxia/img2.jpg",
-      "images/S_Domo_Ataraxia/img3.jpg",
-      "images/S_Domo_Ataraxia/img4.jpg",
+      "/images/S_Domo_Ataraxia/img2.jpg",
+      "/images/S_Domo_Ataraxia/img3.jpg",
+      "/images/S_Domo_Ataraxia/img4.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
-  },{
+  },
+  {
     id: 205,
     name: "Cabaña Golden Suite",
     description: "Espacio íntimo y moderno, diseñado para parejas que buscan tranquilidad.",
-    img: "images/S_Golden_Suite/img1.jpg",
+    img: "/images/S_Golden_Suite/img1.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/S_Golden_Suite/img2.jpg",
-      "images/S_Golden_Suite/img3.jpg",
-      "images/S_Golden_Suite/img4.jpg",
-      "images/S_Golden_Suite/img5.jpg",
+      "/images/S_Golden_Suite/img2.jpg",
+      "/images/S_Golden_Suite/img3.jpg",
+      "/images/S_Golden_Suite/img4.jpg",
+      "/images/S_Golden_Suite/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -166,17 +167,17 @@ const cabañas = [
     id: 206,
     name: "Cabaña Natural Suite",
     description: "Perfecta para quienes aman despertar con vistas a la montaña.",
-    img: "images/S_Natural_Suite/img1.jpg",
+    img: "/images/S_Natural_Suite/img1.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/S_Natural_Suite/img2.jpg",
-      "images/S_Natural_Suite/img3.jpg",
-      "images/S_Natural_Suite/img4.jpg",
-      "images/S_Natural_Suite/img5.jpg",
+      "/images/S_Natural_Suite/img2.jpg",
+      "/images/S_Natural_Suite/img3.jpg",
+      "/images/S_Natural_Suite/img4.jpg",
+      "/images/S_Natural_Suite/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -184,17 +185,17 @@ const cabañas = [
     id: 207,
     name: "Cabaña Villa Guadalupe",
     description: "Combina el encanto natural con toques artesanales y confort total.",
-    img: "images/S_Villa_Guadalupe/img1.jpg",
+    img: "/images/S_Villa_Guadalupe/img1.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "images/S_Villa_Guadalupe/img2.jpg",
-      "images/S_Villa_Guadalupe/img3.jpg",
-      "images/S_Villa_Guadalupe/img4.jpg",
-      "images/S_Villa_Guadalupe/img5.jpg",
+      "/images/S_Villa_Guadalupe/img2.jpg",
+      "/images/S_Villa_Guadalupe/img3.jpg",
+      "/images/S_Villa_Guadalupe/img4.jpg",
+      "/images/S_Villa_Guadalupe/img5.jpg",
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   }
@@ -203,28 +204,33 @@ const cabañas = [
 const paquetes = [
   {
     name: "Kit de Asado",
-    img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes.",
+    img: "/images/comida.png",
+    description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes. Es la opción ideal para los amantes de un buen asado.",
     price: "$150.000 COP",
   },
   {
-    name: "Paquete de Bebidas",
-    img: "https://images.unsplash.com/photo-1544145945-f90425340c7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    description: "Una selección de cócteles vibrantes y coloridos, preparados por expertos para refrescar y animar cualquier ocasión.",
+    name: "Paquete de Alcohol",
+    img: "/images/licores.png",
+    description: "Una selección de cócteles vibrantes y coloridos, preparados por expertos para refrescar y animar cualquier ocasión. Este paquete es la elección perfecta para quienes buscan variedad y sabor en sus bebidas.",
     price: "$150.000 COP",
   },
   {
     name: "Masaje relajante",
-    img: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    description: "Escapa del estrés diario con un masaje profesional diseñado para liberar la tensión muscular.",
+    img: "/images/masaje.png",
+    description: "Escapa del estrés diario con un masaje profesional diseñado para liberar la tensión muscular. Una experiencia de bienestar que te dejará sintiéndote completamente renovado y en paz.",
     price: "$150.000 COP",
   },
 ];
 
-// Funciones API
+// URL base de la API - actualizada a localhost:5272
+const API_BASE_URL = 'http://localhost:5272/api';
+
+// Funciones API actualizadas
 const loginWithAPI = async (email, password) => {
   try {
-    const response = await fetch('http://localhost:5095/api/Usuarios/Login', {
+    console.log('🔐 Intentando login con:', { email, password });
+   
+    const response = await fetch(`${API_BASE_URL}/Usuarios/Login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -234,6 +240,8 @@ const loginWithAPI = async (email, password) => {
         contrasena: password
       })
     });
+
+    console.log("📩 Respuesta del servidor:", response.status, response.statusText);
 
     if (!response.ok) {
       let errorMessage = 'Error en el login';
@@ -252,16 +260,23 @@ const loginWithAPI = async (email, password) => {
     }
 
     const result = await response.json();
+    console.log('✅ Login exitoso:', result);
     return result;
   } catch (error) {
     console.error('❌ Error en login:', error);
+    
+    // Manejo específico de errores de conexión
+    if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+      throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:5272');
+    }
+    
     throw error;
   }
 };
 
 const getAllUsers = async () => {
   try {
-    const response = await fetch('http://localhost:5095/api/Usuarios', {
+    const response = await fetch(`${API_BASE_URL}/Usuarios`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -280,6 +295,27 @@ const getAllUsers = async () => {
   }
 };
 
+const getAllRoles = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Rol`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo roles');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo roles:', error);
+    throw error;
+  }
+};
+
 const findUserInList = async (email) => {
   try {
     const allUsers = await getAllUsers();
@@ -291,15 +327,51 @@ const findUserInList = async (email) => {
   }
 };
 
+const getUserRoleInfo = async (idRol) => {
+  try {
+    const allRoles = await getAllRoles();
+    const role = allRoles.find(r => r.idRol === idRol);
+    return role;
+  } catch (error) {
+    console.error('Error obteniendo información del rol:', error);
+    return null;
+  }
+};
+
+const checkServerConnection = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Usuarios`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('❌ Servidor no disponible:', error);
+    return false;
+  }
+};
+
 const registerWithAPI = async (userData) => {
   try {
-    const response = await fetch('http://localhost:5095/api/Usuarios', {
+    console.log('📝 Intentando registrar usuario:', userData);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
+    const response = await fetch(`${API_BASE_URL}/Usuarios`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(userData)
+      body: JSON.stringify(userData),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
+
+    console.log('📡 Respuesta del registro:', response.status, response.statusText);
 
     if (!response.ok) {
       let errorMessage = 'Error en el registro';
@@ -319,9 +391,19 @@ const registerWithAPI = async (userData) => {
     }
 
     const result = await response.json();
+    console.log('✅ Registro exitoso:', result);
     return result;
   } catch (error) {
     console.error('❌ Error en registro:', error);
+    
+    if (error.name === 'AbortError') {
+      throw new Error('La conexión con el servidor tardó demasiado tiempo. Verifica que el backend esté funcionando correctamente.');
+    }
+    
+    if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+      throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:5272');
+    }
+    
     throw error;
   }
 };
@@ -330,7 +412,7 @@ const registerWithAPI = async (userData) => {
 const sendVerificationCode = async (email) => {
   try {
     console.log('📤 Enviando código de verificación a:', email);
-    const response = await fetch('http://localhost:5095/api/Usuarios/SendVerificationCode', {
+    const response = await fetch(`${API_BASE_URL}/Usuarios/SendVerificationCode`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -362,7 +444,7 @@ const verifyCode = async (email, code) => {
     console.log('🔐 Verificando código para:', email);
     console.log('📝 Código ingresado:', code);
    
-    const response = await fetch('http://localhost:5095/api/Usuarios/VerificarCodigo', {
+    const response = await fetch(`${API_BASE_URL}/Usuarios/VerificarCodigo`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -404,7 +486,7 @@ const verifyCode = async (email, code) => {
 // NUEVA FUNCIÓN: Olvidó contraseña - enviar código
 const forgotPassword = async (email) => {
   try {
-    const response = await fetch('http://localhost:5095/api/Usuarios/OlvidoContrasena', {
+    const response = await fetch(`${API_BASE_URL}/Usuarios/OlvidoContrasena`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -441,7 +523,7 @@ const forgotPassword = async (email) => {
 // NUEVA FUNCIÓN: Restablecer contraseña
 const resetPassword = async (email, code, newPassword) => {
   try {
-    const response = await fetch('http://localhost:5095/api/Usuarios/RestablecerClave', {
+    const response = await fetch(`${API_BASE_URL}/Usuarios/RestablecerClave`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -477,6 +559,30 @@ const resetPassword = async (email, code, newPassword) => {
   }
 };
 
+// Funciones de autenticación
+const saveUser = (user) => {
+  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('isAuthenticated', 'true');
+  localStorage.setItem('userRole', user.rol);
+  localStorage.setItem('userEmail', user.email);
+};
+
+const getUser = () => {
+  const userStr = localStorage.getItem('user');
+  return userStr ? JSON.parse(userStr) : null;
+};
+
+const isAuthenticated = () => {
+  return localStorage.getItem('isAuthenticated') === 'true';
+};
+
+const logout = () => {
+  localStorage.removeItem('user');
+  localStorage.removeItem('isAuthenticated');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userEmail');
+};
+
 function LoginRegister() {
   const navigate = useNavigate();
   const [isRegisterActive, setIsRegisterActive] = useState(false);
@@ -492,6 +598,7 @@ function LoginRegister() {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [isServerOnline, setIsServerOnline] = useState(true);
 
   // NUEVOS ESTADOS PARA OLVIDÓ CONTRASEÑA
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -540,10 +647,10 @@ function LoginRegister() {
       name: "Copacabana",
       description: "Disfruta de una experiencia única en nuestras cabañas premium ubicadas en Copacabana, rodeadas de naturaleza y comodidades exclusivas.",
       images: [
-        "images/C_Ambar_Room/img1.jpg",
-        "images/C_Bali_Suite/img1.jpg",
-        "images/C_Habana_Room/img1.jpg",
-        "images/C_Mikonos_Suite/img1.jpg"
+        "/images/C_Ambar_Room/img1.jpg",
+        "/images/C_Bali_Suite/img1.jpg",
+        "/images/C_Habana_Room/img1.jpg",
+        "/images/C_Mikonos_Suite/img1.jpg"
       ],
       cabañasCount: cabañas.filter(c => c.sede === "Copacabana").length
     },
@@ -551,11 +658,11 @@ function LoginRegister() {
       name: "San Felix",
       description: "Vive momentos inolvidables en San Felix, donde la tranquilidad y el confort se fusionan para crear la escapada perfecta.",
       images: [
-        "images/S_Chalets/img1.jpg",
-        "images/S_Crystal_Garden/img1.jpg",
-        "images/S_Domo_Alaska/img1.jpg",
-        "images/S_Domo_Ataraxia/img1.jpg",
-        "images/S_Golden_Suite/img1.jpg"
+        "/images/S_Chalets/img1.jpg",
+        "/images/S_Crystal_Garden/img1.jpg",
+        "/images/S_Domo_Alaska/img1.jpg",
+        "/images/S_Domo_Ataraxia/img1.jpg",
+        "/images/S_Golden_Suite/img1.jpg"
       ],
       cabañasCount: cabañas.filter(c => c.sede === "San Felix").length
     }
@@ -617,6 +724,34 @@ function LoginRegister() {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Efecto para verificar autenticación al cargar
+  useEffect(() => {
+    const user = getUser();
+
+    if (!user) return; // si no hay usuario, no hace nada
+
+    // 🔒 Evita bucles de redirección
+    if (window.location.pathname === "/home" && user.rol === "Cliente") return;
+    if (window.location.pathname === "/dashboard" && user.rol === "Admin") return;
+
+    // 🔁 Redirige según el rol
+    if (user.rol === "Cliente") {
+      navigate("/home", { replace: true });
+    } else if (user.rol === "Admin") {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
+
+  // Verificar estado del servidor al cargar el componente
+  useEffect(() => {
+    const checkServerStatus = async () => {
+      const online = await checkServerConnection();
+      setIsServerOnline(online);
+    };
+    
+    checkServerStatus();
   }, []);
 
   // Función para scroll to top
@@ -901,9 +1036,18 @@ function LoginRegister() {
     }
   };
 
-  // MODIFICADA: Función de Login - SIEMPRE redirige a verificación después de login exitoso
+  // MODIFICADA: Función de Login - MEJORADA con manejo de roles
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!isServerOnline) {
+      showErrorAlert(
+        'Servidor no disponible', 
+        'El servidor no está disponible. Verifica que el backend esté corriendo en http://localhost:5272'
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     if (!loginEmail || !loginPassword) {
@@ -922,16 +1066,48 @@ function LoginRegister() {
       console.log('🔐 Iniciando proceso de login para:', loginEmail);
       const loginResult = await loginWithAPI(loginEmail, loginPassword);
      
-      if (loginResult && loginResult.exito) {
-        console.log('✅ Login exitoso, procediendo a verificación');
-        // Guardar email para verificación
-        setUserEmail(loginEmail);
-       
+      if (loginResult && loginResult.exito && loginResult.usuario) {
+        const user = loginResult.usuario;
+        console.log("👤 Usuario logueado:", user);
+
+        // Consultar el usuario completo desde la BD para obtener el rol
+        const userFromDB = await findUserInList(user.correo);
+
+        if (!userFromDB) {
+          throw new Error('Usuario no encontrado en la base de datos');
+        }
+
+        // Obtener información del rol
+        const roleInfo = await getUserRoleInfo(userFromDB.idRol);
+        
+        // Determinar el rol basado en idRol
+        let rol = "Cliente"; // Por defecto
+        let nombreRol = "Cliente";
+        
+        if (userFromDB.idRol === 1) {
+          rol = "Admin";
+          nombreRol = roleInfo?.nombreRol || "Administrador";
+        } else if (userFromDB.idRol === 2) {
+          rol = "Cliente";
+          nombreRol = roleInfo?.nombreRol || "Cliente";
+        }
+
+        console.log("🎯 Rol del usuario:", { idRol: userFromDB.idRol, rol, nombreRol });
+
+        // Guardar usuario en localStorage usando util
+        saveUser({
+          ...user,
+          rol,
+          nombreRol,
+          idRol: userFromDB.idRol
+        });
+
         // Enviar código de verificación
         const verificationResult = await sendVerificationCode(loginEmail);
        
-        // MOSTRAR PANTALLA DE VERIFICACIÓN INMEDIATAMENTE - SIN IMPORTAR EL RESULTADO
+        // MOSTRAR PANTALLA DE VERIFICACIÓN INMEDIATAMENTE
         console.log('🔄 Activando pantalla de verificación...');
+        setUserEmail(loginEmail);
         setShowVerification(true);
         setShowForm(false);
         setShowAboutUs(false);
@@ -1002,71 +1178,31 @@ function LoginRegister() {
      
       console.log('📊 Resultado completo de verificación:', verificationResult);
      
-      // MODIFICACIÓN CLAVE: Verificar si la verificación fue exitosa (ambas posibles propiedades)
-      const isSuccess = verificationResult &&
-                       (verificationResult.exito === true || verificationResult.exito === true);
+      // MODIFICACIÓN CLAVE: Verificar si la verificación fue exitosa
+      const isSuccess = verificationResult && verificationResult.exito;
      
       if (isSuccess) {
-        console.log('✅ Verificación exitosa, procediendo a buscar usuario...');
+        console.log('✅ Verificación exitosa');
        
-        // Buscar el usuario en la lista
-        const userFromList = await findUserInList(userEmail);
-       
-        if (userFromList) {
-          // Verificar si la cuenta está activa
-          if (!userFromList.estado) {
-            showErrorAlert('Cuenta inactiva', 'Tu cuenta está desactivada. Contacta al administrador.');
-            setIsLoading(false);
-            return;
+        // Obtener el usuario actual
+        const currentUser = getUser();
+        
+        if (currentUser) {
+          // Mensaje y redirección según rol
+          if (currentUser.rol === "Admin") {
+            showSuccessAlert('Inicio de sesión', `¡Bienvenido Administrador ${currentUser.nombre || ''}!`);
+            navigate("/dashboard");
+          } else {
+            showSuccessAlert('Inicio de sesión', `¡Bienvenido ${currentUser.nombre || ''}!`);
+            navigate("/home");
           }
-
-          // Crear objeto de usuario
-          const user = {
-            id: userFromList.idUsuario,
-            firstName: userFromList.nombre || '',
-            lastName: userFromList.apellido || '',
-            email: userFromList.correo || userEmail,
-            role: userFromList.idRol || 1,
-            isVerified: true,
-            tipoDocumento: userFromList.tipoDocumento,
-            numeroDocumento: userFromList.numeroDocumento,
-            celular: userFromList.celular,
-            fechaNacimiento: userFromList.fechaNacimiento
-          };
-         
-          // Guardar en localStorage
-          localStorage.setItem('user', JSON.stringify(user));
-          localStorage.setItem('isAuthenticated', 'true');
-          localStorage.setItem('userRole', user.role.toString());
-          localStorage.setItem('userEmail', user.email);
-         
-          // Mensaje de bienvenida personalizado
-          const welcomeMessage = user.role === 2
-            ? `¡Bienvenido Administrador ${user.firstName}!`
-            : `¡Bienvenido de nuevo ${user.firstName} ${user.lastName}!`;
-         
-          showSuccessAlert('Verificación exitosa', welcomeMessage);
-         
-          // Redirigir después de éxito
-          setTimeout(() => {
-            if (user.role === 2) {
-              navigate("/admin-dashboard");
-            } else {
-              navigate("/dashboard");
-            }
-          }, 1500);
-         
         } else {
-          // Si no se encuentra el usuario
-          console.error('❌ Usuario no encontrado en la lista');
-          showErrorAlert('Error', 'No se pudo encontrar la información del usuario. Contacta al administrador.');
+          showErrorAlert('Error', 'No se pudo obtener la información del usuario');
         }
       } else {
         // Si la verificación falla
         console.error('❌ Verificación fallida:', verificationResult);
-        const errorMessage = verificationResult?.mensaje ||
-                            verificationResult?.mensaje ||
-                            'El código de verificación es incorrecto o ha expirado.';
+        const errorMessage = verificationResult?.mensaje || 'El código de verificación es incorrecto o ha expirado.';
         showErrorAlert('Código incorrecto', errorMessage);
       }
     } catch (error) {
@@ -1149,14 +1285,26 @@ function LoginRegister() {
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-   
+  
     if (!validateRegisterForm()) {
       showErrorAlert('Error en el formulario', 'Por favor corrige los errores marcados en el formulario');
       return;
     }
 
+    // Verificar conexión con el servidor antes de intentar registrar
+    if (!isServerOnline) {
+      showErrorAlert(
+        'Servidor no disponible', 
+        'El servidor de registro no está disponible. Por favor:\n\n' +
+        '1. Verifica que el backend .NET esté corriendo\n' +
+        '2. Asegúrate de que esté en el puerto 5272\n' +
+        '3. Intenta nuevamente en unos momentos'
+      );
+      return;
+    }
+
     setIsLoading(true);
-   
+  
     try {
       const userData = {
         tipoDocumento: tipoDocumento,
@@ -1167,15 +1315,15 @@ function LoginRegister() {
         fechaNacimiento: fechaNacimiento,
         correo: registerEmail.trim(),
         contrasena: registerPassword,
-        idRol: 1,
+        idRol: 2, // Cliente por defecto
         estado: true
       };
 
       const result = await registerWithAPI(userData);
-     
+    
       if (result) {
         showSuccessAlert('¡Registro exitoso!', 'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.');
-       
+      
         setTimeout(() => {
           handleShowLogin();
         }, 2000);
@@ -1344,14 +1492,35 @@ function LoginRegister() {
         </ul>
       </nav>
 
+      {/* Indicador de estado del servidor */}
+      {!isServerOnline && (
+        <div style={{
+          position: "fixed",
+          top: "70px",
+          left: 0,
+          width: "100%",
+          backgroundColor: "#ff6b6b",
+          color: "white",
+          padding: "10px",
+          textAlign: "center",
+          zIndex: 999,
+          fontSize: "14px",
+          fontWeight: "bold"
+        }}>
+          ⚠️ El servidor no está disponible. Verifica que el backend esté corriendo en http://localhost:5272
+        </div>
+      )}
+
       {/* MAIN CONTENT */}
       <div style={{
         minHeight: "100vh",
         backgroundColor: "#f8faf8",
-        paddingTop: "70px", // Para compensar el navbar fijo
-        overflowX: "hidden", // Eliminar scroll horizontal
+        paddingTop: isServerOnline ? "70px" : "90px", // Ajustar según el estado del servidor
+        margin: 0,
+        overflowX: "hidden",
       }}>
-        <main style={{ width: "100%", overflowX: "hidden" }}>
+        <main style={{ width: "100%", margin: 0, padding: 0, overflowX: "hidden" }}>
+          
           {/* POPUPS ACTUALIZADOS */}
           {showPopup && selectedPackage && (
             <div
@@ -1762,7 +1931,7 @@ function LoginRegister() {
 
           {/* QUIENES SOMOS */}
           {showAboutUs && (
-            <section style={{ padding: "4rem 2rem", backgroundColor: "#f8faf8" }}>
+            <section style={{ padding: "4rem 2rem", backgroundColor: "#f8faf8", margin: 0 }}>
               <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                 <div style={{
                   backgroundColor: "#fff",
@@ -1791,7 +1960,7 @@ function LoginRegister() {
                     </div>
                     <div style={{ flex: 1, minWidth: "300px" }}>
                       <img
-                        src="images/cabana.jpg"
+                        src="/images/cabana.jpg"
                         alt="Glamping"
                         style={{
                           width: "80%",
@@ -1845,7 +2014,8 @@ function LoginRegister() {
               minHeight: "100vh",
               display: "flex",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              margin: 0,
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -1968,7 +2138,8 @@ function LoginRegister() {
               minHeight: "100vh",
               display: "flex",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              margin: 0,
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -2061,7 +2232,8 @@ function LoginRegister() {
               minHeight: "100vh",
               display: "flex",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              margin: 0,
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -2171,6 +2343,7 @@ function LoginRegister() {
                   textAlign: "center",
                   color: "#fff",
                   padding: "0 2rem",
+                  margin: 0,
                 }}
               >
                 <div style={{ marginBottom: "2rem" }}>
@@ -2239,7 +2412,7 @@ function LoginRegister() {
               </section>
 
               {/* SEDES - 2 CARTAS CENTRADAS */}
-              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff" }}>
+              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff", margin: 0 }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <h2 style={{
                     fontSize: "3rem",
@@ -2332,7 +2505,7 @@ function LoginRegister() {
               </section>
 
               {/* TODAS NUESTRAS CABAÑAS CON FILTROS */}
-              <section style={{ padding: "3rem 2rem", backgroundColor: "#f8faf8" }}>
+              <section style={{ padding: "3rem 2rem", backgroundColor: "#f8faf8", margin: 0 }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <h2 style={{
                     fontSize: "3rem",
@@ -2460,7 +2633,7 @@ function LoginRegister() {
               </section>
 
               {/* CABINAS DESTACADAS CON FILTROS APLICADOS */}
-              <section style={{ padding: "0 2rem 5rem", backgroundColor: "#f8faf8" }}>
+              <section style={{ padding: "0 2rem 5rem", backgroundColor: "#f8faf8", margin: 0 }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
                     {cabañasFiltradas.map((cabin, index) => (
@@ -2551,7 +2724,7 @@ function LoginRegister() {
               </section>
 
               {/* SERVICIOS CON IMAGEN INMEDIATA */}
-              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff" }}>
+              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff", margin: 0 }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <h2 style={{
                     fontSize: "3rem",
@@ -2611,7 +2784,7 @@ function LoginRegister() {
               </section>
 
               {/* CALL TO ACTION */}
-              <section style={{ padding: "5rem 2rem", background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", color: "#fff", textAlign: "center" }}>
+              <section style={{ padding: "5rem 2rem", background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", color: "#fff", textAlign: "center", margin: 0 }}>
                 <div style={{ maxWidth: "800px", margin: "0 auto" }}>
                   <h2 style={{ fontSize: "3rem", marginBottom: "1.5rem" }}>¿Listo para tu Aventura?</h2>
                   <p style={{ fontSize: "1.3rem", marginBottom: "2.5rem" }}>
@@ -2664,7 +2837,8 @@ function LoginRegister() {
               minHeight: "100vh",
               display: "flex",
               justifyContent: "center",
-              alignItems: "center"
+              alignItems: "center",
+              margin: 0,
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -2732,22 +2906,37 @@ function LoginRegister() {
 
                     <button
                       type="submit"
-                      disabled={isLoading}
+                      disabled={isLoading || !isServerOnline}
                       style={{
                         width: "100%",
                         padding: "1.2rem",
-                        backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
+                        backgroundColor: isLoading || !isServerOnline ? "#7a9c87" : "#2E5939",
                         color: "#fff",
                         fontWeight: "600",
                         border: "none",
                         borderRadius: "12px",
-                        cursor: isLoading ? "not-allowed" : "pointer",
+                        cursor: isLoading || !isServerOnline ? "not-allowed" : "pointer",
                         fontSize: "1.1rem",
                         marginBottom: "1.5rem",
                       }}
                     >
                       {isLoading ? "Iniciando Sesión..." : "Iniciar Sesión"}
                     </button>
+
+                    {!isServerOnline && (
+                      <div style={{
+                        backgroundColor: "#fff3cd",
+                        border: "1px solid #ffeaa7",
+                        borderRadius: "8px",
+                        padding: "1rem",
+                        marginBottom: "1rem",
+                        textAlign: "center"
+                      }}>
+                        <p style={{ color: "#856404", margin: 0, fontSize: "0.9rem" }}>
+                          ⚠️ El servidor no está disponible. Verifica que el backend esté corriendo.
+                        </p>
+                      </div>
+                    )}
 
                     <p style={{ textAlign: "center", color: "#5D6D63" }}>
                       ¿No tienes cuenta?{" "}
@@ -2906,18 +3095,33 @@ function LoginRegister() {
                       </div>
                     </div>
 
+                    {!isServerOnline && (
+                      <div style={{
+                        backgroundColor: "#fff3cd",
+                        border: "1px solid #ffeaa7",
+                        borderRadius: "8px",
+                        padding: "1rem",
+                        marginBottom: "1rem",
+                        textAlign: "center"
+                      }}>
+                        <p style={{ color: "#856404", margin: 0, fontSize: "0.9rem" }}>
+                          ⚠️ El servidor no está disponible. No podrás registrarte hasta que el backend esté corriendo.
+                        </p>
+                      </div>
+                    )}
+
                     <button
                       type="submit"
-                      disabled={isLoading}
+                      disabled={isLoading || !isServerOnline}
                       style={{
                         width: "100%",
                         padding: "1.2rem",
-                        backgroundColor: isLoading ? "#7a9c87" : "#2E5939",
+                        backgroundColor: isLoading || !isServerOnline ? "#7a9c87" : "#2E5939",
                         color: "#fff",
                         fontWeight: "600",
                         border: "none",
                         borderRadius: "12px",
-                        cursor: isLoading ? "not-allowed" : "pointer",
+                        cursor: isLoading || !isServerOnline ? "not-allowed" : "pointer",
                         fontSize: "1.1rem",
                         marginBottom: "1.5rem",
                       }}
@@ -3005,7 +3209,6 @@ function LoginRegister() {
                     width: "80px",
                     height: "80px",
                     marginRight: "1rem",
-                   
                   }}
                 />
                 <span style={{
