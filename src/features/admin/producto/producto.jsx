@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { 
-  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, 
+import {
+  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus,
   FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox,
   FaTag, FaDollarSign, FaHashtag, FaToggleOn, FaToggleOff,
-  FaSync, FaShoppingCart, FaBuilding, FaClipboardList, FaSlidersH
+  FaShoppingCart, FaSlidersH
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -94,7 +94,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -299,25 +299,24 @@ const VALIDATION_RULES = {
 const API_PRODUCTOS = "http://localhost:5272/api/Productos";
 const API_CATEGORIAS = "http://localhost:5272/api/CategoriaProductos";
 const API_MARCAS = "http://localhost:5272/api/MarcaProducto";
-const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5272/api/ProductoPorServicio";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
 // COMPONENTE FormField PARA PRODUCTOS
 // ===============================================
-const FormField = ({ 
-  label, 
-  name, 
-  type = "text", 
-  value, 
-  onChange, 
+const FormField = ({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
   onBlur,
-  error, 
+  error,
   success,
   warning,
   options = [],
-  style = {}, 
-  required = true, 
+  style = {},
+  required = true,
   disabled = false,
   maxLength,
   placeholder,
@@ -356,7 +355,7 @@ const FormField = ({
     } else {
       filteredValue = value;
     }
-    
+   
     onChange({ target: { name, value: filteredValue } });
   };
 
@@ -507,13 +506,12 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Productos MEJORADO CON FILTROS
+// COMPONENTE PRINCIPAL Productos
 // ===============================================
 const Productos = () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [marcas, setMarcas] = useState([]);
-  const [productosPorServicio, setProductosPorServicio] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -535,15 +533,14 @@ const Productos = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
 
-  // Estados para filtros - NUEVO
+  // Estados para filtros
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     estado: "all",
     categoria: "all",
     marca: "all",
     stock: "all",
-    precio: "all",
-    servicios: "all"
+    precio: "all"
   });
 
   // Estado inicial basado en la estructura de tu API
@@ -565,7 +562,6 @@ const Productos = () => {
     fetchProductos();
     fetchCategorias();
     fetchMarcas();
-    fetchProductosPorServicio();
   }, []);
 
   // Validar formulario en tiempo real solo para campos tocados
@@ -593,7 +589,7 @@ const Productos = () => {
           opacity: 1;
         }
       }
-      
+     
       @keyframes slideDown {
         from {
           opacity: 0;
@@ -656,40 +652,74 @@ const Productos = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO MEJORADAS - NUEVO
+  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
   // ===============================================
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    setCurrentPage(1);
+  const fetchProductos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(API_PRODUCTOS, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+     
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      } else {
+        throw new Error("Formato de datos inválido");
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener productos:", error);
+      handleApiError(error, "cargar los productos");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const clearFilters = () => {
-    setFilters({
-      estado: "all",
-      categoria: "all",
-      marca: "all",
-      stock: "all",
-      precio: "all",
-      servicios: "all"
-    });
-    setCurrentPage(1);
+  const fetchCategorias = async () => {
+    setLoadingCategorias(true);
+    try {
+      const res = await axios.get(API_CATEGORIAS, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+     
+      if (Array.isArray(res.data)) {
+        setCategorias(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener categorías:", error);
+    } finally {
+      setLoadingCategorias(false);
+    }
   };
 
-  // Contador de filtros activos
-  const activeFiltersCount = useMemo(() => {
-    let count = 0;
-    if (filters.estado !== "all") count++;
-    if (filters.categoria !== "all") count++;
-    if (filters.marca !== "all") count++;
-    if (filters.stock !== "all") count++;
-    if (filters.precio !== "all") count++;
-    if (filters.servicios !== "all") count++;
-    return count;
-  }, [filters]);
+  const fetchMarcas = async () => {
+    setLoadingMarcas(true);
+    try {
+      const res = await axios.get(API_MARCAS, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+     
+      if (Array.isArray(res.data)) {
+        setMarcas(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener marcas:", error);
+    } finally {
+      setLoadingMarcas(false);
+    }
+  };
 
   // ===============================================
   // FUNCIONES DE VALIDACIÓN MEJORADAS
@@ -718,7 +748,7 @@ const Productos = () => {
     }
     else if (trimmedValue && (fieldName === 'precio' || fieldName === 'cantidad')) {
       const numericValue = fieldName === 'precio' ? parseFloat(trimmedValue) : parseInt(trimmedValue);
-      
+     
       if (isNaN(numericValue)) {
         error = rules.errorMessages.invalid;
       } else if (rules.min !== undefined && numericValue < rules.min) {
@@ -727,7 +757,7 @@ const Productos = () => {
         error = rules.errorMessages.max;
       } else {
         success = `${fieldName === 'precio' ? 'Precio' : 'Cantidad'} válido.`;
-        
+       
         // Advertencias específicas
         if (fieldName === 'precio') {
           if (numericValue < 100) {
@@ -759,8 +789,8 @@ const Productos = () => {
 
     // Verificación de duplicados para nombre
     if (fieldName === 'nombre' && trimmedValue && !error) {
-      const duplicate = productos.find(prod => 
-        prod.nombre.toLowerCase() === trimmedValue.toLowerCase() && 
+      const duplicate = productos.find(prod =>
+        prod.nombre.toLowerCase() === trimmedValue.toLowerCase() &&
         (!isEditing || prod.idProducto !== newProducto.idProducto)
       );
       if (duplicate) {
@@ -795,7 +825,7 @@ const Productos = () => {
     const estadoValid = validateField('estado', newProducto.estado);
 
     const isValid = nombreValid && precioValid && cantidadValid && categoriaValid && marcaValid && estadoValid;
-    
+   
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
       setTimeout(() => {
@@ -817,97 +847,9 @@ const Productos = () => {
     }));
   };
 
-  // ===============================================
-  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
-  // ===============================================
-  const fetchProductos = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(API_PRODUCTOS, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setProductos(res.data);
-      } else {
-        throw new Error("Formato de datos inválido");
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener productos:", error);
-      handleApiError(error, "cargar los productos");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategorias = async () => {
-    setLoadingCategorias(true);
-    try {
-      const res = await axios.get(API_CATEGORIAS, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setCategorias(res.data);
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener categorías:", error);
-    } finally {
-      setLoadingCategorias(false);
-    }
-  };
-
-  const fetchMarcas = async () => {
-    setLoadingMarcas(true);
-    try {
-      const res = await axios.get(API_MARCAS, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setMarcas(res.data);
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener marcas:", error);
-    } finally {
-      setLoadingMarcas(false);
-    }
-  };
-
-  const fetchProductosPorServicio = async () => {
-    try {
-      const res = await axios.get(API_PRODUCTOS_POR_SERVICIO, {
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (Array.isArray(res.data)) {
-        setProductosPorServicio(res.data);
-      }
-    } catch (error) {
-      console.error("❌ Error al obtener productos por servicio:", error);
-    }
-  };
-
   const handleAddProducto = async (e) => {
     e.preventDefault();
-    
+   
     if (isSubmitting) {
       displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
       return;
@@ -919,7 +861,7 @@ const Productos = () => {
 
     setIsSubmitting(true);
     setLoading(true);
-    
+   
     try {
       // Preparar datos según la estructura de tu API
       const productoData = {
@@ -947,7 +889,7 @@ const Productos = () => {
         });
         displayAlert("Producto agregado exitosamente.", "success");
       }
-      
+     
       await fetchProductos();
       closeForm();
     } catch (error) {
@@ -959,49 +901,13 @@ const Productos = () => {
     }
   };
 
-  const confirmDelete = async () => {
-    if (productoToDelete) {
-      setLoading(true);
-      try {
-        // Verificar si el producto tiene servicios asociados
-        const hasServices = await checkIfProductoHasServices(productoToDelete.idProducto);
-        if (hasServices) {
-          displayAlert("No se puede eliminar el producto porque tiene servicios asociados.", "error");
-          setLoading(false);
-          return;
-        }
-
-        await axios.delete(`${API_PRODUCTOS}/${productoToDelete.idProducto}`);
-        displayAlert("Producto eliminado exitosamente.", "success");
-        await fetchProductos();
-        
-        // Ajustar la página si es necesario
-        if (paginatedProductos.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        }
-      } catch (error) {
-        console.error("❌ Error al eliminar producto:", error);
-        
-        if (error.response && error.response.status === 409) {
-          displayAlert("No se puede eliminar el producto porque tiene registros asociados.", "error");
-        } else {
-          handleApiError(error, "eliminar el producto");
-        }
-      } finally {
-        setLoading(false);
-        setProductoToDelete(null);
-        setShowDeleteConfirm(false);
-      }
-    }
-  };
-
   // ===============================================
   // FUNCIONES AUXILIARES MEJORADAS
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
     let alertType = "error";
-    
+   
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
@@ -1024,39 +930,9 @@ const Productos = () => {
     } else {
       errorMessage = `Error inesperado: ${error.message}`;
     }
-    
+   
     setError(errorMessage);
     displayAlert(errorMessage, alertType);
-  };
-
-  // Función para verificar si un producto tiene servicios asociados
-  const checkIfProductoHasServices = async (productoId) => {
-    try {
-      const serviciosAsociados = productosPorServicio.filter(
-        rel => rel.idProducto === productoId
-      );
-      return serviciosAsociados.length > 0;
-    } catch (error) {
-      console.error("Error al verificar servicios:", error);
-      return true; // Por seguridad, asumir que tiene servicios si hay error
-    }
-  };
-
-  // Función para contar servicios por producto
-  const contarServiciosPorProducto = (productoId) => {
-    return productosPorServicio.filter(rel => rel.idProducto === productoId).length;
-  };
-
-  // Función para obtener servicios detallados del producto
-  const getServiciosDelProducto = (productoId) => {
-    const relaciones = productosPorServicio.filter(rel => rel.idProducto === productoId);
-    // En una implementación real, aquí harías una llamada a la API de servicios
-    // Por ahora retornamos datos básicos
-    return relaciones.map(rel => ({
-      id: rel.idServicio,
-      nombre: `Servicio ${rel.idServicio}`,
-      cantidad: rel.cantidad || 1
-    }));
   };
 
   const handleChange = (e) => {
@@ -1067,14 +943,12 @@ const Productos = () => {
     }));
   };
 
-  // Nueva función para manejar el blur (cuando el campo pierde el foco)
   const handleInputBlur = (e) => {
     const { name } = e.target;
     markFieldAsTouched(name);
     validateField(name, newProducto[name]);
   };
 
-  // Función para cambiar el estado con el botón toggle
   const toggleEstado = () => {
     setNewProducto(prev => ({
       ...prev,
@@ -1116,9 +990,9 @@ const Productos = () => {
   const toggleEstadoProducto = async (producto) => {
     setLoading(true);
     try {
-      const updatedProducto = { 
-        ...producto, 
-        estado: !producto.estado 
+      const updatedProducto = {
+        ...producto,
+        estado: !producto.estado
       };
       await axios.put(`${API_PRODUCTOS}/${producto.idProducto}`, updatedProducto, {
         headers: { 'Content-Type': 'application/json' }
@@ -1138,13 +1012,14 @@ const Productos = () => {
     setShowDetails(true);
   };
 
-  const handleEdit = (producto) => {
+  const handleEdit = async (producto) => {
     setNewProducto({
       ...producto,
       cantidad: producto.cantidad.toString(),
       precio: producto.precio.toString(),
       estado: producto.estado
     });
+   
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
@@ -1154,23 +1029,76 @@ const Productos = () => {
   };
 
   const handleDeleteClick = (producto) => {
-    // Validar si el producto tiene servicios asociados antes de eliminar
-    const hasServices = contarServiciosPorProducto(producto.idProducto) > 0;
-    if (hasServices) {
-      displayAlert("No se puede eliminar un producto que tiene servicios asociados", "error");
-      return;
-    }
     setProductoToDelete(producto);
     setShowDeleteConfirm(true);
   };
 
+  const confirmDelete = async () => {
+    if (productoToDelete) {
+      setLoading(true);
+      try {
+        await axios.delete(`${API_PRODUCTOS}/${productoToDelete.idProducto}`);
+        displayAlert("Producto eliminado exitosamente.", "success");
+        await fetchProductos();
+       
+        // Ajustar la página si es necesario
+        if (paginatedProductos.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } catch (error) {
+        console.error("❌ Error al eliminar producto:", error);
+       
+        if (error.response && error.response.status === 409) {
+          displayAlert("No se puede eliminar el producto porque tiene registros asociados.", "error");
+        } else {
+          handleApiError(error, "eliminar el producto");
+        }
+      } finally {
+        setLoading(false);
+        setProductoToDelete(null);
+        setShowDeleteConfirm(false);
+      }
+    }
+  };
+
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      estado: "all",
+      categoria: "all",
+      marca: "all",
+      stock: "all",
+      precio: "all"
+    });
+    setCurrentPage(1);
+  };
+
+  // Contador de filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.estado !== "all") count++;
+    if (filters.categoria !== "all") count++;
+    if (filters.marca !== "all") count++;
+    if (filters.stock !== "all") count++;
+    if (filters.precio !== "all") count++;
+    return count;
+  }, [filters]);
+
   const filteredProductos = useMemo(() => {
     let filtered = productos.filter(producto => {
       // Búsqueda general
-      const matchesSearch = 
+      const matchesSearch =
         producto.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getCategoriaNombre(producto.idCategoria)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getMarcaNombre(producto.idMarca)?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -1206,13 +1134,6 @@ const Productos = () => {
         if (filters.precio === "bajo" && producto.precio >= 50000) return false;
         if (filters.precio === "medio" && (producto.precio < 50000 || producto.precio >= 200000)) return false;
         if (filters.precio === "alto" && producto.precio < 200000) return false;
-      }
-
-      // Filtro por servicios
-      const serviciosCount = contarServiciosPorProducto(producto.idProducto);
-      if (filters.servicios !== "all") {
-        if (filters.servicios === "con" && serviciosCount === 0) return false;
-        if (filters.servicios === "sin" && serviciosCount > 0) return false;
       }
 
       return true;
@@ -1260,136 +1181,22 @@ const Productos = () => {
   };
 
   // ===============================================
-  // COMPONENTE PARA DETALLES DE RELACIONES
-  // ===============================================
-  const RelacionesSection = ({ productoId }) => {
-    const servicios = getServiciosDelProducto(productoId);
-    const serviciosCount = servicios.length;
-
-    if (serviciosCount === 0) {
-      return (
-        <div style={detailItemStyle}>
-          <div style={detailLabelStyle}>Relaciones del Producto</div>
-          <div style={{
-            backgroundColor: '#F7F4EA',
-            padding: '15px',
-            borderRadius: '8px',
-            textAlign: 'center',
-            color: '#679750'
-          }}>
-            Este producto no tiene servicios asociados.
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div style={detailItemStyle}>
-        <div style={detailLabelStyle}>Relaciones del Producto</div>
-        
-        {/* Resumen de relaciones */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '10px', 
-          marginBottom: '20px' 
-        }}>
-          <div style={{ 
-            backgroundColor: '#E8F5E8',
-            padding: '12px',
-            borderRadius: '8px',
-            textAlign: 'center',
-            border: '1px solid #679750'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '5px' }}>
-              <FaClipboardList color="#679750" />
-              <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Servicios</span>
-            </div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939' }}>
-              {serviciosCount}
-            </div>
-          </div>
-        </div>
-
-        {/* Detalles de servicios */}
-        {servicios.length > 0 && (
-          <div style={{
-            backgroundColor: '#F7F4EA',
-            padding: '15px',
-            borderRadius: '8px',
-            border: '1px solid #E8F5E8'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-              <FaClipboardList color="#2E5939" />
-              <h4 style={{ margin: 0, color: '#2E5939' }}>Servicios Asociados</h4>
-            </div>
-            <div style={{ display: 'grid', gap: '8px' }}>
-              {servicios.map((servicio, index) => (
-                <div key={index} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px',
-                  backgroundColor: 'white',
-                  borderRadius: '6px',
-                  border: '1px solid #E8F5E8'
-                }}>
-                  <span style={{ fontWeight: '500' }}>{servicio.nombre}</span>
-                  <span style={{ 
-                    backgroundColor: '#679750', 
-                    color: 'white', 
-                    padding: '2px 8px', 
-                    borderRadius: '12px', 
-                    fontSize: '12px',
-                    fontWeight: 'bold'
-                  }}>
-                    Cant: {servicio.cantidad}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Información importante sobre relaciones */}
-        {serviciosCount > 0 && (
-          <div style={{
-            backgroundColor: '#fff3cd',
-            border: '1px solid #ffeaa7',
-            borderRadius: '8px',
-            padding: '12px',
-            marginTop: '15px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-              <FaInfoCircle style={{ color: '#856404' }} />
-              <strong style={{ color: '#856404', fontSize: '14px' }}>Información Importante</strong>
-            </div>
-            <p style={{ color: '#856404', margin: 0, fontSize: '13px', lineHeight: '1.4' }}>
-              ⚠️ Este producto tiene servicios asociados. No se puede eliminar mientras tenga servicios vinculados.
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // ===============================================
   // RENDERIZADO
   // ===============================================
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
-      
+     
       {/* Alerta Mejorada */}
       {showAlert && (
         <div style={getAlertStyle(alertType)}>
           {getAlertIcon(alertType)}
           <span style={{ flex: 1 }}>{alertMessage}</span>
-          <button 
+          <button
             onClick={() => setShowAlert(false)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'inherit', 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
               cursor: 'pointer',
               fontSize: '16px',
               padding: 0,
@@ -1528,7 +1335,7 @@ const Productos = () => {
               Total Productos
             </div>
           </div>
-          
+         
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -1546,7 +1353,7 @@ const Productos = () => {
               Productos Activos
             </div>
           </div>
-          
+         
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -1586,7 +1393,7 @@ const Productos = () => {
       )}
 
       {/* Barra de búsqueda y filtros - MEJORADO */}
-      <div style={{ 
+      <div style={{
         marginBottom: '20px',
         backgroundColor: '#fff',
         borderRadius: '10px',
@@ -1594,9 +1401,9 @@ const Productos = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '15px', 
+        <div style={{
+          display: 'flex',
+          gap: '15px',
           alignItems: 'center',
           flexWrap: 'wrap',
           marginBottom: showFilters ? '15px' : '0'
@@ -1780,24 +1587,6 @@ const Productos = () => {
                   <option value="alto">Alto (más de $200,000)</option>
                 </select>
               </div>
-
-              {/* Filtro por servicios */}
-              <div>
-                <label style={labelStyle}>Servicios</label>
-                <select
-                  name="servicios"
-                  value={filters.servicios}
-                  onChange={handleFilterChange}
-                  style={{
-                    ...inputStyle,
-                    width: '100%'
-                  }}
-                >
-                  <option value="all">Todos los productos</option>
-                  <option value="con">Con servicios asociados</option>
-                  <option value="sin">Sin servicios asociados</option>
-                </select>
-              </div>
             </div>
           </div>
         )}
@@ -1819,13 +1608,10 @@ const Productos = () => {
         )}
       </div>
 
-      {/* Resto del código permanece igual (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
-      {/* ... */}
-
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+          <div style={{...modalContentStyle, maxWidth: 700}}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
                 {isEditing ? "Editar Producto" : "Agregar Nuevo Producto"}
@@ -1845,7 +1631,7 @@ const Productos = () => {
                 <FaTimes />
               </button>
             </div>
-            
+           
             <form onSubmit={handleAddProducto}>
               <div style={formContainerStyle}>
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -1885,9 +1671,9 @@ const Productos = () => {
                   warning={formWarnings.idCategoria}
                   required={true}
                   disabled={loadingCategorias || loading}
-                  options={categorias.map(cat => ({ 
-                    value: cat.idCategoria, 
-                    label: cat.categoria 
+                  options={categorias.map(cat => ({
+                    value: cat.idCategoria,
+                    label: cat.categoria
                   }))}
                   icon={<FaTag />}
                   touched={touchedFields.idCategoria}
@@ -1910,9 +1696,9 @@ const Productos = () => {
                   warning={formWarnings.idMarca}
                   required={true}
                   disabled={loadingMarcas || loading}
-                  options={marcas.map(marca => ({ 
-                    value: marca.idMarca, 
-                    label: marca.nombre 
+                  options={marcas.map(marca => ({
+                    value: marca.idMarca,
+                    label: marca.nombre
                   }))}
                   icon={<FaShoppingCart />}
                   touched={touchedFields.idMarca}
@@ -1992,13 +1778,13 @@ const Productos = () => {
                         </>
                       )}
                     </button>
-                    <span style={{ 
-                      fontSize: '14px', 
+                    <span style={{
+                      fontSize: '14px',
                       color: newProducto.estado ? '#4caf50' : '#e57373',
                       fontWeight: '500'
                     }}>
-                      {newProducto.estado 
-                        ? 'El producto está activo y disponible para ventas' 
+                      {newProducto.estado
+                        ? 'El producto está activo y disponible para ventas'
                         : 'El producto está inactivo y no disponible para ventas'
                       }
                     </span>
@@ -2033,12 +1819,12 @@ const Productos = () => {
                     <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
                       {formatPrice(parseFloat(newProducto.precio))}
                     </div>
-                    
+                   
                     <div>Cantidad:</div>
                     <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
                       {newProducto.cantidad} unidades
                     </div>
-                    
+                   
                     <div style={{ borderTop: '1px solid #ccc', paddingTop: '5px' }}>
                       <strong>Valor total:</strong>
                     </div>
@@ -2124,13 +1910,13 @@ const Productos = () => {
                 <FaTimes />
               </button>
             </div>
-            
+           
             <div>
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>ID</div>
                 <div style={detailValueStyle}>#{selectedProducto.idProducto}</div>
               </div>
-              
+             
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Nombre</div>
                 <div style={detailValueStyle}>
@@ -2188,9 +1974,6 @@ const Productos = () => {
                 </div>
               </div>
 
-              {/* Sección de relaciones */}
-              <RelacionesSection productoId={selectedProducto.idProducto} />
-
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Estado</div>
                 <div style={{
@@ -2241,9 +2024,9 @@ const Productos = () => {
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
               ¿Estás seguro de eliminar el producto "<strong>{productoToDelete.nombre}</strong>"?
             </p>
-            
-            <div style={{ 
-              backgroundColor: '#fff3cd', 
+           
+            <div style={{
+              backgroundColor: '#fff3cd',
               border: '1px solid #ffeaa7',
               borderRadius: '8px',
               padding: '15px',
@@ -2254,12 +2037,11 @@ const Productos = () => {
                 <strong style={{ color: '#856404' }}>Producto a eliminar</strong>
               </div>
               <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-                Precio: {formatPrice(productoToDelete.precio)} | 
-                Cantidad: {productoToDelete.cantidad} | 
+                Precio: {formatPrice(productoToDelete.precio)} |
+                Cantidad: {productoToDelete.cantidad} |
                 Estado: {productoToDelete.estado ? 'Activo' : 'Inactivo'} |
                 Categoría: {getCategoriaNombre(productoToDelete.idCategoria)} |
-                Marca: {getMarcaNombre(productoToDelete.idMarca)} |
-                Servicios: {contarServiciosPorProducto(productoToDelete.idProducto)}
+                Marca: {getMarcaNombre(productoToDelete.idMarca)}
               </p>
             </div>
 
@@ -2321,9 +2103,9 @@ const Productos = () => {
       }}>
         {/* Loading */}
         {loading && (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "40px", 
+          <div style={{
+            textAlign: "center",
+            padding: "40px",
             color: "#2E5939"
           }}>
             <div style={{ fontSize: '18px', marginBottom: '10px' }}>
@@ -2348,7 +2130,6 @@ const Productos = () => {
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Cantidad</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Precio</th>
                 <th style={{ padding: "15px", textAlign: "right", fontWeight: "bold" }}>Valor Total</th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Servicios</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
               </tr>
@@ -2356,7 +2137,7 @@ const Productos = () => {
             <tbody>
               {paginatedProductos.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <FaBox size={30} color="#679750" />
                       {productos.length === 0 ? "No hay productos registrados" : "No se encontraron resultados con los filtros aplicados"}
@@ -2404,136 +2185,113 @@ const Productos = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedProductos.map((producto) => {
-                  const serviciosCount = contarServiciosPorProducto(producto.idProducto);
-                  
-                  return (
-                    <tr key={producto.idProducto} style={{ borderBottom: "1px solid #eee" }}>
-                      <td style={{ padding: "15px", fontWeight: "500" }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '8px',
-                            backgroundColor: '#E8F5E8',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#679750',
-                            fontWeight: 'bold',
-                            fontSize: '14px'
-                          }}>
-                            <FaBox />
+                paginatedProductos.map((producto) => (
+                  <tr key={producto.idProducto} style={{ borderBottom: "1px solid #eee" }}>
+                    <td style={{ padding: "15px", fontWeight: "500" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          backgroundColor: '#E8F5E8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#679750',
+                          fontWeight: 'bold',
+                          fontSize: '14px'
+                        }}>
+                          <FaBox />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+                            {producto.nombre}
                           </div>
-                          <div>
-                            <div style={{ fontWeight: "600", marginBottom: "5px" }}>
-                              {producto.nombre}
-                            </div>
-                            <div style={{ fontSize: "13px", color: "#679750" }}>
-                              ID: #{producto.idProducto}
-                            </div>
+                          <div style={{ fontSize: "13px", color: "#679750" }}>
+                            ID: #{producto.idProducto}
                           </div>
                         </div>
-                      </td>
-                      <td style={{ padding: "15px" }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FaTag color="#679750" size={14} />
-                          {getCategoriaNombre(producto.idCategoria)}
-                        </div>
-                      </td>
-                      <td style={{ padding: "15px" }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FaShoppingCart color="#679750" size={14} />
-                          {getMarcaNombre(producto.idMarca)}
-                        </div>
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>
-                        {producto.cantidad}
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "right" }}>
-                        {formatPrice(producto.precio)}
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
-                        {formatPrice(producto.precio * producto.cantidad)}
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                          <span style={{ 
-                            backgroundColor: serviciosCount > 0 ? '#E8F5E8' : '#F7F4EA',
-                            color: serviciosCount > 0 ? '#2E5939' : '#666',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}>
-                            {serviciosCount} servicios
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaTag color="#679750" size={14} />
+                        {getCategoriaNombre(producto.idCategoria)}
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaShoppingCart color="#679750" size={14} />
+                        {getMarcaNombre(producto.idMarca)}
+                      </div>
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>
+                      {producto.cantidad}
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "right" }}>
+                      {formatPrice(producto.precio)}
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "right", fontWeight: "bold", color: "#679750" }}>
+                      {formatPrice(producto.precio * producto.cantidad)}
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <button
+                        onClick={() => toggleEstadoProducto(producto)}
+                        disabled={loading}
+                        style={{
+                          cursor: loading ? "not-allowed" : "pointer",
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          border: "none",
+                          backgroundColor: producto.estado ? "#4caf50" : "#e57373",
+                          color: "white",
+                          fontWeight: "600",
+                          fontSize: "12px",
+                          minWidth: "80px",
+                          opacity: loading ? 0.6 : 1,
+                          transition: "all 0.3s ease",
+                        }}
+                        onMouseOver={(e) => {
+                          if (!loading) {
+                            e.target.style.transform = "scale(1.05)";
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!loading) {
+                            e.target.style.transform = "scale(1)";
+                          }
+                        }}
+                      >
+                        {producto.estado ? "Activo" : "Inactivo"}
+                      </button>
+                    </td>
+                    <td style={{ padding: "15px", textAlign: "center" }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
                         <button
-                          onClick={() => toggleEstadoProducto(producto)}
-                          disabled={loading}
-                          style={{
-                            cursor: loading ? "not-allowed" : "pointer",
-                            padding: "6px 12px",
-                            borderRadius: "20px",
-                            border: "none",
-                            backgroundColor: producto.estado ? "#4caf50" : "#e57373",
-                            color: "white",
-                            fontWeight: "600",
-                            fontSize: "12px",
-                            minWidth: "80px",
-                            opacity: loading ? 0.6 : 1,
-                            transition: "all 0.3s ease",
-                          }}
-                          onMouseOver={(e) => {
-                            if (!loading) {
-                              e.target.style.transform = "scale(1.05)";
-                            }
-                          }}
-                          onMouseOut={(e) => {
-                            if (!loading) {
-                              e.target.style.transform = "scale(1)";
-                            }
-                          }}
+                          onClick={() => handleView(producto)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Ver Detalles"
                         >
-                          {producto.estado ? "Activo" : "Inactivo"}
+                          <FaEye />
                         </button>
-                      </td>
-                      <td style={{ padding: "15px", textAlign: "center" }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                          <button
-                            onClick={() => handleView(producto)}
-                            style={btnAccion("#F7F4EA", "#2E5939")}
-                            title="Ver Detalles"
-                          >
-                            <FaEye />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(producto)}
-                            style={btnAccion("#F7F4EA", "#2E5939")}
-                            title="Editar Producto"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(producto); }}
-                            style={{
-                              ...btnAccion("#fbe9e7", "#e57373"),
-                              opacity: serviciosCount > 0 ? 0.5 : 1,
-                              cursor: serviciosCount > 0 ? "not-allowed" : "pointer"
-                            }}
-                            title={serviciosCount > 0 ? "No se puede eliminar - Tiene servicios asociados" : "Eliminar Producto"}
-                            disabled={serviciosCount > 0}
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                        <button
+                          onClick={() => handleEdit(producto)}
+                          style={btnAccion("#F7F4EA", "#2E5939")}
+                          title="Editar Producto"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(producto); }}
+                          style={btnAccion("#fbe9e7", "#e57373")}
+                          title="Eliminar Producto"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

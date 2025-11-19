@@ -3,22 +3,23 @@ import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, 
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
-// Datos de las cabañas actualizados - solo Copacabana y San Felix
+// Datos de las cabañas actualizados con URLs de Cloudinary
 const cabañas = [
   {
     id: 101,
     name: "Cabaña Ambar Room",
     description: "Amplia cabaña con jacuzzi privado. Ideal para parejas que buscan privacidad y lujo.",
-    img: "/images/C_Ambar_Room/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
     price: "$395.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Ambar_Room/img2.jpg",
-      "/images/C_Ambar_Room/img3.jpg",
-      "/images/C_Ambar_Room/img4.jpg"
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575208/img2_dfakst.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575208/img3_lnpt77.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575208/img4_snjxn5.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -26,18 +27,19 @@ const cabañas = [
     id: 102,
     name: "Cabaña Bali Suite",
     description: "Cabaña Premium. Perfecta para una escapada romántica con todas las comodidades.",
-    img: "/images/C_Bali_Suite/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575223/img1_x2yzaj.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Bali_Suite/img2.jpg",
-      "/images/C_Bali_Suite/img3.jpg",
-      "/images/C_Bali_Suite/img4.jpg",
-      "/images/C_Bali_Suite/img5.jpg",
-      "/images/C_Bali_Suite/img6.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575223/img1_x2yzaj.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575224/img2_rijsf4.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575225/img3_abpcjy.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575226/img4_gnsihe.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575227/img5_acuwuy.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575227/img6_viyrju.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -45,19 +47,20 @@ const cabañas = [
     id: 103,
     name: "Cabaña Habana Room",
     description: "Espaciosa cabaña ideal para familias, Perfecta para vacaciones familiares inolvidables.",
-    img: "/images/C_Habana_Room/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575241/img1_jtfyrl.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Familiar",
     capacidad: 6,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Habana_Room/img2.jpg",
-      "/images/C_Habana_Room/img3.jpg",
-      "/images/C_Habana_Room/img4.jpg",
-      "/images/C_Habana_Room/img5.jpg",
-      "/images/C_Habana_Room/img6.jpg",
-      "/images/C_Habana_Room/img7.jpg"
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575241/img1_jtfyrl.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575242/img2_blpjkx.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575243/img3_rsxyfx.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575253/img4_vh4vxh.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575255/img5_bwnxab.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575256/img6_olv9ms.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575257/img7_mlyytq.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Piscina Privada", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -65,17 +68,18 @@ const cabañas = [
     id: 104,
     name: "Cabaña Mikonos Suite",
     description: "Lujosa cabaña con diseño moderno y jacuzzi con vista a las montañas. Experiencia de lujo en un entorno natural privilegiado.",
-    img: "/images/C_Mikonos_Suite/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575259/img1_rxptsv.jpg",
     price: "$520.000 COP/noche",
     sede: "Copacabana",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/C_Mikonos_Suite/img2.jpg",
-      "/images/C_Mikonos_Suite/img3.jpg",
-      "/images/C_Mikonos_Suite/img4.jpg",
-      "/images/C_Mikonos_Suite/img5.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575259/img1_rxptsv.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575260/img2_s19ehf.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575269/img3_c1eewm.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575269/img4_usvqz1.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575270/img5_laoeun.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -83,15 +87,16 @@ const cabañas = [
     id: 201,
     name: "Chalets",
     description: "Ideal para parejas, con cama king. Un refugio íntimo para reconectar con tu pareja.",
-    img: "/images/S_Chalets/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575279/img1_nmydmr.jpg",
     price: "$380.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Chalets/img2.jpg",
-      "/images/S_Chalets/img3.jpg"
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575279/img1_nmydmr.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575279/img2_rdjmca.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575288/img3_qrjwix.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -99,15 +104,16 @@ const cabañas = [
     id: 202,
     name: "Cabaña Crystal Garden",
     description: "Perfecta para una escapada romántica con todas las comodidades.",
-    img: "/images/S_Crystal_Garden/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575322/img1_r6txan.jpg",
     price: "$495.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Crystal_Garden/img2.jpg",
-      "/images/S_Crystal_Garden/img3.jpg"
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575322/img1_r6txan.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575334/img2_frgxvx.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575335/img3_auf2yd.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -115,16 +121,17 @@ const cabañas = [
     id: 203,
     name: "Domo Alaska",
     description: "rodeada de naturaleza, ideal para desconectarte del ruido y descansar.",
-    img: "/images/S_Domo_Alaska/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763577957/img1_kkb5uo.jpg",
     price: "$460.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Domo_Alaska/img2.jpg",
-      "/images/S_Domo_Alaska/img3.jpg",
-      "/images/S_Domo_Alaska/img4.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763577957/img1_kkb5uo.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763577958/img2_sf1zg9.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763577960/img3_luzyt3.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763577947/img4_xfsnty.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -132,16 +139,17 @@ const cabañas = [
     id: 204,
     name: "Domo Ataraxia",
     description: "Disfruta amaneceres entre la neblina y el sonido de los pájaros.",
-    img: "/images/S_Domo_Ataraxia/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578023/img1_ikpkxp.jpg",
     price: "$460.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Domo_Ataraxia/img2.jpg",
-      "/images/S_Domo_Ataraxia/img3.jpg",
-      "/images/S_Domo_Ataraxia/img4.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578023/img1_ikpkxp.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578024/img2_o8xmnf.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578027/img3_uwcq9q.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578029/img4_efrgao.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -149,17 +157,18 @@ const cabañas = [
     id: 205,
     name: "Cabaña Golden Suite",
     description: "Espacio íntimo y moderno, diseñado para parejas que buscan tranquilidad.",
-    img: "/images/S_Golden_Suite/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578092/img1_xkiuuv.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Golden_Suite/img2.jpg",
-      "/images/S_Golden_Suite/img3.jpg",
-      "/images/S_Golden_Suite/img4.jpg",
-      "/images/S_Golden_Suite/img5.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578092/img1_xkiuuv.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578094/img2_qvkbbj.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578096/img3_dwghyq.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578099/img4_oycu8p.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578101/img5_izlubz.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -167,17 +176,18 @@ const cabañas = [
     id: 206,
     name: "Cabaña Natural Suite",
     description: "Perfecta para quienes aman despertar con vistas a la montaña.",
-    img: "/images/S_Natural_Suite/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578150/img1_lqpxhk.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Natural_Suite/img2.jpg",
-      "/images/S_Natural_Suite/img3.jpg",
-      "/images/S_Natural_Suite/img4.jpg",
-      "/images/S_Natural_Suite/img5.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578150/img1_lqpxhk.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578151/img2_boswye.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578159/img3_sazoyx.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578161/img4_xu59kj.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578164/img5_f7dhip.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   },
@@ -185,17 +195,18 @@ const cabañas = [
     id: 207,
     name: "Cabaña Villa Guadalupe",
     description: "Combina el encanto natural con toques artesanales y confort total.",
-    img: "/images/S_Villa_Guadalupe/img1.jpg",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578189/img1_w9w5j7.jpg",
     price: "$499.000 COP/noche",
     sede: "San Felix",
     tipo: "Premium",
     capacidad: 2,
     habitaciones: 1,
     imagenes: [
-      "/images/S_Villa_Guadalupe/img2.jpg",
-      "/images/S_Villa_Guadalupe/img3.jpg",
-      "/images/S_Villa_Guadalupe/img4.jpg",
-      "/images/S_Villa_Guadalupe/img5.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578189/img1_w9w5j7.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578191/img2_ul5lxz.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578194/img3_wugnjz.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578197/img4_g4hi50.jpg",
+      "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578199/img5_u3nl3w.jpg"
     ],
     comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
   }
@@ -204,19 +215,19 @@ const cabañas = [
 const paquetes = [
   {
     name: "Kit de Asado",
-    img: "/images/comida.png",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763576016/asados_nfmvlb.jpg",
     description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes. Es la opción ideal para los amantes de un buen asado.",
     price: "$150.000 COP",
   },
   {
-    name: "Paquete de Alcohol",
-    img: "/images/licores.png",
-    description: "Una selección de cócteles vibrantes y coloridos, preparados por expertos para refrescar y animar cualquier ocasión. Este paquete es la elección perfecta para quienes buscan variedad y sabor en sus bebidas.",
+    name: "Decoración",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763576017/decoracion_cpaldi.jpg",
+    description: "Transforma tu cabaña en un espacio mágico con nuestro servicio de decoración. Creamos ambientes únicos y especiales para momentos inolvidables.",
     price: "$150.000 COP",
   },
   {
     name: "Masaje relajante",
-    img: "/images/masaje.png",
+    img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763576017/masajes_fp6ra1.jpg",
     description: "Escapa del estrés diario con un masaje profesional diseñado para liberar la tensión muscular. Una experiencia de bienestar que te dejará sintiéndote completamente renovado y en paz.",
     price: "$150.000 COP",
   },
@@ -264,12 +275,12 @@ const loginWithAPI = async (email, password) => {
     return result;
   } catch (error) {
     console.error('❌ Error en login:', error);
-    
+   
     // Manejo específico de errores de conexión
     if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
       throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:5272');
     }
-    
+   
     throw error;
   }
 };
@@ -356,7 +367,7 @@ const checkServerConnection = async () => {
 const registerWithAPI = async (userData) => {
   try {
     console.log('📝 Intentando registrar usuario:', userData);
-    
+   
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
 
@@ -395,15 +406,15 @@ const registerWithAPI = async (userData) => {
     return result;
   } catch (error) {
     console.error('❌ Error en registro:', error);
-    
+   
     if (error.name === 'AbortError') {
       throw new Error('La conexión con el servidor tardó demasiado tiempo. Verifica que el backend esté funcionando correctamente.');
     }
-    
+   
     if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
       throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:5272');
     }
-    
+   
     throw error;
   }
 };
@@ -647,10 +658,10 @@ function LoginRegister() {
       name: "Copacabana",
       description: "Disfruta de una experiencia única en nuestras cabañas premium ubicadas en Copacabana, rodeadas de naturaleza y comodidades exclusivas.",
       images: [
-        "/images/C_Ambar_Room/img1.jpg",
-        "/images/C_Bali_Suite/img1.jpg",
-        "/images/C_Habana_Room/img1.jpg",
-        "/images/C_Mikonos_Suite/img1.jpg"
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575223/img1_x2yzaj.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575241/img1_jtfyrl.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575259/img1_rxptsv.jpg"
       ],
       cabañasCount: cabañas.filter(c => c.sede === "Copacabana").length
     },
@@ -658,11 +669,11 @@ function LoginRegister() {
       name: "San Felix",
       description: "Vive momentos inolvidables en San Felix, donde la tranquilidad y el confort se fusionan para crear la escapada perfecta.",
       images: [
-        "/images/S_Chalets/img1.jpg",
-        "/images/S_Crystal_Garden/img1.jpg",
-        "/images/S_Domo_Alaska/img1.jpg",
-        "/images/S_Domo_Ataraxia/img1.jpg",
-        "/images/S_Golden_Suite/img1.jpg"
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575279/img1_nmydmr.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575322/img1_r6txan.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763577957/img1_kkb5uo.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578023/img1_ikpkxp.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763578092/img1_xkiuuv.jpg"
       ],
       cabañasCount: cabañas.filter(c => c.sede === "San Felix").length
     }
@@ -750,7 +761,7 @@ function LoginRegister() {
       const online = await checkServerConnection();
       setIsServerOnline(online);
     };
-    
+   
     checkServerStatus();
   }, []);
 
@@ -1039,10 +1050,10 @@ function LoginRegister() {
   // MODIFICADA: Función de Login - MEJORADA con manejo de roles
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    
+   
     if (!isServerOnline) {
       showErrorAlert(
-        'Servidor no disponible', 
+        'Servidor no disponible',
         'El servidor no está disponible. Verifica que el backend esté corriendo en http://localhost:5272'
       );
       return;
@@ -1079,11 +1090,11 @@ function LoginRegister() {
 
         // Obtener información del rol
         const roleInfo = await getUserRoleInfo(userFromDB.idRol);
-        
+       
         // Determinar el rol basado en idRol
         let rol = "Cliente"; // Por defecto
         let nombreRol = "Cliente";
-        
+       
         if (userFromDB.idRol === 1) {
           rol = "Admin";
           nombreRol = roleInfo?.nombreRol || "Administrador";
@@ -1186,7 +1197,7 @@ function LoginRegister() {
        
         // Obtener el usuario actual
         const currentUser = getUser();
-        
+       
         if (currentUser) {
           // Mensaje y redirección según rol
           if (currentUser.rol === "Admin") {
@@ -1285,7 +1296,7 @@ function LoginRegister() {
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-  
+ 
     if (!validateRegisterForm()) {
       showErrorAlert('Error en el formulario', 'Por favor corrige los errores marcados en el formulario');
       return;
@@ -1294,7 +1305,7 @@ function LoginRegister() {
     // Verificar conexión con el servidor antes de intentar registrar
     if (!isServerOnline) {
       showErrorAlert(
-        'Servidor no disponible', 
+        'Servidor no disponible',
         'El servidor de registro no está disponible. Por favor:\n\n' +
         '1. Verifica que el backend .NET esté corriendo\n' +
         '2. Asegúrate de que esté en el puerto 5272\n' +
@@ -1304,7 +1315,7 @@ function LoginRegister() {
     }
 
     setIsLoading(true);
-  
+ 
     try {
       const userData = {
         tipoDocumento: tipoDocumento,
@@ -1320,10 +1331,10 @@ function LoginRegister() {
       };
 
       const result = await registerWithAPI(userData);
-    
+   
       if (result) {
         showSuccessAlert('¡Registro exitoso!', 'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.');
-      
+     
         setTimeout(() => {
           handleShowLogin();
         }, 2000);
@@ -1520,7 +1531,7 @@ function LoginRegister() {
         overflowX: "hidden",
       }}>
         <main style={{ width: "100%", margin: 0, padding: 0, overflowX: "hidden" }}>
-          
+         
           {/* POPUPS ACTUALIZADOS */}
           {showPopup && selectedPackage && (
             <div
@@ -1960,7 +1971,7 @@ function LoginRegister() {
                     </div>
                     <div style={{ flex: 1, minWidth: "300px" }}>
                       <img
-                        src="/images/cabana.jpg"
+                        src="https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg"
                         alt="Glamping"
                         style={{
                           width: "80%",
@@ -2328,7 +2339,7 @@ function LoginRegister() {
           {/* LANDING PAGE ACTUALIZADA */}
           {!showForm && !showAboutUs && !showCabins && !showVerification && !showForgotPassword && !showResetPassword && (
             <>
-              {/* HERO SECTION */}
+              {/* HERO SECTION - SIN ESPACIOS A LOS LADOS */}
               <section
                 style={{
                   width: "100%",
@@ -2342,8 +2353,12 @@ function LoginRegister() {
                   alignItems: "center",
                   textAlign: "center",
                   color: "#fff",
-                  padding: "0 2rem",
-                  margin: 0,
+                  padding: "0",
+                  margin: "0",
+                  marginTop:"-70px",
+                  position: "relative",
+                  left: "0",
+                  right: "0",
                 }}
               >
                 <div style={{ marginBottom: "2rem" }}>
