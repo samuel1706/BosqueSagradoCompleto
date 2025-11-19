@@ -1528,6 +1528,7 @@ function LoginRegister() {
         backgroundColor: "#f8faf8",
         paddingTop: isServerOnline ? "70px" : "90px", // Ajustar según el estado del servidor
         margin: 0,
+        padding: 0,
         overflowX: "hidden",
       }}>
         <main style={{ width: "100%", margin: 0, padding: 0, overflowX: "hidden" }}>
