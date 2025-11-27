@@ -1,5 +1,5 @@
 // src/components/Gestiservi.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaDollarSign, FaSlidersH, FaBox, FaBuilding, FaGift, FaClipboardList } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaCheck, FaInfoCircle, FaSearch, FaImage, FaUpload, FaCamera, FaDollarSign, FaSlidersH, FaBox, FaBuilding, FaGift, FaClipboardList, FaMapMarkerAlt } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 import { useCloudinary } from '../../../hooks/useCloudinary';
@@ -84,7 +84,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 800,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -267,6 +267,45 @@ const galleryImageStyle = {
   objectFit: 'cover',
   borderRadius: '8px',
   boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+// ===============================================
+// ESTILOS PARA SELECTORES MÚLTIPLES
+// ===============================================
+const selectorMultipleStyle = {
+  border: '1px solid #ccc',
+  borderRadius: '8px',
+  padding: '15px',
+  backgroundColor: '#F7F4EA',
+  marginBottom: '15px'
+};
+
+const selectorItemStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '8px',
+  marginBottom: '5px',
+  backgroundColor: 'white',
+  borderRadius: '5px',
+  border: '1px solid #e0e0e0',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease'
+};
+
+const selectorItemSelectedStyle = {
+  ...selectorItemStyle,
+  backgroundColor: '#E8F5E8',
+  border: '1px solid #679750'
+};
+
+const selectorListStyle = {
+  maxHeight: '200px',
+  overflowY: 'auto',
+  marginTop: '10px',
+  border: '1px solid #e0e0e0',
+  borderRadius: '5px',
+  padding: '10px'
 };
 
 // ===============================================
@@ -461,7 +500,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}></span>}
+        {required && <span style={{ color: "red" }}>*</span>}
       </label>
       {type === "select" ? (
         <select
@@ -552,7 +591,7 @@ const FormField = ({
                 marginTop: "4px"
               }}>
                 {value.length}/{maxLength} caracteres
-              </div>
+            </div>
             )}
           </div>
         </div>
@@ -563,7 +602,131 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL Gestiservi MEJORADO CON CLOUDINARY
+// COMPONENTE PARA SELECTOR MÚLTIPLE DE SEDES
+// ===============================================
+const SelectorSedes = ({ 
+  titulo, 
+  sedes, 
+  sedesSeleccionadas, 
+  onToggleSede, 
+  icon,
+  tipo = "multiple"
+}) => {
+  const isSelected = (sede) => {
+    return sedesSeleccionadas.some(sel => sel && sede && sel.idSede === sede.idSede);
+  };
+
+  const handleSedeClick = (sede) => {
+    if (tipo === "single") {
+      // Para selección única, reemplazar cualquier selección existente
+      if (isSelected(sede)) {
+        // Si ya está seleccionado, deseleccionarlo
+        onToggleSede(sede, { action: "deselect" });
+      } else {
+        // Seleccionar solo este (reemplaza cualquier otro)
+        onToggleSede(sede, { action: "selectSingle" });
+      }
+    } else {
+      // Para selección múltiple, toggle normal
+      if (isSelected(sede)) {
+        onToggleSede(sede, { action: "deselect" });
+      } else {
+        onToggleSede(sede, { action: "select" });
+      }
+    }
+  };
+
+  return (
+    <div style={selectorMultipleStyle}>
+      <label style={labelStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {icon}
+          {titulo}
+          <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+            ({tipo === "single" ? "Selecciona solo una sede" : "Selecciona una o varias sedes"})
+          </span>
+        </div>
+      </label>
+      
+      <div style={selectorListStyle}>
+        {sedes.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#679750', padding: '10px' }}>
+            No hay sedes disponibles
+          </div>
+        ) : (
+          sedes.map(sede => {
+            const selected = isSelected(sede);
+            return (
+              <div 
+                key={sede.idSede}
+                style={selected ? selectorItemSelectedStyle : selectorItemStyle}
+                onClick={() => handleSedeClick(sede)}
+                onMouseOver={(e) => {
+                  if (!selected) {
+                    e.currentTarget.style.backgroundColor = '#f0f0f0';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!selected) {
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }
+                }}
+              >
+                <input
+                  type={tipo === "single" ? "radio" : "checkbox"}
+                  checked={selected}
+                  readOnly
+                  style={{ cursor: 'pointer' }}
+                  name={tipo === "single" ? "sede-unica" : undefined}
+                />
+                <span style={{ flex: 1 }}>
+                  {sede.nombreSede || sede.nombre || `Sede ${sede.idSede}`}
+                  {sede.ubicacionSede && (
+                    <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px' }}>
+                      ({sede.ubicacionSede})
+                    </span>
+                  )}
+                </span>
+                {sede.estado !== undefined && (
+                  <span style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    backgroundColor: sede.estado ? '#4caf50' : '#e57373',
+                    color: 'white'
+                  }}>
+                    {sede.estado ? 'Activa' : 'Inactiva'}
+                  </span>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+      
+      {sedesSeleccionadas.length > 0 && (
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ fontSize: '0.8rem', color: '#2E5939', marginBottom: '5px' }}>
+            {tipo === "single" ? 'Sede seleccionada:' : 'Sedes seleccionadas:'} {sedesSeleccionadas.length}
+          </div>
+          {tipo === "multiple" && (
+            <div style={{ fontSize: '0.7rem', color: '#679750' }}>
+              {sedesSeleccionadas.map(sede => sede.nombreSede || sede.nombre || `Sede ${sede.idSede}`).join(', ')}
+            </div>
+          )}
+          {tipo === "single" && sedesSeleccionadas.length > 0 && (
+            <div style={{ fontSize: '0.7rem', color: '#679750' }}>
+              {sedesSeleccionadas[0].nombreSede || sedesSeleccionadas[0].nombre || `Sede ${sedesSeleccionadas[0].idSede}`}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===============================================
+// COMPONENTE PRINCIPAL Gestiservi MEJORADO CON ASOCIACIÓN DE SEDES
 // ===============================================
 const Gestiservi = () => {
   const [servicios, setServicios] = useState([]);
@@ -594,6 +757,9 @@ const Gestiservi = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Estados para selección de sedes - NUEVO
+  const [sedesSeleccionadas, setSedesSeleccionadas] = useState([]);
 
   // Estados para filtros
   const [showFilters, setShowFilters] = useState(false);
@@ -840,6 +1006,55 @@ const Gestiservi = () => {
       ...prev,
       [fieldName]: true
     }));
+  };
+
+  // ===============================================
+  // FUNCIONES PARA MANEJO DE SEDES - NUEVAS
+  // ===============================================
+  const toggleSede = (sede, opts = { action: "toggle" }) => {
+    const { action } = opts;
+    
+    setSedesSeleccionadas(prev => {
+      if (action === "selectSingle") {
+        return [sede];
+      } else if (action === "deselect") {
+        return prev.filter(s => s.idSede !== sede.idSede);
+      } else if (action === "select") {
+        // Para selección múltiple, agregar si no existe
+        const exists = prev.some(s => s.idSede === sede.idSede);
+        if (exists) return prev;
+        return [...prev, sede];
+      } else { // toggle por defecto
+        const exists = prev.some(s => s.idSede === sede.idSede);
+        if (exists) return prev.filter(s => s.idSede !== sede.idSede);
+        return [...prev, sede];
+      }
+    });
+  };
+
+  // Función para guardar relaciones con sedes - NUEVA
+  const guardarRelacionesSedes = async (idServicio) => {
+    try {
+      // Eliminar relaciones existentes si estamos editando
+      if (isEditing) {
+        const relacionesExistentes = sedesPorServicio.filter(sp => sp.idServicio === parseInt(idServicio));
+        for (const relacion of relacionesExistentes) {
+          await axios.delete(`${API_SEDES_POR_SERVICIO}/${relacion.idSedesServicio}`);
+        }
+      }
+
+      // Crear nuevas relaciones
+      for (const sede of sedesSeleccionadas) {
+        await axios.post(API_SEDES_POR_SERVICIO, {
+          idSedesServicio: 0,
+          idServicio: parseInt(idServicio),
+          idSede: sede.idSede
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al guardar relaciones sedes-servicio:", error);
+      throw error;
+    }
   };
 
   // ===============================================
@@ -1133,6 +1348,12 @@ const Gestiservi = () => {
       return;
     }
 
+    // Validar que haya al menos una sede seleccionada - NUEVO
+    if (sedesSeleccionadas.length === 0) {
+      displayAlert("Debe seleccionar al menos una sede para el servicio.", "error");
+      return;
+    }
+
     setIsSubmitting(true);
     setLoading(true);
     
@@ -1148,19 +1369,26 @@ const Gestiservi = () => {
 
       console.log("📤 Enviando datos:", servicioData);
 
+      let idServicioCreado;
+
       if (isEditing) {
         // Para edición, incluir el idServicio
         servicioData.idServicio = newServicio.idServicio;
         await axios.put(`${API_SERVICIOS}/${newServicio.idServicio}`, servicioData, {
           headers: { 'Content-Type': 'application/json' }
         });
+        idServicioCreado = newServicio.idServicio;
         displayAlert("Servicio actualizado exitosamente.", "success");
       } else {
-        await axios.post(API_SERVICIOS, servicioData, {
+        const response = await axios.post(API_SERVICIOS, servicioData, {
           headers: { 'Content-Type': 'application/json' }
         });
+        idServicioCreado = response.data.idServicio;
         displayAlert("Servicio agregado exitosamente.", "success");
       }
+
+      // Guardar relaciones con sedes - NUEVO
+      await guardarRelacionesSedes(idServicioCreado);
       
       await fetchAllData();
       closeForm();
@@ -1319,8 +1547,8 @@ const Gestiservi = () => {
       const sede = sedes.find(s => s.idSede === rel.idSede);
       return {
         id: rel.idSede,
-        nombre: sede ? sede.nombre : `Sede ${rel.idSede}`,
-        direccion: sede ? sede.direccion : 'Dirección no disponible'
+        nombre: sede ? sede.nombreSede || sede.nombre : `Sede ${rel.idSede}`,
+        direccion: sede ? sede.ubicacionSede || sede.direccion : 'Dirección no disponible'
       };
     });
   };
@@ -1331,7 +1559,7 @@ const Gestiservi = () => {
       const paquete = paquetes.find(p => p.idPaquete === rel.idPaquete);
       return {
         id: rel.idPaquete,
-        nombre: paquete ? paquete.nombre : `Paquete ${rel.idPaquete}`,
+        nombre: paquete ? paquete.nombrePaquete || paquete.nombre : `Paquete ${rel.idPaquete}`,
         descripcion: paquete ? paquete.descripcion : 'Descripción no disponible'
       };
     });
@@ -1414,6 +1642,7 @@ const Gestiservi = () => {
       publicId: null,
       isCloudinary: false
     });
+    setSedesSeleccionadas([]); // NUEVO: Limpiar sedes seleccionadas
     setNewServicio({
       idServicio: 0,
       nombreServicio: "",
@@ -1439,7 +1668,7 @@ const Gestiservi = () => {
     setShowDetails(true);
   };
 
-  const handleEdit = (servicio) => {
+  const handleEdit = async (servicio) => {
     console.log("Editando servicio:", servicio);
     
     setNewServicio({
@@ -1459,6 +1688,15 @@ const Gestiservi = () => {
         publicId: null // No tenemos el publicId para imágenes existentes
       });
     }
+
+    // Cargar sedes asociadas - NUEVO
+    const sedesAsociadas = getSedesDelServicio(servicio.idServicio);
+    // Convertir las sedes asociadas al formato de sedes disponibles
+    const sedesCompletas = sedesAsociadas.map(sedeAsociada => {
+      const sedeCompleta = sedes.find(s => s.idSede === sedeAsociada.id);
+      return sedeCompleta || sedeAsociada;
+    });
+    setSedesSeleccionadas(sedesCompletas);
 
     setIsEditing(true);
     setShowForm(true);
@@ -1977,6 +2215,7 @@ const Gestiservi = () => {
               publicId: null,
               isCloudinary: false
             });
+            setSedesSeleccionadas([]); // NUEVO: Limpiar sedes seleccionadas
             setNewServicio({
               idServicio: 0,
               nombreServicio: "",
@@ -2377,6 +2616,18 @@ const Gestiservi = () => {
                   />
                 </div>
 
+                {/* Selector de Sede para asociar servicio - NUEVO */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <SelectorSedes
+                    titulo="Sedes Disponibles"
+                    sedes={sedes.filter(s => s.estado)}
+                    sedesSeleccionadas={sedesSeleccionadas}
+                    onToggleSede={toggleSede}
+                    icon={<FaMapMarkerAlt />}
+                    tipo="multiple"
+                  />
+                </div>
+
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2499,6 +2750,33 @@ const Gestiservi = () => {
                   />
                 </div>
               </div>
+
+              {/* Resumen del servicio - NUEVO */}
+              {sedesSeleccionadas.length > 0 && (
+                <div style={{
+                  backgroundColor: '#E8F5E8',
+                  border: '1px solid #679750',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#2E5939' }}>Resumen del Servicio</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
+                    <div>Precio:</div>
+                    <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                      {formatPrice(parseFloat(newServicio.precioServicio || 0))}
+                    </div>
+                    
+                    <div>Sedes seleccionadas:</div>
+                    <div style={{ textAlign: 'right' }}>{sedesSeleccionadas.length}</div>
+
+                    <div>Estado:</div>
+                    <div style={{ textAlign: 'right' }}>
+                      {newServicio.estado ? 'Activo' : 'Inactivo'}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <button
@@ -2715,7 +2993,7 @@ const Gestiservi = () => {
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: '15px' }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
@@ -2969,7 +3247,7 @@ const Gestiservi = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: '10px' }}>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}

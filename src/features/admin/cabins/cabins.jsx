@@ -331,13 +331,13 @@ const VALIDATION_RULES = {
   },
   precio: {
     min: 0,
-    max: 10000,
+    max: 1000000,
     required: true,
     pattern: VALIDATION_PATTERNS.precio,
     errorMessages: {
       required: "El precio es obligatorio.",
       min: "El precio no puede ser negativo.",
-      max: "El precio no puede exceder $10,000.",
+      max: "El precio no puede exceder $1,000,000.",
       pattern: "El precio debe ser un número válido (ej: 150.00)",
       invalid: "El precio debe ser un número válido."
     }

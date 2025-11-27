@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  FaCalendarAlt, FaHome, FaMapMarkerAlt, FaMoneyBillAlt, FaBox, 
+import {
+  FaCalendarAlt, FaHome, FaMapMarkerAlt, FaMoneyBillAlt, FaBox,
   FaCreditCard, FaTimes, FaCheck, FaExclamationTriangle, FaUser,
   FaPhone, FaEnvelope, FaUsers, FaStar, FaArrowRight, FaArrowLeft,
   FaClock, FaShieldAlt, FaSmile, FaMountain, FaUmbrellaBeach, FaLeaf,
   FaHeart, FaCouch, FaUtensils, FaWifi, FaCar, FaSnowflake,
-  FaFire, FaShower, FaTree, FaSun, FaMoon, FaPlus, FaMinus
+  FaFire, FaShower, FaTree, FaSun, FaMoon, FaPlus, FaMinus,
+  FaIdCard
 } from "react-icons/fa";
 
 // ===============================================
@@ -119,7 +120,8 @@ const API_URLS = {
   SERVICIOS: `${API_BASE_URL}/Servicio`,
   SERVICIOS_RESERVA: `${API_BASE_URL}/ServiciosReserva`,
   SERVICIO_POR_PAQUETE: `${API_BASE_URL}/ServicioPorPaquete`,
-  SEDES_POR_SERVICIO: `${API_BASE_URL}/SedesPorServicio`
+  SEDES_POR_SERVICIO: `${API_BASE_URL}/SedesPorServicio`,
+  USUARIOS: `${API_BASE_URL}/Usuarios`
 };
 
 // ===============================================
@@ -129,10 +131,14 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
   const cabanaSeleccionada = datosRelacionados.cabanas.find(c => c.idCabana === parseInt(formData.idCabana));
   const paqueteSeleccionado = datosRelacionados.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
   const sedeSeleccionada = datosRelacionados.sedes.find(s => s.idSede === parseInt(formData.idSede));
-  
-  // Calcular total de servicios extras
-  const totalServiciosExtras = serviciosSeleccionados.reduce((total, servicio) => 
-    total + (servicio.precioServicio * calcularDiasEstadia()), 0
+ 
+  // Determinar días y capacidad mostrada (usar dias/personas del paquete si existe)
+  const diasAsociados = paqueteSeleccionado && paqueteSeleccionado.dias ? parseInt(paqueteSeleccionado.dias) : calcularDiasEstadia();
+  const personasAsociadas = paqueteSeleccionado && paqueteSeleccionado.personas ? paqueteSeleccionado.personas : (cabanaSeleccionada ? cabanaSeleccionada.capacidad : 1);
+
+  // Calcular total de servicios extras (usar diasAsociados)
+  const totalServiciosExtras = serviciosSeleccionados.reduce((total, servicio) =>
+    total + (servicio.precioServicio * diasAsociados), 0
   );
 
   const totalGeneral = formData.montoTotal + totalServiciosExtras;
@@ -176,8 +182,8 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
         </p>
       </div>
 
-      {/* Información de fechas */}
-      {formData.fechaEntrada && formData.fechaSalida && (
+      {/* Información de duración y personas: mostrar si hay paquete seleccionado o si hay fechas */}
+      {(paqueteSeleccionado || (formData.fechaEntrada && formData.fechaSalida)) && (
         <div style={{
           backgroundColor: '#F9FBFA',
           padding: '16px',
@@ -192,7 +198,7 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             marginBottom: '8px'
           }}>
             <span style={{ color: '#2E5939', fontWeight: '600', fontSize: '14px' }}>
-              {formData.fechaEntrada} → {formData.fechaSalida}
+              {formData.fechaEntrada && formData.fechaSalida ? `${formData.fechaEntrada} → ${formData.fechaSalida}` : (paqueteSeleccionado ? `Paquete: ${paqueteSeleccionado.nombrePaquete}` : 'Fechas por seleccionar')}
             </span>
             <span style={{
               backgroundColor: '#2E5939',
@@ -202,11 +208,11 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
               fontSize: '12px',
               fontWeight: '700'
             }}>
-              {calcularDiasEstadia()} noche{calcularDiasEstadia() !== 1 ? 's' : ''}
+              {diasAsociados} noche{diasAsociados !== 1 ? 's' : ''}
             </span>
           </div>
           <div style={{ color: '#679750', fontSize: '13px', fontWeight: '500' }}>
-            {formData.numeroPersonas} huésped{formData.numeroPersonas !== 1 ? 'es' : ''}
+            {personasAsociadas} huésped{personasAsociadas !== 1 ? 'es' : ''}
           </div>
         </div>
       )}
@@ -259,8 +265,8 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
                 fontSize: '13px',
                 lineHeight: '1.4'
               }}>
-                {cabanaSeleccionada ? 
-                  (cabanaSeleccionada.descripcion || "Cabaña premium en la naturaleza") : 
+                {cabanaSeleccionada ?
+                  (cabanaSeleccionada.descripcion || "Cabaña premium en la naturaleza") :
                   (paqueteSeleccionado.descripcion || "Paquete de experiencia completa")
                 }
               </div>
@@ -344,7 +350,7 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
                   + {servicio.nombreServicio}
                 </span>
                 <span style={{ color: '#679750', fontWeight: '600', fontSize: '13px' }}>
-                  {formatCurrency(servicio.precioServicio * calcularDiasEstadia())}
+                  {formatCurrency(servicio.precioServicio * diasAsociados)}
                 </span>
               </div>
             ))}
@@ -474,7 +480,7 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 };
 
 // ===============================================
-// COMPONENTES INTERACTIVOS (se mantienen igual)
+// COMPONENTES INTERACTIVOS
 // ===============================================
 
 // Componente de progreso con pasos
@@ -510,7 +516,7 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
       transition: 'width 0.5s ease',
       borderRadius: '3px'
     }}></div>
-    
+   
     {steps.map((step, index) => (
       <div key={index} style={{
         display: 'flex',
@@ -551,19 +557,19 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
 );
 
 // Componente de tarjeta de selección premium
-const SelectionCard = ({ 
-  title, 
-  description, 
-  price, 
-  image, 
-  isSelected, 
-  onSelect, 
+const SelectionCard = ({
+  title,
+  description,
+  price,
+  image,
+  isSelected,
+  onSelect,
   features = [],
   popular = false,
   capacity = 2,
   disabled = false
 }) => (
-  <div 
+  <div
     onClick={disabled ? null : onSelect}
     style={{
       border: isSelected ? '3px solid #2E5939' : '2px solid #E8F0E8',
@@ -607,7 +613,7 @@ const SelectionCard = ({
         ⭐ Más Popular
       </div>
     )}
-    
+   
     {disabled && (
       <div style={{
         position: 'absolute',
@@ -626,14 +632,14 @@ const SelectionCard = ({
         No Disponible
       </div>
     )}
-    
+   
     <div style={{
       width: '100%',
       height: '140px',
       borderRadius: '16px',
       marginBottom: '20px',
-      background: disabled 
-        ? 'linear-gradient(135deg, #cccccc 0%, #999999 100%)' 
+      background: disabled
+        ? 'linear-gradient(135deg, #cccccc 0%, #999999 100%)'
         : 'linear-gradient(135deg, #2E5939 0%, #679750 100%)',
       display: 'flex',
       alignItems: 'center',
@@ -658,7 +664,7 @@ const SelectionCard = ({
         {capacity} personas
       </div>
     </div>
-    
+   
     <h4 style={{
       margin: '0 0 12px 0',
       color: disabled ? '#999' : '#2E5939',
@@ -667,7 +673,7 @@ const SelectionCard = ({
     }}>
       {title}
     </h4>
-    
+   
     <p style={{
       margin: '0 0 20px 0',
       color: disabled ? '#bbb' : '#679750',
@@ -676,7 +682,7 @@ const SelectionCard = ({
     }}>
       {description}
     </p>
-    
+   
     {features.length > 0 && (
       <div style={{ marginBottom: '20px' }}>
         {features.map((feature, index) => (
@@ -695,7 +701,7 @@ const SelectionCard = ({
         ))}
       </div>
     )}
-    
+   
     <div style={{
       display: 'flex',
       justifyContent: 'space-between',
@@ -726,16 +732,16 @@ const SelectionCard = ({
 );
 
 // Componente de servicio extra
-const ServicioExtraCard = ({ 
-  servicio, 
-  isSelected, 
+const ServicioExtraCard = ({
+  servicio,
+  isSelected,
   onToggle,
   diasEstadia = 1
 }) => {
   const precioTotal = servicio.precioServicio * diasEstadia;
 
   return (
-    <div 
+    <div
       onClick={() => onToggle(servicio)}
       style={{
         border: isSelected ? '3px solid #2E5939' : '2px solid #E8F0E8',
@@ -757,7 +763,7 @@ const ServicioExtraCard = ({
       onMouseLeave={(e) => {
         if (!isSelected) {
           e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
+          e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
         }
       }}
     >
@@ -774,7 +780,7 @@ const ServicioExtraCard = ({
       }}>
         {isSelected && <FaCheck style={{ color: 'white', fontSize: '12px' }} />}
       </div>
-      
+     
       <div style={{ flex: 1 }}>
         <div style={{
           display: 'flex',
@@ -822,11 +828,11 @@ const ServicioExtraCard = ({
 };
 
 // Diálogo de cancelación premium
-const AlertDialog = ({ 
-  isOpen, 
-  title = "¿Estás seguro de que quieres cancelar?", 
-  message = "Se perderán los datos no guardados.", 
-  onConfirm, 
+const AlertDialog = ({
+  isOpen,
+  title = "¿Estás seguro de que quieres cancelar?",
+  message = "Se perderán los datos no guardados.",
+  onConfirm,
   onCancel,
   confirmText = "Sí, cancelar",
   cancelText = "Continuar"
@@ -870,9 +876,9 @@ const AlertDialog = ({
           border: '3px solid #ffc107',
           margin: '0 auto 20px'
         }}>
-          <FaExclamationTriangle style={{ 
-            color: '#856404', 
-            fontSize: '32px' 
+          <FaExclamationTriangle style={{
+            color: '#856404',
+            fontSize: '32px'
           }} />
         </div>
 
@@ -959,19 +965,20 @@ const AlertDialog = ({
 };
 
 // Componente FormField mejorado
-const FormField = ({ 
-  label, 
-  name, 
-  type = "text", 
-  value, 
-  onChange, 
-  options = [], 
-  required = false, 
+const FormField = ({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  options = [],
+  required = false,
   disabled = false,
   placeholder = "",
   style = {},
   icon,
-  validation = null
+  validation = null,
+  inputProps = {}
 }) => {
   const [isValid, setIsValid] = useState(true);
   const [validationMessage, setValidationMessage] = useState("");
@@ -979,7 +986,7 @@ const FormField = ({
   const handleChange = (e) => {
     const { value } = e.target;
     onChange(e);
-    
+   
     if (validation) {
       const result = validation(value);
       setIsValid(result.isValid);
@@ -1018,6 +1025,7 @@ const FormField = ({
           }}
           required={required}
           disabled={disabled}
+          {...inputProps}
         >
           <option value="">{placeholder}</option>
           {options.map((option) => (
@@ -1049,6 +1057,7 @@ const FormField = ({
           required={required}
           disabled={disabled}
           rows="4"
+          {...inputProps}
         />
       ) : (
         <input
@@ -1070,6 +1079,7 @@ const FormField = ({
           }}
           required={required}
           disabled={disabled}
+          {...inputProps}
         />
       )}
       {!isValid && validationMessage && (
@@ -1101,7 +1111,8 @@ export default function ReservaForm() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
-  
+  const [usuarioLogueado, setUsuarioLogueado] = useState(null);
+ 
   // Estado para datos de la API
   const [apiData, setApiData] = useState({
     sedes: [],
@@ -1115,30 +1126,33 @@ export default function ReservaForm() {
     sedesPorServicio: []
   });
 
-  // Estado del formulario
+  // Estado del formulario con idUsuario: 12 y idEstado: 1
   const [formData, setFormData] = useState({
     // Información personal
     nombre: "",
+    apellido: "",
+    tipoDocumento: "",
+    numeroDocumento: "",
     email: "",
     telefono: "",
-    
-    // Información de reserva - CORREGIDO NOMBRES DE FECHAS
+   
+    // Información de reserva
     idReserva: 0,
-    fechaSalida: "", // Fecha de salida (antes fechaReserva)
-    fechaEntrada: "", // Fecha de entrada
-    fechaRegistro: new Date().toISOString().split('T')[0], // Se llena automáticamente
+    fechaReserva: new Date().toISOString().split('T')[0],
+    fechaSalida: "",
+    fechaEntrada: "",
+    fechaRegistro: new Date().toISOString().split('T')[0],
     abono: 0,
     restante: 0,
     montoTotal: 0,
-    idUsuario: 1, // Temporal - se puede obtener del localStorage o contexto
-    idEstado: 2, // Pendiente por defecto
+    idUsuario: 12, // Cliente Giraldo
+    idEstado: 1, // Cambiado de 2 a 1 (solo existe el estado 1)
     idSede: "",
     idCabana: "",
     idMetodoPago: "",
     idPaquete: "",
-    
+   
     // Información adicional
-    numeroPersonas: 1,
     observaciones: ""
   });
 
@@ -1146,22 +1160,75 @@ export default function ReservaForm() {
   const [filteredData, setFilteredData] = useState({
     cabanas: [],
     paquetes: [],
-    servicios: [] // Servicios filtrados por sede
+    servicios: []
   });
 
   // Definir los pasos del formulario
   const steps = [
     { label: "Tus Datos", icon: <FaUser /> },
-    { label: "Fechas", icon: <FaCalendarAlt /> },
     { label: "Alojamiento", icon: <FaHome /> },
     { label: "Extras", icon: <FaPlus /> },
+    { label: "Fechas", icon: <FaCalendarAlt /> },
     { label: "Confirmación", icon: <FaCheck /> }
   ];
 
   // Cargar datos relacionados al montar el componente
   useEffect(() => {
     cargarDatosRelacionados();
+    cargarUsuarioLogueado();
   }, []);
+
+  // Función para cargar el usuario logueado
+  const cargarUsuarioLogueado = async () => {
+    try {
+      setLoading(true);
+      // En una aplicación real, aquí obtendrías el ID del usuario del contexto, localStorage, o token
+      // Por ahora, simularemos que obtenemos el usuario con ID 12 (Cliente Giraldo)
+      const response = await fetch(`${API_URLS.USUARIOS}/12`);
+     
+      if (response.ok) {
+        const usuario = await response.json();
+        setUsuarioLogueado(usuario);
+       
+        // Actualizar el formulario con los datos del usuario
+        setFormData(prev => ({
+          ...prev,
+          nombre: usuario.nombre || "",
+          apellido: usuario.apellido || "",
+          tipoDocumento: usuario.tipoDocumento || "",
+          numeroDocumento: usuario.numeroDocumento || "",
+          email: usuario.correo || "",
+          telefono: usuario.celular || ""
+        }));
+       
+        console.log("✅ Usuario cargado:", usuario);
+      } else {
+        console.warn("⚠ No se pudo cargar el usuario, usando datos por defecto");
+        // Datos de ejemplo por si falla la API
+        setUsuarioLogueado({
+          nombre: "Cliente",
+          apellido: "Giraldo",
+          tipoDocumento: "Cédula de Ciudadanía",
+          numeroDocumento: "123456789",
+          correo: "cliente@ejemplo.com",
+          celular: "3001234567"
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al cargar usuario:", error);
+      // Datos de ejemplo por si falla la API
+      setUsuarioLogueado({
+        nombre: "Cliente",
+        apellido: "Giraldo",
+        tipoDocumento: "Cédula de Ciudadanía",
+        numeroDocumento: "123456789",
+        correo: "cliente@ejemplo.com",
+        celular: "3001234567"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filtrar datos cuando cambia la sede seleccionada
   useEffect(() => {
@@ -1171,19 +1238,17 @@ export default function ReservaForm() {
   // Calcular montos cuando cambian los datos relevantes
   useEffect(() => {
     calcularMontos();
-  }, [formData.idPaquete, formData.fechaEntrada, formData.fechaSalida, formData.numeroPersonas, formData.idCabana]);
+  }, [formData.idPaquete, formData.fechaEntrada, formData.fechaSalida, formData.idCabana]);
 
   // Función para cargar todos los datos de la API
   const cargarDatosRelacionados = async () => {
     try {
       setLoading(true);
-      
+     
+      // Configuración por defecto actualizada con solo el estado 1
       const configuracionPorDefecto = {
         estados: [
-          { idEstado: 1, nombreEstado: 'Abonado' },
-          { idEstado: 2, nombreEstado: 'Pendiente' },
-          { idEstado: 3, nombreEstado: 'Cancelada' },
-          { idEstado: 4, nombreEstado: 'Completada' }
+          { idEstado: 1, nombreEstado: 'Abonado' }
         ],
         metodosPago: [
           { idMetodoPago: 1, nombreMetodoPago: "Transferencia Bancaria" },
@@ -1192,10 +1257,9 @@ export default function ReservaForm() {
         ],
         servicios: [
           { idServicio: 1, nombreServicio: "Desayuno Premium", descripcion: "Desayuno buffet con productos locales y orgánicos", precioServicio: 25000 },
-          { idServicio: 2, nombreServicio: "Cena Romántica", descripcion: "Cena especial para parejas con velas y música", precioServicio: 80000 },
+          { idServicio: 2, nombreServicio: "Cena Romántica", descripcion: "Cena a la luz de las velas con menú gourmet", precioServicio: 50000 },
           { idServicio: 3, nombreServicio: "Tour Guiado", descripcion: "Recorrido por senderos naturales con guía especializado", precioServicio: 40000 },
-          { idServicio: 4, nombreServicio: "Spa Relajante", descripcion: "Masajes relajantes y tratamientos de bienestar", precioServicio: 120000 },
-          { idServicio: 5, nombreServicio: "Cabalgata", descripcion: "Paseo a caballo por los alrededores del bosque", precioServicio: 60000 }
+          { idServicio: 4, nombreServicio: "Spa Relajante", descripcion: "Sesión de masajes y tratamientos de bienestar", precioServicio: 60000 }
         ]
       };
 
@@ -1214,10 +1278,10 @@ export default function ReservaForm() {
 
       // Cargar todos los datos en paralelo
       const [
-        sedesData, 
-        cabanasData, 
-        paquetesData, 
-        estadosData, 
+        sedesData,
+        cabanasData,
+        paquetesData,
+        estadosData,
         metodosPagoData,
         sedePaquetesData,
         cabanaSedesData,
@@ -1247,15 +1311,23 @@ export default function ReservaForm() {
 
       // Asegurarse de que los servicios tengan datos mínimos
       const serviciosConDatos = serviciosData.map(servicio => ({
-        idServicio: servicio.idServicio,
-        nombreServicio: servicio.nombreServicio || `Servicio ${servicio.idServicio}`,
-        precioServicio: servicio.precioServicio || servicio.precio || 0,
-        descripcion: servicio.descripcion || "Servicio adicional para tu estadía",
-        imagen: servicio.imagen || "",
-        estado: servicio.estado !== undefined ? servicio.estado : true,
+        idServicio: Number(servicio.idServicio ?? servicio.id ?? 0),
+        nombreServicio: servicio.nombreServicio || servicio.nombre || `Servicio ${servicio.idServicio ?? servicio.id ?? 0}`,
+        precioServicio: Number(servicio.precioServicio ?? servicio.precio ?? 0),
+        descripcion: servicio.descripcion ?? "Servicio adicional para tu estadía",
+        imagen: servicio.imagen ?? "",
+        estado: servicio.estado !== undefined ? Boolean(servicio.estado) : true,
         ...servicio
       }));
-
+ 
+      // Normalizar relación SedesPorServicio (asegurar números)
+      const sedesPorServicioConDatos = (sedesPorServicioData || []).map(rel => ({
+        idSedesServicio: Number(rel.idSedesServicio ?? rel.id ?? 0),
+        idServicio: Number(rel.idServicio ?? rel.servicioId ?? rel.idservicio ?? 0),
+        idSede: Number(rel.idSede ?? rel.sedeId ?? rel.idsede ?? 0),
+        ...rel
+      }));
+ 
       setApiData({
         sedes: sedesData,
         cabanas: cabanasConDatos,
@@ -1265,13 +1337,14 @@ export default function ReservaForm() {
         sedePaquetes: sedePaquetesData,
         cabanaSedes: cabanaSedesData,
         servicios: serviciosConDatos,
-        sedesPorServicio: sedesPorServicioData
+        sedesPorServicio: sedesPorServicioConDatos
       });
 
       console.log("📊 Datos de la API cargados:", {
         sedes: sedesData.length,
         cabanas: cabanasConDatos.length,
         paquetes: paquetesData.length,
+        estados: estadosData.length,
         cabanaSedes: cabanaSedesData.length,
         sedePaquetes: sedePaquetesData.length
       });
@@ -1280,9 +1353,9 @@ export default function ReservaForm() {
       if (sedesData.length > 0) {
         // Buscar Copacabana primero, si no existe usar la primera sede
         const copacabana = sedesData.find(s => s.nombreSede?.toLowerCase().includes('copacabana'));
-        setFormData(prev => ({ 
-          ...prev, 
-          idSede: copacabana ? copacabana.idSede : sedesData[0].idSede 
+        setFormData(prev => ({
+          ...prev,
+          idSede: copacabana ? copacabana.idSede : sedesData[0].idSede
         }));
       }
       if (metodosPagoData.length > 0) {
@@ -1297,10 +1370,9 @@ export default function ReservaForm() {
     }
   };
 
-  // Función para filtrar cabañas, paquetes y servicios por sede seleccionada - MEJORADA
+  // Función para filtrar cabañas, paquetes y servicios por sede seleccionada
   const filtrarDatosPorSede = () => {
     if (!formData.idSede) {
-      // Si no hay sede seleccionada, mostrar todos los datos
       setFilteredData({
         cabanas: [],
         paquetes: [],
@@ -1309,77 +1381,68 @@ export default function ReservaForm() {
       return;
     }
 
-    const sedeId = parseInt(formData.idSede);
+    const sedeId = Number(formData.idSede);
     console.log(`🔍 Filtrando datos para sede ID: ${sedeId}`);
 
-    // Filtrar cabañas por sede - MEJORADO con manejo de errores
+    // Filtrar cabañas por sede
     let cabanasFiltradas = [];
     try {
-      if (apiData.cabanaSedes && apiData.cabanaSedes.length > 0) {
+      const hasCabanaSedes = Array.isArray(apiData.cabanaSedes) && apiData.cabanaSedes.length > 0;
+
+      if (hasCabanaSedes) {
         cabanasFiltradas = apiData.cabanaSedes
-          .filter(cs => {
-            // Verificar que cs existe y tiene las propiedades necesarias
-            if (!cs) return false;
-            
-            // Manejar diferentes estructuras posibles de la API
-            const csSedeId = cs.idSede || cs.sedeId || cs.idsede;
-            const csCabanaId = cs.idCabana || cs.cabanaId || cs.idcabana;
-            
-            return csSedeId === sedeId && csCabanaId;
-          })
           .map(cs => {
-            const cabanaId = cs.idCabana || cs.cabanaId || cs.idcabana;
-            return apiData.cabanas.find(c => c.idCabana === cabanaId);
+            if (!cs) return null;
+            const csSedeId = Number(cs.idSede ?? cs.sedeId ?? cs.idsede);
+            const csCabanaId = Number(cs.idCabana ?? cs.cabanaId ?? cs.idcabana);
+            if (csSedeId === sedeId && csCabanaId) {
+              return apiData.cabanas.find(c => Number(c.idCabana) === csCabanaId) || null;
+            }
+            return null;
           })
           .filter(Boolean);
       } else {
-        // Si no hay datos de cabanaSedes, mostrar todas las cabañas
-        console.warn("⚠ No hay datos de CabanaPorSede, mostrando todas las cabañas");
-        cabanasFiltradas = apiData.cabanas;
+        cabanasFiltradas = apiData.cabanas.filter(c => {
+          const cSedeId = Number(c.idSede ?? c.sedeId ?? c.idsede ?? 0);
+          return cSedeId === sedeId;
+        });
       }
     } catch (error) {
       console.error("❌ Error al filtrar cabañas:", error);
-      cabanasFiltradas = apiData.cabanas; // Fallback: mostrar todas
+      cabanasFiltradas = [];
     }
 
     // Filtrar paquetes por sede
-    const paquetesFiltrados = apiData.sedePaquetes
-      .filter(sp => {
-        if (!sp) return false;
-        const spSedeId = sp.idSede || sp.sedeId || sp.idsede;
-        return spSedeId === sedeId;
-      })
+    const paquetesFiltrados = (apiData.sedePaquetes || [])
       .map(sp => {
-        const paqueteId = sp.idPaquete || sp.paqueteId || sp.idpaquete;
-        return apiData.paquetes.find(p => p.idPaquete === paqueteId);
+        if (!sp) return null;
+        const spSedeId = Number(sp.idSede ?? sp.sedeId ?? sp.idsede);
+        const paqueteId = Number(sp.idPaquete ?? sp.paqueteId ?? sp.idpaquete);
+        if (spSedeId === sedeId && paqueteId) {
+          return apiData.paquetes.find(p => Number(p.idPaquete) === paqueteId) || null;
+        }
+        return null;
       })
       .filter(Boolean);
 
     // Filtrar servicios por sede
     const serviciosFiltrados = apiData.servicios.filter(servicio => {
-      // Si no hay datos de sedesPorServicio, mostrar todos los servicios activos
-      if (apiData.sedesPorServicio.length === 0) {
+      if (!Array.isArray(apiData.sedesPorServicio) || apiData.sedesPorServicio.length === 0) {
         return servicio.estado !== false;
       }
-      
-      const disponibleEnSede = apiData.sedesPorServicio.some(
-        sss => {
-          if (!sss) return false;
-          const sssSedeId = sss.idSede || sss.sedeId || sss.idsede;
-          const sssServicioId = sss.idServicio || sss.servicioId || sss.idservicio;
-          return sssSedeId === sedeId && sssServicioId === servicio.idServicio;
-        }
-      );
-      
+      const disponibleEnSede = apiData.sedesPorServicio.some(sss => {
+        if (!sss) return false;
+        const sssSedeId = Number(sss.idSede ?? sss.sedeId ?? sss.idsede);
+        const sssServicioId = Number(sss.idServicio ?? sss.servicioId ?? sss.idservicio);
+        return sssSedeId === sedeId && sssServicioId === Number(servicio.idServicio);
+      });
       return disponibleEnSede && servicio.estado !== false;
     });
 
     console.log("🔍 Resultados del filtrado:", {
       cabanasFiltradas: cabanasFiltradas.length,
       paquetesFiltrados: paquetesFiltrados.length,
-      serviciosFiltrados: serviciosFiltrados.length,
-      cabanasFiltradas,
-      paquetesFiltrados
+      serviciosFiltrados: serviciosFiltrados.length
     });
 
     setFilteredData({
@@ -1389,10 +1452,10 @@ export default function ReservaForm() {
     });
 
     // Resetear selecciones si ya no están disponibles
-    if (formData.idCabana && !cabanasFiltradas.find(c => c.idCabana === parseInt(formData.idCabana))) {
+    if (formData.idCabana && !cabanasFiltradas.find(c => Number(c.idCabana) === Number(formData.idCabana))) {
       setFormData(prev => ({ ...prev, idCabana: "" }));
     }
-    if (formData.idPaquete && !paquetesFiltrados.find(p => p.idPaquete === parseInt(formData.idPaquete))) {
+    if (formData.idPaquete && !paquetesFiltrados.find(p => Number(p.idPaquete) === Number(formData.idPaquete))) {
       setFormData(prev => ({ ...prev, idPaquete: "" }));
     }
   };
@@ -1402,11 +1465,11 @@ export default function ReservaForm() {
     const paqueteSeleccionado = apiData.paquetes.find(
       p => p.idPaquete === parseInt(formData.idPaquete)
     );
-    
+   
     const cabanaSeleccionada = apiData.cabanas.find(
       c => c.idCabana === parseInt(formData.idCabana)
     );
-    
+   
     // Precio base del paquete o cabaña
     let precioBase = 0;
     if (paqueteSeleccionado) {
@@ -1414,20 +1477,19 @@ export default function ReservaForm() {
     } else if (cabanaSeleccionada) {
       precioBase = parseFloat(cabanaSeleccionada.precio || 0);
     }
-    
+   
     // Calcular días de estadía
     let diasEstadia = 1;
-    if (formData.fechaEntrada && formData.fechaSalida) {
+    if (paqueteSeleccionado && paqueteSeleccionado.dias) {
+      diasEstadia = parseInt(paqueteSeleccionado.dias) || 1;
+    } else if (formData.fechaEntrada && formData.fechaSalida) {
       const entrada = new Date(formData.fechaEntrada);
       const salida = new Date(formData.fechaSalida);
       const diffTime = Math.abs(salida - entrada);
       diasEstadia = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
     }
 
-    // Aplicar recargo por personas adicionales (más de 2)
-    const recargoPersonas = formData.numeroPersonas > 2 ? (formData.numeroPersonas - 2) * 50000 : 0;
-    
-    const montoTotal = (precioBase * diasEstadia) + recargoPersonas;
+    const montoTotal = (precioBase * diasEstadia);
     const abono = Math.round(montoTotal * 0.5);
     const restante = montoTotal - abono;
 
@@ -1466,31 +1528,39 @@ export default function ReservaForm() {
     });
   };
 
+  // Función para formatear fecha en formato YYYY-MM-DD para la API
+  const formatDateForAPI = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+  };
+
+  // Función principal de envío del formulario con idUsuario: 12 y idEstado: 1
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validarFormulario()) {
       return;
     }
 
     setLoading(true);
     try {
-      // Preparar datos para la API en el formato exacto que necesitas
       const reservaData = {
         idReserva: 0,
-        fechaSalida: formData.fechaSalida, // Fecha de salida (CORREGIDO)
-        fechaEntrada: formData.fechaEntrada, // Fecha de entrada
-        // fechaRegistro se llena automáticamente en la API, no la enviamos
-        abono: parseFloat(formData.abono),
-        restante: parseFloat(formData.restante),
-        montoTotal: parseFloat(formData.montoTotal),
-        idUsuario: parseInt(formData.idUsuario),
-        idEstado: 2, // Siempre pendiente por defecto
-        idSede: parseInt(formData.idSede),
-        idCabana: parseInt(formData.idCabana),
-        idMetodoPago: parseInt(formData.idMetodoPago),
-        idPaquete: formData.idPaquete ? parseInt(formData.idPaquete) : 0
-        // serviciosExtras se manejan en una tabla aparte
+        fechaReserva: formatDateForAPI(formData.fechaReserva),
+        fechaEntrada: formatDateForAPI(formData.fechaEntrada),
+        fechaSalida: formatDateForAPI(formData.fechaSalida),
+        fechaRegistro: formatDateForAPI(formData.fechaRegistro),
+        abono: parseFloat(formData.abono) || 0,
+        restante: parseFloat(formData.restante) || 0,
+        montoTotal: parseFloat(formData.montoTotal) || 0,
+        idUsuario: 12, // Cliente Giraldo
+        idEstado: 1, // Cambiado de 2 a 1 (solo existe el estado 1)
+        idSede: parseInt(formData.idSede) || 0,
+        idCabana: formData.idCabana ? parseInt(formData.idCabana) : null,
+        idMetodoPago: parseInt(formData.idMetodoPago) || 0,
+        idPaquete: formData.idPaquete ? parseInt(formData.idPaquete) : null,
+        observaciones: formData.observaciones || ""
       };
 
       console.log("📤 Enviando datos de reserva:", reservaData);
@@ -1499,30 +1569,30 @@ export default function ReservaForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(reservaData)
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText}`);
+        let errorText = await response.text();
+        try {
+          errorText = JSON.parse(errorText);
+        } catch {}
+        console.error("❌ Error del servidor:", errorText);
+        throw new Error(`Error ${response.status}: ${JSON.stringify(errorText)}`);
       }
 
       const result = await response.json();
-      
-      console.log("✅ Reserva creada exitosamente:", result);
-      
-      // Si hay servicios extras seleccionados, guardarlos en la tabla de servicios_reserva
+      console.log("✅ Reserva creada:", result);
+
+      // Guardar servicios extras si hay alguno seleccionado
       if (serviciosSeleccionados.length > 0) {
-        await guardarServiciosReserva(result.idReserva);
+        await guardarServiciosReserva(result.idReserva ?? result.id ?? 0);
       }
-      
+
       displayAlert("✅ ¡Reserva creada exitosamente! Te redirigiremos en breve...", "success");
-      
-      // Redirigir después de 3 segundos
-      setTimeout(() => {
-        navigate("/cliente/reservas");
-      }, 3000);
+      setTimeout(() => navigate("/cliente/reservas"), 3000);
 
     } catch (error) {
       console.error("❌ Error al crear reserva:", error);
@@ -1532,18 +1602,38 @@ export default function ReservaForm() {
     }
   };
 
+  // Evita envío accidental con Enter (salvo textarea)
+  const preventEnterSubmit = (e) => {
+    if (e.key === 'Enter' && e.target && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
+  };
+
+  // Handler del form: si no estamos en el último paso, avanza; si estamos, crea la reserva
+  const onFormSubmit = (e) => {
+    e.preventDefault();
+    if (currentStep < steps.length - 1) {
+      nextStep();
+      return;
+    }
+    handleSubmit(e);
+  };
+ 
   // Función para guardar servicios de reserva
   const guardarServiciosReserva = async (idReserva) => {
     try {
+      const paqueteSeleccionado = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
+      const diasParaServicios = paqueteSeleccionado && paqueteSeleccionado.dias ? Number(paqueteSeleccionado.dias) : calcularDiasEstadia();
+ 
       for (const servicio of serviciosSeleccionados) {
         const servicioReservaData = {
           idServicioReserva: 0,
           idReserva: idReserva,
-          idServicio: servicio.idServicio,
-          precio: servicio.precioServicio,
-          cantidad: calcularDiasEstadia()
+          idServicio: Number(servicio.idServicio),
+          precio: Number(servicio.precioServicio),
+          cantidad: diasParaServicios
         };
-
+ 
         const response = await fetch(API_URLS.SERVICIOS_RESERVA, {
           method: 'POST',
           headers: {
@@ -1551,7 +1641,7 @@ export default function ReservaForm() {
           },
           body: JSON.stringify(servicioReservaData)
         });
-
+ 
         if (!response.ok) {
           console.warn(`⚠ No se pudo guardar el servicio ${servicio.nombreServicio}`);
         }
@@ -1603,14 +1693,13 @@ export default function ReservaForm() {
       return false;
     }
 
-    // Validar fechas - CORREGIDO
+    // Validar fechas
     const hoy = new Date().toISOString().split('T')[0];
     if (formData.fechaEntrada < hoy) {
       displayAlert("❌ La fecha de entrada no puede ser anterior a hoy", "error");
       return false;
     }
 
-    // CORREGIDO: La fecha de salida debe ser posterior a la fecha de entrada
     if (formData.fechaSalida <= formData.fechaEntrada) {
       displayAlert("❌ La fecha de salida debe ser posterior a la fecha de entrada", "error");
       return false;
@@ -1618,16 +1707,6 @@ export default function ReservaForm() {
 
     if (formData.montoTotal <= 0) {
       displayAlert("❌ Debe seleccionar al menos una cabaña o paquete para calcular el monto total", "error");
-      return false;
-    }
-
-    if (formData.numeroPersonas < 1) {
-      displayAlert("❌ El número de personas debe ser al menos 1", "error");
-      return false;
-    }
-
-    if (formData.numeroPersonas > 6) {
-      displayAlert("❌ El número máximo de personas es 6", "error");
       return false;
     }
 
@@ -1674,49 +1753,61 @@ export default function ReservaForm() {
     return 1;
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(amount);
+  // Helper: sumar días a una fecha YYYY-MM-DD -> YYYY-MM-DD
+  const addDays = (dateStr, days) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + Number(days));
+    return d.toISOString().split('T')[0];
+  };
+ 
+  // Si hay paquete seleccionado con días, fijar fechaSalida = fechaEntrada + paquete.dias
+  useEffect(() => {
+    const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
+    if (paquete && paquete.dias) {
+      if (formData.fechaEntrada) {
+        const nuevaSalida = addDays(formData.fechaEntrada, paquete.dias);
+        setFormData(prev => ({ ...prev, fechaSalida: nuevaSalida }));
+      } else {
+        setFormData(prev => ({ ...prev, fechaSalida: "" }));
+      }
+    }
+  }, [formData.idPaquete, formData.fechaEntrada, apiData.paquetes]);
+
+  // Obtener paquete seleccionado en la UI y la fecha de salida esperada (si aplica)
+  const paqueteSeleccionadoForm = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
+  const fechaSalidaEsperada = (paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && formData.fechaEntrada)
+    ? addDays(formData.fechaEntrada, paqueteSeleccionadoForm.dias)
+    : "";
+
+  // Helpers añadidos para evitar errores en consola
+  const formatCurrency = (value) => {
+    const n = Number(value ?? 0);
+    try {
+      return n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+    } catch {
+      return `COP ${n.toFixed(0)}`;
+    }
   };
 
-  // Función para obtener icono según el tipo de cabaña
+  // Icono por defecto para cabañas
   const getCabanaIcon = (cabana) => {
-    const nombre = cabana.nombre?.toLowerCase() || '';
-    if (nombre.includes('premium') || nombre.includes('vista')) return <FaMountain />;
-    if (nombre.includes('familiar') || nombre.includes('deluxe')) return <FaHome />;
-    if (nombre.includes('romántica') || nombre.includes('pareja')) return <FaHeart />;
-    if (nombre.includes('playa') || nombre.includes('arena')) return <FaUmbrellaBeach />;
-    return <FaLeaf />;
+    return <FaMountain />;
   };
 
-  // Función para obtener características según la cabaña
+  // Extrae características mostradas en las cards de cabaña
   const getCabanaFeatures = (cabana) => {
     const features = [];
-    const nombre = cabana.nombre?.toLowerCase() || '';
-    
-    if (nombre.includes('jacuzzi') || nombre.includes('premium')) {
-      features.push('Jacuzzi privado', 'Terraza con vista', 'Desayuno incluido');
-    }
-    if (nombre.includes('familiar') || cabana.capacidad > 2) {
-      features.push('Amplio espacio', 'Cocina equipada', 'Área familiar');
-    }
-    if (nombre.includes('romántica')) {
-      features.push('Ambiente íntimo', 'Decoración especial', 'Cena romántica');
-    }
-    
-    // Características básicas para todas
-    features.push('WiFi gratis', 'Aire acondicionado', 'Baño privado');
-    
-    return features.slice(0, 4); // Máximo 4 características
+    if (cabana.capacidad) features.push(`${cabana.capacidad} personas`);
+    if (cabana.banios || cabana.banos) features.push(`${cabana.banios ?? cabana.banos} baño(s)`);
+    if (cabana.area) features.push(`${cabana.area} m²`);
+    return features;
   };
 
   return (
-    <div style={{ 
-      padding: "32px", 
-      backgroundColor: "#f5f8f2", 
+    <div style={{
+      padding: "32px",
+      backgroundColor: "#f5f8f2",
       minHeight: "100vh",
       width: "100%",
       boxSizing: "border-box",
@@ -1724,7 +1815,7 @@ export default function ReservaForm() {
       background: "linear-gradient(135deg, #f5f8f2 0%, #e8f0e8 100%)",
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
     }}>
-      
+     
       {/* Diálogo de cancelación premium */}
       <AlertDialog
         isOpen={showCancelDialog}
@@ -1744,17 +1835,17 @@ export default function ReservaForm() {
           color: alertMessage.includes('❌') ? '#c62828' : '#2E5939',
           borderLeftColor: alertMessage.includes('❌') ? '#e57373' : '#4caf50'
         }}>
-          {alertMessage.includes('❌') ? 
-            <FaExclamationTriangle style={{ color: '#e57373', fontSize: '22px' }} /> : 
+          {alertMessage.includes('❌') ?
+            <FaExclamationTriangle style={{ color: '#e57373', fontSize: '22px' }} /> :
             <FaCheck style={{ color: '#4caf50', fontSize: '22px' }} />
           }
           <span style={{ flex: 1 }}>{alertMessage}</span>
           <button
             onClick={() => setShowAlert(false)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'inherit', 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -1778,19 +1869,19 @@ export default function ReservaForm() {
       )}
 
       {/* Header Premium */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center", 
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
         marginBottom: 40,
         flexWrap: 'wrap',
         gap: '24px'
       }}>
         <div>
-          <h1 style={{ 
-            margin: 0, 
-            color: "#2E5939", 
-            fontSize: "42px", 
+          <h1 style={{
+            margin: 0,
+            color: "#2E5939",
+            fontSize: "42px",
             fontWeight: "900",
             background: "linear-gradient(135deg, #2E5939 0%, #679750 100%)",
             WebkitBackgroundClip: "text",
@@ -1800,15 +1891,15 @@ export default function ReservaForm() {
           }}>
             🌲 Reserva tu Aventura en el Bosque
           </h1>
-          <p style={{ 
-            margin: "12px 0 0 0", 
-            color: "#679750", 
+          <p style={{
+            margin: "12px 0 0 0",
+            color: "#679750",
             fontSize: "18px",
             fontWeight: "500",
             maxWidth: "600px",
             lineHeight: "1.6"
           }}>
-            Vive una experiencia única de glamping en medio de la naturaleza. 
+            Vive una experiencia única de glamping en medio de la naturaleza.
             Disfruta de lujo y comodidad en un entorno natural espectacular.
           </p>
         </div>
@@ -1845,14 +1936,14 @@ export default function ReservaForm() {
         gap: '32px',
         alignItems: 'start'
       }}>
-        
+       
         {/* Columna izquierda - Formulario */}
         <div>
           {/* Indicador de Progreso */}
-          <StepIndicator 
-            currentStep={currentStep} 
-            totalSteps={steps.length} 
-            steps={steps} 
+          <StepIndicator
+            currentStep={currentStep}
+            totalSteps={steps.length}
+            steps={steps}
           />
 
           {/* Formulario Premium */}
@@ -1860,9 +1951,9 @@ export default function ReservaForm() {
             <div style={{ padding: "40px" }}>
               {loading && apiData.cabanas.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "80px" }}>
-                  <div style={{ 
-                    width: '80px', 
-                    height: '80px', 
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
                     border: '5px solid #f3f3f3',
                     borderTop: '5px solid #2E5939',
                     borderRadius: '50%',
@@ -1877,22 +1968,22 @@ export default function ReservaForm() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={onFormSubmit} onKeyDown={preventEnterSubmit}>
                   {/* Paso 1: Información Personal */}
                   {currentStep === 0 && (
-                    <div style={{ 
-                      backgroundColor: '#FBFDF9', 
-                      padding: '36px', 
+                    <div style={{
+                      backgroundColor: '#FBFDF9',
+                      padding: '36px',
                       borderRadius: '20px',
                       marginBottom: '32px',
                       border: '2px solid rgba(103, 151, 80, 0.2)',
                       boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
                     }}>
-                      <h3 style={{ 
-                        color: '#2E5939', 
-                        marginBottom: '32px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <h3 style={{
+                        color: '#2E5939',
+                        marginBottom: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '16px',
                         fontSize: '24px',
                         fontWeight: '800'
@@ -1913,19 +2004,111 @@ export default function ReservaForm() {
                         </div>
                         Información Personal
                       </h3>
+                     
+                      {/* Banner informativo del usuario */}
+                      {usuarioLogueado && (
+                        <div style={{
+                          backgroundColor: '#E8F5E8',
+                          padding: '20px',
+                          borderRadius: '16px',
+                          border: '2px solid #2E5939',
+                          marginBottom: '28px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '16px'
+                        }}>
+                          <div style={{
+                            width: '50px',
+                            height: '50px',
+                            borderRadius: '50%',
+                            backgroundColor: '#2E5939',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '20px',
+                            flexShrink: 0
+                          }}>
+                            <FaUser />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{
+                              margin: '0 0 8px 0',
+                              color: '#2E5939',
+                              fontSize: '18px',
+                              fontWeight: '700'
+                            }}>
+                              ¡Hola, {usuarioLogueado.nombre} {usuarioLogueado.apellido}!
+                            </h4>
+                            <p style={{
+                              margin: 0,
+                              color: '#679750',
+                              fontSize: '14px',
+                              lineHeight: '1.4'
+                            }}>
+                              Tus datos han sido cargados automáticamente. Puedes modificarlos si es necesario.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px' }}>
                         <FormField
-                          label="Nombre Completo"
+                          label="Nombre"
                           name="nombre"
                           type="text"
                           value={formData.nombre}
                           onChange={handleInputChange}
                           required={true}
-                          placeholder="Ingresa tu nombre completo"
+                          placeholder="Ingresa tu nombre"
                           icon={<FaUser />}
                           validation={(value) => ({
                             isValid: value.length >= 2,
                             message: "El nombre debe tener al menos 2 caracteres"
+                          })}
+                        />
+                        <FormField
+                          label="Apellido"
+                          name="apellido"
+                          type="text"
+                          value={formData.apellido}
+                          onChange={handleInputChange}
+                          required={true}
+                          placeholder="Ingresa tu apellido"
+                          icon={<FaUser />}
+                          validation={(value) => ({
+                            isValid: value.length >= 2,
+                            message: "El apellido debe tener al menos 2 caracteres"
+                          })}
+                        />
+                        <FormField
+                          label="Tipo de Documento"
+                          name="tipoDocumento"
+                          type="select"
+                          value={formData.tipoDocumento}
+                          onChange={handleInputChange}
+                          options={[
+                            { value: "Cédula de Ciudadanía", label: "Cédula de Ciudadanía" },
+                            { value: "Cédula de Extranjería", label: "Cédula de Extranjería" },
+                            { value: "Pasaporte", label: "Pasaporte" },
+                            { value: "Tarjeta de Identidad", label: "Tarjeta de Identidad" }
+                          ]}
+                          required={true}
+                          placeholder="Selecciona tu tipo de documento"
+                          icon={<FaIdCard />}
+                        />
+                        <FormField
+                          label="Número de Documento"
+                          name="numeroDocumento"
+                          type="text"
+                          value={formData.numeroDocumento}
+                          onChange={handleInputChange}
+                          required={true}
+                          placeholder="Ingresa tu número de documento"
+                          icon={<FaIdCard />}
+                          validation={(value) => ({
+                            isValid: value.length >= 5,
+                            message: "El número de documento debe tener al menos 5 caracteres"
                           })}
                         />
                         <FormField
@@ -1943,7 +2126,7 @@ export default function ReservaForm() {
                           })}
                         />
                         <FormField
-                          label="Teléfono"
+                          label="Teléfono / Celular"
                           name="telefono"
                           type="tel"
                           value={formData.telefono}
@@ -1960,106 +2143,21 @@ export default function ReservaForm() {
                     </div>
                   )}
 
-                  {/* Paso 2: Fechas y Huéspedes */}
+                  {/* Paso 2: Selección de Alojamiento */}
                   {currentStep === 1 && (
-                    <div style={{ 
-                      backgroundColor: '#FBFDF9', 
-                      padding: '36px', 
+                    <div style={{
+                      backgroundColor: '#FBFDF9',
+                      padding: '36px',
                       borderRadius: '20px',
                       marginBottom: '32px',
                       border: '2px solid rgba(103, 151, 80, 0.2)',
                       boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
                     }}>
-                      <h3 style={{ 
-                        color: '#2E5939', 
-                        marginBottom: '32px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '16px',
-                        fontSize: '24px',
-                        fontWeight: '800'
-                      }}>
-                        <div style={{
-                          backgroundColor: '#2E5939',
-                          color: 'white',
-                          width: '50px',
-                          height: '50px',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '20px',
-                          boxShadow: '0 8px 20px rgba(46, 89, 57, 0.3)'
-                        }}>
-                          <FaCalendarAlt />
-                        </div>
-                        Fechas y Huéspedes
-                      </h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '28px' }}>
-                        <FormField
-                          label="Fecha de Llegada"
-                          name="fechaEntrada"
-                          type="date"
-                          value={formData.fechaEntrada}
-                          onChange={handleInputChange}
-                          required={true}
-                        />
-                        <FormField
-                          label="Fecha de Salida"
-                          name="fechaSalida"
-                          type="date"
-                          value={formData.fechaSalida}
-                          onChange={handleInputChange}
-                          required={true}
-                        />
-                        <FormField
-                          label="Número de Personas"
-                          name="numeroPersonas"
-                          type="number"
-                          value={formData.numeroPersonas}
-                          onChange={handleInputChange}
-                          required={true}
-                          min="1"
-                          max="6"
-                          icon={<FaUsers />}
-                        />
-                      </div>
-                      {formData.fechaEntrada && formData.fechaSalida && (
-                        <div style={{ 
-                          marginTop: '28px', 
-                          padding: '24px', 
-                          backgroundColor: '#E8F5E8', 
-                          borderRadius: '16px',
-                          textAlign: 'center',
-                          border: '3px solid #2E5939',
-                          boxShadow: '0 8px 25px rgba(46, 89, 57, 0.15)'
-                        }}>
-                          <strong style={{ color: '#2E5939', fontSize: '20px', display: 'block', marginBottom: '8px' }}>
-                            🗓️ ¡Perfecto! Tu estadía será de {calcularDiasEstadia()} {calcularDiasEstadia() === 1 ? 'noche' : 'noches'}
-                          </strong>
-                          <span style={{ color: '#679750', fontSize: '15px' }}>
-                            {formData.fechaEntrada} → {formData.fechaSalida}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Paso 3: Selección de Alojamiento */}
-                  {currentStep === 2 && (
-                    <div style={{ 
-                      backgroundColor: '#FBFDF9', 
-                      padding: '36px', 
-                      borderRadius: '20px',
-                      marginBottom: '32px',
-                      border: '2px solid rgba(103, 151, 80, 0.2)',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
-                    }}>
-                      <h3 style={{ 
-                        color: '#2E5939', 
-                        marginBottom: '32px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <h3 style={{
+                        color: '#2E5939',
+                        marginBottom: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '16px',
                         fontSize: '24px',
                         fontWeight: '800'
@@ -2089,9 +2187,9 @@ export default function ReservaForm() {
                           type="select"
                           value={formData.idSede}
                           onChange={handleInputChange}
-                          options={apiData.sedes.map(s => ({ 
-                            value: s.idSede, 
-                            label: `${s.nombreSede} - ${s.ubicacionSede}` 
+                          options={apiData.sedes.map(s => ({
+                            value: s.idSede,
+                            label: `${s.nombreSede} - ${s.ubicacionSede}`
                           }))}
                           required={true}
                           icon={<FaMapMarkerAlt />}
@@ -2100,19 +2198,19 @@ export default function ReservaForm() {
 
                       {/* Cabañas en formato de cards - Filtradas por sede */}
                       <div style={{ marginBottom: '32px' }}>
-                        <h4 style={{ 
-                          color: '#2E5939', 
+                        <h4 style={{
+                          color: '#2E5939',
                           marginBottom: '24px',
                           fontSize: '20px',
                           fontWeight: '700'
                         }}>
                           🏡 Selecciona tu Cabaña {formData.idSede && `(${filteredData.cabanas.length} disponibles)`}
                         </h4>
-                        
+                       
                         {filteredData.cabanas.length === 0 ? (
-                          <div style={{ 
-                            textAlign: 'center', 
-                            padding: '40px', 
+                          <div style={{
+                            textAlign: 'center',
+                            padding: '40px',
                             backgroundColor: '#F9FBFA',
                             borderRadius: '16px',
                             border: '2px dashed #E8F0E8'
@@ -2122,9 +2220,9 @@ export default function ReservaForm() {
                             <p style={{ color: '#679750' }}>Selecciona otra sede para ver las opciones disponibles.</p>
                           </div>
                         ) : (
-                          <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
                             gap: '24px',
                             marginBottom: '32px'
                           }}>
@@ -2148,19 +2246,19 @@ export default function ReservaForm() {
 
                       {/* Paquetes en formato de cards - Filtrados por sede */}
                       <div style={{ marginBottom: '32px' }}>
-                        <h4 style={{ 
-                          color: '#2E5939', 
+                        <h4 style={{
+                          color: '#2E5939',
                           marginBottom: '24px',
                           fontSize: '20px',
                           fontWeight: '700'
                         }}>
                           📦 Paquetes de Experiencia {formData.idSede && `(${filteredData.paquetes.length} disponibles)`}
                         </h4>
-                        
+                       
                         {filteredData.paquetes.length === 0 ? (
-                          <div style={{ 
-                            textAlign: 'center', 
-                            padding: '40px', 
+                          <div style={{
+                            textAlign: 'center',
+                            padding: '40px',
                             backgroundColor: '#F9FBFA',
                             borderRadius: '16px',
                             border: '2px dashed #E8F0E8'
@@ -2170,9 +2268,9 @@ export default function ReservaForm() {
                             <p style={{ color: '#679750' }}>Selecciona otra sede para ver los paquetes disponibles.</p>
                           </div>
                         ) : (
-                          <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
                             gap: '24px'
                           }}>
                             {filteredData.paquetes.map((paquete) => (
@@ -2199,21 +2297,21 @@ export default function ReservaForm() {
                     </div>
                   )}
 
-                  {/* Paso 4: Servicios Extras */}
-                  {currentStep === 3 && (
-                    <div style={{ 
-                      backgroundColor: '#FBFDF9', 
-                      padding: '36px', 
+                  {/* Paso 3: Servicios Extras */}
+                  {currentStep === 2 && (
+                    <div style={{
+                      backgroundColor: '#FBFDF9',
+                      padding: '36px',
                       borderRadius: '20px',
                       marginBottom: '32px',
                       border: '2px solid rgba(103, 151, 80, 0.2)',
                       boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
                     }}>
-                      <h3 style={{ 
-                        color: '#2E5939', 
-                        marginBottom: '32px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <h3 style={{
+                        color: '#2E5939',
+                        marginBottom: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '16px',
                         fontSize: '24px',
                         fontWeight: '800'
@@ -2236,21 +2334,21 @@ export default function ReservaForm() {
                       </h3>
 
                       <div style={{ marginBottom: '24px' }}>
-                        <p style={{ 
-                          color: '#679750', 
+                        <p style={{
+                          color: '#679750',
                           fontSize: '16px',
                           lineHeight: '1.6',
                           marginBottom: '24px'
                         }}>
-                          Personaliza tu experiencia seleccionando servicios adicionales. 
+                          Personaliza tu experiencia seleccionando servicios adicionales.
                           Estos se aplicarán por cada noche de tu estadía.
                         </p>
                       </div>
 
                       {filteredData.servicios.length === 0 ? (
-                        <div style={{ 
-                          textAlign: 'center', 
-                          padding: '40px', 
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '40px',
                           backgroundColor: '#F9FBFA',
                           borderRadius: '16px',
                           border: '2px dashed #E8F0E8'
@@ -2261,28 +2359,32 @@ export default function ReservaForm() {
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                          {filteredData.servicios.map((servicio) => (
-                            <ServicioExtraCard
-                              key={servicio.idServicio}
-                              servicio={servicio}
-                              isSelected={serviciosSeleccionados.some(s => s.idServicio === servicio.idServicio)}
-                              onToggle={toggleServicioExtra}
-                              diasEstadia={calcularDiasEstadia()}
-                            />
-                          ))}
+                          {filteredData.servicios.map((servicio) => {
+                            const paqueteSeleccionado = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
+                            const diasParaMostrar = paqueteSeleccionado && paqueteSeleccionado.dias ? Number(paqueteSeleccionado.dias) : calcularDiasEstadia();
+                            return (
+                              <ServicioExtraCard
+                                key={servicio.idServicio}
+                                servicio={servicio}
+                                isSelected={serviciosSeleccionados.some(s => s.idServicio === servicio.idServicio)}
+                                onToggle={toggleServicioExtra}
+                                diasEstadia={diasParaMostrar}
+                              />
+                            );
+                          })}
                         </div>
                       )}
 
                       {serviciosSeleccionados.length > 0 && (
-                        <div style={{ 
+                        <div style={{
                           marginTop: '32px',
                           padding: '20px',
                           backgroundColor: '#E8F5E8',
                           borderRadius: '16px',
                           border: '2px solid #2E5939'
                         }}>
-                          <h5 style={{ 
-                            color: '#2E5939', 
+                          <h5 style={{
+                            color: '#2E5939',
                             marginBottom: '12px',
                             fontSize: '18px',
                             fontWeight: '700'
@@ -2319,9 +2421,7 @@ export default function ReservaForm() {
                             }}>
                               <span>Total servicios extras:</span>
                               <span>
-                                +{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => 
-                                  total + (servicio.precioServicio * calcularDiasEstadia()), 0
-                                ))}
+                                +{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => total + (servicio.precioServicio * calcularDiasEstadia()), 0))}
                               </span>
                             </div>
                           </div>
@@ -2330,21 +2430,109 @@ export default function ReservaForm() {
                     </div>
                   )}
 
-                  {/* Paso 5: Confirmación y Pago */}
-                  {currentStep === 4 && (
-                    <div style={{ 
-                      backgroundColor: '#FBFDF9', 
-                      padding: '36px', 
+                  {/* Paso 4: Fechas y Huéspedes */}
+                  {currentStep === 3 && (
+                    <div style={{
+                      backgroundColor: '#FBFDF9',
+                      padding: '36px',
                       borderRadius: '20px',
                       marginBottom: '32px',
                       border: '2px solid rgba(103, 151, 80, 0.2)',
                       boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
                     }}>
-                      <h3 style={{ 
-                        color: '#2E5939', 
-                        marginBottom: '32px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <h3 style={{
+                        color: '#2E5939',
+                        marginBottom: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        fontSize: '24px',
+                        fontWeight: '800'
+                      }}>
+                        <div style={{
+                          backgroundColor: '#2E5939',
+                          color: 'white',
+                          width: '50px',
+                          height: '50px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '20px',
+                          boxShadow: '0 8px 20px rgba(46, 89, 57, 0.3)'
+                        }}>
+                          <FaCalendarAlt />
+                        </div>
+                        Fechas
+                      </h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px' }}>
+                        <FormField
+                          label="Fecha de Llegada"
+                          name="fechaEntrada"
+                          type="date"
+                          value={formData.fechaEntrada}
+                          onChange={handleInputChange}
+                          required={true}
+                          inputProps={{ min: new Date().toISOString().split('T')[0] }}
+                        />
+                        <FormField
+                          label="Fecha de Salida"
+                          name="fechaSalida"
+                          type="date"
+                          value={formData.fechaSalida}
+                          onChange={handleInputChange}
+                          required={true}
+                          inputProps={{
+                            min: formData.fechaEntrada ? formData.fechaEntrada : new Date().toISOString().split('T')[0],
+                            ...(paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && fechaSalidaEsperada
+                              ? { min: fechaSalidaEsperada, max: fechaSalidaEsperada, readOnly: true, disabled: false }
+                              : {}),
+                          }}
+                        />
+                       
+                        {/* Nota cuando es paquete */}
+                        {paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && formData.fechaEntrada && (
+                          <div style={{ gridColumn: '1 / -1', color: '#679750', fontSize: '13px', marginTop: '6px' }}>
+                            ⚠️ Este paquete incluye <strong>{paqueteSeleccionadoForm.dias}</strong> noche(s). La salida será <strong>{fechaSalidaEsperada}</strong> y no se permiten otras fechas.
+                          </div>
+                        )}
+                      </div>
+                      {formData.fechaEntrada && formData.fechaSalida && (
+                        <div style={{
+                          marginTop: '28px',
+                          padding: '24px',
+                          backgroundColor: '#E8F5E8',
+                          borderRadius: '16px',
+                          textAlign: 'center',
+                          border: '3px solid #2E5939',
+                          boxShadow: '0 8px 25px rgba(46, 89, 57, 0.15)'
+                        }}>
+                          <strong style={{ color: '#2E5939', fontSize: '20px', display: 'block', marginBottom: '8px' }}>
+                            🗓️ ¡Perfecto! Tu estadía será de {calcularDiasEstadia()} {calcularDiasEstadia() === 1 ? 'noche' : 'noches'}
+                          </strong>
+                          <span style={{ color: '#679750', fontSize: '15px' }}>
+                            {formData.fechaEntrada} → {formData.fechaSalida}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Paso 5: Confirmación y Pago */}
+                  {currentStep === 4 && (
+                    <div style={{
+                      backgroundColor: '#FBFDF9',
+                      padding: '36px',
+                      borderRadius: '20px',
+                      marginBottom: '32px',
+                      border: '2px solid rgba(103, 151, 80, 0.2)',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
+                    }}>
+                      <h3 style={{
+                        color: '#2E5939',
+                        marginBottom: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '16px',
                         fontSize: '24px',
                         fontWeight: '800'
@@ -2394,9 +2582,9 @@ export default function ReservaForm() {
 
                       {/* Detalles del cálculo */}
                       {formData.montoTotal > 0 && (
-                        <div style={{ 
-                          padding: '24px', 
-                          backgroundColor: '#f8f9fa', 
+                        <div style={{
+                          padding: '24px',
+                          backgroundColor: '#f8f9fa',
                           borderRadius: '16px',
                           fontSize: '15px',
                           color: '#2E5939',
@@ -2408,10 +2596,6 @@ export default function ReservaForm() {
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div>• Días de estadía: <strong>{calcularDiasEstadia()}</strong></div>
-                            <div>• Número de personas: <strong>{formData.numeroPersonas}</strong></div>
-                            {formData.numeroPersonas > 2 && (
-                              <div>• Recargo por personas adicionales: <strong>{formatCurrency((formData.numeroPersonas - 2) * 50000)}</strong></div>
-                            )}
                             {serviciosSeleccionados.length > 0 && (
                               <div>• Servicios extras: <strong>+{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => total + (servicio.precioServicio * calcularDiasEstadia()), 0))}</strong></div>
                             )}
@@ -2422,10 +2606,10 @@ export default function ReservaForm() {
                   )}
 
                   {/* Navegación entre pasos */}
-                  <div style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center", 
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     marginTop: "48px",
                     paddingTop: '32px',
                     borderTop: '3px solid #f0f0f0'
@@ -2539,7 +2723,7 @@ export default function ReservaForm() {
         </div>
 
         {/* Columna derecha - Resumen de la reserva */}
-        <ResumenReserva 
+        <ResumenReserva
           formData={formData}
           calcularDiasEstadia={calcularDiasEstadia}
           formatCurrency={formatCurrency}
@@ -2555,7 +2739,7 @@ export default function ReservaForm() {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
-          
+         
           @keyframes slideInRight {
             from {
               transform: translateX(100%);
@@ -2571,13 +2755,13 @@ export default function ReservaForm() {
             from { opacity: 0; }
             to { opacity: 1; }
           }
-          
+         
           @keyframes scaleIn {
-            from { 
+            from {
               opacity: 0;
               transform: scale(0.8);
             }
-            to { 
+            to {
               opacity: 1;
               transform: scale(1);
             }
@@ -2599,7 +2783,7 @@ export default function ReservaForm() {
             .main-layout {
               grid-template-columns: 1fr !important;
             }
-            
+           
             .resumen-columna {
               order: -1;
               margin-bottom: 32px;
@@ -2610,12 +2794,12 @@ export default function ReservaForm() {
             .form-section {
               padding: 24px !important;
             }
-            
+           
             .header-content {
               flex-direction: column;
               text-align: center;
             }
-            
+           
             .step-indicator {
               padding: 0 10px !important;
             }
