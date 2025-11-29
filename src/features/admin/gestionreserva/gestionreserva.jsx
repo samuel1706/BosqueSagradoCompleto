@@ -967,7 +967,7 @@ const GestionReserva = () => {
         
         displayAlert("Reserva actualizada exitosamente.", "success");
       } else {
-        // POST para crear
+        // POST para crear - CORREGIDO: usar el formato exacto que espera la API
         response = await axios.post(API_RESERVAS, reservaData, {
           headers: { 
             'Content-Type': 'application/json',
@@ -975,12 +975,27 @@ const GestionReserva = () => {
           }
         });
         
+        console.log("Respuesta del servidor:", response.data);
+        
         // Obtener el ID de la reserva creada - CORREGIDO
-        reservaId = response.data.idReserva || response.data?.idReserva;
+        reservaId = response.data.idReserva || response.data;
+        
+        if (!reservaId) {
+          // Si no viene el ID en la respuesta, intentar obtenerlo de otra manera
+          console.warn("No se pudo obtener el ID de la reserva de la respuesta directa");
+          // En este caso, hacemos una nueva consulta para obtener la última reserva
+          const ultimasReservas = await axios.get(API_RESERVAS);
+          if (ultimasReservas.data && ultimasReservas.data.length > 0) {
+            const ultimaReserva = ultimasReservas.data[ultimasReservas.data.length - 1];
+            reservaId = ultimaReserva.idReserva;
+          }
+        }
         
         if (!reservaId) {
           throw new Error("No se pudo obtener el ID de la reserva creada");
         }
+        
+        console.log("ID de reserva creada:", reservaId);
         
         // Crear servicios de reserva
         await manejarServiciosReserva(reservaId);
@@ -1003,7 +1018,7 @@ const GestionReserva = () => {
       
       // Manejo de errores más específico
       if (error.response) {
-        const errorMessage = error.response.data?.mensaje || error.response.data?.message || error.response.data?.title;
+        const errorMessage = error.response.data?.mensaje || error.response.data?.message || error.response.data?.title || error.response.data;
         displayAlert(errorMessage || `Error al ${isEditing ? "actualizar" : "crear"} la reserva`, "error");
       } else {
         handleApiError(error, isEditing ? "actualizar la reserva" : "agregar la reserva");

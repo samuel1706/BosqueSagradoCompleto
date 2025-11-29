@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   FaUser, 
   FaMapMarkerAlt, 
@@ -15,98 +15,142 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaPhone,
-  FaEnvelope
+  FaEnvelope,
+  FaChair
 } from "react-icons/fa";
-import { getUser, saveUser, logout } from "../../utils/auth"; // Cambiar removeUser por logout
+import { getUser, logout } from "../../utils/auth";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
-// Datos de las cabañas
-const cabañas = [
-  {
-    id: 101,
-    name: "Cabaña Ambar Room",
-    description: "Amplia cabaña con jacuzzi privado. Ideal para parejas que buscan privacidad y lujo.",
-    img: "/images/C_Ambar_Room/img1.jpg",
-    price: "$395.000 COP/noche",
-    sede: "Copacabana",
-    tipo: "Premium",
-    capacidad: 2,
-    habitaciones: 1,
-    imagenes: [
-      "/images/C_Ambar_Room/img1.jpg",
-      "/images/C_Ambar_Room/img2.jpg",
-      "/images/C_Ambar_Room/img3.jpg"
-    ],
-    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
-  },
-  {
-    id: 102,
-    name: "Cabaña Bali Suite",
-    description: "Cabaña Premium. Perfecta para una escapada romántica con todas las comodidades.",
-    img: "/images/C_Bali_Suite/img1.jpg",
-    price: "$520.000 COP/noche",
-    sede: "Copacabana",
-    tipo: "Premium",
-    capacidad: 2,
-    habitaciones: 1,
-    imagenes: [
-      "/images/C_Bali_Suite/img1.jpg",
-      "/images/C_Bali_Suite/img2.jpg",
-      "/images/C_Bali_Suite/img3.jpg"
-    ],
-    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
-  },
-  {
-    id: 103,
-    name: "Cabaña Habana Room",
-    description: "Espaciosa cabaña ideal para familias, Perfecta para vacaciones familiares inolvidables.",
-    img: "/images/C_Habana_Room/img1.jpg",
-    price: "$520.000 COP/noche",
-    sede: "Copacabana",
-    tipo: "Familiar",
-    capacidad: 6,
-    habitaciones: 1,
-    imagenes: [
-      "/images/C_Habana_Room/img1.jpg",
-      "/images/C_Habana_Room/img2.jpg",
-      "/images/C_Habana_Room/img3.jpg"
-    ],
-    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Piscina Privada", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
-  },
-  {
-    id: 201,
-    name: "Chalets",
-    description: "Ideal para parejas, con cama king. Un refugio íntimo para reconectar con tu pareja.",
-    img: "/images/S_Chalets/img1.jpg",
-    price: "$380.000 COP/noche",
-    sede: "San Felix",
-    tipo: "Premium",
-    capacidad: 2,
-    habitaciones: 1,
-    imagenes: [
-      "/images/S_Chalets/img1.jpg",
-      "/images/S_Chalets/img2.jpg"
-    ],
-    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
-  },
-  {
-    id: 202,
-    name: "Cabaña Crystal Garden",
-    description: "Perfecta para una escapada romántica con todas las comodidades.",
-    img: "/images/S_Crystal_Garden/img1.jpg",
-    price: "$495.000 COP/noche",
-    sede: "San Felix",
-    tipo: "Premium",
-    capacidad: 2,
-    habitaciones: 1,
-    imagenes: [
-      "/images/S_Crystal_Garden/img1.jpg",
-      "/images/S_Crystal_Garden/img2.jpg"
-    ],
-    comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+// URL base de la API
+const API_BASE_URL = 'http://localhost:5272/api';
+
+// Funciones API para obtener datos
+const fetchCabinsFromAPI = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Cabanas`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo cabañas');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo cabañas:', error);
+    throw error;
   }
-];
+};
+
+const fetchSedesFromAPI = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Sede`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo sedes');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo sedes:', error);
+    throw error;
+  }
+};
+
+const fetchTiposCabanasFromAPI = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/TipoCabana`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo tipos de cabañas');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo tipos de cabañas:', error);
+    throw error;
+  }
+};
+
+const fetchComodidadesFromAPI = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Comodidades`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo comodidades');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo comodidades:', error);
+    throw error;
+  }
+};
+
+const fetchCabanaComodidadesFromAPI = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/CabanaPorComodidades`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo relaciones cabaña-comodidades');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo relaciones cabaña-comodidades:', error);
+    throw error;
+  }
+};
+
+const fetchImagenesFromAPI = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ImgCabana`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo imágenes');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo imágenes:', error);
+    throw error;
+  }
+};
 
 const HomeCliente = () => {
   const user = getUser();
@@ -117,6 +161,126 @@ const HomeCliente = () => {
   const [selectedCabin, setSelectedCabin] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [cabinImageIndex, setCabinImageIndex] = useState(0);
+
+  // Estados para datos de la API
+  const [cabañas, setCabañas] = useState([]);
+  const [sedes, setSedes] = useState([]);
+  const [tiposCabanas, setTiposCabanas] = useState([]);
+  const [comodidades, setComodidades] = useState([]);
+  const [cabanaComodidades, setCabanaComodidades] = useState([]);
+  const [imagenes, setImagenes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState(null);
+
+  // Cargar datos de la API al montar el componente
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [cabinsData, sedesData, tiposData, comodidadesData, cabanaComodidadesData, imagenesData] = await Promise.all([
+          fetchCabinsFromAPI(),
+          fetchSedesFromAPI(),
+          fetchTiposCabanasFromAPI(),
+          fetchComodidadesFromAPI(),
+          fetchCabanaComodidadesFromAPI(),
+          fetchImagenesFromAPI()
+        ]);
+
+        console.log("📊 Datos obtenidos de la API:", {
+          cabañas: cabinsData,
+          sedes: sedesData,
+          tipos: tiposData,
+          comodidades: comodidadesData,
+          relaciones: cabanaComodidadesData,
+          imágenes: imagenesData
+        });
+
+        // Transformar datos de cabañas para que coincidan con la estructura esperada
+        const transformedCabins = cabinsData.map(cabin => {
+          // Obtener comodidades de esta cabaña
+          const comodidadesCabin = cabanaComodidadesData
+            .filter(cc => cc.idCabana === cabin.idCabana)
+            .map(cc => {
+              const comodidad = comodidadesData.find(c => c.idComodidades === cc.idComodidades);
+              return comodidad ? comodidad.nombreComodidades : null;
+            })
+            .filter(Boolean);
+
+          // Obtener imágenes de esta cabaña
+          const imagenesCabin = imagenesData
+            .filter(img => img.idCabana === cabin.idCabana)
+            .map(img => img.rutaImagen);
+
+          // Obtener tipo de cabaña
+          const tipoCabana = tiposData.find(t => t.idTipoCabana === cabin.idTipoCabana);
+          const nombreTipo = tipoCabana ? tipoCabana.nombreTipoCabana : "Estándar";
+
+          // Obtener sede
+          const sede = sedesData.find(s => s.idSede === cabin.idSede);
+          const nombreSede = sede ? sede.nombreSede : "Sede Principal";
+
+          return {
+            id: cabin.idCabana,
+            name: cabin.nombre,
+            description: cabin.descripcion || "Cabaña cómoda y acogedora para tu estadía.",
+            img: imagenesCabin.length > 0 ? imagenesCabin[0] : "/images/default-cabin.jpg",
+            price: `$${(cabin.precio || 0).toLocaleString()} COP/noche`,
+            precioNumerico: cabin.precio || 0,
+            sede: nombreSede,
+            tipo: nombreTipo,
+            capacidad: cabin.capacidad || 2,
+            habitaciones: cabin.habitaciones || 1,
+            imagenes: imagenesCabin.length > 0 ? imagenesCabin : ["/images/default-cabin.jpg"],
+            comodidades: comodidadesCabin.length > 0 ? comodidadesCabin : ["Baño Privado", "Cama King"],
+            // Información adicional de la API
+            idSede: cabin.idSede,
+            idTipoCabana: cabin.idTipoCabana,
+            precio: cabin.precio,
+            descripcionCompleta: cabin.descripcion,
+            estado: cabin.estado
+          };
+        });
+
+        setCabañas(transformedCabins);
+        setSedes(sedesData);
+        setTiposCabanas(tiposData);
+        setComodidades(comodidadesData);
+        setCabanaComodidades(cabanaComodidadesData);
+        setImagenes(imagenesData);
+        setDataError(null);
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+        setDataError('Error al cargar los datos. Mostrando información de ejemplo.');
+        // Datos de ejemplo en caso de error
+        setCabañas(getDefaultCabins());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Datos por defecto en caso de error
+  const getDefaultCabins = () => [
+    {
+      id: 101,
+      name: "Cabaña Ambar Room",
+      description: "Amplia cabaña con jacuzzi privado. Ideal para parejas que buscan privacidad y lujo.",
+      img: "/images/C_Ambar_Room/img1.jpg",
+      price: "$395.000 COP/noche",
+      sede: "Copacabana",
+      tipo: "Premium",
+      capacidad: 2,
+      habitaciones: 1,
+      imagenes: [
+        "/images/C_Ambar_Room/img1.jpg",
+        "/images/C_Ambar_Room/img2.jpg",
+        "/images/C_Ambar_Room/img3.jpg"
+      ],
+      comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+    }
+  ];
 
   // Obtener opciones únicas para filtros
   const sedesUnicas = [...new Set(cabañas.map(cabin => cabin.sede))];
@@ -169,8 +333,11 @@ const HomeCliente = () => {
   };
 
   const handleReserveCabin = () => {
-    setShowPopup(false);
-    navigate("/reservar");
+    if (selectedCabin) {
+      setShowPopup(false);
+      // Pasar la cabaña seleccionada a la página de reserva
+      navigate("/reservar", { state: { cabana: selectedCabin } });
+    }
   };
 
   const handleLogout = () => {
@@ -185,7 +352,7 @@ const HomeCliente = () => {
       cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed) {
-        logout(); // Cambiar removeUser por logout
+        logout();
         navigate("/", { replace: true });
       }
     });
@@ -197,6 +364,20 @@ const HomeCliente = () => {
 
   const handleMisReservas = () => {
     navigate("/mis-reservas");
+  };
+
+  // Estilos para comodidades
+  const comodidadTagStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    backgroundColor: '#E8F5E8',
+    color: '#2E5939',
+    padding: '4px 8px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '500',
+    margin: '2px'
   };
 
   // Si no hay usuario, redirigir al login
@@ -224,6 +405,9 @@ const HomeCliente = () => {
             src="/images/Logo.png" 
             alt="Bosque Sagrado" 
             style={{ width: "45px", height: "45px" }}
+            onError={(e) => {
+              e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
+            }}
           />
           <h1 style={{ color: 'white', margin: 0, fontSize: '1.5rem', fontFamily: "'Playfair Display', serif" }}>
             Bosque Sagrado
@@ -267,6 +451,44 @@ const HomeCliente = () => {
           </button>
         </div>
       </nav>
+
+      {/* Indicador de carga */}
+      {loading && (
+        <div style={{
+          position: "fixed",
+          top: "70px",
+          left: 0,
+          width: "100%",
+          backgroundColor: "#2E5939",
+          color: "white",
+          padding: "10px",
+          textAlign: "center",
+          zIndex: 999,
+          fontSize: "14px",
+          fontWeight: "bold"
+        }}>
+          📡 Cargando datos desde la API...
+        </div>
+      )}
+
+      {/* Indicador de error de datos */}
+      {dataError && (
+        <div style={{
+          position: "fixed",
+          top: "70px",
+          left: 0,
+          width: "100%",
+          backgroundColor: "#ff9800",
+          color: "white",
+          padding: "10px",
+          textAlign: "center",
+          zIndex: 999,
+          fontSize: "14px",
+          fontWeight: "bold"
+        }}>
+          ⚠️ {dataError}
+        </div>
+      )}
 
       {/* Hero Section */}
       <section style={{
@@ -467,15 +689,24 @@ const HomeCliente = () => {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
           {cabañasFiltradas.map((cabin, index) => (
             <div
-              key={index}
+              key={cabin.id}
               style={{
                 backgroundColor: "#fff",
                 borderRadius: "15px",
                 overflow: "hidden",
                 boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-                cursor: "pointer"
+                cursor: "pointer",
+                transition: "transform 0.3s ease, box-shadow 0.3s ease",
               }}
               onClick={() => handleShowCabinDetails(cabin)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 5px 15px rgba(0,0,0,0.1)";
+              }}
             >
               <img
                 src={cabin.img}
@@ -484,6 +715,9 @@ const HomeCliente = () => {
                   width: "100%",
                   height: "250px",
                   objectFit: "cover"
+                }}
+                onError={(e) => {
+                  e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
                 }}
               />
               <div style={{ padding: "1.5rem" }}>
@@ -508,7 +742,34 @@ const HomeCliente = () => {
                     <FaUsers /> {cabin.capacidad} personas
                   </span>
                 </div>
-                <p style={{ color: "#5D6D63", marginBottom: "1.5rem", lineHeight: "1.5", fontSize: "0.9rem" }}>{cabin.description}</p>
+
+                {/* Comodidades en la tarjeta */}
+                {cabin.comodidades && cabin.comodidades.length > 0 && (
+                  <div style={{ marginBottom: "1rem" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+                      {cabin.comodidades.slice(0, 3).map((comodidad, index) => (
+                        <span
+                          key={index}
+                          style={comodidadTagStyle}
+                        >
+                          <FaChair size={8} /> {comodidad}
+                        </span>
+                      ))}
+                      {cabin.comodidades.length > 3 && (
+                        <span style={{
+                          ...comodidadTagStyle,
+                          backgroundColor: '#F7F4EA'
+                        }}>
+                          +{cabin.comodidades.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <p style={{ color: "#5D6D63", marginBottom: "1.5rem", lineHeight: "1.5", fontSize: "0.9rem" }}>
+                  {cabin.description}
+                </p>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#3E7E5C" }}>{cabin.price}</span>
                   <button
@@ -586,6 +847,9 @@ const HomeCliente = () => {
                   height: "300px",
                   objectFit: "cover",
                   borderRadius: "10px",
+                }}
+                onError={(e) => {
+                  e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
                 }}
               />
               {selectedCabin.imagenes.length > 1 && (
@@ -680,7 +944,7 @@ const HomeCliente = () => {
               </div>
              
               <p style={{ lineHeight: "1.6", color: "#2E3A30", marginBottom: "1rem" }}>
-                {selectedCabin.description}
+                {selectedCabin.descripcionCompleta || selectedCabin.description}
               </p>
 
               {/* Comodidades */}
@@ -690,16 +954,9 @@ const HomeCliente = () => {
                   {selectedCabin.comodidades.map((comodidad, index) => (
                     <span
                       key={index}
-                      style={{
-                        backgroundColor: "#E8F5E9",
-                        color: "#2E5939",
-                        padding: "0.3rem 0.8rem",
-                        borderRadius: "15px",
-                        fontSize: "0.9rem",
-                        fontWeight: "500",
-                      }}
+                      style={comodidadTagStyle}
                     >
-                      {comodidad}
+                      <FaChair size={10} /> {comodidad}
                     </span>
                   ))}
                 </div>
@@ -771,6 +1028,9 @@ const HomeCliente = () => {
                   height: "40px",
                   marginRight: "1rem",
                   filter: "brightness(0) invert(1)"
+                }}
+                onError={(e) => {
+                  e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
                 }}
               />
               <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: "bold", fontSize: "1.5rem" }}>

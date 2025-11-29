@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { clearUser } from "../../utils/auth";
+import { clearUser, isAuthenticated, getUserForReservation } from "../../utils/auth";
 import { FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaMapMarkerAlt, FaHome, FaUsers, FaBed, FaStar } from "react-icons/fa";
 
 // Datos de las cabañas actualizados - solo Copacabana y San Felix
@@ -295,6 +295,38 @@ export default function Landing() {
         }
       } else {
         console.log("Logout cancelado");
+      }
+    });
+  };
+
+  // Función para manejar reserva de cabaña
+  const handleReservarCabin = (cabin) => {
+    if (!isAuthenticated()) {
+      Swal.fire({
+        title: "Iniciar sesión requerido",
+        text: "Debes iniciar sesión para realizar una reserva",
+        icon: "warning",
+        confirmButtonText: "Entendido"
+      });
+      return;
+    }
+
+    const userData = getUserForReservation();
+    if (!userData) {
+      Swal.fire({
+        title: "Error",
+        text: "No se pudieron cargar tus datos. Por favor, inicia sesión nuevamente.",
+        icon: "error",
+        confirmButtonText: "Entendido"
+      });
+      return;
+    }
+
+    // Navegar al formulario de reserva con los datos de la cabaña y usuario
+    navigate("/cliente/reserva-form", { 
+      state: { 
+        cabana: cabin,
+        usuario: userData
       }
     });
   };
@@ -712,6 +744,25 @@ export default function Landing() {
                     }}
                   >
                     Cerrar
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleClosePopup();
+                      handleReservarCabin(selectedCabin);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "0.8rem",
+                      backgroundColor: "#3E7E5C",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      fontSize: "1.1rem",
+                    }}
+                  >
+                    Reservar Ahora
                   </button>
                 </div>
               </div>

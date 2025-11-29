@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FaCalendarAlt, FaHome, FaMapMarkerAlt, FaMoneyBillAlt, FaBox,
   FaCreditCard, FaTimes, FaCheck, FaExclamationTriangle, FaUser,
@@ -7,31 +7,33 @@ import {
   FaClock, FaShieldAlt, FaSmile, FaMountain, FaUmbrellaBeach, FaLeaf,
   FaHeart, FaCouch, FaUtensils, FaWifi, FaCar, FaSnowflake,
   FaFire, FaShower, FaTree, FaSun, FaMoon, FaPlus, FaMinus,
-  FaIdCard
+  FaIdCard, FaUpload, FaImage, FaFileInvoiceDollar, FaReceipt,
+  FaInfoCircle
 } from "react-icons/fa";
+import { getUserForReservation, isAuthenticated, getUserInfo } from "../../utils/auth";
 
 // ===============================================
-// ESTILOS PREMIUM
+// ESTILOS PREMIUM - OPTIMIZADOS
 // ===============================================
 const cardStyle = {
-  backgroundColor: '#fff',
-  borderRadius: '24px',
-  boxShadow: '0 20px 60px rgba(46, 89, 57, 0.15)',
+  backgroundColor: '#fff',  
+  borderRadius: '20px',
+  boxShadow: '0 15px 40px rgba(46, 89, 57, 0.12)',
   overflow: 'hidden',
-  border: '1px solid rgba(103, 151, 80, 0.2)',
-  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+  border: '1px solid rgba(103, 151, 80, 0.15)',
+  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
 };
 
 const inputStyle = {
   width: "100%",
-  padding: "18px 20px",
+  padding: "16px 18px",
   border: "2px solid #E8F0E8",
-  borderRadius: "16px",
+  borderRadius: "14px",
   backgroundColor: "#F9FBFA",
   color: "#2E5939",
   boxSizing: 'border-box',
-  boxShadow: "0 4px 15px rgba(46, 89, 57, 0.08)",
-  fontSize: "16px",
+  boxShadow: "0 3px 12px rgba(46, 89, 57, 0.06)",
+  fontSize: "15px",
   transition: "all 0.3s ease",
   fontFamily: 'inherit',
   fontWeight: '500'
@@ -40,68 +42,68 @@ const inputStyle = {
 const inputFocusStyle = {
   outline: "none",
   borderColor: "#2E5939",
-  boxShadow: "0 0 0 4px rgba(46, 89, 57, 0.15)",
+  boxShadow: "0 0 0 3px rgba(46, 89, 57, 0.12)",
   backgroundColor: "#FFFFFF",
-  transform: "translateY(-2px)"
+  transform: "translateY(-1px)"
 };
 
 const labelStyle = {
   display: "block",
   fontWeight: "700",
-  marginBottom: "12px",
+  marginBottom: "10px",
   color: "#2E5939",
-  fontSize: "15px",
-  letterSpacing: "0.5px"
+  fontSize: "14px",
+  letterSpacing: "0.3px"
 };
 
 const alertStyle = {
   position: 'fixed',
-  top: "24px",
-  right: "24px",
-  padding: '20px 24px',
-  borderRadius: '16px',
-  boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+  top: "20px",
+  right: "20px",
+  padding: '16px 20px',
+  borderRadius: '14px',
+  boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
   zIndex: 10000,
   display: 'flex',
   alignItems: 'center',
-  gap: '14px',
+  gap: '12px',
   fontWeight: '600',
-  fontSize: '15px',
-  minWidth: '340px',
-  maxWidth: '500px',
-  borderLeft: '6px solid',
-  backdropFilter: 'blur(12px)',
-  animation: 'slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+  fontSize: '14px',
+  minWidth: '300px',
+  maxWidth: '450px',
+  borderLeft: '5px solid',
+  backdropFilter: 'blur(10px)',
+  animation: 'slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
 };
 
 const btnPrimaryStyle = {
   backgroundColor: "#2E5939",
   color: "white",
-  padding: "20px 40px",
+  padding: "16px 32px",
   border: "none",
-  borderRadius: "16px",
+  borderRadius: "14px",
   cursor: "pointer",
   fontWeight: "700",
-  boxShadow: "0 12px 30px rgba(46, 89, 57, 0.4)",
+  boxShadow: "0 8px 25px rgba(46, 89, 57, 0.3)",
   transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-  fontSize: "16px",
-  minWidth: '200px',
-  letterSpacing: '0.5px',
+  fontSize: "15px",
+  minWidth: '160px',
+  letterSpacing: '0.3px',
   textTransform: 'uppercase'
 };
 
 const btnSecondaryStyle = {
   backgroundColor: "#ffffff",
   color: "#2E5939",
-  padding: "20px 36px",
+  padding: "16px 28px",
   border: "2px solid #2E5939",
-  borderRadius: "16px",
+  borderRadius: "14px",
   cursor: "pointer",
   fontWeight: "700",
   transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-  minWidth: '160px',
-  fontSize: "15px",
-  letterSpacing: '0.5px'
+  minWidth: '140px',
+  fontSize: "14px",
+  letterSpacing: '0.3px'
 };
 
 // ===============================================
@@ -117,101 +119,625 @@ const API_URLS = {
   METODOS_PAGO: `${API_BASE_URL}/metodopago`,
   SEDE_POR_PAQUETE: `${API_BASE_URL}/SedePorPaquete`,
   CABANA_POR_SEDE: `${API_BASE_URL}/CabanaPorSede`,
-  SERVICIOS: `${API_BASE_URL}/Servicio`,
+  SERVICIOS: `${API_BASE_URL}/Servicios`,
   SERVICIOS_RESERVA: `${API_BASE_URL}/ServiciosReserva`,
   SERVICIO_POR_PAQUETE: `${API_BASE_URL}/ServicioPorPaquete`,
   SEDES_POR_SERVICIO: `${API_BASE_URL}/SedesPorServicio`,
-  USUARIOS: `${API_BASE_URL}/Usuarios`
+  USUARIOS: `${API_BASE_URL}/Usuarios`,
+  ABONOS: `${API_BASE_URL}/Abonos`
 };
 
 // ===============================================
-// COMPONENTE DE RECIBO/RESUMEN (IZQUIERDA)
+// Modal para abono - MEJORADO Y MÁS COMPACTO
+// ===============================================
+const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago = [], defaultMetodo = null }) => {
+  const [monto, setMonto] = useState(defaultMonto || 0);
+  const [metodo, setMetodo] = useState(defaultMetodo ?? (metodosPago[0]?.idMetodoPago ?? 0));
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setMonto(defaultMonto || 0);
+    setMetodo(defaultMetodo ?? (metodosPago[0]?.idMetodoPago ?? 0));
+    setFile(null);
+    setPreview(null);
+    setError("");
+  }, [isOpen, defaultMonto, defaultMetodo, metodosPago]);
+
+  const handleFileChange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+   
+    if (!f.type.startsWith('image/')) {
+      setError("❌ Solo se permiten archivos de imagen (JPG, PNG, etc.)");
+      return;
+    }
+   
+    if (f.size > 5 * 1024 * 1024) {
+      setError("❌ El archivo es demasiado grande. Máximo 5MB.");
+      return;
+    }
+   
+    setFile(f);
+    setError("");
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreview(ev.target.result);
+    reader.readAsDataURL(f);
+  };
+
+  const readFileAsBase64 = (f) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  });
+
+  const handleSubmit = async () => {
+    setError("");
+    if (!monto || monto <= 0) {
+      setError("❌ Ingresa un monto válido.");
+      return;
+    }
+    if (!file) {
+      setError("❌ Adjunta la imagen del comprobante.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const base64 = await readFileAsBase64(file);
+      await onSubmit({
+        montoAbono: Number(monto),
+        idMetodoPago: Number(metodo),
+        verificacionBase64: base64
+      });
+    } catch (err) {
+      console.error("Error subida comprobante:", err);
+      setError("❌ No se pudo procesar el comprobante.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+ 
+  return (
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.7)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 20000,
+      padding: "16px",
+      animation: 'fadeIn 0.3s ease-out'
+    }}>
+      <div style={{
+        width: "95%",
+        maxWidth: "900px",
+        maxHeight: "90vh",
+        overflow: "auto",
+        background: "white",
+        borderRadius: "20px",
+        padding: "28px",
+        boxShadow: "0 25px 60px rgba(0,0,0,0.35)",
+        border: "1px solid rgba(103, 151, 80, 0.2)",
+        animation: 'scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+      }}>
+        {/* Header del Modal */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+          paddingBottom: "18px",
+          borderBottom: "2px solid #E8F0E8"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{
+              backgroundColor: '#2E5939',
+              color: 'white',
+              width: '45px',
+              height: '45px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
+            }}>
+              <FaFileInvoiceDollar />
+            </div>
+            <div>
+              <h3 style={{
+                margin: 0,
+                color: "#2E5939",
+                fontSize: "22px",
+                fontWeight: "800"
+              }}>
+                Realizar Abono Inicial
+              </h3>
+              <p style={{
+                margin: "4px 0 0 0",
+                color: "#679750",
+                fontSize: "13px"
+              }}>
+                Completa tu reserva con el depósito del 50%
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#2E5939",
+              fontSize: "18px",
+              padding: "6px",
+              borderRadius: "50%",
+              transition: "all 0.3s ease"
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = "#f5f5f5";
+              e.target.style.transform = "rotate(90deg)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.transform = "rotate(0deg)";
+            }}
+          >
+            <FaTimes />
+          </button>
+        </div>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 300px",
+          gap: "24px",
+          alignItems: "start"
+        }}>
+          {/* Columna Izquierda - Formulario */}
+          <div>
+            <div style={{
+              padding: "18px",
+              backgroundColor: "#F9FBFA",
+              borderRadius: "14px",
+              border: "2px solid #E8F0E8",
+              marginBottom: "18px"
+            }}>
+              <h4 style={{
+                margin: "0 0 10px 0",
+                color: "#2E5939",
+                fontSize: "15px",
+                fontWeight: "700",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}>
+                <FaCreditCard /> Información Bancaria
+              </h4>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+                gap: "10px",
+                color: "#2E5939",
+                fontSize: "13px"
+              }}>
+                <div>
+                  <strong>Banco:</strong> Bancolombia
+                </div>
+                <div>
+                  <strong>Cuenta:</strong> 123-456789-00
+                </div>
+                <div>
+                  <strong>Tipo:</strong> Ahorros
+                </div>
+                <div>
+                  <strong>Titular:</strong> Bosque Sagrado S.A.S
+                </div>
+              </div>
+              <div style={{
+                marginTop: "10px",
+                padding: "10px",
+                backgroundColor: "#FFF3E0",
+                borderRadius: "8px",
+                fontSize: "12px",
+                color: "#FFA000",
+                fontWeight: "600",
+                border: "1px solid #FFA000"
+              }}>
+                💡 <strong>Importante:</strong> Usa el concepto "Reserva EcoGlamping" en la transferencia
+              </div>
+            </div>
+
+            {/* Campos del formulario */}
+            <div style={{ marginBottom: "18px" }}>
+              <label style={labelStyle}>
+                <FaMoneyBillAlt style={{ marginRight: "8px" }} />
+                Monto a Abonar (50% del total)
+              </label>
+              <input
+                type="number"
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  color: "#2E5939"
+                }}
+                min="0"
+                step="1000"
+              />
+            </div>
+
+            <div style={{ marginBottom: "18px" }}>
+              <label style={labelStyle}>
+                <FaCreditCard style={{ marginRight: "8px" }} />
+                Método de Pago
+              </label>
+              <select
+                value={metodo}
+                onChange={(e) => setMetodo(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  appearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E5939' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 16px center',
+                  backgroundSize: '16px',
+                }}
+              >
+                {metodosPago.map(m => (
+                  <option key={m.idMetodoPago} value={m.idMetodoPago}>
+                    {m.nombreMetodoPago}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "18px" }}>
+              <label style={labelStyle}>
+                <FaUpload style={{ marginRight: "8px" }} />
+                Comprobante de Pago
+              </label>
+              <div style={{
+                border: '2px dashed #E8F0E8',
+                borderRadius: '14px',
+                padding: '20px',
+                textAlign: 'center',
+                backgroundColor: '#F9FBFA',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                position: 'relative'
+              }}>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  style={{
+                    display: 'none'
+                  }}
+                  id="comprobante-file"
+                  accept="image/*"
+                />
+                <label
+                  htmlFor="comprobante-file"
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: "10px"
+                  }}
+                >
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    backgroundColor: '#E8F5E8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#2E5939',
+                    fontSize: '20px'
+                  }}>
+                    <FaUpload />
+                  </div>
+                  <div>
+                    <div style={{
+                      color: '#2E5939',
+                      fontWeight: '700',
+                      marginBottom: '4px',
+                      fontSize: "14px"
+                    }}>
+                      {file ? 'Comprobante seleccionado' : 'Haz clic para subir comprobante'}
+                    </div>
+                    <div style={{
+                      color: '#679750',
+                      fontSize: "12px"
+                    }}>
+                      {file ? file.name : 'Formatos: JPG, PNG (Máx. 5MB)'}
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: '14px',
+                backgroundColor: '#ffebee',
+                borderRadius: '10px',
+                border: '2px solid #e57373',
+                color: '#c62828',
+                fontSize: "13px",
+                fontWeight: '600',
+                marginBottom: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: "8px"
+              }}>
+                <FaExclamationTriangle />
+                {error}
+              </div>
+            )}
+
+            {/* Botones de acción */}
+            <div style={{
+              display: "flex",
+              gap: "14px",
+              marginTop: "20px"
+            }}>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                style={{
+                  ...btnPrimaryStyle,
+                  flex: 1,
+                  backgroundColor: submitting ? "#ccc" : "#2E5939",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  opacity: submitting ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: "10px"
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <div style={{
+                      width: '18px',
+                      height: '18px',
+                      border: '2px solid transparent',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <FaReceipt />
+                    Confirmar Abono
+                  </>
+                )}
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  ...btnSecondaryStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: "10px"
+                }}
+              >
+                <FaTimes />
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          {/* Columna Derecha - Vista Previa */}
+          <div>
+            <div style={{
+              backgroundColor: '#FBFDF9',
+              borderRadius: '14px',
+              padding: '18px',
+              border: '2px solid #E8F0E8',
+              height: '100%'
+            }}>
+              <h4 style={{
+                margin: "0 0 14px 0",
+                color: "#2E5939",
+                fontSize: "16px",
+                fontWeight: "700",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}>
+                <FaImage /> Vista Previa del Comprobante
+              </h4>
+             
+              {preview ? (
+                <div>
+                  <img
+                    src={preview}
+                    alt="Vista previa del comprobante"
+                    style={{
+                      width: "100%",
+                      borderRadius: "10px",
+                      border: "2px solid #E8F0E8",
+                      marginBottom: "14px"
+                    }}
+                  />
+                  <div style={{
+                    padding: "10px",
+                    backgroundColor: "#E8F5E8",
+                    borderRadius: "8px",
+                    border: "2px solid #2E5939"
+                  }}>
+                    <div style={{
+                      color: "#2E5939",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px"
+                    }}>
+                      <FaCheck />
+                      Comprobante listo para enviar
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  display: "flex",
+                  height: "180px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px dashed #E8F0E8",
+                  borderRadius: "10px",
+                  color: "#679750",
+                  backgroundColor: "#F9FBFA"
+                }}>
+                  <div style={{ textAlign: "center" }}>
+                    <FaImage size={40} style={{ marginBottom: "10px", opacity: 0.5 }} />
+                    <div style={{ fontSize: "13px", fontWeight: "600" }}>
+                      Vista previa disponible
+                    </div>
+                    <div style={{ fontSize: "11px", marginTop: "4px" }}>
+                      Selecciona un comprobante
+                    </div>
+                  </div>
+                </div>
+              )}
+             
+              {/* Información adicional */}
+              <div style={{
+                marginTop: "18px",
+                padding: "14px",
+                backgroundColor: "#FFF3E0",
+                borderRadius: "10px",
+                border: "2px solid #FFA000"
+              }}>
+                <h5 style={{
+                  color: "#FFA000",
+                  margin: "0 0 6px 0",
+                  fontSize: "13px",
+                  fontWeight: "700"
+                }}>
+                  📋 Información Importante
+                </h5>
+                <ul style={{
+                  color: "#2E5939",
+                  fontSize: "11px",
+                  lineHeight: "1.4",
+                  margin: 0,
+                  paddingLeft: "14px"
+                }}>
+                  <li>Tu reserva se confirmará tras verificar el comprobante</li>
+                  <li>Proceso de verificación: 24-48 horas</li>
+                  <li>Recibirás confirmación por email</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
+// COMPONENTE DE RECIBO/RESUMEN - MÁS COMPACTO
 // ===============================================
 const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRelacionados, serviciosSeleccionados = [] }) => {
   const cabanaSeleccionada = datosRelacionados.cabanas.find(c => c.idCabana === parseInt(formData.idCabana));
   const paqueteSeleccionado = datosRelacionados.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
   const sedeSeleccionada = datosRelacionados.sedes.find(s => s.idSede === parseInt(formData.idSede));
  
-  // Determinar días y capacidad mostrada (usar dias/personas del paquete si existe)
   const diasAsociados = paqueteSeleccionado && paqueteSeleccionado.dias ? parseInt(paqueteSeleccionado.dias) : calcularDiasEstadia();
   const personasAsociadas = paqueteSeleccionado && paqueteSeleccionado.personas ? paqueteSeleccionado.personas : (cabanaSeleccionada ? cabanaSeleccionada.capacidad : 1);
 
-  // Calcular total de servicios extras (usar diasAsociados)
   const totalServiciosExtras = serviciosSeleccionados.reduce((total, servicio) =>
     total + (servicio.precioServicio * diasAsociados), 0
   );
 
-  const totalGeneral = formData.montoTotal + totalServiciosExtras;
-  const abonoInicial = totalGeneral * 0.5;
+  const subtotalAlojamiento = formData.montoTotal || 0;
+  const totalGeneral = subtotalAlojamiento + totalServiciosExtras;
+  const abonoInicial = Math.round(totalGeneral * 0.5);
   const saldoRestante = totalGeneral - abonoInicial;
 
   return (
     <div style={{
       position: 'sticky',
-      top: '24px',
+      top: '20px',
       backgroundColor: '#fff',
-      borderRadius: '20px',
-      padding: '28px',
-      boxShadow: '0 20px 60px rgba(46, 89, 57, 0.15)',
-      border: '1px solid rgba(103, 151, 80, 0.2)',
+      borderRadius: '18px',
+      padding: '24px',
+      boxShadow: '0 15px 40px rgba(46, 89, 57, 0.12)',
+      border: '1px solid rgba(103, 151, 80, 0.15)',
       height: 'fit-content',
-      minWidth: '380px'
+      minWidth: '340px'
     }}>
       {/* Header del recibo */}
       <div style={{
         textAlign: 'center',
-        marginBottom: '24px',
-        paddingBottom: '20px',
+        marginBottom: '20px',
+        paddingBottom: '18px',
         borderBottom: '2px solid #E8F0E8'
       }}>
         <h3 style={{
-          margin: '0 0 8px 0',
+          margin: '0 0 6px 0',
           color: '#2E5939',
-          fontSize: '20px',
-          fontWeight: '800'
+          fontSize: "18px",
+          fontWeight: "800"
         }}>
           Resumen de tu Reserva
         </h3>
         <p style={{
           margin: 0,
           color: '#679750',
-          fontSize: '14px',
-          fontWeight: '500'
+          fontSize: "13px",
+          fontWeight: "500"
         }}>
           Detalles y costos de tu experiencia
         </p>
       </div>
 
-      {/* Información de duración y personas: mostrar si hay paquete seleccionado o si hay fechas */}
+      {/* Información de duración y personas */}
       {(paqueteSeleccionado || (formData.fechaEntrada && formData.fechaSalida)) && (
         <div style={{
           backgroundColor: '#F9FBFA',
-          padding: '16px',
-          borderRadius: '12px',
-          marginBottom: '20px',
+          padding: "14px",
+          borderRadius: "10px",
+          marginBottom: "18px",
           border: '1px solid #E8F0E8'
         }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '8px'
+            marginBottom: "6px"
           }}>
-            <span style={{ color: '#2E5939', fontWeight: '600', fontSize: '14px' }}>
+            <span style={{ color: '#2E5939', fontWeight: "600", fontSize: "13px" }}>
               {formData.fechaEntrada && formData.fechaSalida ? `${formData.fechaEntrada} → ${formData.fechaSalida}` : (paqueteSeleccionado ? `Paquete: ${paqueteSeleccionado.nombrePaquete}` : 'Fechas por seleccionar')}
             </span>
             <span style={{
               backgroundColor: '#2E5939',
               color: 'white',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '700'
+              padding: "3px 10px",
+              borderRadius: '18px',
+              fontSize: "11px",
+              fontWeight: "700"
             }}>
               {diasAsociados} noche{diasAsociados !== 1 ? 's' : ''}
             </span>
           </div>
-          <div style={{ color: '#679750', fontSize: '13px', fontWeight: '500' }}>
+          <div style={{ color: '#679750', fontSize: "12px", fontWeight: "500" }}>
             {personasAsociadas} huésped{personasAsociadas !== 1 ? 'es' : ''}
           </div>
         </div>
@@ -219,51 +745,51 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 
       {/* Alojamiento seleccionado */}
       {(cabanaSeleccionada || paqueteSeleccionado) && (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: "18px" }}>
           <h4 style={{
-            margin: '0 0 12px 0',
+            margin: '0 0 10px 0',
             color: '#2E5939',
-            fontSize: '16px',
-            fontWeight: '700'
+            fontSize: "15px",
+            fontWeight: "700"
           }}>
             Alojamiento
           </h4>
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
-            gap: '12px',
-            padding: '16px',
+            gap: "10px",
+            padding: "14px",
             backgroundColor: '#F9FBFA',
-            borderRadius: '12px',
+            borderRadius: "10px",
             border: '1px solid #E8F0E8'
           }}>
             <div style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '10px',
+              width: '45px',
+              height: '45px',
+              borderRadius: "8px",
               backgroundColor: '#2E5939',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              fontSize: '20px',
+              fontSize: "18px",
               flexShrink: 0
             }}>
               {cabanaSeleccionada ? <FaHome /> : <FaStar />}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{
-                fontWeight: '700',
+                fontWeight: "700",
                 color: '#2E5939',
-                fontSize: '15px',
-                marginBottom: '4px'
+                fontSize: "14px",
+                marginBottom: "3px"
               }}>
                 {cabanaSeleccionada ? cabanaSeleccionada.nombre : paqueteSeleccionado.nombrePaquete}
               </div>
               <div style={{
                 color: '#679750',
-                fontSize: '13px',
-                lineHeight: '1.4'
+                fontSize: "12px",
+                lineHeight: "1.4"
               }}>
                 {cabanaSeleccionada ?
                   (cabanaSeleccionada.descripcion || "Cabaña premium en la naturaleza") :
@@ -277,30 +803,30 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 
       {/* Ubicación */}
       {sedeSeleccionada && (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: "18px" }}>
           <h4 style={{
-            margin: '0 0 12px 0',
+            margin: '0 0 10px 0',
             color: '#2E5939',
-            fontSize: '16px',
-            fontWeight: '700'
+            fontSize: "15px",
+            fontWeight: "700"
           }}>
             Ubicación
           </h4>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            padding: '16px',
+            gap: "10px",
+            padding: "14px",
             backgroundColor: '#F9FBFA',
-            borderRadius: '12px',
+            borderRadius: "10px",
             border: '1px solid #E8F0E8'
           }}>
-            <FaMapMarkerAlt style={{ color: '#2E5939', fontSize: '18px', flexShrink: 0 }} />
+            <FaMapMarkerAlt style={{ color: '#2E5939', fontSize: "16px", flexShrink: 0 }} />
             <div>
-              <div style={{ fontWeight: '600', color: '#2E5939', fontSize: '14px' }}>
+              <div style={{ fontWeight: "600", color: '#2E5939', fontSize: "13px" }}>
                 {sedeSeleccionada.nombreSede}
               </div>
-              <div style={{ color: '#679750', fontSize: '13px' }}>
+              <div style={{ color: '#679750', fontSize: "12px" }}>
                 {sedeSeleccionada.ubicacionSede}
               </div>
             </div>
@@ -309,47 +835,47 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
       )}
 
       {/* Desglose de costos */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: "20px" }}>
         <h4 style={{
-          margin: '0 0 16px 0',
+          margin: '0 0 14px 0',
           color: '#2E5939',
-          fontSize: '16px',
-          fontWeight: '700'
+          fontSize: "15px",
+          fontWeight: "700"
         }}>
           Desglose de Costos
         </h4>
 
         {/* Subtotal alojamiento */}
-        {formData.montoTotal > 0 && (
+        {subtotalAlojamiento > 0 && (
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '12px',
-            paddingBottom: '12px',
+            marginBottom: "10px",
+            paddingBottom: "10px",
             borderBottom: '1px solid #E8F0E8'
           }}>
-            <span style={{ color: '#2E5939', fontSize: '14px' }}>Subtotal alojamiento</span>
-            <span style={{ color: '#2E5939', fontWeight: '700', fontSize: '14px' }}>
-              {formatCurrency(formData.montoTotal)}
+            <span style={{ color: '#2E5939', fontSize: "13px" }}>Subtotal alojamiento</span>
+            <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
+              {formatCurrency(subtotalAlojamiento)}
             </span>
           </div>
         )}
 
         {/* Servicios extras */}
         {serviciosSeleccionados.length > 0 && (
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: "10px" }}>
             {serviciosSeleccionados.map((servicio, index) => (
               <div key={index} style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '8px'
+                marginBottom: "6px"
               }}>
-                <span style={{ color: '#679750', fontSize: '13px' }}>
+                <span style={{ color: '#679750', fontSize: "12px" }}>
                   + {servicio.nombreServicio}
                 </span>
-                <span style={{ color: '#679750', fontWeight: '600', fontSize: '13px' }}>
+                <span style={{ color: '#679750', fontWeight: "600", fontSize: "12px" }}>
                   {formatCurrency(servicio.precioServicio * diasAsociados)}
                 </span>
               </div>
@@ -358,30 +884,45 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '12px',
-              paddingBottom: '12px',
+              marginBottom: "10px",
+              paddingBottom: "10px",
               borderBottom: '1px solid #E8F0E8'
             }}>
-              <span style={{ color: '#2E5939', fontSize: '14px' }}>Total servicios</span>
-              <span style={{ color: '#2E5939', fontWeight: '700', fontSize: '14px' }}>
+              <span style={{ color: '#2E5939', fontSize: "13px" }}>Total servicios</span>
+              <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
                 +{formatCurrency(totalServiciosExtras)}
               </span>
             </div>
           </div>
         )}
 
+        {/* Total antes de impuestos */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: "10px",
+          paddingBottom: "10px",
+          borderBottom: '1px solid #E8F0E8'
+        }}>
+          <span style={{ color: '#2E5939', fontSize: "13px", fontWeight: "600" }}>Subtotal</span>
+          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
+            {formatCurrency(totalGeneral)}
+          </span>
+        </div>
+
         {/* Impuestos y tasas */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px',
-          paddingBottom: '16px',
+          marginBottom: "14px",
+          paddingBottom: "14px",
           borderBottom: '2px solid #E8F0E8'
         }}>
-          <span style={{ color: '#2E5939', fontSize: '14px' }}>Impuestos y tasas</span>
-          <span style={{ color: '#2E5939', fontWeight: '700', fontSize: '14px' }}>
-            {formatCurrency(totalGeneral * 0.19)} {/* 19% de impuestos */}
+          <span style={{ color: '#2E5939', fontSize: "13px" }}>Impuestos y tasas (19%)</span>
+          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
+            {formatCurrency(totalGeneral * 0.19)}
           </span>
         </div>
 
@@ -390,59 +931,60 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '20px',
-          padding: '16px',
+          marginBottom: "18px",
+          padding: "14px",
           backgroundColor: '#2E5939',
-          borderRadius: '12px',
+          borderRadius: "10px",
           color: 'white'
         }}>
-          <span style={{ fontWeight: '700', fontSize: '16px' }}>TOTAL</span>
-          <span style={{ fontWeight: '900', fontSize: '20px' }}>
+          <span style={{ fontWeight: "700", fontSize: "15px" }}>TOTAL</span>
+          <span style={{ fontWeight: "900", fontSize: "18px" }}>
             {formatCurrency(totalGeneral + (totalGeneral * 0.19))}
           </span>
         </div>
 
         {/* Información de pago */}
         <div style={{
-          padding: '16px',
+          padding: "14px",
           backgroundColor: '#FFF3E0',
-          borderRadius: '12px',
+          borderRadius: "10px",
           border: '2px solid #FFA000'
         }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '8px'
+            marginBottom: "6px"
           }}>
-            <span style={{ color: '#FFA000', fontWeight: '600', fontSize: '14px' }}>
+            <span style={{ color: '#FFA000', fontWeight: "600", fontSize: "13px" }}>
               Depósito inicial (50%)
             </span>
-            <span style={{ color: '#FFA000', fontWeight: '800', fontSize: '15px' }}>
+            <span style={{ color: '#FFA000', fontWeight: "800", fontSize: "14px" }}>
               {formatCurrency(abonoInicial)}
             </span>
           </div>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            marginBottom: "6px"
           }}>
-            <span style={{ color: '#FFA000', fontWeight: '600', fontSize: '14px' }}>
+            <span style={{ color: '#FFA000', fontWeight: "600", fontSize: "13px" }}>
               Saldo restante
             </span>
-            <span style={{ color: '#FFA000', fontWeight: '800', fontSize: '15px' }}>
+            <span style={{ color: '#FFA000', fontWeight: "800", fontSize: "14px" }}>
               {formatCurrency(saldoRestante)}
             </span>
           </div>
           <div style={{
-            marginTop: '8px',
-            padding: '8px',
+            marginTop: "6px",
+            padding: "6px",
             backgroundColor: 'rgba(255, 255, 255, 0.5)',
-            borderRadius: '8px',
+            borderRadius: "6px",
             textAlign: 'center'
           }}>
-            <span style={{ color: '#FFA000', fontSize: '12px', fontWeight: '600' }}>
-              💳 Pago seguro online
+            <span style={{ color: '#FFA000', fontSize: "11px", fontWeight: "600" }}>
+              💳 Abono requerido para confirmar reserva
             </span>
           </div>
         </div>
@@ -450,27 +992,27 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 
       {/* Información adicional */}
       <div style={{
-        padding: '16px',
+        padding: "14px",
         backgroundColor: '#E8F5E8',
-        borderRadius: '12px',
+        borderRadius: "10px",
         border: '2px solid #2E5939'
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          marginBottom: '8px'
+          gap: "8px",
+          marginBottom: "6px"
         }}>
           <FaShieldAlt style={{ color: '#2E5939' }} />
-          <span style={{ color: '#2E5939', fontWeight: '700', fontSize: '14px' }}>
+          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
             Reserva Protegida
           </span>
         </div>
         <p style={{
           margin: 0,
           color: '#679750',
-          fontSize: '12px',
-          lineHeight: '1.4'
+          fontSize: "11px",
+          lineHeight: "1.4"
         }}>
           Tu reserva está 100% protegida. Cancelación gratuita hasta 48 horas antes del check-in.
         </p>
@@ -480,41 +1022,41 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 };
 
 // ===============================================
-// COMPONENTES INTERACTIVOS
+// COMPONENTES INTERACTIVOS (OPTIMIZADOS)
 // ===============================================
 
-// Componente de progreso con pasos
+// Componente de progreso con pasos - MÁS COMPACTO
 const StepIndicator = ({ currentStep, totalSteps, steps }) => (
   <div style={{
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '50px',
+    marginBottom: '40px',
     position: 'relative',
-    padding: '0 30px'
+    padding: '0 20px'
   }}>
     <div style={{
       position: 'absolute',
       top: '50%',
       left: '0',
       right: '0',
-      height: '6px',
+      height: '4px',
       backgroundColor: '#E8F0E8',
       transform: 'translateY(-50%)',
       zIndex: 1,
-      borderRadius: '3px'
+      borderRadius: '2px'
     }}></div>
     <div style={{
       position: 'absolute',
       top: '50%',
       left: '0',
-      height: '6px',
+      height: '4px',
       backgroundColor: '#2E5939',
       transform: 'translateY(-50%)',
       zIndex: 2,
       width: `${(currentStep / (totalSteps - 1)) * 100}%`,
-      transition: 'width 0.5s ease',
-      borderRadius: '3px'
+      transition: 'width 0.4s ease',
+      borderRadius: '2px'
     }}></div>
    
     {steps.map((step, index) => (
@@ -526,26 +1068,26 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
         position: 'relative'
       }}>
         <div style={{
-          width: '60px',
-          height: '60px',
+          width: '50px',
+          height: '50px',
           borderRadius: '50%',
           backgroundColor: index <= currentStep ? '#2E5939' : '#E8F0E8',
           color: index <= currentStep ? 'white' : '#679750',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontWeight: '700',
-          fontSize: '20px',
-          boxShadow: index <= currentStep ? '0 12px 25px rgba(46, 89, 57, 0.3)' : '0 4px 15px rgba(0,0,0,0.1)',
+          fontWeight: "700",
+          fontSize: "18px",
+          boxShadow: index <= currentStep ? '0 8px 20px rgba(46, 89, 57, 0.25)' : '0 3px 12px rgba(0,0,0,0.08)',
           transition: 'all 0.3s ease',
-          border: index === currentStep ? '4px solid #2E5939' : 'none'
+          border: index === currentStep ? '3px solid #2E5939' : 'none'
         }}>
           {index < currentStep ? <FaCheck /> : step.icon}
         </div>
         <span style={{
-          marginTop: '12px',
-          fontSize: '14px',
-          fontWeight: '700',
+          marginTop: "10px",
+          fontSize: "13px",
+          fontWeight: "700",
           color: index <= currentStep ? '#2E5939' : '#679750',
           textAlign: 'center'
         }}>
@@ -556,7 +1098,7 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
   </div>
 );
 
-// Componente de tarjeta de selección premium
+// Componente de tarjeta de selección premium - MÁS COMPACTO
 const SelectionCard = ({
   title,
   description,
@@ -573,42 +1115,42 @@ const SelectionCard = ({
     onClick={disabled ? null : onSelect}
     style={{
       border: isSelected ? '3px solid #2E5939' : '2px solid #E8F0E8',
-      borderRadius: '20px',
-      padding: '28px',
+      borderRadius: '18px',
+      padding: '24px',
       cursor: disabled ? 'not-allowed' : 'pointer',
-      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+      transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       backgroundColor: disabled ? '#f5f5f5' : (isSelected ? '#F9FBFA' : 'white'),
       position: 'relative',
-      transform: isSelected ? 'translateY(-8px) scale(1.02)' : 'translateY(0)',
-      boxShadow: isSelected ? '0 25px 50px rgba(46, 89, 57, 0.2)' : '0 8px 30px rgba(0,0,0,0.1)',
+      transform: isSelected ? 'translateY(-6px) scale(1.02)' : 'translateY(0)',
+      boxShadow: isSelected ? '0 20px 40px rgba(46, 89, 57, 0.15)' : '0 6px 25px rgba(0,0,0,0.08)',
       opacity: disabled ? 0.6 : 1
     }}
     onMouseEnter={(e) => {
       if (!isSelected && !disabled) {
-        e.currentTarget.style.transform = 'translateY(-5px)';
-        e.currentTarget.style.boxShadow = '0 15px 40px rgba(0,0,0,0.15)';
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.12)';
       }
     }}
     onMouseLeave={(e) => {
       if (!isSelected && !disabled) {
         e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.1)';
+        e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.08)';
       }
     }}
   >
     {popular && (
       <div style={{
         position: 'absolute',
-        top: '-12px',
-        right: '20px',
+        top: '-10px',
+        right: '18px',
         backgroundColor: '#FFA000',
         color: 'white',
-        padding: '8px 20px',
-        borderRadius: '25px',
-        fontSize: '12px',
-        fontWeight: '800',
+        padding: "6px 16px",
+        borderRadius: '20px',
+        fontSize: "11px",
+        fontWeight: "800",
         textTransform: 'uppercase',
-        boxShadow: '0 4px 15px rgba(255, 160, 0, 0.3)'
+        boxShadow: '0 3px 12px rgba(255, 160, 0, 0.25)'
       }}>
         ⭐ Más Popular
       </div>
@@ -617,16 +1159,16 @@ const SelectionCard = ({
     {disabled && (
       <div style={{
         position: 'absolute',
-        top: '-12px',
-        left: '20px',
+        top: '-10px',
+        left: '18px',
         backgroundColor: '#f44336',
         color: 'white',
-        padding: '8px 16px',
-        borderRadius: '25px',
-        fontSize: '12px',
-        fontWeight: '800',
+        padding: "6px 14px",
+        borderRadius: '20px',
+        fontSize: "11px",
+        fontWeight: "800",
         textTransform: 'uppercase',
-        boxShadow: '0 4px 15px rgba(244, 67, 54, 0.3)',
+        boxShadow: '0 3px 12px rgba(244, 67, 54, 0.25)',
         zIndex: 2
       }}>
         No Disponible
@@ -635,9 +1177,9 @@ const SelectionCard = ({
    
     <div style={{
       width: '100%',
-      height: '140px',
-      borderRadius: '16px',
-      marginBottom: '20px',
+      height: '120px',
+      borderRadius: "14px",
+      marginBottom: "18px",
       background: disabled
         ? 'linear-gradient(135deg, #cccccc 0%, #999999 100%)'
         : 'linear-gradient(135deg, #2E5939 0%, #679750 100%)',
@@ -645,57 +1187,57 @@ const SelectionCard = ({
       alignItems: 'center',
       justifyContent: 'center',
       color: 'white',
-      fontSize: '54px',
+      fontSize: "48px",
       position: 'relative',
       overflow: 'hidden'
     }}>
       {image}
       <div style={{
         position: 'absolute',
-        bottom: '12px',
-        right: '12px',
+        bottom: "10px",
+        right: "10px",
         backgroundColor: 'rgba(255,255,255,0.2)',
-        padding: '6px 12px',
-        borderRadius: '20px',
-        fontSize: '12px',
-        fontWeight: '700',
-        backdropFilter: 'blur(10px)'
+        padding: "4px 10px",
+        borderRadius: '18px',
+        fontSize: "11px",
+        fontWeight: "700",
+        backdropFilter: 'blur(8px)'
       }}>
         {capacity} personas
       </div>
     </div>
    
     <h4 style={{
-      margin: '0 0 12px 0',
+      margin: '0 0 10px 0',
       color: disabled ? '#999' : '#2E5939',
-      fontSize: '20px',
-      fontWeight: '800'
+      fontSize: "18px",
+      fontWeight: "800"
     }}>
       {title}
     </h4>
    
     <p style={{
-      margin: '0 0 20px 0',
+      margin: '0 0 18px 0',
       color: disabled ? '#bbb' : '#679750',
-      fontSize: '15px',
-      lineHeight: '1.6'
+      fontSize: "14px",
+      lineHeight: "1.5"
     }}>
       {description}
     </p>
    
     {features.length > 0 && (
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: "18px" }}>
         {features.map((feature, index) => (
           <div key={index} style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            marginBottom: '8px',
-            fontSize: '14px',
+            gap: "8px",
+            marginBottom: "6px",
+            fontSize: "13px",
             color: disabled ? '#bbb' : '#2E5939',
-            fontWeight: '500'
+            fontWeight: "500"
           }}>
-            <FaCheck style={{ color: disabled ? '#bbb' : '#4CAF50', fontSize: '14px' }} />
+            <FaCheck style={{ color: disabled ? '#bbb' : '#4CAF50', fontSize: "12px" }} />
             {feature}
           </div>
         ))}
@@ -708,30 +1250,30 @@ const SelectionCard = ({
       alignItems: 'center'
     }}>
       <span style={{
-        fontSize: '24px',
-        fontWeight: '900',
+        fontSize: "22px",
+        fontWeight: "900",
         color: disabled ? '#999' : '#2E5939'
       }}>
         {price}
       </span>
       <div style={{
-        width: '28px',
-        height: '28px',
+        width: '24px',
+        height: '24px',
         borderRadius: '50%',
-        border: `3px solid ${disabled ? '#ccc' : '#2E5939'}`,
+        border: `2px solid ${disabled ? '#ccc' : '#2E5939'}`,
         backgroundColor: isSelected ? '#2E5939' : 'transparent',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         transition: 'all 0.3s ease'
       }}>
-        {isSelected && <FaCheck style={{ color: 'white', fontSize: '14px' }} />}
+        {isSelected && <FaCheck style={{ color: 'white', fontSize: "12px" }} />}
       </div>
     </div>
   </div>
 );
 
-// Componente de servicio extra
+// Componente de servicio extra - MÁS COMPACTO
 const ServicioExtraCard = ({
   servicio,
   isSelected,
@@ -745,32 +1287,32 @@ const ServicioExtraCard = ({
       onClick={() => onToggle(servicio)}
       style={{
         border: isSelected ? '3px solid #2E5939' : '2px solid #E8F0E8',
-        borderRadius: '16px',
-        padding: '20px',
+        borderRadius: "14px",
+        padding: "18px",
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         backgroundColor: isSelected ? '#F9FBFA' : 'white',
         display: 'flex',
         alignItems: 'center',
-        gap: '16px'
+        gap: "14px"
       }}
       onMouseEnter={(e) => {
         if (!isSelected) {
           e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.08)';
         }
       }}
       onMouseLeave={(e) => {
         if (!isSelected) {
           e.currentTarget.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
+          e.target.style.boxShadow = '0 3px 12px rgba(0,0,0,0.04)';
         }
       }}
     >
       <div style={{
-        width: '24px',
-        height: '24px',
-        borderRadius: '6px',
+        width: '22px',
+        height: '22px',
+        borderRadius: "5px",
         border: '2px solid #2E5939',
         backgroundColor: isSelected ? '#2E5939' : 'transparent',
         display: 'flex',
@@ -778,7 +1320,7 @@ const ServicioExtraCard = ({
         justifyContent: 'center',
         flexShrink: 0
       }}>
-        {isSelected && <FaCheck style={{ color: 'white', fontSize: '12px' }} />}
+        {isSelected && <FaCheck style={{ color: 'white', fontSize: "11px" }} />}
       </div>
      
       <div style={{ flex: 1 }}>
@@ -786,20 +1328,20 @@ const ServicioExtraCard = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '8px'
+          marginBottom: "6px"
         }}>
           <h5 style={{
             margin: 0,
             color: '#2E5939',
-            fontSize: '16px',
-            fontWeight: '700'
+            fontSize: "15px",
+            fontWeight: "700"
           }}>
             {servicio.nombreServicio}
           </h5>
           <span style={{
             color: '#2E5939',
-            fontWeight: '800',
-            fontSize: '16px'
+            fontWeight: "800",
+            fontSize: "15px"
           }}>
             ${servicio.precioServicio.toLocaleString()} / noche
           </span>
@@ -807,17 +1349,17 @@ const ServicioExtraCard = ({
         <p style={{
           margin: 0,
           color: '#679750',
-          fontSize: '14px',
-          lineHeight: '1.5'
+          fontSize: "13px",
+          lineHeight: "1.4"
         }}>
           {servicio.descripcion}
         </p>
         {diasEstadia > 1 && (
           <div style={{
-            marginTop: '8px',
-            fontSize: '13px',
+            marginTop: "6px",
+            fontSize: "12px",
             color: '#FFA000',
-            fontWeight: '600'
+            fontWeight: "600"
           }}>
             Total por {diasEstadia} noches: ${precioTotal.toLocaleString()}
           </div>
@@ -827,7 +1369,7 @@ const ServicioExtraCard = ({
   );
 };
 
-// Diálogo de cancelación premium
+// Diálogo de cancelación premium - MÁS COMPACTO
 const AlertDialog = ({
   isOpen,
   title = "¿Estás seguro de que quieres cancelar?",
@@ -851,72 +1393,72 @@ const AlertDialog = ({
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 10001,
-      padding: '20px',
+      padding: "16px",
       animation: 'fadeIn 0.3s ease-out'
     }}>
       <div style={{
         backgroundColor: 'white',
-        borderRadius: '24px',
-        padding: '36px',
-        boxShadow: '0 30px 80px rgba(0, 0, 0, 0.4)',
-        maxWidth: '480px',
+        borderRadius: "20px",
+        padding: "32px",
+        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35)',
+        maxWidth: '440px',
         width: '100%',
         border: '1px solid #e0e0e0',
         animation: 'scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         textAlign: 'center'
       }}>
         <div style={{
-          width: '80px',
-          height: '80px',
+          width: '70px',
+          height: '70px',
           borderRadius: '50%',
           backgroundColor: '#fff3cd',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           border: '3px solid #ffc107',
-          margin: '0 auto 20px'
+          margin: '0 auto 18px'
         }}>
           <FaExclamationTriangle style={{
             color: '#856404',
-            fontSize: '32px'
+            fontSize: "28px"
           }} />
         </div>
 
         <h3 style={{
-          margin: '0 0 16px 0',
+          margin: '0 0 14px 0',
           color: '#2E5939',
-          fontSize: '22px',
-          fontWeight: '800'
+          fontSize: "20px",
+          fontWeight: "800"
         }}>
           {title}
         </h3>
 
         <p style={{
-          margin: '0 0 32px 0',
+          margin: '0 0 28px 0',
           color: '#666',
-          fontSize: '16px',
-          lineHeight: '1.6'
+          fontSize: "15px",
+          lineHeight: "1.5"
         }}>
           {message}
         </p>
 
         <div style={{
           display: 'flex',
-          gap: '16px',
+          gap: "14px",
           justifyContent: 'center'
         }}>
           <button
             onClick={onCancel}
             style={{
-              padding: '16px 32px',
+              padding: "14px 28px",
               border: '2px solid #2E5939',
               backgroundColor: 'white',
               color: '#2E5939',
-              borderRadius: '12px',
+              borderRadius: "10px",
               cursor: 'pointer',
-              fontWeight: '700',
-              fontSize: '15px',
-              minWidth: '140px',
+              fontWeight: "700",
+              fontSize: "14px",
+              minWidth: '120px',
               transition: 'all 0.3s ease'
             }}
             onMouseOver={(e) => {
@@ -933,27 +1475,27 @@ const AlertDialog = ({
           <button
             onClick={onConfirm}
             style={{
-              padding: '16px 32px',
+              padding: "14px 28px",
               border: 'none',
               backgroundColor: '#2E5939',
               color: 'white',
-              borderRadius: '12px',
+              borderRadius: "10px",
               cursor: 'pointer',
-              fontWeight: '700',
-              fontSize: '15px',
-              minWidth: '140px',
+              fontWeight: "700",
+              fontSize: "14px",
+              minWidth: '120px',
               transition: 'all 0.3s ease',
-              boxShadow: '0 6px 20px rgba(46, 89, 57, 0.3)'
+              boxShadow: '0 5px 18px rgba(46, 89, 57, 0.25)'
             }}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = '#1e4629';
               e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 8px 25px rgba(46, 89, 57, 0.4)';
+              e.target.style.boxShadow = '0 7px 22px rgba(46, 89, 57, 0.35)';
             }}
             onMouseOut={(e) => {
               e.target.style.backgroundColor = '#2E5939';
               e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 6px 20px rgba(46, 89, 57, 0.3)';
+              e.target.style.boxShadow = '0 5px 18px rgba(46, 89, 57, 0.25)';
             }}
           >
             {confirmText}
@@ -964,7 +1506,7 @@ const AlertDialog = ({
   );
 };
 
-// Componente FormField mejorado
+// Componente FormField mejorado - MÁS COMPACTO
 const FormField = ({
   label,
   name,
@@ -995,11 +1537,11 @@ const FormField = ({
   };
 
   return (
-    <div style={{ marginBottom: '24px', ...style }}>
+    <div style={{ marginBottom: '20px', ...style }}>
       <label style={labelStyle}>
-        {icon && <span style={{ marginRight: '12px', color: '#679750' }}>{icon}</span>}
+        {icon && <span style={{ marginRight: "10px", color: '#679750' }}>{icon}</span>}
         {label}
-        {required && <span style={{ color: "#e57373", marginLeft: '6px' }}>*</span>}
+        {required && <span style={{ color: "#e57373", marginLeft: '4px' }}>*</span>}
       </label>
       {type === "select" ? (
         <select
@@ -1011,8 +1553,8 @@ const FormField = ({
             appearance: 'none',
             backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E5939' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
             backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 20px center',
-            backgroundSize: '20px',
+            backgroundPosition: 'right 16px center',
+            backgroundSize: "16px",
             cursor: disabled ? 'not-allowed' : 'pointer',
             borderColor: !isValid ? '#e57373' : '#E8F0E8'
           }}
@@ -1020,7 +1562,7 @@ const FormField = ({
           onBlur={(e) => {
             e.target.style.outline = "none";
             e.target.style.borderColor = !isValid ? '#e57373' : "#E8F0E8";
-            e.target.style.boxShadow = "0 4px 15px rgba(46, 89, 57, 0.08)";
+            e.target.style.boxShadow = "0 3px 12px rgba(46, 89, 57, 0.06)";
             e.target.style.transform = "translateY(0)";
           }}
           required={required}
@@ -1042,7 +1584,7 @@ const FormField = ({
           placeholder={placeholder}
           style={{
             ...inputStyle,
-            minHeight: '120px',
+            minHeight: '100px',
             resize: 'vertical',
             fontFamily: 'inherit',
             borderColor: !isValid ? '#e57373' : '#E8F0E8'
@@ -1051,12 +1593,12 @@ const FormField = ({
           onBlur={(e) => {
             e.target.style.outline = "none";
             e.target.style.borderColor = !isValid ? '#e57373' : "#E8F0E8";
-            e.target.style.boxShadow = "0 4px 15px rgba(46, 89, 57, 0.08)";
+            e.target.style.boxShadow = "0 3px 12px rgba(46, 89, 57, 0.06)";
             e.target.style.transform = "translateY(0)";
           }}
           required={required}
           disabled={disabled}
-          rows="4"
+          rows="3"
           {...inputProps}
         />
       ) : (
@@ -1074,7 +1616,7 @@ const FormField = ({
           onBlur={(e) => {
             e.target.style.outline = "none";
             e.target.style.borderColor = !isValid ? '#e57373' : "#E8F0E8";
-            e.target.style.boxShadow = "0 4px 15px rgba(46, 89, 57, 0.08)";
+            e.target.style.boxShadow = "0 3px 12px rgba(46, 89, 57, 0.06)";
             e.target.style.transform = "translateY(0)";
           }}
           required={required}
@@ -1085,14 +1627,14 @@ const FormField = ({
       {!isValid && validationMessage && (
         <div style={{
           color: '#e57373',
-          fontSize: '13px',
-          marginTop: '8px',
-          fontWeight: '600',
+          fontSize: "12px",
+          marginTop: "6px",
+          fontWeight: "600",
           display: 'flex',
           alignItems: 'center',
-          gap: '6px'
+          gap: "4px"
         }}>
-          <FaExclamationTriangle size={12} />
+          <FaExclamationTriangle size={11} />
           {validationMessage}
         </div>
       )}
@@ -1101,10 +1643,11 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL DEL FORMULARIO
+// COMPONENTE PRINCIPAL DEL FORMULARIO - CORREGIDO
 // ===============================================
 export default function ReservaForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -1126,17 +1669,14 @@ export default function ReservaForm() {
     sedesPorServicio: []
   });
 
-  // Estado del formulario con idUsuario: 12 y idEstado: 1
+  // Estado del formulario - INICIALIZADO DINÁMICAMENTE
   const [formData, setFormData] = useState({
-    // Información personal
     nombre: "",
     apellido: "",
     tipoDocumento: "",
     numeroDocumento: "",
     email: "",
     telefono: "",
-   
-    // Información de reserva
     idReserva: 0,
     fechaReserva: new Date().toISOString().split('T')[0],
     fechaSalida: "",
@@ -1145,14 +1685,12 @@ export default function ReservaForm() {
     abono: 0,
     restante: 0,
     montoTotal: 0,
-    idUsuario: 12, // Cliente Giraldo
-    idEstado: 1, // Cambiado de 2 a 1 (solo existe el estado 1)
+    idUsuario: null,
+    idEstado: 1,
     idSede: "",
     idCabana: "",
     idMetodoPago: "",
     idPaquete: "",
-   
-    // Información adicional
     observaciones: ""
   });
 
@@ -1163,6 +1701,11 @@ export default function ReservaForm() {
     servicios: []
   });
 
+  // Estados nuevos para abonos
+  const [showAbonoModal, setShowAbonoModal] = useState(false);
+  const [createdReservaId, setCreatedReservaId] = useState(null);
+  const [abonoDefaultMonto, setAbonoDefaultMonto] = useState(0);
+
   // Definir los pasos del formulario
   const steps = [
     { label: "Tus Datos", icon: <FaUser /> },
@@ -1172,63 +1715,51 @@ export default function ReservaForm() {
     { label: "Confirmación", icon: <FaCheck /> }
   ];
 
-  // Cargar datos relacionados al montar el componente
+  // Cargar datos del usuario y datos relacionados al montar el componente
   useEffect(() => {
-    cargarDatosRelacionados();
-    cargarUsuarioLogueado();
-  }, []);
-
-  // Función para cargar el usuario logueado
-  const cargarUsuarioLogueado = async () => {
-    try {
-      setLoading(true);
-      // En una aplicación real, aquí obtendrías el ID del usuario del contexto, localStorage, o token
-      // Por ahora, simularemos que obtenemos el usuario con ID 12 (Cliente Giraldo)
-      const response = await fetch(`${API_URLS.USUARIOS}/12`);
-     
-      if (response.ok) {
-        const usuario = await response.json();
-        setUsuarioLogueado(usuario);
-       
-        // Actualizar el formulario con los datos del usuario
-        setFormData(prev => ({
-          ...prev,
-          nombre: usuario.nombre || "",
-          apellido: usuario.apellido || "",
-          tipoDocumento: usuario.tipoDocumento || "",
-          numeroDocumento: usuario.numeroDocumento || "",
-          email: usuario.correo || "",
-          telefono: usuario.celular || ""
-        }));
-       
-        console.log("✅ Usuario cargado:", usuario);
-      } else {
-        console.warn("⚠ No se pudo cargar el usuario, usando datos por defecto");
-        // Datos de ejemplo por si falla la API
-        setUsuarioLogueado({
-          nombre: "Cliente",
-          apellido: "Giraldo",
-          tipoDocumento: "Cédula de Ciudadanía",
-          numeroDocumento: "123456789",
-          correo: "cliente@ejemplo.com",
-          celular: "3001234567"
-        });
-      }
-    } catch (error) {
-      console.error("❌ Error al cargar usuario:", error);
-      // Datos de ejemplo por si falla la API
-      setUsuarioLogueado({
-        nombre: "Cliente",
-        apellido: "Giraldo",
-        tipoDocumento: "Cédula de Ciudadanía",
-        numeroDocumento: "123456789",
-        correo: "cliente@ejemplo.com",
-        celular: "3001234567"
-      });
-    } finally {
-      setLoading(false);
+    // Verificar si el usuario está autenticado
+    if (!isAuthenticated()) {
+      displayAlert("❌ Debes iniciar sesión para realizar una reserva", "error");
+      setTimeout(() => navigate("/login"), 2000);
+      return;
     }
-  };
+
+    // Obtener datos del usuario desde localStorage
+    const usuarioData = getUserForReservation();
+    const usuarioInfo = getUserInfo();
+
+    if (usuarioData) {
+      setUsuarioLogueado(usuarioInfo);
+     
+      // Establecer los datos del usuario en el formulario
+      setFormData(prev => ({
+        ...prev,
+        idUsuario: usuarioInfo?.id || null,
+        nombre: usuarioData.nombre || "",
+        apellido: usuarioData.apellido || "",
+        tipoDocumento: usuarioData.tipoDocumento || "",
+        numeroDocumento: usuarioData.numeroDocumento || "",
+        email: usuarioData.email || "",
+        telefono: usuarioData.celular || ""
+      }));
+    } else {
+      displayAlert("❌ No se pudieron cargar tus datos. Por favor, inicia sesión nuevamente.", "error");
+      setTimeout(() => navigate("/login"), 2000);
+      return;
+    }
+
+    // Verificar si se pasaron datos de cabaña desde el Landing
+    if (location.state?.cabana) {
+      const { cabana, usuario } = location.state;
+      setFormData(prev => ({
+        ...prev,
+        idSede: cabana.sede === "Copacabana" ? "1" : "2", // Ajusta según tus IDs de sede
+        idCabana: cabana.id.toString()
+      }));
+    }
+
+    cargarDatosRelacionados();
+  }, [location, navigate]);
 
   // Filtrar datos cuando cambia la sede seleccionada
   useEffect(() => {
@@ -1238,14 +1769,27 @@ export default function ReservaForm() {
   // Calcular montos cuando cambian los datos relevantes
   useEffect(() => {
     calcularMontos();
-  }, [formData.idPaquete, formData.fechaEntrada, formData.fechaSalida, formData.idCabana]);
+  }, [formData.idPaquete, formData.fechaEntrada, formData.fechaSalida, formData.idCabana, serviciosSeleccionados]);
+
+  // CORREGIDO: Efecto para manejar fechas automáticamente cuando se selecciona un paquete
+  useEffect(() => {
+    const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
+    if (paquete && paquete.dias) {
+      if (formData.fechaEntrada) {
+        const nuevaSalida = addDays(formData.fechaEntrada, paquete.dias);
+        setFormData(prev => ({
+          ...prev,
+          fechaSalida: nuevaSalida
+        }));
+      }
+    }
+  }, [formData.idPaquete, formData.fechaEntrada, apiData.paquetes]);
 
   // Función para cargar todos los datos de la API
   const cargarDatosRelacionados = async () => {
     try {
       setLoading(true);
      
-      // Configuración por defecto actualizada con solo el estado 1
       const configuracionPorDefecto = {
         estados: [
           { idEstado: 1, nombreEstado: 'Abonado' }
@@ -1276,7 +1820,6 @@ export default function ReservaForm() {
         }
       };
 
-      // Cargar todos los datos en paralelo
       const [
         sedesData,
         cabanasData,
@@ -1299,7 +1842,6 @@ export default function ReservaForm() {
         fetchConManejoError(API_URLS.SEDES_POR_SERVICIO, [])
       ]);
 
-      // Asegurarse de que las cabañas tengan datos mínimos
       const cabanasConDatos = cabanasData.map(cabana => ({
         idCabana: cabana.idCabana,
         nombre: cabana.nombre || `Cabaña ${cabana.idCabana}`,
@@ -1309,7 +1851,6 @@ export default function ReservaForm() {
         ...cabana
       }));
 
-      // Asegurarse de que los servicios tengan datos mínimos
       const serviciosConDatos = serviciosData.map(servicio => ({
         idServicio: Number(servicio.idServicio ?? servicio.id ?? 0),
         nombreServicio: servicio.nombreServicio || servicio.nombre || `Servicio ${servicio.idServicio ?? servicio.id ?? 0}`,
@@ -1320,7 +1861,6 @@ export default function ReservaForm() {
         ...servicio
       }));
  
-      // Normalizar relación SedesPorServicio (asegurar números)
       const sedesPorServicioConDatos = (sedesPorServicioData || []).map(rel => ({
         idSedesServicio: Number(rel.idSedesServicio ?? rel.id ?? 0),
         idServicio: Number(rel.idServicio ?? rel.servicioId ?? rel.idservicio ?? 0),
@@ -1349,9 +1889,7 @@ export default function ReservaForm() {
         sedePaquetes: sedePaquetesData.length
       });
 
-      // Establecer valores por defecto
       if (sedesData.length > 0) {
-        // Buscar Copacabana primero, si no existe usar la primera sede
         const copacabana = sedesData.find(s => s.nombreSede?.toLowerCase().includes('copacabana'));
         setFormData(prev => ({
           ...prev,
@@ -1384,7 +1922,6 @@ export default function ReservaForm() {
     const sedeId = Number(formData.idSede);
     console.log(`🔍 Filtrando datos para sede ID: ${sedeId}`);
 
-    // Filtrar cabañas por sede
     let cabanasFiltradas = [];
     try {
       const hasCabanaSedes = Array.isArray(apiData.cabanaSedes) && apiData.cabanaSedes.length > 0;
@@ -1412,7 +1949,6 @@ export default function ReservaForm() {
       cabanasFiltradas = [];
     }
 
-    // Filtrar paquetes por sede
     const paquetesFiltrados = (apiData.sedePaquetes || [])
       .map(sp => {
         if (!sp) return null;
@@ -1425,7 +1961,6 @@ export default function ReservaForm() {
       })
       .filter(Boolean);
 
-    // Filtrar servicios por sede
     const serviciosFiltrados = apiData.servicios.filter(servicio => {
       if (!Array.isArray(apiData.sedesPorServicio) || apiData.sedesPorServicio.length === 0) {
         return servicio.estado !== false;
@@ -1451,7 +1986,6 @@ export default function ReservaForm() {
       servicios: serviciosFiltrados
     });
 
-    // Resetear selecciones si ya no están disponibles
     if (formData.idCabana && !cabanasFiltradas.find(c => Number(c.idCabana) === Number(formData.idCabana))) {
       setFormData(prev => ({ ...prev, idCabana: "" }));
     }
@@ -1470,7 +2004,6 @@ export default function ReservaForm() {
       c => c.idCabana === parseInt(formData.idCabana)
     );
    
-    // Precio base del paquete o cabaña
     let precioBase = 0;
     if (paqueteSeleccionado) {
       precioBase = parseFloat(paqueteSeleccionado.precioPaquete || 0);
@@ -1478,7 +2011,6 @@ export default function ReservaForm() {
       precioBase = parseFloat(cabanaSeleccionada.precio || 0);
     }
    
-    // Calcular días de estadía
     let diasEstadia = 1;
     if (paqueteSeleccionado && paqueteSeleccionado.dias) {
       diasEstadia = parseInt(paqueteSeleccionado.dias) || 1;
@@ -1489,7 +2021,11 @@ export default function ReservaForm() {
       diasEstadia = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
     }
 
-    const montoTotal = (precioBase * diasEstadia);
+    const totalServicios = serviciosSeleccionados.reduce((total, servicio) =>
+      total + (servicio.precioServicio * diasEstadia), 0
+    );
+
+    const montoTotal = (precioBase * diasEstadia) + totalServicios;
     const abono = Math.round(montoTotal * 0.5);
     const restante = montoTotal - abono;
 
@@ -1503,20 +2039,62 @@ export default function ReservaForm() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+   
+    // CORREGIDO: Validación especial para fechas
+    if (name === 'fechaEntrada') {
+      setFormData(prev => {
+        const nuevaFechaEntrada = value;
+        let nuevaFechaSalida = prev.fechaSalida;
+       
+        // Si hay una fecha de salida anterior a la nueva fecha de entrada, resetearla
+        if (nuevaFechaSalida && nuevaFechaEntrada >= nuevaFechaSalida) {
+          nuevaFechaSalida = "";
+        }
+       
+        // Si hay un paquete seleccionado, calcular automáticamente la fecha de salida
+        const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(prev.idPaquete));
+        if (paquete && paquete.dias && nuevaFechaEntrada) {
+          nuevaFechaSalida = addDays(nuevaFechaEntrada, paquete.dias);
+        }
+       
+        return {
+          ...prev,
+          fechaEntrada: nuevaFechaEntrada,
+          fechaSalida: nuevaFechaSalida
+        };
+      });
+    } else if (name === 'fechaSalida') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSelectChange = (name, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value
+      };
+     
+      // CORREGIDO: Si se selecciona un paquete y ya hay fecha de entrada, calcular automáticamente la fecha de salida
+      if (name === 'idPaquete' && value && prev.fechaEntrada) {
+        const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(value));
+        if (paquete && paquete.dias) {
+          newData.fechaSalida = addDays(prev.fechaEntrada, paquete.dias);
+        }
+      }
+     
+      return newData;
+    });
   };
 
-  // Función para manejar servicios extras
   const toggleServicioExtra = (servicio) => {
     setServiciosSeleccionados(prev => {
       const yaSeleccionado = prev.find(s => s.idServicio === servicio.idServicio);
@@ -1528,16 +2106,20 @@ export default function ReservaForm() {
     });
   };
 
-  // Función para formatear fecha en formato YYYY-MM-DD para la API
   const formatDateForAPI = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
     return date.toISOString().split('T')[0];
   };
 
-  // Función principal de envío del formulario con idUsuario: 12 y idEstado: 1
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Verificar que tenemos un usuario logueado
+    if (!formData.idUsuario) {
+      displayAlert("❌ No se pudo identificar al usuario. Por favor, inicia sesión nuevamente.", "error");
+      return;
+    }
 
     if (!validarFormulario()) {
       return;
@@ -1554,8 +2136,8 @@ export default function ReservaForm() {
         abono: parseFloat(formData.abono) || 0,
         restante: parseFloat(formData.restante) || 0,
         montoTotal: parseFloat(formData.montoTotal) || 0,
-        idUsuario: 12, // Cliente Giraldo
-        idEstado: 1, // Cambiado de 2 a 1 (solo existe el estado 1)
+        idUsuario: formData.idUsuario,
+        idEstado: 1,
         idSede: parseInt(formData.idSede) || 0,
         idCabana: formData.idCabana ? parseInt(formData.idCabana) : null,
         idMetodoPago: parseInt(formData.idMetodoPago) || 0,
@@ -1576,23 +2158,23 @@ export default function ReservaForm() {
 
       if (!response.ok) {
         let errorText = await response.text();
-        try {
-          errorText = JSON.parse(errorText);
-        } catch {}
+        try { errorText = JSON.parse(errorText); } catch {}
         console.error("❌ Error del servidor:", errorText);
         throw new Error(`Error ${response.status}: ${JSON.stringify(errorText)}`);
       }
 
       const result = await response.json();
+      const reservaId = result.idReserva ?? result.id ?? 0;
       console.log("✅ Reserva creada:", result);
 
-      // Guardar servicios extras si hay alguno seleccionado
       if (serviciosSeleccionados.length > 0) {
-        await guardarServiciosReserva(result.idReserva ?? result.id ?? 0);
+        await guardarServiciosReserva(reservaId);
       }
 
-      displayAlert("✅ ¡Reserva creada exitosamente! Te redirigiremos en breve...", "success");
-      setTimeout(() => navigate("/cliente/reservas"), 3000);
+      setCreatedReservaId(reservaId);
+      setAbonoDefaultMonto(formData.abono);
+      setShowAbonoModal(true);
+      displayAlert("✅ Reserva creada. Por favor realiza el abono para confirmar la reserva.", "success");
 
     } catch (error) {
       console.error("❌ Error al crear reserva:", error);
@@ -1602,14 +2184,56 @@ export default function ReservaForm() {
     }
   };
 
-  // Evita envío accidental con Enter (salvo textarea)
+  const crearAbonoEnAPI = async ({ montoAbono, idMetodoPago, verificacionBase64 }) => {
+    if (!createdReservaId) {
+      displayAlert("❌ ID de reserva no encontrado.", "error");
+      return;
+    }
+    setLoading(true);
+    try {
+      const abonoPayload = {
+        idAbono: 0,
+        idReserva: Number(createdReservaId),
+        fechaAbono: new Date().toISOString().split('T')[0],
+        montoAbono: Number(montoAbono),
+        idMetodoPago: Number(idMetodoPago),
+        verificacion: verificacionBase64 || ""
+      };
+
+      console.log("📤 Enviando abono:", abonoPayload);
+
+      const res = await fetch(API_URLS.ABONOS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(abonoPayload)
+      });
+
+      if (!res.ok) {
+        let err = await res.text();
+        try { err = JSON.parse(err); } catch {}
+        console.error("❌ Error al guardar abono:", err);
+        throw new Error(typeof err === 'object' ? JSON.stringify(err) : String(err));
+      }
+
+      const data = await res.json();
+      console.log("✅ Abono guardado:", data);
+      setShowAbonoModal(false);
+      displayAlert("✅ ¡Abono registrado exitosamente! Tu reserva está confirmada.", "success");
+      setTimeout(() => navigate("/cliente/mis-reservas"), 2000);
+    } catch (error) {
+      console.error("❌ Error creando abono:", error);
+      displayAlert("❌ No se pudo guardar el abono. Intenta nuevamente.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const preventEnterSubmit = (e) => {
     if (e.key === 'Enter' && e.target && e.target.tagName !== 'TEXTAREA') {
       e.preventDefault();
     }
   };
 
-  // Handler del form: si no estamos en el último paso, avanza; si estamos, crea la reserva
   const onFormSubmit = (e) => {
     e.preventDefault();
     if (currentStep < steps.length - 1) {
@@ -1619,7 +2243,6 @@ export default function ReservaForm() {
     handleSubmit(e);
   };
  
-  // Función para guardar servicios de reserva
   const guardarServiciosReserva = async (idReserva) => {
     try {
       const paqueteSeleccionado = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
@@ -1653,7 +2276,6 @@ export default function ReservaForm() {
   };
 
   const validarFormulario = () => {
-    // Validar información personal
     if (!formData.nombre.trim()) {
       displayAlert("❌ El nombre completo es obligatorio", "error");
       return false;
@@ -1674,7 +2296,6 @@ export default function ReservaForm() {
       return false;
     }
 
-    // Validar información de reserva
     const camposRequeridos = [
       'fechaEntrada', 'fechaSalida', 'idSede', 'idMetodoPago'
     ];
@@ -1687,13 +2308,12 @@ export default function ReservaForm() {
       }
     }
 
-    // Validar que se haya seleccionado al menos cabaña o paquete
     if (!formData.idCabana && !formData.idPaquete) {
       displayAlert("❌ Debes seleccionar al menos una cabaña o un paquete", "error");
       return false;
     }
 
-    // Validar fechas
+    // CORREGIDO: Validación mejorada de fechas
     const hoy = new Date().toISOString().split('T')[0];
     if (formData.fechaEntrada < hoy) {
       displayAlert("❌ La fecha de entrada no puede ser anterior a hoy", "error");
@@ -1728,7 +2348,7 @@ export default function ReservaForm() {
 
   const handleCancelConfirm = () => {
     setShowCancelDialog(false);
-    navigate("/cliente/reservas");
+    navigate("/cliente/mis-reservas");
   };
 
   const handleCancelCancel = () => {
@@ -1743,44 +2363,34 @@ export default function ReservaForm() {
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
+  // CORREGIDO: Función mejorada para calcular días de estadía
   const calcularDiasEstadia = () => {
     if (formData.fechaEntrada && formData.fechaSalida) {
       const entrada = new Date(formData.fechaEntrada);
       const salida = new Date(formData.fechaSalida);
+     
+      // Validar que la fecha de salida sea posterior a la de entrada
+      if (salida <= entrada) return 1;
+     
       const diffTime = Math.abs(salida - entrada);
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
     }
     return 1;
   };
 
-  // Helper: sumar días a una fecha YYYY-MM-DD -> YYYY-MM-DD
+  // CORREGIDO: Función mejorada para agregar días a una fecha
   const addDays = (dateStr, days) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
     d.setDate(d.getDate() + Number(days));
     return d.toISOString().split('T')[0];
   };
- 
-  // Si hay paquete seleccionado con días, fijar fechaSalida = fechaEntrada + paquete.dias
-  useEffect(() => {
-    const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
-    if (paquete && paquete.dias) {
-      if (formData.fechaEntrada) {
-        const nuevaSalida = addDays(formData.fechaEntrada, paquete.dias);
-        setFormData(prev => ({ ...prev, fechaSalida: nuevaSalida }));
-      } else {
-        setFormData(prev => ({ ...prev, fechaSalida: "" }));
-      }
-    }
-  }, [formData.idPaquete, formData.fechaEntrada, apiData.paquetes]);
 
-  // Obtener paquete seleccionado en la UI y la fecha de salida esperada (si aplica)
   const paqueteSeleccionadoForm = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
   const fechaSalidaEsperada = (paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && formData.fechaEntrada)
     ? addDays(formData.fechaEntrada, paqueteSeleccionadoForm.dias)
     : "";
 
-  // Helpers añadidos para evitar errores en consola
   const formatCurrency = (value) => {
     const n = Number(value ?? 0);
     try {
@@ -1790,12 +2400,10 @@ export default function ReservaForm() {
     }
   };
 
-  // Icono por defecto para cabañas
   const getCabanaIcon = (cabana) => {
     return <FaMountain />;
   };
 
-  // Extrae características mostradas en las cards de cabaña
   const getCabanaFeatures = (cabana) => {
     const features = [];
     if (cabana.capacidad) features.push(`${cabana.capacidad} personas`);
@@ -1806,7 +2414,7 @@ export default function ReservaForm() {
 
   return (
     <div style={{
-      padding: "32px",
+      padding: "24px",
       backgroundColor: "#f5f8f2",
       minHeight: "100vh",
       width: "100%",
@@ -1816,6 +2424,16 @@ export default function ReservaForm() {
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
     }}>
      
+      {/* Modal de abono MEJORADO */}
+      <AbonoModal
+        isOpen={showAbonoModal}
+        onClose={() => setShowAbonoModal(false)}
+        onSubmit={crearAbonoEnAPI}
+        defaultMonto={abonoDefaultMonto}
+        metodosPago={apiData.metodosPago}
+        defaultMetodo={formData.idMetodoPago || (apiData.metodosPago[0]?.idMetodoPago ?? null)}
+      />
+
       {/* Diálogo de cancelación premium */}
       <AlertDialog
         isOpen={showCancelDialog}
@@ -1836,8 +2454,8 @@ export default function ReservaForm() {
           borderLeftColor: alertMessage.includes('❌') ? '#e57373' : '#4caf50'
         }}>
           {alertMessage.includes('❌') ?
-            <FaExclamationTriangle style={{ color: '#e57373', fontSize: '22px' }} /> :
-            <FaCheck style={{ color: '#4caf50', fontSize: '22px' }} />
+            <FaExclamationTriangle style={{ color: '#e57373', fontSize: "20px" }} /> :
+            <FaCheck style={{ color: '#4caf50', fontSize: "20px" }} />
           }
           <span style={{ flex: 1 }}>{alertMessage}</span>
           <button
@@ -1850,7 +2468,7 @@ export default function ReservaForm() {
               display: 'flex',
               alignItems: 'center',
               opacity: 0.7,
-              padding: '4px',
+              padding: "3px",
               borderRadius: '50%',
               transition: 'all 0.2s ease'
             }}
@@ -1873,31 +2491,31 @@ export default function ReservaForm() {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 40,
+        marginBottom: 32,
         flexWrap: 'wrap',
-        gap: '24px'
+        gap: '20px'
       }}>
         <div>
           <h1 style={{
             margin: 0,
             color: "#2E5939",
-            fontSize: "42px",
+            fontSize: "36px",
             fontWeight: "900",
             background: "linear-gradient(135deg, #2E5939 0%, #679750 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
-            marginBottom: "12px",
-            letterSpacing: "-0.5px"
+            marginBottom: "10px",
+            letterSpacing: "-0.3px"
           }}>
             🌲 Reserva tu Aventura en el Bosque
           </h1>
           <p style={{
-            margin: "12px 0 0 0",
+            margin: "10px 0 0 0",
             color: "#679750",
-            fontSize: "18px",
+            fontSize: "16px",
             fontWeight: "500",
-            maxWidth: "600px",
-            lineHeight: "1.6"
+            maxWidth: "550px",
+            lineHeight: "1.5"
           }}>
             Vive una experiencia única de glamping en medio de la naturaleza.
             Disfruta de lujo y comodidad en un entorno natural espectacular.
@@ -1909,14 +2527,14 @@ export default function ReservaForm() {
             ...btnSecondaryStyle,
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            padding: "16px 32px"
+            gap: "10px",
+            padding: "14px 28px"
           }}
           onMouseOver={(e) => {
             e.target.style.backgroundColor = "#2E5939";
             e.target.style.color = "white";
-            e.target.style.transform = "translateY(-3px)";
-            e.target.style.boxShadow = "0 8px 25px rgba(46, 89, 57, 0.3)";
+            e.target.style.transform = "translateY(-2px)";
+            e.target.style.boxShadow = "0 6px 20px rgba(46, 89, 57, 0.25)";
           }}
           onMouseOut={(e) => {
             e.target.style.backgroundColor = "#ffffff";
@@ -1932,8 +2550,8 @@ export default function ReservaForm() {
       {/* Layout principal con dos columnas */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 400px',
-        gap: '32px',
+        gridTemplateColumns: '1fr 340px',
+        gap: '28px',
         alignItems: 'start'
       }}>
        
@@ -1948,22 +2566,22 @@ export default function ReservaForm() {
 
           {/* Formulario Premium */}
           <div style={cardStyle}>
-            <div style={{ padding: "40px" }}>
+            <div style={{ padding: "32px" }}>
               {loading && apiData.cabanas.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "80px" }}>
+                <div style={{ textAlign: "center", padding: "60px" }}>
                   <div style={{
-                    width: '80px',
-                    height: '80px',
-                    border: '5px solid #f3f3f3',
-                    borderTop: '5px solid #2E5939',
+                    width: '70px',
+                    height: '70px',
+                    border: '4px solid #f3f3f3',
+                    borderTop: '4px solid #2E5939',
                     borderRadius: '50%',
                     animation: 'spin 1.2s linear infinite',
-                    margin: '0 auto 24px'
+                    margin: '0 auto 20px'
                   }}></div>
-                  <div style={{ fontSize: '22px', marginBottom: '12px', color: "#2E5939", fontWeight: '700' }}>
+                  <div style={{ fontSize: "20px", marginBottom: "10px", color: "#2E5939", fontWeight: "700" }}>
                     Cargando tu experiencia...
                   </div>
-                  <div style={{ color: "#679750", fontSize: '16px' }}>
+                  <div style={{ color: "#679750", fontSize: "15px" }}>
                     Preparando las mejores opciones para tu aventura en el bosque
                   </div>
                 </div>
@@ -1973,32 +2591,32 @@ export default function ReservaForm() {
                   {currentStep === 0 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
-                      padding: '36px',
-                      borderRadius: '20px',
-                      marginBottom: '32px',
-                      border: '2px solid rgba(103, 151, 80, 0.2)',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
+                      padding: "32px",
+                      borderRadius: "18px",
+                      marginBottom: "28px",
+                      border: '2px solid rgba(103, 151, 80, 0.15)',
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
-                        marginBottom: '32px',
+                        marginBottom: "28px",
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '16px',
-                        fontSize: '24px',
-                        fontWeight: '800'
+                        gap: "14px",
+                        fontSize: "22px",
+                        fontWeight: "800"
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
                           color: 'white',
-                          width: '50px',
-                          height: '50px',
+                          width: '45px',
+                          height: '45px',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '20px',
-                          boxShadow: '0 8px 20px rgba(46, 89, 57, 0.3)'
+                          fontSize: "18px",
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
                         }}>
                           <FaUser />
                         </div>
@@ -2009,50 +2627,50 @@ export default function ReservaForm() {
                       {usuarioLogueado && (
                         <div style={{
                           backgroundColor: '#E8F5E8',
-                          padding: '20px',
-                          borderRadius: '16px',
+                          padding: "18px",
+                          borderRadius: "14px",
                           border: '2px solid #2E5939',
-                          marginBottom: '28px',
+                          marginBottom: "24px",
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '16px'
+                          gap: "14px"
                         }}>
                           <div style={{
-                            width: '50px',
-                            height: '50px',
+                            width: '45px',
+                            height: '45px',
                             borderRadius: '50%',
                             backgroundColor: '#2E5939',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
-                            fontSize: '20px',
+                            fontSize: "18px",
                             flexShrink: 0
                           }}>
                             <FaUser />
                           </div>
                           <div style={{ flex: 1 }}>
                             <h4 style={{
-                              margin: '0 0 8px 0',
+                              margin: '0 0 6px 0',
                               color: '#2E5939',
-                              fontSize: '18px',
-                              fontWeight: '700'
+                              fontSize: "16px",
+                              fontWeight: "700"
                             }}>
                               ¡Hola, {usuarioLogueado.nombre} {usuarioLogueado.apellido}!
                             </h4>
                             <p style={{
                               margin: 0,
                               color: '#679750',
-                              fontSize: '14px',
-                              lineHeight: '1.4'
+                              fontSize: "13px",
+                              lineHeight: "1.4"
                             }}>
-                              Tus datos han sido cargados automáticamente. Puedes modificarlos si es necesario.
+                              Tus datos han sido cargados automáticamente desde tu perfil. Puedes modificarlos si es necesario.
                             </p>
                           </div>
                         </div>
                       )}
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: "24px" }}>
                         <FormField
                           label="Nombre"
                           name="nombre"
@@ -2147,32 +2765,32 @@ export default function ReservaForm() {
                   {currentStep === 1 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
-                      padding: '36px',
-                      borderRadius: '20px',
-                      marginBottom: '32px',
-                      border: '2px solid rgba(103, 151, 80, 0.2)',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
+                      padding: "32px",
+                      borderRadius: "18px",
+                      marginBottom: "28px",
+                      border: '2px solid rgba(103, 151, 80, 0.15)',
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
-                        marginBottom: '32px',
+                        marginBottom: "28px",
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '16px',
-                        fontSize: '24px',
-                        fontWeight: '800'
+                        gap: "14px",
+                        fontSize: "22px",
+                        fontWeight: "800"
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
                           color: 'white',
-                          width: '50px',
-                          height: '50px',
+                          width: '45px',
+                          height: '45px',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '20px',
-                          boxShadow: '0 8px 20px rgba(46, 89, 57, 0.3)'
+                          fontSize: "18px",
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
                         }}>
                           <FaHome />
                         </div>
@@ -2180,7 +2798,7 @@ export default function ReservaForm() {
                       </h3>
 
                       {/* Selector de Sede */}
-                      <div style={{ marginBottom: '32px' }}>
+                      <div style={{ marginBottom: "28px" }}>
                         <FormField
                           label="Ubicación"
                           name="idSede"
@@ -2197,12 +2815,12 @@ export default function ReservaForm() {
                       </div>
 
                       {/* Cabañas en formato de cards - Filtradas por sede */}
-                      <div style={{ marginBottom: '32px' }}>
+                      <div style={{ marginBottom: "28px" }}>
                         <h4 style={{
                           color: '#2E5939',
-                          marginBottom: '24px',
-                          fontSize: '20px',
-                          fontWeight: '700'
+                          marginBottom: "20px",
+                          fontSize: "18px",
+                          fontWeight: "700"
                         }}>
                           🏡 Selecciona tu Cabaña {formData.idSede && `(${filteredData.cabanas.length} disponibles)`}
                         </h4>
@@ -2210,21 +2828,21 @@ export default function ReservaForm() {
                         {filteredData.cabanas.length === 0 ? (
                           <div style={{
                             textAlign: 'center',
-                            padding: '40px',
+                            padding: "32px",
                             backgroundColor: '#F9FBFA',
-                            borderRadius: '16px',
+                            borderRadius: "14px",
                             border: '2px dashed #E8F0E8'
                           }}>
-                            <FaHome style={{ fontSize: '48px', color: '#679750', marginBottom: '16px' }} />
-                            <h4 style={{ color: '#2E5939', marginBottom: '8px' }}>No hay cabañas disponibles</h4>
+                            <FaHome style={{ fontSize: "42px", color: '#679750', marginBottom: "14px" }} />
+                            <h4 style={{ color: '#2E5939', marginBottom: "6px" }}>No hay cabañas disponibles</h4>
                             <p style={{ color: '#679750' }}>Selecciona otra sede para ver las opciones disponibles.</p>
                           </div>
                         ) : (
                           <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-                            gap: '24px',
-                            marginBottom: '32px'
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                            gap: "20px",
+                            marginBottom: "28px"
                           }}>
                             {filteredData.cabanas.map((cabana) => (
                               <SelectionCard
@@ -2238,6 +2856,7 @@ export default function ReservaForm() {
                                 features={getCabanaFeatures(cabana)}
                                 popular={cabana.precio > 300000}
                                 capacity={cabana.capacidad || 2}
+                                disabled={false}
                               />
                             ))}
                           </div>
@@ -2245,12 +2864,12 @@ export default function ReservaForm() {
                       </div>
 
                       {/* Paquetes en formato de cards - Filtrados por sede */}
-                      <div style={{ marginBottom: '32px' }}>
+                      <div style={{ marginBottom: "28px" }}>
                         <h4 style={{
                           color: '#2E5939',
-                          marginBottom: '24px',
-                          fontSize: '20px',
-                          fontWeight: '700'
+                          marginBottom: "20px",
+                          fontSize: "18px",
+                          fontWeight: "700"
                         }}>
                           📦 Paquetes de Experiencia {formData.idSede && `(${filteredData.paquetes.length} disponibles)`}
                         </h4>
@@ -2258,20 +2877,20 @@ export default function ReservaForm() {
                         {filteredData.paquetes.length === 0 ? (
                           <div style={{
                             textAlign: 'center',
-                            padding: '40px',
+                            padding: "32px",
                             backgroundColor: '#F9FBFA',
-                            borderRadius: '16px',
+                            borderRadius: "14px",
                             border: '2px dashed #E8F0E8'
                           }}>
-                            <FaBox style={{ fontSize: '48px', color: '#679750', marginBottom: '16px' }} />
-                            <h4 style={{ color: '#2E5939', marginBottom: '8px' }}>No hay paquetes disponibles</h4>
+                            <FaBox style={{ fontSize: "42px", color: '#679750', marginBottom: "14px" }} />
+                            <h4 style={{ color: '#2E5939', marginBottom: "6px" }}>No hay paquetes disponibles</h4>
                             <p style={{ color: '#679750' }}>Selecciona otra sede para ver los paquetes disponibles.</p>
                           </div>
                         ) : (
                           <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-                            gap: '24px'
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                            gap: "20px"
                           }}>
                             {filteredData.paquetes.map((paquete) => (
                               <SelectionCard
@@ -2289,6 +2908,7 @@ export default function ReservaForm() {
                                 ]}
                                 popular={paquete.descuento > 0}
                                 capacity={paquete.personas}
+                                disabled={false}
                               />
                             ))}
                           </div>
@@ -2301,44 +2921,44 @@ export default function ReservaForm() {
                   {currentStep === 2 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
-                      padding: '36px',
-                      borderRadius: '20px',
-                      marginBottom: '32px',
-                      border: '2px solid rgba(103, 151, 80, 0.2)',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
+                      padding: "32px",
+                      borderRadius: "18px",
+                      marginBottom: "28px",
+                      border: '2px solid rgba(103, 151, 80, 0.15)',
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
-                        marginBottom: '32px',
+                        marginBottom: "28px",
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '16px',
-                        fontSize: '24px',
-                        fontWeight: '800'
+                        gap: "14px",
+                        fontSize: "22px",
+                        fontWeight: "800"
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
                           color: 'white',
-                          width: '50px',
-                          height: '50px',
+                          width: '45px',
+                          height: '45px',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '20px',
-                          boxShadow: '0 8px 20px rgba(46, 89, 57, 0.3)'
+                          fontSize: "18px",
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
                         }}>
                           <FaPlus />
                         </div>
                         Servicios Extras
                       </h3>
 
-                      <div style={{ marginBottom: '24px' }}>
+                      <div style={{ marginBottom: "20px" }}>
                         <p style={{
                           color: '#679750',
-                          fontSize: '16px',
-                          lineHeight: '1.6',
-                          marginBottom: '24px'
+                          fontSize: "15px",
+                          lineHeight: "1.5",
+                          marginBottom: "20px"
                         }}>
                           Personaliza tu experiencia seleccionando servicios adicionales.
                           Estos se aplicarán por cada noche de tu estadía.
@@ -2348,17 +2968,17 @@ export default function ReservaForm() {
                       {filteredData.servicios.length === 0 ? (
                         <div style={{
                           textAlign: 'center',
-                          padding: '40px',
+                          padding: "32px",
                           backgroundColor: '#F9FBFA',
-                          borderRadius: '16px',
+                          borderRadius: "14px",
                           border: '2px dashed #E8F0E8'
                         }}>
-                          <FaBox style={{ fontSize: '48px', color: '#679750', marginBottom: '16px' }} />
-                          <h4 style={{ color: '#2E5939', marginBottom: '8px' }}>No hay servicios disponibles</h4>
+                          <FaBox style={{ fontSize: "42px", color: '#679750', marginBottom: "14px" }} />
+                          <h4 style={{ color: '#2E5939', marginBottom: "6px" }}>No hay servicios disponibles</h4>
                           <p style={{ color: '#679750' }}>Selecciona otra sede para ver los servicios disponibles.</p>
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: "14px" }}>
                           {filteredData.servicios.map((servicio) => {
                             const paqueteSeleccionado = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
                             const diasParaMostrar = paqueteSeleccionado && paqueteSeleccionado.dias ? Number(paqueteSeleccionado.dias) : calcularDiasEstadia();
@@ -2377,34 +2997,34 @@ export default function ReservaForm() {
 
                       {serviciosSeleccionados.length > 0 && (
                         <div style={{
-                          marginTop: '32px',
-                          padding: '20px',
+                          marginTop: "28px",
+                          padding: "18px",
                           backgroundColor: '#E8F5E8',
-                          borderRadius: '16px',
+                          borderRadius: "14px",
                           border: '2px solid #2E5939'
                         }}>
                           <h5 style={{
                             color: '#2E5939',
-                            marginBottom: '12px',
-                            fontSize: '18px',
-                            fontWeight: '700'
+                            marginBottom: "10px",
+                            fontSize: "16px",
+                            fontWeight: "700"
                           }}>
                             🎁 Servicios Seleccionados:
                           </h5>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: "6px" }}>
                             {serviciosSeleccionados.map((servicio, index) => (
                               <div key={index} style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                padding: '12px',
+                                padding: "10px",
                                 backgroundColor: 'white',
-                                borderRadius: '8px'
+                                borderRadius: "6px"
                               }}>
-                                <span style={{ color: '#2E5939', fontWeight: '600' }}>
+                                <span style={{ color: '#2E5939', fontWeight: "600" }}>
                                   {servicio.nombreServicio}
                                 </span>
-                                <span style={{ color: '#679750', fontWeight: '700' }}>
+                                <span style={{ color: '#679750', fontWeight: "700" }}>
                                   +{formatCurrency(servicio.precioServicio * calcularDiasEstadia())}
                                 </span>
                               </div>
@@ -2413,11 +3033,11 @@ export default function ReservaForm() {
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
-                              padding: '12px',
+                              padding: "10px",
                               backgroundColor: '#2E5939',
-                              borderRadius: '8px',
+                              borderRadius: "6px",
                               color: 'white',
-                              fontWeight: '800'
+                              fontWeight: "800"
                             }}>
                               <span>Total servicios extras:</span>
                               <span>
@@ -2430,88 +3050,130 @@ export default function ReservaForm() {
                     </div>
                   )}
 
-                  {/* Paso 4: Fechas y Huéspedes */}
+                  {/* Paso 4: Fechas y Huéspedes - CORREGIDO */}
                   {currentStep === 3 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
-                      padding: '36px',
-                      borderRadius: '20px',
-                      marginBottom: '32px',
-                      border: '2px solid rgba(103, 151, 80, 0.2)',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
+                      padding: "32px",
+                      borderRadius: "18px",
+                      marginBottom: "28px",
+                      border: '2px solid rgba(103, 151, 80, 0.15)',
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
-                        marginBottom: '32px',
+                        marginBottom: "28px",
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '16px',
-                        fontSize: '24px',
-                        fontWeight: '800'
+                        gap: "14px",
+                        fontSize: "22px",
+                        fontWeight: "800"
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
                           color: 'white',
-                          width: '50px',
-                          height: '50px',
+                          width: '45px',
+                          height: '45px',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '20px',
-                          boxShadow: '0 8px 20px rgba(46, 89, 57, 0.3)'
+                          fontSize: "18px",
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
                         }}>
                           <FaCalendarAlt />
                         </div>
-                        Fechas
+                        Fechas de tu Estadía
                       </h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px' }}>
+                     
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: "24px" }}>
                         <FormField
-                          label="Fecha de Llegada"
+                          label="Fecha de Llegada (Check-in)"
                           name="fechaEntrada"
                           type="date"
                           value={formData.fechaEntrada}
                           onChange={handleInputChange}
                           required={true}
-                          inputProps={{ min: new Date().toISOString().split('T')[0] }}
+                          inputProps={{
+                            min: new Date().toISOString().split('T')[0],
+                            onFocus: (e) => e.target.showPicker?.()
+                          }}
+                          icon={<FaCalendarAlt />}
                         />
+                       
                         <FormField
-                          label="Fecha de Salida"
+                          label="Fecha de Salida (Check-out)"
                           name="fechaSalida"
                           type="date"
                           value={formData.fechaSalida}
                           onChange={handleInputChange}
                           required={true}
                           inputProps={{
-                            min: formData.fechaEntrada ? formData.fechaEntrada : new Date().toISOString().split('T')[0],
-                            ...(paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && fechaSalidaEsperada
-                              ? { min: fechaSalidaEsperada, max: fechaSalidaEsperada, readOnly: true, disabled: false }
-                              : {}),
+                            min: formData.fechaEntrada
+                              ? addDays(formData.fechaEntrada, 1)
+                              : new Date().toISOString().split('T')[0],
+                            readOnly: !!(paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias),
+                            disabled: !!(paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias),
+                            onFocus: (e) => e.target.showPicker?.()
                           }}
+                          icon={<FaCalendarAlt />}
                         />
-                       
-                        {/* Nota cuando es paquete */}
-                        {paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && formData.fechaEntrada && (
-                          <div style={{ gridColumn: '1 / -1', color: '#679750', fontSize: '13px', marginTop: '6px' }}>
-                            ⚠️ Este paquete incluye <strong>{paqueteSeleccionadoForm.dias}</strong> noche(s). La salida será <strong>{fechaSalidaEsperada}</strong> y no se permiten otras fechas.
-                          </div>
-                        )}
                       </div>
+                     
+                      {/* Información sobre paquetes */}
+                      {paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && (
+                        <div style={{
+                          marginTop: "20px",
+                          padding: "16px",
+                          backgroundColor: '#FFF3E0',
+                          borderRadius: "12px",
+                          border: '2px solid #FFA000'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: "10px",
+                            marginBottom: "8px"
+                          }}>
+                            <FaInfoCircle style={{ color: '#FFA000', fontSize: "18px" }} />
+                            <h5 style={{
+                              margin: 0,
+                              color: '#FFA000',
+                              fontSize: "15px",
+                              fontWeight: "700"
+                            }}>
+                              Información del Paquete
+                            </h5>
+                          </div>
+                          <p style={{
+                            margin: 0,
+                            color: '#2E5939',
+                            fontSize: "14px",
+                            lineHeight: "1.4"
+                          }}>
+                            Tu paquete <strong>"{paqueteSeleccionadoForm.nombrePaquete}"</strong> incluye <strong>{paqueteSeleccionadoForm.dias} noche(s)</strong> de estadía.
+                            {formData.fechaEntrada && (
+                              <span> La fecha de salida se ha establecido automáticamente para el <strong>{fechaSalidaEsperada}</strong>.</span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+
                       {formData.fechaEntrada && formData.fechaSalida && (
                         <div style={{
-                          marginTop: '28px',
-                          padding: '24px',
+                          marginTop: "24px",
+                          padding: "20px",
                           backgroundColor: '#E8F5E8',
-                          borderRadius: '16px',
+                          borderRadius: "14px",
                           textAlign: 'center',
                           border: '3px solid #2E5939',
-                          boxShadow: '0 8px 25px rgba(46, 89, 57, 0.15)'
+                          boxShadow: '0 6px 20px rgba(46, 89, 57, 0.12)'
                         }}>
-                          <strong style={{ color: '#2E5939', fontSize: '20px', display: 'block', marginBottom: '8px' }}>
+                          <strong style={{ color: '#2E5939', fontSize: "18px", display: 'block', marginBottom: "6px" }}>
                             🗓️ ¡Perfecto! Tu estadía será de {calcularDiasEstadia()} {calcularDiasEstadia() === 1 ? 'noche' : 'noches'}
                           </strong>
-                          <span style={{ color: '#679750', fontSize: '15px' }}>
-                            {formData.fechaEntrada} → {formData.fechaSalida}
+                          <span style={{ color: '#679750', fontSize: "14px" }}>
+                            Del {formData.fechaEntrada} al {formData.fechaSalida}
                           </span>
                         </div>
                       )}
@@ -2522,32 +3184,32 @@ export default function ReservaForm() {
                   {currentStep === 4 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
-                      padding: '36px',
-                      borderRadius: '20px',
-                      marginBottom: '32px',
-                      border: '2px solid rgba(103, 151, 80, 0.2)',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
+                      padding: "32px",
+                      borderRadius: "18px",
+                      marginBottom: "28px",
+                      border: '2px solid rgba(103, 151, 80, 0.15)',
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
-                        marginBottom: '32px',
+                        marginBottom: "28px",
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '16px',
-                        fontSize: '24px',
-                        fontWeight: '800'
+                        gap: "14px",
+                        fontSize: "22px",
+                        fontWeight: "800"
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
                           color: 'white',
-                          width: '50px',
-                          height: '50px',
+                          width: '45px',
+                          height: '45px',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '20px',
-                          boxShadow: '0 8px 20px rgba(46, 89, 57, 0.3)'
+                          fontSize: "18px",
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
                         }}>
                           <FaCreditCard />
                         </div>
@@ -2555,7 +3217,7 @@ export default function ReservaForm() {
                       </h3>
 
                       {/* Método de Pago */}
-                      <div style={{ marginBottom: '32px' }}>
+                      <div style={{ marginBottom: "28px" }}>
                         <FormField
                           label="Método de Pago"
                           name="idMetodoPago"
@@ -2569,7 +3231,7 @@ export default function ReservaForm() {
                       </div>
 
                       {/* Observaciones */}
-                      <div style={{ marginBottom: '32px' }}>
+                      <div style={{ marginBottom: "28px" }}>
                         <FormField
                           label="Observaciones Especiales"
                           name="observaciones"
@@ -2583,22 +3245,23 @@ export default function ReservaForm() {
                       {/* Detalles del cálculo */}
                       {formData.montoTotal > 0 && (
                         <div style={{
-                          padding: '24px',
+                          padding: "20px",
                           backgroundColor: '#f8f9fa',
-                          borderRadius: '16px',
-                          fontSize: '15px',
+                          borderRadius: "14px",
+                          fontSize: "14px",
                           color: '#2E5939',
                           border: '2px solid #E8F0E8',
-                          marginBottom: '24px'
+                          marginBottom: "20px"
                         }}>
-                          <div style={{ fontWeight: '800', marginBottom: '16px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ fontWeight: "800", marginBottom: "14px", fontSize: "15px", display: 'flex', alignItems: 'center', gap: "8px" }}>
                             <FaClock /> Detalles de tu Reserva
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: "10px" }}>
                             <div>• Días de estadía: <strong>{calcularDiasEstadia()}</strong></div>
                             {serviciosSeleccionados.length > 0 && (
                               <div>• Servicios extras: <strong>+{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => total + (servicio.precioServicio * calcularDiasEstadia()), 0))}</strong></div>
                             )}
+                            <div>• Abono requerido (50%): <strong>{formatCurrency(formData.abono)}</strong></div>
                           </div>
                         </div>
                       )}
@@ -2610,8 +3273,8 @@ export default function ReservaForm() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginTop: "48px",
-                    paddingTop: '32px',
+                    marginTop: "40px",
+                    paddingTop: "28px",
                     borderTop: '3px solid #f0f0f0'
                   }}>
                     <button
@@ -2622,7 +3285,7 @@ export default function ReservaForm() {
                         ...btnSecondaryStyle,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
+                        gap: "10px",
                         opacity: currentStep === 0 ? 0.5 : 1,
                         cursor: currentStep === 0 ? 'not-allowed' : 'pointer'
                       }}
@@ -2652,17 +3315,17 @@ export default function ReservaForm() {
                           ...btnPrimaryStyle,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px'
+                          gap: "10px"
                         }}
                         onMouseOver={(e) => {
                           e.target.style.backgroundColor = "#1e4629";
-                          e.target.style.transform = "translateY(-3px)";
-                          e.target.style.boxShadow = "0 15px 35px rgba(46, 89, 57, 0.4)";
+                          e.target.style.transform = "translateY(-2px)";
+                          e.target.style.boxShadow = "0 12px 30px rgba(46, 89, 57, 0.35)";
                         }}
                         onMouseOut={(e) => {
                           e.target.style.backgroundColor = "#2E5939";
                           e.target.style.transform = "translateY(0)";
-                          e.target.style.boxShadow = "0 12px 30px rgba(46, 89, 57, 0.4)";
+                          e.target.style.boxShadow = "0 8px 25px rgba(46, 89, 57, 0.3)";
                         }}
                       >
                         Siguiente <FaArrowRight />
@@ -2678,37 +3341,37 @@ export default function ReservaForm() {
                           opacity: loading ? 0.7 : 1,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px'
+                          gap: "10px"
                         }}
                         onMouseOver={(e) => {
                           if (!loading) {
                             e.target.style.backgroundColor = "#1e4629";
-                            e.target.style.transform = "translateY(-3px)";
-                            e.target.style.boxShadow = "0 15px 35px rgba(46, 89, 57, 0.4)";
+                            e.target.style.transform = "translateY(-2px)";
+                            e.target.style.boxShadow = "0 12px 30px rgba(46, 89, 57, 0.35)";
                           }
                         }}
                         onMouseOut={(e) => {
                           if (!loading) {
                             e.target.style.backgroundColor = "#2E5939";
                             e.target.style.transform = "translateY(0)";
-                            e.target.style.boxShadow = "0 12px 30px rgba(46, 89, 57, 0.4)";
+                            e.target.style.boxShadow = "0 8px 25px rgba(46, 89, 57, 0.3)";
                           }
                         }}
                       >
                         {loading ? (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: "10px" }}>
                             <div style={{
-                              width: '20px',
-                              height: '20px',
-                              border: '3px solid transparent',
-                              borderTop: '3px solid white',
+                              width: '18px',
+                              height: '18px',
+                              border: '2px solid transparent',
+                              borderTop: '2px solid white',
                               borderRadius: '50%',
                               animation: 'spin 1s linear infinite'
                             }}></div>
                             Creando tu Reserva...
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: "10px" }}>
                             <FaCheck />
                             Confirmar Reserva
                           </div>
@@ -2767,17 +3430,6 @@ export default function ReservaForm() {
             }
           }
 
-          /* Scroll suave */
-          html {
-            scroll-behavior: smooth;
-          }
-
-          /* Mejoras de hover para las tarjetas */
-          .info-card:hover {
-            transform: translateY(-8px);
-            boxShadow: 0 20px 40px rgba(0,0,0,0.15);
-          }
-
           /* Responsive */
           @media (max-width: 1200px) {
             .main-layout {
@@ -2786,11 +3438,15 @@ export default function ReservaForm() {
            
             .resumen-columna {
               order: -1;
-              margin-bottom: 32px;
+              margin-bottom: 24px;
             }
           }
 
           @media (max-width: 768px) {
+            .main-container {
+              padding: 16px !important;
+            }
+           
             .form-section {
               padding: 24px !important;
             }
@@ -2798,10 +3454,35 @@ export default function ReservaForm() {
             .header-content {
               flex-direction: column;
               text-align: center;
+              gap: 16px;
             }
            
             .step-indicator {
               padding: 0 10px !important;
+            }
+           
+            .step-icon {
+              width: 40px !important;
+              height: 40px !important;
+              font-size: 16px !important;
+            }
+           
+            .step-label {
+              font-size: 12px !important;
+            }
+           
+            .selection-cards-grid {
+              grid-template-columns: 1fr !important;
+            }
+           
+            .abono-modal-grid {
+              grid-template-columns: 1fr !important;
+            }
+           
+            .resumen-reserva {
+              position: static !important;
+              min-width: auto !important;
+              margin-bottom: 24px;
             }
           }
         `}

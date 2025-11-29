@@ -154,7 +154,7 @@ const fetchImagenesFromAPI = async () => {
   }
 };
 
-// Funciones de autenticación
+// Funciones de autenticación MEJORADAS
 const loginWithAPI = async (email, password) => {
   try {
     console.log('🔐 Intentando login con:', { email, password });
@@ -244,10 +244,30 @@ const getAllRoles = async () => {
   }
 };
 
+// MODIFICADA: Función para buscar usuario en lista - MEJORADA
 const findUserInList = async (email) => {
   try {
     const allUsers = await getAllUsers();
+    console.log('📊 Todos los usuarios obtenidos:', allUsers);
+   
     const user = allUsers.find(u => u.correo && u.correo.toLowerCase() === email.toLowerCase());
+   
+    if (user) {
+      console.log('✅ Usuario encontrado en BD con todos los campos:', user);
+      console.log('📝 Campos disponibles:', {
+        tipoDocumento: user.tipoDocumento,
+        numeroDocumento: user.numeroDocumento,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        celular: user.celular,
+        fechaNacimiento: user.fechaNacimiento,
+        correo: user.correo,
+        idRol: user.idRol
+      });
+    } else {
+      console.warn('⚠️ Usuario NO encontrado en BD para email:', email);
+    }
+   
     return user;
   } catch (error) {
     console.error('Error buscando usuario en lista:', error);
@@ -336,6 +356,7 @@ const registerWithAPI = async (userData) => {
   }
 };
 
+// MODIFICADA: Función para enviar código de verificación (más tolerante a errores)
 const sendVerificationCode = async (email) => {
   try {
     console.log('📤 Enviando código de verificación a:', email);
@@ -363,6 +384,7 @@ const sendVerificationCode = async (email) => {
   }
 };
 
+// MODIFICADA: Función para verificar código (más tolerante a errores)
 const verifyCode = async (email, code) => {
   try {
     console.log('🔐 Verificando código para:', email);
@@ -406,6 +428,7 @@ const verifyCode = async (email, code) => {
   }
 };
 
+// NUEVAS FUNCIONES: Olvidó contraseña
 const forgotPassword = async (email) => {
   try {
     const response = await fetch(`${API_BASE_URL}/Usuarios/OlvidoContrasena`, {
@@ -480,12 +503,36 @@ const resetPassword = async (email, code, newPassword) => {
   }
 };
 
-// Funciones de autenticación
+// FUNCIONES DE AUTENTICACIÓN CORREGIDAS - GUARDAR TODOS LOS CAMPOS NECESARIOS
 const saveUser = (user) => {
-  localStorage.setItem('user', JSON.stringify(user));
+  // Guardar todos los campos necesarios para el formulario de reserva
+  const userData = {
+    // Datos básicos de autenticación
+    idUsuario: user.idUsuario,
+    email: user.correo || user.email,
+    nombre: user.nombre,
+    apellido: user.apellido,
+    rol: user.rol,
+    nombreRol: user.nombreRol,
+    idRol: user.idRol,
+   
+    // DATOS CRÍTICOS PARA EL FORMULARIO DE RESERVA
+    tipoDocumento: user.tipoDocumento,
+    numeroDocumento: user.numeroDocumento,
+    celular: user.celular,
+    fechaNacimiento: user.fechaNacimiento,
+   
+    // Campos adicionales por si acaso
+    correo: user.correo || user.email,
+    estado: user.estado
+  };
+ 
+  localStorage.setItem('user', JSON.stringify(userData));
   localStorage.setItem('isAuthenticated', 'true');
   localStorage.setItem('userRole', user.rol);
-  localStorage.setItem('userEmail', user.email);
+  localStorage.setItem('userEmail', user.correo || user.email);
+ 
+  console.log('💾 Usuario guardado en localStorage:', userData);
 };
 
 const getUser = () => {
@@ -561,10 +608,10 @@ function LoginRegister() {
   const [cabinImageIndex, setCabinImageIndex] = useState(0);
   const [sedeImageIndex, setSedeImageIndex] = useState(0);
 
-  // Estados para paginación - MODIFICADO: 3 sedes por página
+  // Estados para paginación
   const [currentSedePage, setCurrentSedePage] = useState(1);
   const [currentCabinPage, setCurrentCabinPage] = useState(1);
-  const sedesPerPage = 3; // Cambiado a 3 sedes por página
+  const sedesPerPage = 3;
   const cabinsPerPage = 4;
 
   // Estados para registro
@@ -645,7 +692,11 @@ function LoginRegister() {
 
           // Obtener tipo de cabaña
           const tipoCabana = tiposData.find(t => t.idTipoCabana === cabin.idTipoCabana);
-          const nombreTipo = tipoCabana ? tipoCabana.nombreTipo : "Estándar";
+          const nombreTipo = tipoCabana ? tipoCabana.nombreTipoCabana : "Estándar";
+
+          // Obtener sede
+          const sede = sedesData.find(s => s.idSede === cabin.idSede);
+          const nombreSede = sede ? sede.nombreSede : "Sede Principal";
 
           return {
             id: cabin.idCabana,
@@ -654,7 +705,7 @@ function LoginRegister() {
             img: imagenesCabin.length > 0 ? imagenesCabin[0] : "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
             price: `$${(cabin.precio || 0).toLocaleString()} COP/noche`,
             precioNumerico: cabin.precio || 0,
-            sede: getSedeNombre(cabin.idSede, sedesData),
+            sede: nombreSede,
             tipo: nombreTipo,
             capacidad: cabin.capacidad || 2,
             habitaciones: cabin.habitaciones || 1,
@@ -789,27 +840,35 @@ function LoginRegister() {
     return sedesTransformadas;
   }, [sedes, cabañas]);
 
-  // Obtener opciones únicas para filtros desde la API - CORREGIDO
+  // Obtener opciones únicas para filtros desde la API
   const sedesUnicas = useMemo(() => {
-    return [...new Set(cabañas.map(cabin => cabin.sede))];
-  }, [cabañas]);
+    if (sedes && sedes.length > 0) {
+      return sedes.map(sede => ({
+        id: sede.idSede,
+        nombre: sede.nombreSede
+      }));
+    }
+    return [];
+  }, [sedes]);
 
   const tiposUnicos = useMemo(() => {
-    // Usar directamente los tipos de cabañas de la API
     if (tiposCabanas && tiposCabanas.length > 0) {
-      return tiposCabanas.map(tipo => tipo.nombreTipo);
+      return tiposCabanas.map(tipo => ({
+        id: tipo.idTipoCabana,
+        nombre: tipo.nombreTipoCabana
+      }));
     }
-    return [...new Set(cabañas.map(cabin => cabin.tipo))];
-  }, [cabañas, tiposCabanas]);
+    return [];
+  }, [tiposCabanas]);
 
   const capacidadesUnicas = useMemo(() => {
-    return [...new Set(cabañas.map(cabin => cabin.capacidad))].sort((a, b) => a - b);
+    return [...new Set(cabañas.map(cabin => cabin.capacidad))].sort((a, b) => a - b).filter(Boolean);
   }, [cabañas]);
 
   // Función para filtrar cabañas
   const cabañasFiltradas = cabañas.filter(cabin => {
-    const coincideSede = !filtroSede || cabin.sede === filtroSede;
-    const coincideTipo = !filtroTipo || cabin.tipo === filtroTipo;
+    const coincideSede = !filtroSede || cabin.idSede === parseInt(filtroSede);
+    const coincideTipo = !filtroTipo || cabin.idTipoCabana === parseInt(filtroTipo);
     const coincideCapacidad = !filtroCapacidad || cabin.capacidad >= parseInt(filtroCapacidad);
    
     return coincideSede && coincideTipo && coincideCapacidad;
@@ -1065,7 +1124,7 @@ function LoginRegister() {
     return selectedDate < today;
   };
 
-  // Manejar olvidé contraseña
+  // NUEVA FUNCIÓN: Manejar olvidé contraseña
   const handleForgotPassword = () => {
     if (!loginEmail) {
       showErrorAlert('Correo requerido', 'Por favor ingresa tu correo electrónico para recuperar tu contraseña');
@@ -1100,7 +1159,7 @@ function LoginRegister() {
       });
   };
 
-  // Verificar código de recuperación
+  // NUEVA FUNCIÓN: Verificar código de recuperación
   const handleVerifyResetCode = async (e) => {
     e.preventDefault();
    
@@ -1123,7 +1182,7 @@ function LoginRegister() {
     }
   };
 
-  // Restablecer contraseña
+  // NUEVA FUNCIÓN: Restablecer contraseña
   const handleResetPassword = async (e) => {
     e.preventDefault();
    
@@ -1167,7 +1226,7 @@ function LoginRegister() {
     }
   };
 
-  // Función de Login
+  // MODIFICADA: Función de Login - MEJORADA para guardar todos los campos
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
    
@@ -1201,15 +1260,18 @@ function LoginRegister() {
         const user = loginResult.usuario;
         console.log("👤 Usuario logueado:", user);
 
+        // Consultar el usuario completo desde la BD para obtener TODOS los campos
         const userFromDB = await findUserInList(user.correo);
 
         if (!userFromDB) {
           throw new Error('Usuario no encontrado en la base de datos');
         }
 
+        // Obtener información del rol
         const roleInfo = await getUserRoleInfo(userFromDB.idRol);
        
-        let rol = "Cliente";
+        // Determinar el rol basado en idRol
+        let rol = "Cliente"; // Por defecto
         let nombreRol = "Cliente";
        
         if (userFromDB.idRol === 1) {
@@ -1221,16 +1283,30 @@ function LoginRegister() {
         }
 
         console.log("🎯 Rol del usuario:", { idRol: userFromDB.idRol, rol, nombreRol });
+        console.log("📋 Datos completos del usuario desde BD:", userFromDB);
 
-        saveUser({
+        // CORREGIDO: Guardar usuario en localStorage con TODOS los campos necesarios
+        const userToSave = {
+          // Datos del login
           ...user,
+          // Datos completos de la BD (incluye tipoDocumento, numeroDocumento, celular, etc.)
+          ...userFromDB,
+          // Información del rol
           rol,
           nombreRol,
           idRol: userFromDB.idRol
-        });
+        };
 
+        saveUser(userToSave);
+
+        // Verificar que se guardó correctamente
+        const savedUser = getUser();
+        console.log('✅ Usuario guardado en localStorage:', savedUser);
+
+        // Enviar código de verificación
         const verificationResult = await sendVerificationCode(loginEmail);
        
+        // MOSTRAR PANTALLA DE VERIFICACIÓN INMEDIATAMENTE
         console.log('🔄 Activando pantalla de verificación...');
         setUserEmail(loginEmail);
         setShowVerification(true);
@@ -1280,7 +1356,7 @@ function LoginRegister() {
     }
   };
 
-  // Manejar verificación de código
+  // FUNCIÓN CORREGIDA: Manejar verificación de código
   const handleVerifyCode = async (e) => {
     e.preventDefault();
    
@@ -1303,14 +1379,17 @@ function LoginRegister() {
      
       console.log('📊 Resultado completo de verificación:', verificationResult);
      
+      // MODIFICACIÓN CLAVE: Verificar si la verificación fue exitosa
       const isSuccess = verificationResult && verificationResult.exito;
      
       if (isSuccess) {
         console.log('✅ Verificación exitosa');
        
+        // Obtener el usuario actual
         const currentUser = getUser();
        
         if (currentUser) {
+          // Mensaje y redirección según rol
           if (currentUser.rol === "Admin") {
             showSuccessAlert('Inicio de sesión', `¡Bienvenido Administrador ${currentUser.nombre || ''}!`);
             navigate("/dashboard");
@@ -1322,6 +1401,7 @@ function LoginRegister() {
           showErrorAlert('Error', 'No se pudo obtener la información del usuario');
         }
       } else {
+        // Si la verificación falla
         console.error('❌ Verificación fallida:', verificationResult);
         const errorMessage = verificationResult?.mensaje || 'El código de verificación es incorrecto o ha expirado.';
         showErrorAlert('Código incorrecto', errorMessage);
@@ -1471,7 +1551,7 @@ function LoginRegister() {
     setCelular(value.replace(/[^0-9+]/g, ''));
   };
 
-  // Lógica de paginación para sedes - MODIFICADO: 3 sedes por página
+  // Lógica de paginación para sedes
   const sedesPaginadas = useMemo(() => {
     const startIndex = (currentSedePage - 1) * sedesPerPage;
     return sedesParaGaleria.slice(startIndex, startIndex + sedesPerPage);
@@ -1757,8 +1837,15 @@ function LoginRegister() {
         margin: 0,
         padding: 0,
         overflowX: "hidden",
+        width: "100%",
       }}>
-        <main style={{ width: "100%", margin: 0, padding: 0, overflowX: "hidden" }}>
+        <main style={{ 
+          width: "100%", 
+          margin: 0, 
+          padding: 0, 
+          overflowX: "hidden",
+          backgroundColor: "#f8faf8"
+        }}>
          
           {/* POPUPS */}
           {showPopup && selectedPackage && (
@@ -2233,7 +2320,13 @@ function LoginRegister() {
 
           {/* QUIENES SOMOS - MODIFICADO PARA MOSTRAR LOGO EN VEZ DE IMAGEN */}
           {showAboutUs && (
-            <section style={{ padding: "4rem 2rem", backgroundColor: "#f8faf8", margin: 0 }}>
+            <section style={{ 
+              padding: "4rem 2rem", 
+              backgroundColor: "#f8faf8", 
+              margin: 0,
+              width: "100%",
+              boxSizing: "border-box"
+            }}>
               <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                 <div style={{
                   backgroundColor: "#fff",
@@ -2319,6 +2412,7 @@ function LoginRegister() {
               justifyContent: "center",
               alignItems: "center",
               margin: 0,
+              width: "100%",
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -2443,6 +2537,7 @@ function LoginRegister() {
               justifyContent: "center",
               alignItems: "center",
               margin: 0,
+              width: "100%",
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -2537,6 +2632,7 @@ function LoginRegister() {
               justifyContent: "center",
               alignItems: "center",
               margin: 0,
+              width: "100%",
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -2640,6 +2736,7 @@ function LoginRegister() {
               justifyContent: "center",
               alignItems: "center",
               margin: 0,
+              width: "100%",
             }}>
               <div style={{
                 backgroundColor: "#fff",
@@ -2951,6 +3048,8 @@ function LoginRegister() {
                   width: "100%",
                   height: "90vh",
                   background: "linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url('https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
@@ -3101,7 +3200,13 @@ function LoginRegister() {
 
               {/* SEDES - 3 SEDES POR PÁGINA CON PAGINACIÓN */}
               {sedesParaGaleria.length > 0 && (
-                <section style={{ padding: "5rem 2rem", backgroundColor: "#fff", margin: 0 }}>
+                <section style={{ 
+                  padding: "5rem 2rem", 
+                  backgroundColor: "#fff", 
+                  margin: 0,
+                  width: "100%",
+                  boxSizing: "border-box"
+                }}>
                   <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                     <h2 style={{
                       fontSize: "3rem",
@@ -3235,7 +3340,13 @@ function LoginRegister() {
               )}
 
               {/* TODAS NUESTRAS CABAÑAS CON FILTROS - MEJORADO */}
-              <section style={{ padding: "3rem 2rem", backgroundColor: "#f8faf8", margin: 0 }}>
+              <section style={{ 
+                padding: "3rem 2rem", 
+                backgroundColor: "#f8faf8", 
+                margin: 0,
+                width: "100%",
+                boxSizing: "border-box"
+              }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <h2 style={{
                     fontSize: "3rem",
@@ -3258,9 +3369,9 @@ function LoginRegister() {
                       Encuentra tu Cabaña Ideal
                     </h3>
                    
-                    {/* Filtros desde la API - CORREGIDOS */}
+                    {/* Filtros desde la API - CORREGIDOS Y MEJORADOS */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "1rem" }}>
-                      {/* Filtro por sede */}
+                      {/* Filtro por sede - USANDO IDs */}
                       <div>
                         <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
                           <FaMapMarkerAlt style={{ marginRight: "0.5rem" }} /> Sede
@@ -3282,12 +3393,12 @@ function LoginRegister() {
                         >
                           <option value="">Todas las sedes</option>
                           {sedesUnicas.map((sede, index) => (
-                            <option key={index} value={sede}>{sede}</option>
+                            <option key={sede.id} value={sede.id}>{sede.nombre}</option>
                           ))}
                         </select>
                       </div>
 
-                      {/* Filtro por tipo desde API - CORREGIDO */}
+                      {/* Filtro por tipo desde API - USANDO IDs */}
                       <div>
                         <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
                           <FaHome style={{ marginRight: "0.5rem" }} /> Tipo
@@ -3309,7 +3420,7 @@ function LoginRegister() {
                         >
                           <option value="">Todos los tipos</option>
                           {tiposUnicos.map((tipo, index) => (
-                            <option key={index} value={tipo}>{tipo}</option>
+                            <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
                           ))}
                         </select>
                       </div>
@@ -3372,7 +3483,13 @@ function LoginRegister() {
               </section>
 
               {/* CABINAS DESTACADAS CON FILTROS APLICADOS Y BOTÓN VER MÁS - MEJORADO */}
-              <section style={{ padding: "0 2rem 5rem", backgroundColor: "#f8faf8", margin: 0 }}>
+              <section style={{ 
+                padding: "0 2rem 5rem", 
+                backgroundColor: "#f8faf8", 
+                margin: 0,
+                width: "100%",
+                boxSizing: "border-box"
+              }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
                     {cabañasParaMostrar.map((cabin, index) => (
@@ -3547,7 +3664,13 @@ function LoginRegister() {
               </section>
 
               {/* SERVICIOS CON BOTÓN VER MÁS */}
-              <section style={{ padding: "5rem 2rem", backgroundColor: "#fff", margin: 0 }}>
+              <section style={{ 
+                padding: "5rem 2rem", 
+                backgroundColor: "#fff", 
+                margin: 0,
+                width: "100%",
+                boxSizing: "border-box"
+              }}>
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                   <h2 style={{
                     fontSize: "3rem",
@@ -3660,7 +3783,15 @@ function LoginRegister() {
               </section>
 
               {/* CALL TO ACTION */}
-              <section style={{ padding: "5rem 2rem", background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", color: "#fff", textAlign: "center", margin: 0 }}>
+              <section style={{ 
+                padding: "5rem 2rem", 
+                background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", 
+                color: "#fff", 
+                textAlign: "center", 
+                margin: 0,
+                width: "100%",
+                boxSizing: "border-box"
+              }}>
                 <div style={{ maxWidth: "800px", margin: "0 auto" }}>
                   <h2 style={{ fontSize: "3rem", marginBottom: "1.5rem" }}>¿Listo para tu Aventura?</h2>
                   <p style={{ fontSize: "1.3rem", marginBottom: "2.5rem" }}>
@@ -3748,6 +3879,7 @@ function LoginRegister() {
             padding: "4rem 0 2rem",
             margin: 0,
             width: "100%",
+            boxSizing: "border-box"
           }}
         >
           <div style={{
