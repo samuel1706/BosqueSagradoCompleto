@@ -649,6 +649,19 @@ function LoginRegister() {
     window.scrollTo(0, 0);
   }, []);
 
+  // Efecto para controlar el scroll del body cuando se abren popups
+  useEffect(() => {
+    if (showPopup) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showPopup]);
+
   // Cargar datos de la API al montar el componente
   useEffect(() => {
     const loadData = async () => {
@@ -2448,7 +2461,7 @@ function LoginRegister() {
                         required
                         value={verificationCode}
                         onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
-                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1.1rem", letterSpacing: "2px" }}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1.1rem", letterSpacing: "2px", background: "unset", color: "#000" }}
                         maxLength={6}
                       />
                     </div>
@@ -2570,7 +2583,7 @@ function LoginRegister() {
                         required
                         value={resetPasswordCode}
                         onChange={(e) => setResetPasswordCode(e.target.value.replace(/[^0-9]/g, ''))}
-                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                         maxLength={6}
                       />
                     </div>
@@ -2664,7 +2677,7 @@ function LoginRegister() {
                         required
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                       />
                     </div>
                     <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
@@ -2675,7 +2688,7 @@ function LoginRegister() {
                         required
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                        style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                       />
                     </div>
                   </div>
@@ -2771,7 +2784,7 @@ function LoginRegister() {
                           required
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
-                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                         />
                       </div>
                       <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
@@ -2782,7 +2795,7 @@ function LoginRegister() {
                           required
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                         />
                       </div>
                     </div>
@@ -2867,7 +2880,7 @@ function LoginRegister() {
                             <select
                               value={tipoDocumento}
                               onChange={(e) => setTipoDocumento(e.target.value)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "transparent" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             >
                               {tiposDocumento.map((tipo) => (
                                 <option key={tipo} value={tipo}>{tipo}</option>
@@ -2884,7 +2897,7 @@ function LoginRegister() {
                               required
                               value={numeroDocumento}
                               onChange={handleDocumentNumberChange}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
                         </div>
@@ -2901,7 +2914,7 @@ function LoginRegister() {
                               required
                               value={firstName}
                               onChange={(e) => handleTextInputChange(e, setFirstName)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
                         </div>
@@ -2914,7 +2927,7 @@ function LoginRegister() {
                               required
                               value={lastName}
                               onChange={(e) => handleTextInputChange(e, setLastName)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
                         </div>
@@ -2931,7 +2944,7 @@ function LoginRegister() {
                               required
                               value={celular}
                               onChange={handlePhoneChange}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
                         </div>
@@ -2943,7 +2956,7 @@ function LoginRegister() {
                               required
                               value={fechaNacimiento}
                               onChange={(e) => setFechaNacimiento(e.target.value)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
                         </div>
@@ -2958,7 +2971,7 @@ function LoginRegister() {
                           required
                           value={registerEmail}
                           onChange={(e) => setRegisterEmail(e.target.value)}
-                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                         />
                       </div>
 
@@ -2973,7 +2986,7 @@ function LoginRegister() {
                               required
                               value={registerPassword}
                               onChange={(e) => setRegisterPassword(e.target.value)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
                         </div>
@@ -2986,7 +2999,7 @@ function LoginRegister() {
                               required
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem" }}
+                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
                         </div>
@@ -3389,6 +3402,8 @@ function LoginRegister() {
                             borderRadius: "8px",
                             fontSize: "1rem",
                             outline: "none",
+                            background: "unset",
+                            color: "#000"
                           }}
                         >
                           <option value="">Todas las sedes</option>
@@ -3416,6 +3431,8 @@ function LoginRegister() {
                             borderRadius: "8px",
                             fontSize: "1rem",
                             outline: "none",
+                            background: "unset",
+                            color: "#000"
                           }}
                         >
                           <option value="">Todos los tipos</option>
@@ -3443,6 +3460,8 @@ function LoginRegister() {
                             borderRadius: "8px",
                             fontSize: "1rem",
                             outline: "none",
+                            background: "unset",
+                            color: "#000"
                           }}
                         >
                           <option value="">Cualquier capacidad</option>

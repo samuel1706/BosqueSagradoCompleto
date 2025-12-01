@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   FaUser, 
   FaMapMarkerAlt, 
@@ -16,7 +16,16 @@ import {
   FaChevronRight,
   FaPhone,
   FaEnvelope,
-  FaChair
+  FaChair,
+  FaDollarSign,
+  FaImage,
+  FaSearch,
+  FaArrowUp,
+  FaChevronDown,
+  FaChevronUp,
+  FaCrown,
+  FaLightbulb,
+  FaEye
 } from "react-icons/fa";
 import { getUser, logout } from "../../utils/auth";
 import { useNavigate } from "react-router-dom";
@@ -43,6 +52,27 @@ const fetchCabinsFromAPI = async () => {
     return result;
   } catch (error) {
     console.error('Error obteniendo cabañas:', error);
+    throw error;
+  }
+};
+
+const fetchServicesFromAPI = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/Servicios`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo servicios');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error obteniendo servicios:', error);
     throw error;
   }
 };
@@ -155,15 +185,22 @@ const fetchImagenesFromAPI = async () => {
 const HomeCliente = () => {
   const user = getUser();
   const navigate = useNavigate();
+  
+  // Estados para filtros
   const [filtroSede, setFiltroSede] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroCapacidad, setFiltroCapacidad] = useState("");
   const [selectedCabin, setSelectedCabin] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [selectedSede, setSelectedSede] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [cabinImageIndex, setCabinImageIndex] = useState(0);
+  const [sedeImageIndex, setSedeImageIndex] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Estados para datos de la API
   const [cabañas, setCabañas] = useState([]);
+  const [paquetes, setPaquetes] = useState([]);
   const [sedes, setSedes] = useState([]);
   const [tiposCabanas, setTiposCabanas] = useState([]);
   const [comodidades, setComodidades] = useState([]);
@@ -172,13 +209,27 @@ const HomeCliente = () => {
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState(null);
 
+  // Estados para mostrar más contenido
+  const [showAllCabins, setShowAllCabins] = useState(false);
+  const [showAllServices, setShowAllServices] = useState(false);
+
+  // Estados para paginación
+  const [currentSedePage, setCurrentSedePage] = useState(1);
+  const sedesPerPage = 3;
+
+  // Efecto para scroll al inicio al cargar la página
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Cargar datos de la API al montar el componente
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [cabinsData, sedesData, tiposData, comodidadesData, cabanaComodidadesData, imagenesData] = await Promise.all([
+        const [cabinsData, servicesData, sedesData, tiposData, comodidadesData, cabanaComodidadesData, imagenesData] = await Promise.all([
           fetchCabinsFromAPI(),
+          fetchServicesFromAPI(),
           fetchSedesFromAPI(),
           fetchTiposCabanasFromAPI(),
           fetchComodidadesFromAPI(),
@@ -188,6 +239,7 @@ const HomeCliente = () => {
 
         console.log("📊 Datos obtenidos de la API:", {
           cabañas: cabinsData,
+          servicios: servicesData,
           sedes: sedesData,
           tipos: tiposData,
           comodidades: comodidadesData,
@@ -223,15 +275,15 @@ const HomeCliente = () => {
             id: cabin.idCabana,
             name: cabin.nombre,
             description: cabin.descripcion || "Cabaña cómoda y acogedora para tu estadía.",
-            img: imagenesCabin.length > 0 ? imagenesCabin[0] : "/images/default-cabin.jpg",
+            img: imagenesCabin.length > 0 ? imagenesCabin[0] : "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
             price: `$${(cabin.precio || 0).toLocaleString()} COP/noche`,
             precioNumerico: cabin.precio || 0,
             sede: nombreSede,
             tipo: nombreTipo,
             capacidad: cabin.capacidad || 2,
             habitaciones: cabin.habitaciones || 1,
-            imagenes: imagenesCabin.length > 0 ? imagenesCabin : ["/images/default-cabin.jpg"],
-            comodidades: comodidadesCabin.length > 0 ? comodidadesCabin : ["Baño Privado", "Cama King"],
+            imagenes: imagenesCabin.length > 0 ? imagenesCabin : ["https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg"],
+            comodidades: comodidadesCabin.length > 0 ? comodidadesCabin : ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"],
             // Información adicional de la API
             idSede: cabin.idSede,
             idTipoCabana: cabin.idTipoCabana,
@@ -241,7 +293,16 @@ const HomeCliente = () => {
           };
         });
 
+        // Transformar datos de servicios
+        const transformedServices = servicesData.map(service => ({
+          name: service.nombreServicio,
+          img: service.imagen || "https://res.cloudinary.com/dou17w0m0/image/upload/v1763576016/asados_nfmvlb.jpg",
+          description: service.descripcion || "Servicio de calidad para tu comodidad.",
+          price: `$${(service.precioServicio || 0).toLocaleString()} COP`
+        }));
+
         setCabañas(transformedCabins);
+        setPaquetes(transformedServices);
         setSedes(sedesData);
         setTiposCabanas(tiposData);
         setComodidades(comodidadesData);
@@ -253,6 +314,8 @@ const HomeCliente = () => {
         setDataError('Error al cargar los datos. Mostrando información de ejemplo.');
         // Datos de ejemplo en caso de error
         setCabañas(getDefaultCabins());
+        setPaquetes(getDefaultPackages());
+        setSedes(getDefaultSedes());
       } finally {
         setLoading(false);
       }
@@ -267,30 +330,108 @@ const HomeCliente = () => {
       id: 101,
       name: "Cabaña Ambar Room",
       description: "Amplia cabaña con jacuzzi privado. Ideal para parejas que buscan privacidad y lujo.",
-      img: "/images/C_Ambar_Room/img1.jpg",
+      img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
       price: "$395.000 COP/noche",
+      precioNumerico: 395000,
       sede: "Copacabana",
       tipo: "Premium",
       capacidad: 2,
       habitaciones: 1,
       imagenes: [
-        "/images/C_Ambar_Room/img1.jpg",
-        "/images/C_Ambar_Room/img2.jpg",
-        "/images/C_Ambar_Room/img3.jpg"
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575208/img2_dfakst.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575208/img3_lnpt77.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575208/img4_snjxn5.jpg"
       ],
-      comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"]
+      comodidades: ["Jacuzzi Privado", "Baño Privado", "Mini Bar", "Malla Catamarán", "BBQ a Gas", "Desayuno incluido", "Estacionamiento privado"],
+      estado: true
     }
   ];
 
-  // Obtener opciones únicas para filtros
-  const sedesUnicas = [...new Set(cabañas.map(cabin => cabin.sede))];
-  const tiposUnicos = [...new Set(cabañas.map(cabin => cabin.tipo))];
-  const capacidadesUnicas = [...new Set(cabañas.map(cabin => cabin.capacidad))].sort((a, b) => a - b);
+  const getDefaultPackages = () => [
+    {
+      name: "Kit de Asado",
+      img: "https://res.cloudinary.com/dou17w0m0/image/upload/v1763576016/asados_nfmvlb.jpg",
+      description: "Perfecto para una noche especial, este kit incluye un jugoso corte de carne acompañado de papas doradas y crujientes.",
+      price: "$150.000 COP",
+    }
+  ];
+
+  const getDefaultSedes = () => [
+    {
+      idSede: 1,
+      nombreSede: "Copacabana",
+      descripcion: "Disfruta de una experiencia única en nuestras cabañas premium ubicadas en Copacabana.",
+      images: [
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575223/img1_x2yzaj.jpg"
+      ],
+      cabañasCount: 4
+    },
+    {
+      idSede: 2,
+      nombreSede: "San Felix",
+      descripcion: "Vive momentos inolvidables en San Felix, donde la tranquilidad y el confort se fusionan.",
+      images: [
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575279/img1_nmydmr.jpg",
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575322/img1_r6txan.jpg"
+      ],
+      cabañasCount: 7
+    },
+    {
+      idSede: 3,
+      nombreSede: "Cerro de las Cruces",
+      descripcion: "Experimenta la magia de la montaña en nuestras cabañas con vistas espectaculares.",
+      images: [
+        "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575279/img1_nmydmr.jpg"
+      ],
+      cabañasCount: 0
+    }
+  ];
+
+  // Transformar sedes para la galería - TODAS LAS SEDES
+  const sedesParaGaleria = useMemo(() => {
+    const sedesTransformadas = sedes.map(sede => ({
+      id: sede.idSede,
+      name: sede.nombreSede,
+      description: sede.descripcion || `Disfruta de nuestras cabañas en ${sede.nombreSede}`,
+      cabañasCount: cabañas.filter(c => c.idSede === sede.idSede).length,
+      images: sede.images || ["https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg"],
+      cabañas: cabañas.filter(c => c.idSede === sede.idSede) // Agregar las cabañas de cada sede
+    }));
+    
+    return sedesTransformadas;
+  }, [sedes, cabañas]);
+
+  // Obtener opciones únicas para filtros desde la API
+  const sedesUnicas = useMemo(() => {
+    if (sedes && sedes.length > 0) {
+      return sedes.map(sede => ({
+        id: sede.idSede,
+        nombre: sede.nombreSede
+      }));
+    }
+    return [];
+  }, [sedes]);
+
+  const tiposUnicos = useMemo(() => {
+    if (tiposCabanas && tiposCabanas.length > 0) {
+      return tiposCabanas.map(tipo => ({
+        id: tipo.idTipoCabana,
+        nombre: tipo.nombreTipoCabana
+      }));
+    }
+    return [];
+  }, [tiposCabanas]);
+
+  const capacidadesUnicas = useMemo(() => {
+    return [...new Set(cabañas.map(cabin => cabin.capacidad))].sort((a, b) => a - b).filter(Boolean);
+  }, [cabañas]);
 
   // Función para filtrar cabañas
   const cabañasFiltradas = cabañas.filter(cabin => {
-    const coincideSede = !filtroSede || cabin.sede === filtroSede;
-    const coincideTipo = !filtroTipo || cabin.tipo === filtroTipo;
+    const coincideSede = !filtroSede || cabin.idSede === parseInt(filtroSede);
+    const coincideTipo = !filtroTipo || cabin.idTipoCabana === parseInt(filtroTipo);
     const coincideCapacidad = !filtroCapacidad || cabin.capacidad >= parseInt(filtroCapacidad);
    
     return coincideSede && coincideTipo && coincideCapacidad;
@@ -310,6 +451,11 @@ const HomeCliente = () => {
         prev === selectedCabin.imagenes.length - 1 ? 0 : prev + 1
       );
     }
+    if (selectedSede) {
+      setSedeImageIndex((prev) =>
+        prev === selectedSede.images.length - 1 ? 0 : prev + 1
+      );
+    }
   };
 
   const prevImage = () => {
@@ -318,6 +464,53 @@ const HomeCliente = () => {
         prev === 0 ? selectedCabin.imagenes.length - 1 : prev - 1
       );
     }
+    if (selectedSede) {
+      setSedeImageIndex((prev) =>
+        prev === 0 ? selectedSede.images.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Efecto para mostrar el botón de scroll to top
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Función para scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const showSuccessAlert = (title, text) => {
+    Swal.fire({
+      title,
+      text,
+      icon: 'success',
+      timer: 2000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      background: '#fff',
+      color: '#2E3A30',
+    });
+  };
+
+  const showErrorAlert = (title, text) => {
+    Swal.fire({
+      title,
+      text,
+      icon: 'error',
+      confirmButtonColor: '#2E5939',
+      background: '#fff',
+      color: '#2E3A30',
+    });
   };
 
   const handleShowCabinDetails = (cabin) => {
@@ -326,10 +519,25 @@ const HomeCliente = () => {
     setShowPopup(true);
   };
 
+  const handleShowPackageDetails = (paquete) => {
+    setSelectedPackage(paquete);
+    setShowPopup(true);
+  };
+
+  // Nueva función para mostrar galería de sede con cabañas
+  const handleShowSedeGallery = (sede) => {
+    setSelectedSede(sede);
+    setSedeImageIndex(0);
+    setShowPopup(true);
+  };
+
   const handleClosePopup = () => {
     setShowPopup(false);
+    setSelectedPackage(null);
     setSelectedCabin(null);
+    setSelectedSede(null);
     setCabinImageIndex(0);
+    setSedeImageIndex(0);
   };
 
   const handleReserveCabin = () => {
@@ -378,6 +586,91 @@ const HomeCliente = () => {
     fontSize: '12px',
     fontWeight: '500',
     margin: '2px'
+  };
+
+  // Lógica de paginación para sedes
+  const sedesPaginadas = useMemo(() => {
+    const startIndex = (currentSedePage - 1) * sedesPerPage;
+    return sedesParaGaleria.slice(startIndex, startIndex + sedesPerPage);
+  }, [sedesParaGaleria, currentSedePage]);
+
+  const totalSedePages = Math.ceil(sedesParaGaleria.length / sedesPerPage);
+
+  // Lógica para mostrar cabañas (6 iniciales, luego todas)
+  const cabañasParaMostrar = useMemo(() => {
+    if (showAllCabins) {
+      return cabañasFiltradas;
+    }
+    return cabañasFiltradas.slice(0, 6);
+  }, [cabañasFiltradas, showAllCabins]);
+
+  // Lógica para mostrar servicios (6 iniciales, luego todas)
+  const serviciosParaMostrar = useMemo(() => {
+    if (showAllServices) {
+      return paquetes;
+    }
+    return paquetes.slice(0, 6);
+  }, [paquetes, showAllServices]);
+
+  // Componente de paginación
+  const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        gap: '1rem', 
+        marginTop: '2rem',
+        flexWrap: 'wrap'
+      }}>
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: currentPage === 1 ? '#e0e0e0' : '#2E5939',
+            color: currentPage === 1 ? '#666' : '#fff',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+            fontSize: '0.9rem'
+          }}
+        >
+          <FaChevronLeft />
+        </button>
+        
+        <span style={{ 
+          color: '#2E5939', 
+          fontWeight: 'bold',
+          fontSize: '1rem'
+        }}>
+          Página {currentPage} de {totalPages}
+        </span>
+        
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: currentPage === totalPages ? '#e0e0e0' : '#2E5939',
+            color: currentPage === totalPages ? '#666' : '#fff',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+            fontSize: '0.9rem'
+          }}
+        >
+          <FaChevronRight />
+        </button>
+      </div>
+    );
+  };
+
+  // Función para abrir enlaces de redes sociales en nueva ventana
+  const handleSocialMediaClick = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   // Si no hay usuario, redirigir al login
@@ -430,25 +723,69 @@ const HomeCliente = () => {
               </span>
             </div>
           </div>
-          
-          <button 
-            onClick={handleLogout}
-            style={{
-              backgroundColor: "transparent",
-              color: "#E8F5E9",
-              border: "1px solid #E8F5E9",
-              padding: "0.5rem 1rem",
-              borderRadius: "20px",
-              cursor: "pointer",
-              fontWeight: "500",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem"
-            }}
-          >
-            <FaSignOutAlt />
-            Salir
-          </button>
+
+          {/* Botones de acción */}
+          <div style={{ display: "flex", gap: "1rem" }}>
+            <button 
+              onClick={handleNuevaReserva}
+              style={{
+                backgroundColor: "#E8F5E9",
+                color: "#2E5939",
+                border: "none",
+                padding: "0.5rem 1rem",
+                borderRadius: "20px",
+                cursor: "pointer",
+                fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.9rem"
+              }}
+            >
+              <FaPlusCircle />
+              Nueva Reserva
+            </button>
+            
+            <button 
+              onClick={handleMisReservas}
+              style={{
+                backgroundColor: "transparent",
+                color: "#E8F5E9",
+                border: "1px solid #E8F5E9",
+                padding: "0.5rem 1rem",
+                borderRadius: "20px",
+                cursor: "pointer",
+                fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.9rem"
+              }}
+            >
+              <FaListAlt />
+              Mis Reservas
+            </button>
+            
+            <button 
+              onClick={handleLogout}
+              style={{
+                backgroundColor: "transparent",
+                color: "#E8F5E9",
+                border: "1px solid #E8F5E9",
+                padding: "0.5rem 1rem",
+                borderRadius: "20px",
+                cursor: "pointer",
+                fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.9rem"
+              }}
+            >
+              <FaSignOutAlt />
+              Salir
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -490,32 +827,838 @@ const HomeCliente = () => {
         </div>
       )}
 
-      {/* Hero Section */}
-      <section style={{
-        background: "linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%)",
-        padding: "4rem 2rem",
-        textAlign: "center",
-        color: "#fff",
-        marginBottom: "3rem"
+      {/* Hero Section - IGUAL AL LANDING PRINCIPAL */}
+      <section
+        style={{
+          width: "100%",
+          height: "70vh",
+          background: "linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%), url('https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+          color: "#fff",
+          padding: "0",
+          margin: "0",
+          position: "relative",
+        }}
+      >
+        <div style={{ marginBottom: "2rem" }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "2rem"
+          }}>
+            <img
+              src="/images/Logo.png"
+              alt="Bosque Sagrado"
+              style={{
+                width: "120px",
+                height: "120px",
+                filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))"
+              }}
+            />
+          </div>
+          <h1 style={{
+            fontSize: "4.5rem",
+            marginBottom: "1rem",
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontWeight: "700",
+            textShadow: "2px 2px 8px rgba(0,0,0,0.5)"
+          }}>
+            Bosque Sagrado
+          </h1>
+          <p style={{ fontSize: "1.8rem", marginBottom: "2rem", textShadow: "1px 1px 4px rgba(0,0,0,0.5)" }}>
+            Donde el lujo se encuentra con la naturaleza
+          </p>
+        </div>
+
+        <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            onClick={handleNuevaReserva}
+            style={{
+              backgroundColor: "#E8F5E9",
+              color: "#2E5939",
+              border: "none",
+              padding: "18px 35px",
+              borderRadius: "30px",
+              fontWeight: "600",
+              fontSize: "1.2rem",
+              cursor: "pointer",
+            }}
+          >
+            Descubre la Magia
+          </button>
+          <button
+            onClick={scrollToTop}
+            style={{
+              backgroundColor: "transparent",
+              color: "#E8F5E9",
+              border: "2px solid #E8F5E9",
+              padding: "18px 35px",
+              borderRadius: "30px",
+              fontWeight: "600",
+              fontSize: "1.2rem",
+              cursor: "pointer",
+            }}
+          >
+            Explorar Cabañas
+          </button>
+        </div>
+      </section>
+
+      {/* NUEVA SECCIÓN EXCLUSIVA CON IMAGEN DE FONDO COMPLETA */}
+      <section
+        style={{
+          width: "100%",
+          height: "60vh",
+          backgroundImage: "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          margin: 0,
+          padding: 0,
+        }}
+      >
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(46, 89, 57, 0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
+          <div style={{
+            textAlign: "center",
+            color: "#fff",
+            maxWidth: "800px",
+            padding: "2rem",
+          }}>
+            <h2 style={{
+              fontSize: "3.5rem",
+              marginBottom: "1.5rem",
+              fontFamily: "'Playfair Display', serif",
+              fontWeight: "700",
+              textShadow: "2px 2px 8px rgba(0,0,0,0.5)"
+            }}>
+              Vive una Experiencia Única
+            </h2>
+            <p style={{
+              fontSize: "1.5rem",
+              marginBottom: "2.5rem",
+              lineHeight: "1.6",
+              textShadow: "1px 1px 4px rgba(0,0,0,0.5)"
+            }}>
+              Descubre la magia de conectar con la naturaleza sin sacrificar el confort. 
+              Nuestras cabañas premium te ofrecen el equilibrio perfecto entre lujo y aventura.
+            </p>
+            <button
+              onClick={handleNuevaReserva}
+              style={{
+                backgroundColor: "#E8F5E9",
+                color: "#2E5939",
+                border: "none",
+                padding: "18px 35px",
+                borderRadius: "30px",
+                fontWeight: "600",
+                fontSize: "1.2rem",
+                cursor: "pointer",
+                boxShadow: "0 4px 15px rgba(0,0,0,0.2)"
+              }}
+            >
+              Reserva Ahora
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* SEDES - 3 SEDES POR PÁGINA CON PAGINACIÓN */}
+      {sedesParaGaleria.length > 0 && (
+        <section style={{ 
+          padding: "5rem 2rem", 
+          backgroundColor: "#fff", 
+          margin: 0,
+          width: "100%",
+          boxSizing: "border-box"
+        }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <h2 style={{
+              fontSize: "3rem",
+              color: "#2E5939",
+              textAlign: "center",
+              marginBottom: "3rem",
+              fontFamily: "'Playfair Display', serif"
+            }}>
+              Nuestras Sedes
+            </h2>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "2rem",
+              justifyContent: "center"
+            }}>
+              {sedesPaginadas.map((sede, index) => (
+                <div
+                  key={sede.id}
+                  style={{
+                    backgroundColor: "#fff",
+                    borderRadius: "15px",
+                    overflow: "hidden",
+                    boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+                    width: "100%",
+                    maxWidth: "350px",
+                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                    margin: "0 auto",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-5px)";
+                    e.currentTarget.style.boxShadow = "0 12px 30px rgba(0,0,0,0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.1)";
+                  }}
+                >
+                  <div style={{
+                    backgroundColor: "#2E5939",
+                    padding: "2rem 1.5rem",
+                    textAlign: "center",
+                    color: "#fff"
+                  }}>
+                    <div style={{
+                      width: "60px",
+                      height: "60px",
+                      backgroundColor: "#E8F5E9",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 1rem",
+                      color: "#2E5939",
+                      fontSize: "1.5rem",
+                      fontWeight: "bold"
+                    }}>
+                      {sede.name.charAt(0)}
+                    </div>
+                    <h3 style={{
+                      margin: "0",
+                      fontSize: "1.5rem",
+                      textAlign: "center"
+                    }}>
+                      {sede.name}
+                    </h3>
+                  </div>
+                  <div style={{ padding: "1.5rem" }}>
+                    <p style={{
+                      color: "#5D6D63",
+                      marginBottom: "1.5rem",
+                      lineHeight: "1.5",
+                      textAlign: "center",
+                      fontSize: "0.95rem"
+                    }}>
+                      {sede.description}
+                    </p>
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: "1rem",
+                      marginBottom: "1.5rem"
+                    }}>
+                      <span style={{
+                        backgroundColor: "#E8F5E9",
+                        color: "#2E5939",
+                        padding: "0.4rem 0.8rem",
+                        borderRadius: "15px",
+                        fontWeight: "600",
+                        fontSize: "0.85rem"
+                      }}>
+                        {sede.cabañasCount} cabaña{sede.cabañasCount !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "center"
+                    }}>
+                      <button
+                        onClick={() => handleShowSedeGallery(sede)}
+                        style={{
+                          backgroundColor: "#2E5939",
+                          color: "#fff",
+                          border: "none",
+                          padding: "10px 20px",
+                          borderRadius: "20px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Ver Detalles
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Paginación para sedes - SOLO SI HAY MÁS DE 3 SEDES */}
+            {sedesParaGaleria.length > sedesPerPage && (
+              <Pagination
+                currentPage={currentSedePage}
+                totalPages={totalSedePages}
+                onPageChange={setCurrentSedePage}
+              />
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* TODAS NUESTRAS CABAÑAS CON FILTROS - MEJORADO */}
+      <section style={{ 
+        padding: "3rem 2rem", 
+        backgroundColor: "#f8faf8", 
+        margin: 0,
+        width: "100%",
+        boxSizing: "border-box"
+      }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <h2 style={{
+            fontSize: "3rem",
+            color: "#2E5939",
+            textAlign: "center",
+            marginBottom: "2rem",
+            fontFamily: "'Playfair Display', serif"
+          }}>
+            Todas Nuestras Cabañas
+          </h2>
+         
+          <div style={{
+            backgroundColor: "#fff",
+            padding: "2rem",
+            borderRadius: "15px",
+            boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
+            marginBottom: "2rem"
+          }}>
+            <h3 style={{ color: "#2E5939", marginBottom: "1.5rem", textAlign: "center" }}>
+              Encuentra tu Cabaña Ideal
+            </h3>
+           
+            {/* Filtros desde la API - CORREGIDOS Y MEJORADOS */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "1rem" }}>
+              {/* Filtro por sede - USANDO IDs */}
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
+                  <FaMapMarkerAlt style={{ marginRight: "0.5rem" }} /> Sede
+                </label>
+                <select
+                  value={filtroSede}
+                  onChange={(e) => setFiltroSede(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.8rem",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    outline: "none",
+                    background: "unset",
+                    color: "#000"
+                  }}
+                >
+                  <option value="">Todas las sedes</option>
+                  {sedesUnicas.map((sede, index) => (
+                    <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por tipo desde API - USANDO IDs */}
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
+                  <FaHome style={{ marginRight: "0.5rem" }} /> Tipo
+                </label>
+                <select
+                  value={filtroTipo}
+                  onChange={(e) => setFiltroTipo(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.8rem",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    outline: "none",
+                    background: "unset",
+                    color: "#000"
+                  }}
+                >
+                  <option value="">Todos los tipos</option>
+                  {tiposUnicos.map((tipo, index) => (
+                    <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por capacidad */}
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
+                  <FaUsers style={{ marginRight: "0.5rem" }} /> Capacidad mínima
+                </label>
+                <select
+                  value={filtroCapacidad}
+                  onChange={(e) => setFiltroCapacidad(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.8rem",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    outline: "none",
+                    background: "unset",
+                    color: "#000"
+                  }}
+                >
+                  <option value="">Cualquier capacidad</option>
+                  {capacidadesUnicas.map((capacidad, index) => (
+                    <option key={index} value={capacidad}>{capacidad} personas</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Botón limpiar */}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <button
+                onClick={limpiarFiltros}
+                style={{
+                  padding: "0.8rem 1.5rem",
+                  backgroundColor: "#e0e0e0",
+                  color: "#333",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Limpiar Filtros
+              </button>
+            </div>
+          </div>
+
+          {/* Resultados de búsqueda */}
+          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+            <p style={{ color: "#5D6D63", fontSize: "1.1rem" }}>
+              {cabañasFiltradas.length} cabaña{cabañasFiltradas.length !== 1 ? 's' : ''} encontrada{cabañasFiltradas.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CABINAS DESTACADAS CON FILTROS APLICADOS Y BOTÓN VER MÁS - MEJORADO */}
+      <section style={{ 
+        padding: "0 2rem 5rem", 
+        backgroundColor: "#f8faf8", 
+        margin: 0,
+        width: "100%",
+        boxSizing: "border-box"
+      }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
+            {cabañasParaMostrar.map((cabin, index) => (
+              <div
+                key={cabin.id}
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: "20px",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                  cursor: "pointer",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                }}
+                onClick={() => handleShowCabinDetails(cabin)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-5px)";
+                  e.currentTarget.style.boxShadow = "0 15px 40px rgba(0,0,0,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.1)";
+                }}
+              >
+                <img
+                  src={cabin.imagenes && cabin.imagenes.length > 0 ? cabin.imagenes[0] : cabin.img}
+                  alt={cabin.name}
+                  style={{
+                    width: "100%",
+                    height: "250px",
+                    objectFit: "cover"
+                  }}
+                  onError={(e) => {
+                    e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
+                  }}
+                />
+                <div style={{ padding: "2rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                    <h3 style={{ margin: "0", color: "#2E5939" }}>{cabin.name}</h3>
+                    <div style={{ display: "flex", alignItems: "center", color: "#FFD700" }}>
+                      <FaStar />
+                      <FaStar />
+                      <FaStar />
+                      <FaStar />
+                      <FaStar />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
+                      <FaMapMarkerAlt /> {cabin.sede}
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
+                      <FaHome /> {cabin.tipo}
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
+                      <FaUsers /> {cabin.capacidad} personas
+                    </span>
+                  </div>
+                  
+                  {/* Comodidades en la tarjeta */}
+                  {cabin.comodidades && cabin.comodidades.length > 0 && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+                        {cabin.comodidades.slice(0, 3).map((comodidad, index) => (
+                          <span
+                            key={index}
+                            style={comodidadTagStyle}
+                          >
+                            <FaChair size={8} /> {comodidad}
+                          </span>
+                        ))}
+                        {cabin.comodidades.length > 3 && (
+                          <span style={{
+                            ...comodidadTagStyle,
+                            backgroundColor: '#F7F4EA'
+                          }}>
+                            +{cabin.comodidades.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <p style={{ color: "#5D6D63", marginBottom: "1.5rem", fontSize: "0.95rem" }}>
+                    {cabin.description.length > 120 
+                      ? `${cabin.description.substring(0, 120)}...` 
+                      : cabin.description}
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "1.3rem", fontWeight: "bold", color: "#3E7E5C", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <FaDollarSign size={14} /> {cabin.price}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShowCabinDetails(cabin);
+                      }}
+                      style={{
+                        backgroundColor: "#2E5939",
+                        color: "#fff",
+                        border: "none",
+                        padding: "10px 20px",
+                        borderRadius: "20px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Ver Detalles
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {cabañasFiltradas.length === 0 && (
+            <div style={{ textAlign: "center", padding: "3rem", color: "#5D6D63" }}>
+              <h3 style={{ marginBottom: "1rem" }}>No se encontraron cabañas</h3>
+              <p>Intenta ajustar los filtros de búsqueda</p>
+            </div>
+          )}
+
+          {/* Botón Ver Más Cabañas - SOLO SI HAY MÁS DE 6 CABAÑAS */}
+          {cabañasFiltradas.length > 6 && !showAllCabins && (
+            <div style={{ textAlign: "center", marginTop: "3rem" }}>
+              <button
+                onClick={() => setShowAllCabins(true)}
+                style={{
+                  backgroundColor: "#2E5939",
+                  color: "#fff",
+                  border: "none",
+                  padding: "15px 30px",
+                  borderRadius: "25px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  margin: "0 auto"
+                }}
+              >
+                Ver Más Cabañas <FaChevronDown />
+              </button>
+            </div>
+          )}
+
+          {/* Botón Ver Menos Cabañas - CUANDO SE MUESTRAN TODAS */}
+          {showAllCabins && (
+            <div style={{ textAlign: "center", marginTop: "3rem" }}>
+              <button
+                onClick={() => setShowAllCabins(false)}
+                style={{
+                  backgroundColor: "#e0e0e0",
+                  color: "#333",
+                  border: "none",
+                  padding: "15px 30px",
+                  borderRadius: "25px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  margin: "0 auto"
+                }}
+              >
+                Ver Menos Cabañas <FaChevronUp />
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* SERVICIOS CON BOTÓN VER MÁS */}
+      <section style={{ 
+        padding: "5rem 2rem", 
+        backgroundColor: "#fff", 
+        margin: 0,
+        width: "100%",
+        boxSizing: "border-box"
+      }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <h2 style={{
+            fontSize: "3rem",
+            color: "#2E5939",
+            textAlign: "center",
+            marginBottom: "3rem",
+            fontFamily: "'Playfair Display', serif"
+          }}>
+            Servicios Exclusivos
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
+            {serviciosParaMostrar.map((paquete, index) => (
+              <div
+                key={index}
+                style={{
+                  backgroundColor: "#f8faf8",
+                  borderRadius: "20px",
+                  overflow: "hidden",
+                  boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+                }}
+              >
+                <img
+                  src={paquete.img}
+                  alt={paquete.name}
+                  style={{
+                    width: "100%",
+                    height: "200px",
+                    objectFit: "cover",
+                  }}
+                  onError={(e) => {
+                    e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763576016/asados_nfmvlb.jpg";
+                  }}
+                />
+                <div style={{ padding: "2rem", textAlign: "center" }}>
+                  <h3 style={{ color: "#2E5939", marginBottom: "1rem", fontSize: "1.5rem" }}>{paquete.name}</h3>
+                  <p style={{ color: "#5D6D63", marginBottom: "1.5rem" }}>{paquete.description}</p>
+                  <div style={{ fontSize: "1.4rem", fontWeight: "bold", color: "#3E7E5C", marginBottom: "1.5rem" }}>
+                    {paquete.price}
+                  </div>
+                  <button
+                    onClick={() => handleShowPackageDetails(paquete)}
+                    style={{
+                      backgroundColor: "#2E5939",
+                      color: "#fff",
+                      border: "none",
+                      padding: "12px 25px",
+                      borderRadius: "25px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      width: "100%",
+                    }}
+                  >
+                    Más Información
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Botón Ver Más Servicios - SOLO SI HAY MÁS DE 6 SERVICIOS */}
+          {paquetes.length > 6 && !showAllServices && (
+            <div style={{ textAlign: "center", marginTop: "3rem" }}>
+              <button
+                onClick={() => setShowAllServices(true)}
+                style={{
+                  backgroundColor: "#2E5939",
+                  color: "#fff",
+                  border: "none",
+                  padding: "15px 30px",
+                  borderRadius: "25px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  margin: "0 auto"
+                }}
+              >
+                Ver Más Servicios <FaChevronDown />
+              </button>
+            </div>
+          )}
+
+          {/* Botón Ver Menos Servicios - CUANDO SE MUESTRAN TODOS */}
+          {showAllServices && (
+            <div style={{ textAlign: "center", marginTop: "3rem" }}>
+              <button
+                onClick={() => setShowAllServices(false)}
+                style={{
+                  backgroundColor: "#e0e0e0",
+                  color: "#333",
+                  border: "none",
+                  padding: "15px 30px",
+                  borderRadius: "25px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  margin: "0 auto"
+                }}
+              >
+                Ver Menos Servicios <FaChevronUp />
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* QUIENES SOMOS - MODIFICADO PARA MOSTRAR LOGO EN VEZ DE IMAGEN */}
+      <section style={{ 
+        padding: "4rem 2rem", 
+        backgroundColor: "#f8faf8", 
+        margin: 0,
+        width: "100%",
+        boxSizing: "border-box"
+      }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div style={{
+            backgroundColor: "#fff",
+            padding: "3rem",
+            borderRadius: "20px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+            marginBottom: "3rem"
+          }}>
+            <h2 style={{
+              fontSize: "3rem",
+              color: "#2E5939",
+              marginBottom: "2rem",
+              textAlign: "center",
+              fontFamily: "Georgia, serif"
+            }}>
+              Nuestra Historia
+            </h2>
+            <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: "300px" }}>
+                <p style={{ fontSize: "1.2rem", lineHeight: "1.8", marginBottom: "1.5rem",color: "black" }}>
+                  En <strong>Bosque Sagrado</strong>, creemos que la conexión con la naturaleza no debe estar reñida con el lujo y la comodidad. Somos un santuario de glamping ubicado en Antioquia, Colombia, dedicados a ofrecerte una escapada mágica.
+                </p>
+                <p style={{ fontSize: "1.2rem", lineHeight: "1.8", color:"black" }}>
+                  Nuestro objetivo es brindarte un refugio lejos del bullicio de la ciudad, un lugar para reconectar contigo mismo, con tu pareja o con tus seres queridos, rodeado de la belleza y la tranquilidad del entorno natural.
+                </p>
+              </div>
+              <div style={{ flex: 1, minWidth: "300px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <img
+                  src="/images/Logo.png"
+                  alt="Bosque Sagrado Logo"
+                  style={{
+                    width: "250px",
+                    height: "250px",
+                    borderRadius: "15px",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.1)"
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", justifyContent: "center" }}>
+            <div style={{
+              flex: 1,
+              minWidth: "280px",
+              backgroundColor: "#fff",
+              padding: "2.5rem",
+              borderRadius: "15px",
+              textAlign: "center",
+              boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
+            }}>
+              <FaLightbulb size={60} color="#3E7E5C" style={{ marginBottom: "1.5rem" }} />
+              <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>Nuestra Misión</h3>
+              <p style={{ color: "#000000ff", fontSize: "1.2rem" }}>Ofrecer una experiencia de glamping inolvidable, combinando el lujo y la comodidad con la serenidad de la naturaleza.</p>
+            </div>
+            <div style={{
+              flex: 1,
+              minWidth: "280px",
+              backgroundColor: "#fff",
+              padding: "2.5rem",
+              borderRadius: "15px",
+              textAlign: "center",
+              boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
+            }}>
+              <FaEye size={60} color="#3E7E5C" style={{ marginBottom: "1.5rem" }} />
+              <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>Nuestra Visión</h3>
+              <p style={{ color: "#000000ff", fontSize: "1.2rem" }}>Convertirnos en el destino de glamping líder en Colombia, reconocidos por nuestra excelencia en el servicio y la sostenibilidad.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CALL TO ACTION */}
+      <section style={{ 
+        padding: "5rem 2rem", 
+        background: "linear-gradient(135deg, #2E5939 0%, #3E7E5C 100%)", 
+        color: "#fff", 
+        textAlign: "center", 
+        margin: 0,
+        width: "100%",
+        boxSizing: "border-box"
       }}>
         <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize: "3rem",
-            marginBottom: "1rem",
-            fontFamily: "'Playfair Display', serif",
-            fontWeight: "700"
-          }}>
-            Bienvenido a tu Paraíso
-          </h1>
-          <p style={{
-            fontSize: "1.3rem",
-            marginBottom: "2rem",
-            opacity: 0.9
-          }}>
-            Descubre la magia de conectar con la naturaleza sin sacrificar el confort
+          <h2 style={{ fontSize: "3rem", marginBottom: "1.5rem" }}>¿Listo para tu Aventura?</h2>
+          <p style={{ fontSize: "1.3rem", marginBottom: "2.5rem" }}>
+            Únete a la familia Bosque Sagrado y descubre la magia de conectar con la naturaleza sin sacrificar el confort.
           </p>
-          
-          {/* Quick Actions */}
           <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", flexWrap: "wrap" }}>
             <button
               onClick={handleNuevaReserva}
@@ -523,288 +1666,97 @@ const HomeCliente = () => {
                 backgroundColor: "#E8F5E9",
                 color: "#2E5939",
                 border: "none",
-                padding: "12px 25px",
-                borderRadius: "25px",
+                padding: "18px 35px",
+                borderRadius: "30px",
                 fontWeight: "600",
-                fontSize: "1rem",
+                fontSize: "1.2rem",
                 cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem"
               }}
             >
-              <FaPlusCircle />
-              Nueva Reserva
+              Hacer Reserva
             </button>
-            
             <button
               onClick={handleMisReservas}
               style={{
                 backgroundColor: "transparent",
                 color: "#E8F5E9",
                 border: "2px solid #E8F5E9",
-                padding: "12px 25px",
-                borderRadius: "25px",
+                padding: "18px 35px",
+                borderRadius: "30px",
                 fontWeight: "600",
-                fontSize: "1rem",
+                fontSize: "1.2rem",
                 cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem"
               }}
             >
-              <FaListAlt />
-              Mis Reservas
+              Ver Mis Reservas
             </button>
           </div>
         </div>
       </section>
 
-      {/* Filtros */}
-      <section style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-        <div style={{
-          backgroundColor: "#fff",
-          padding: "2rem",
-          borderRadius: "15px",
-          boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
-          marginBottom: "2rem"
-        }}>
-          <h3 style={{ color: "#2E5939", marginBottom: "1.5rem", textAlign: "center", fontSize: "1.5rem" }}>
-            Encuentra tu Cabaña Ideal
-          </h3>
-         
-          {/* Filtros */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "1rem" }}>
-            {/* Filtro por sede */}
-            <div>
-              <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
-                <FaMapMarkerAlt style={{ marginRight: "0.5rem" }} /> Sede
-              </label>
-              <select
-                value={filtroSede}
-                onChange={(e) => setFiltroSede(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.8rem",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "1rem",
-                  outline: "none",
-                }}
-              >
-                <option value="">Todas las sedes</option>
-                {sedesUnicas.map((sede, index) => (
-                  <option key={index} value={sede}>{sede}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Filtro por tipo */}
-            <div>
-              <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
-                <FaHome style={{ marginRight: "0.5rem" }} /> Tipo
-              </label>
-              <select
-                value={filtroTipo}
-                onChange={(e) => setFiltroTipo(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.8rem",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "1rem",
-                  outline: "none",
-                }}
-              >
-                <option value="">Todos los tipos</option>
-                {tiposUnicos.map((tipo, index) => (
-                  <option key={index} value={tipo}>{tipo}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Filtro por capacidad */}
-            <div>
-              <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
-                <FaUsers style={{ marginRight: "0.5rem" }} /> Capacidad mínima
-              </label>
-              <select
-                value={filtroCapacidad}
-                onChange={(e) => setFiltroCapacidad(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.8rem",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "1rem",
-                  outline: "none",
-                }}
-              >
-                <option value="">Cualquier capacidad</option>
-                {capacidadesUnicas.map((capacidad, index) => (
-                  <option key={index} value={capacidad}>{capacidad} personas</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Botón limpiar */}
-          <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
-            <button
-              onClick={limpiarFiltros}
+      {/* POPUPS */}
+      {showPopup && selectedPackage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 2000,
+          }}
+          onClick={handleClosePopup}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "2rem",
+              borderRadius: "15px",
+              maxWidth: "500px",
+              width: "90%",
+              boxShadow: "0 5px 25px rgba(0,0,0,0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ color: "#2E5939", textAlign: "center", marginBottom: "1rem" }}>{selectedPackage.name}</h2>
+            <img
+              src={selectedPackage.img}
+              alt={selectedPackage.name}
               style={{
-                padding: "0.8rem 1.5rem",
-                backgroundColor: "#e0e0e0",
-                color: "#333",
+                width: "100%",
+                height: "200px",
+                objectFit: "cover",
+                borderRadius: "10px",
+                marginBottom: "1rem",
+              }}
+            />
+            <p style={{ lineHeight: "1.6", color: "#2E3A30", marginBottom: "1rem" }}>{selectedPackage.description}</p>
+            <h4 style={{ color: "#3E7E5C", textAlign: "center", fontSize: "1.5rem", marginBottom: "1rem" }}>
+              Precio: {selectedPackage.price}
+            </h4>
+            <button
+              onClick={handleClosePopup}
+              style={{
+                width: "100%",
+                padding: "0.8rem",
+                backgroundColor: "#2E5939",
+                color: "#fff",
                 border: "none",
                 borderRadius: "8px",
                 cursor: "pointer",
-                fontWeight: "bold"
+                fontWeight: "bold",
               }}
             >
-              Limpiar Filtros
+              Cerrar
             </button>
           </div>
         </div>
+      )}
 
-        {/* Resultados de búsqueda */}
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <p style={{ color: "#5D6D63", fontSize: "1.1rem" }}>
-            {cabañasFiltradas.length} cabaña{cabañasFiltradas.length !== 1 ? 's' : ''} encontrada{cabañasFiltradas.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-      </section>
-
-      {/* Cabañas Destacadas */}
-      <section style={{ padding: "0 2rem 4rem", maxWidth: "1200px", margin: "0 auto" }}>
-        <h2 style={{
-          fontSize: "2.5rem",
-          color: "#2E5939",
-          textAlign: "center",
-          marginBottom: "3rem",
-          fontFamily: "'Playfair Display', serif"
-        }}>
-          Nuestras Cabañas
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
-          {cabañasFiltradas.map((cabin, index) => (
-            <div
-              key={cabin.id}
-              style={{
-                backgroundColor: "#fff",
-                borderRadius: "15px",
-                overflow: "hidden",
-                boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-                cursor: "pointer",
-                transition: "transform 0.3s ease, box-shadow 0.3s ease",
-              }}
-              onClick={() => handleShowCabinDetails(cabin)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-5px)";
-                e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.15)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 5px 15px rgba(0,0,0,0.1)";
-              }}
-            >
-              <img
-                src={cabin.img}
-                alt={cabin.name}
-                style={{
-                  width: "100%",
-                  height: "250px",
-                  objectFit: "cover"
-                }}
-                onError={(e) => {
-                  e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
-                }}
-              />
-              <div style={{ padding: "1.5rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-                  <h3 style={{ margin: "0", color: "#2E5939", fontSize: "1.3rem" }}>{cabin.name}</h3>
-                  <div style={{ display: "flex", alignItems: "center", color: "#FFD700" }}>
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
-                    <FaMapMarkerAlt /> {cabin.sede}
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
-                    <FaHome /> {cabin.tipo}
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#5D6D63", fontSize: "0.9rem" }}>
-                    <FaUsers /> {cabin.capacidad} personas
-                  </span>
-                </div>
-
-                {/* Comodidades en la tarjeta */}
-                {cabin.comodidades && cabin.comodidades.length > 0 && (
-                  <div style={{ marginBottom: "1rem" }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
-                      {cabin.comodidades.slice(0, 3).map((comodidad, index) => (
-                        <span
-                          key={index}
-                          style={comodidadTagStyle}
-                        >
-                          <FaChair size={8} /> {comodidad}
-                        </span>
-                      ))}
-                      {cabin.comodidades.length > 3 && (
-                        <span style={{
-                          ...comodidadTagStyle,
-                          backgroundColor: '#F7F4EA'
-                        }}>
-                          +{cabin.comodidades.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <p style={{ color: "#5D6D63", marginBottom: "1.5rem", lineHeight: "1.5", fontSize: "0.9rem" }}>
-                  {cabin.description}
-                </p>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#3E7E5C" }}>{cabin.price}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShowCabinDetails(cabin);
-                    }}
-                    style={{
-                      backgroundColor: "#2E5939",
-                      color: "#fff",
-                      border: "none",
-                      padding: "8px 16px",
-                      borderRadius: "20px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      fontSize: "0.9rem"
-                    }}
-                  >
-                    Ver Detalles
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {cabañasFiltradas.length === 0 && (
-          <div style={{ textAlign: "center", padding: "3rem", color: "#5D6D63" }}>
-            <h3 style={{ marginBottom: "1rem", color: "#2E5939" }}>No se encontraron cabañas</h3>
-            <p>Intenta ajustar los filtros de búsqueda</p>
-          </div>
-        )}
-      </section>
-
-      {/* Popup de detalles de cabaña */}
       {showPopup && selectedCabin && (
         <div
           style={{
@@ -844,7 +1796,7 @@ const HomeCliente = () => {
                 alt={selectedCabin.name}
                 style={{
                   width: "100%",
-                  height: "300px",
+                  height: "400px",
                   objectFit: "cover",
                   borderRadius: "10px",
                 }}
@@ -865,8 +1817,8 @@ const HomeCliente = () => {
                       border: "none",
                       color: "#2E5939",
                       fontSize: "1.5rem",
-                      width: "40px",
-                      height: "40px",
+                      width: "50px",
+                      height: "50px",
                       borderRadius: "50%",
                       cursor: "pointer",
                       display: "flex",
@@ -887,8 +1839,8 @@ const HomeCliente = () => {
                       border: "none",
                       color: "#2E5939",
                       fontSize: "1.5rem",
-                      width: "40px",
-                      height: "40px",
+                      width: "50px",
+                      height: "50px",
                       borderRadius: "50%",
                       cursor: "pointer",
                       display: "flex",
@@ -910,8 +1862,8 @@ const HomeCliente = () => {
                       <div
                         key={index}
                         style={{
-                          width: "10px",
-                          height: "10px",
+                          width: "12px",
+                          height: "12px",
                           borderRadius: "50%",
                           backgroundColor: index === cabinImageIndex ? "#2E5939" : "rgba(255,255,255,0.5)",
                           cursor: "pointer",
@@ -924,7 +1876,7 @@ const HomeCliente = () => {
               )}
             </div>
 
-            {/* Información detallada */}
+            {/* Información detallada - MEJORADA */}
             <div style={{ marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
@@ -947,11 +1899,13 @@ const HomeCliente = () => {
                 {selectedCabin.descripcionCompleta || selectedCabin.description}
               </p>
 
-              {/* Comodidades */}
+              {/* Comodidades desde la API - MEJORADO */}
               <div style={{ marginBottom: "1.5rem" }}>
-                <h4 style={{ color: "#2E5939", marginBottom: "0.5rem" }}>Comodidades:</h4>
+                <h4 style={{ color: "#2E5939", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <FaChair /> Comodidades:
+                </h4>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {selectedCabin.comodidades.map((comodidad, index) => (
+                  {selectedCabin.comodidades && selectedCabin.comodidades.map((comodidad, index) => (
                     <span
                       key={index}
                       style={comodidadTagStyle}
@@ -961,10 +1915,51 @@ const HomeCliente = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Información de imágenes */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h4 style={{ color: "#2E5939", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <FaImage /> Galería de Imágenes:
+                </h4>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", 
+                  gap: "0.5rem",
+                  marginTop: "0.5rem"
+                }}>
+                  {selectedCabin.imagenes.slice(0, 6).map((imagen, index) => (
+                    <img
+                      key={index}
+                      src={imagen}
+                      alt={`${selectedCabin.name} ${index + 1}`}
+                      style={{
+                        width: "100%",
+                        height: "80px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setCabinImageIndex(index)}
+                      onError={(e) => {
+                        e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <h4 style={{ color: "#3E7E5C", textAlign: "center", fontSize: "1.5rem", marginBottom: "1.5rem" }}>
-              Precio: {selectedCabin.price}
+            <h4 style={{ 
+              color: "#3E7E5C", 
+              textAlign: "center", 
+              fontSize: "1.8rem", 
+              marginBottom: "1.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem"
+            }}>
+              <FaDollarSign /> Precio: {selectedCabin.price}
             </h4>
            
             <div style={{ display: "flex", gap: "1rem" }}>
@@ -978,10 +1973,11 @@ const HomeCliente = () => {
                   border: "none",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  fontWeight: "bold"
+                  fontWeight: "bold",
+                  fontSize: "1.1rem",
                 }}
               >
-                Reservar Ahora
+                Reservar
               </button>
               <button
                 onClick={handleClosePopup}
@@ -993,7 +1989,8 @@ const HomeCliente = () => {
                   border: "none",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  fontWeight: "bold"
+                  fontWeight: "bold",
+                  fontSize: "1.1rem",
                 }}
               >
                 Cerrar
@@ -1003,12 +2000,215 @@ const HomeCliente = () => {
         </div>
       )}
 
+      {/* POPUP PARA GALERÍA DE SEDES - MODIFICADO PARA MOSTRAR CABAÑAS */}
+      {showPopup && selectedSede && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 2000,
+          }}
+          onClick={handleClosePopup}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "2rem",
+              borderRadius: "15px",
+              maxWidth: "900px",
+              width: "90%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 5px 25px rgba(0,0,0,0.2)",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ color: "#2E5939", textAlign: "center", marginBottom: "1.5rem" }}>{selectedSede.name}</h2>
+           
+            <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+              <div style={{
+                width: "100px",
+                height: "100px",
+                backgroundColor: "#2E5939",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 1rem",
+                color: "#fff",
+                fontSize: "2rem",
+                fontWeight: "bold"
+              }}>
+                {selectedSede.name.charAt(0)}
+              </div>
+              <h3 style={{ color: "#2E5939", marginBottom: "1rem" }}>{selectedSede.name}</h3>
+              <p style={{ lineHeight: "1.6", color: "#2E3A30", marginBottom: "1rem" }}>
+                {selectedSede.description}
+              </p>
+            </div>
+
+            <p style={{ lineHeight: "1.6", color: "#2E3A30", marginBottom: "1.5rem", textAlign: "center" }}>
+              {selectedSede.cabañasCount} cabaña{selectedSede.cabañasCount !== 1 ? 's' : ''} disponible{selectedSede.cabañasCount !== 1 ? 's' : ''}
+            </p>
+
+            {/* Mostrar cabañas de esta sede */}
+            {selectedSede.cabañas && selectedSede.cabañas.length > 0 && (
+              <div style={{ marginBottom: "2rem" }}>
+                <h4 style={{ 
+                  color: "#2E5939", 
+                  marginBottom: "1rem", 
+                  textAlign: "center",
+                  borderBottom: "2px solid #2E5939",
+                  paddingBottom: "0.5rem"
+                }}>
+                  Cabañas en {selectedSede.name}
+                </h4>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
+                  gap: "1rem",
+                  maxHeight: "300px",
+                  overflowY: "auto",
+                  padding: "1rem",
+                  backgroundColor: "#f8faf8",
+                  borderRadius: "10px"
+                }}>
+                  {selectedSede.cabañas.map((cabin, index) => (
+                    <div
+                      key={cabin.id}
+                      style={{
+                        backgroundColor: "#fff",
+                        padding: "1rem",
+                        borderRadius: "10px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        cursor: "pointer",
+                        transition: "transform 0.2s ease"
+                      }}
+                      onClick={() => {
+                        setSelectedCabin(cabin);
+                        setSelectedSede(null);
+                        setCabinImageIndex(0);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                        <img
+                          src={cabin.imagenes && cabin.imagenes.length > 0 ? cabin.imagenes[0] : cabin.img}
+                          alt={cabin.name}
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            objectFit: "cover",
+                            borderRadius: "8px"
+                          }}
+                          onError={(e) => {
+                            e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
+                          }}
+                        />
+                        <div>
+                          <h5 style={{ margin: "0 0 0.3rem 0", color: "#2E5939" }}>{cabin.name}</h5>
+                          <p style={{ margin: "0", fontSize: "0.9rem", color: "#5D6D63" }}>
+                            {cabin.capacidad} personas • {cabin.price}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedSede.cabañasCount === 0 && (
+              <div style={{ 
+                textAlign: "center", 
+                padding: "2rem", 
+                backgroundColor: "#f8faf8", 
+                borderRadius: "10px",
+                marginBottom: "1.5rem"
+              }}>
+                <p style={{ color: "#5D6D63", margin: 0 }}>
+                  Actualmente no hay cabañas disponibles en esta sede.
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={handleClosePopup}
+              style={{
+                width: "100%",
+                padding: "0.8rem",
+                backgroundColor: "#2E5939",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+              }}
+            >
+              Cerrar Galería
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* BOTÓN SCROLL TO TOP */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          style={{
+            position: "fixed",
+            bottom: "30px",
+            right: "30px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            backgroundColor: "#2E5939",
+            color: "#fff",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "1.2rem",
+            boxShadow: "0 4px 15px rgba(46, 89, 57, 0.3)",
+            zIndex: 1000,
+            transition: "all 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = "0 6px 20px rgba(46, 89, 57, 0.4)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 4px 15px rgba(46, 89, 57, 0.3)";
+          }}
+        >
+          <FaArrowUp />
+        </button>
+      )}
+
       {/* Footer */}
       <footer style={{
         backgroundColor: "#2E5939",
         color: "#fff",
-        padding: "3rem 2rem 2rem",
-        marginTop: "4rem"
+        padding: "4rem 0 2rem",
+        margin: 0,
+        width: "100%",
+        boxSizing: "border-box"
       }}>
         <div style={{
           maxWidth: "1200px",
@@ -1016,72 +2216,191 @@ const HomeCliente = () => {
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
           gap: "3rem",
-          marginBottom: "2rem"
+          marginBottom: "3rem",
+          padding: "0 2rem"
         }}>
+          {/* Logo y descripción */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "1rem" }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "1.5rem"
+            }}>
               <img
                 src="/images/Logo.png"
                 alt="Bosque Sagrado"
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: "80px",
+                  height: "80px",
                   marginRight: "1rem",
-                  filter: "brightness(0) invert(1)"
                 }}
                 onError={(e) => {
                   e.target.src = "https://res.cloudinary.com/dou17w0m0/image/upload/v1763575207/img1_gi8hgx.jpg";
                 }}
               />
-              <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: "bold", fontSize: "1.5rem" }}>
+              <span style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: "bold",
+                fontSize: "2rem"
+              }}>
                 Bosque Sagrado
               </span>
             </div>
-            <p style={{ color: "rgba(255,255,255,0.8)", lineHeight: "1.6", marginBottom: "1.5rem" }}>
+            <p style={{
+              lineHeight: "1.6",
+              color: "rgba(255,255,255,0.8)",
+              marginBottom: "1.5rem"
+            }}>
               Donde el lujo se encuentra con la naturaleza. Experimenta la magia del glamping en los paisajes más espectaculares de Antioquia.
             </p>
             <div style={{ display: "flex", gap: "1rem" }}>
-              {[FaFacebook, FaInstagram, FaWhatsapp].map((Icon, index) => (
-                <a key={index} href="#" style={{
+              <a
+                onClick={() => handleSocialMediaClick("https://www.facebook.com/glampingbosquesagrado/?ref=_xav_ig_profile_page_web#")}
+                style={{
                   color: "#fff",
-                  fontSize: "1.2rem",
+                  fontSize: "1.5rem",
                   padding: "0.5rem",
                   borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,0.1)"
-                }}>
-                  <Icon />
-                </a>
-              ))}
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+              >
+                <FaFacebook />
+              </a>
+              <a
+                onClick={() => handleSocialMediaClick("https://www.instagram.com/bosquesagradoglamping/")}
+                style={{
+                  color: "#fff",
+                  fontSize: "1.5rem",
+                  padding: "0.5rem",
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+              >
+                <FaInstagram />
+              </a>
+              <a
+                onClick={() => handleSocialMediaClick("https://api.whatsapp.com/send?phone=573145894884&text=Bienvenid%40%20a%20Bosque%20Sagrado%20Glamping.%20%0AMi%20nombre%20es%20Olga%20P%C3%A9rez%2C%20asesora%20autorizada.%20Ser%C3%A1%20un%20gusto%20asesorarte%20para%20que%20vivas%20una%20experiencia%20%C3%BAnica%20y%20hagas%20una%20excelente%20elecci%C3%B3n%20%F0%9F%8C%B3%F0%9F%8C%99%E2%98%80%EF%B8%8F")}
+                style={{
+                  color: "#fff",
+                  fontSize: "1.5rem",
+                  padding: "0.5rem",
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)"}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+              >
+                <FaWhatsapp />
+              </a>
             </div>
           </div>
 
+          {/* Enlaces rápidos */}
           <div>
-            <h4 style={{ marginBottom: "1rem", fontSize: "1.2rem" }}>Contacto</h4>
+            <h4 style={{
+              marginBottom: "1.5rem",
+              fontSize: "1.3rem",
+              fontFamily: "'Playfair Display', serif"
+            }}>
+              Enlaces Rápidos
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              <li style={{ marginBottom: "0.8rem" }}>
+                <a
+                  onClick={scrollToTop}
+                  style={{
+                    color: "rgba(255,255,255,0.8)",
+                    textDecoration: "none",
+                    cursor: "pointer",
+                    transition: "color 0.3s ease"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = "#fff"}
+                  onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                >
+                  Inicio
+                </a>
+              </li>
+              <li style={{ marginBottom: "0.8rem" }}>
+                <a
+                  onClick={handleNuevaReserva}
+                  style={{
+                    color: "rgba(255,255,255,0.8)",
+                    textDecoration: "none",
+                    cursor: "pointer",
+                    transition: "color 0.3s ease"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = "#fff"}
+                  onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                >
+                  Nueva Reserva
+                </a>
+              </li>
+              <li style={{ marginBottom: "0.8rem" }}>
+                <a
+                  onClick={handleMisReservas}
+                  style={{
+                    color: "rgba(255,255,255,0.8)",
+                    textDecoration: "none",
+                    cursor: "pointer",
+                    transition: "color 0.3s ease"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = "#fff"}
+                  onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.8)"}
+                >
+                  Mis Reservas
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contacto */}
+          <div>
+            <h4 style={{
+              marginBottom: "1.5rem",
+              fontSize: "1.3rem",
+              fontFamily: "'Playfair Display', serif"
+            }}>
+              Contacto
+            </h4>
             <div style={{ color: "rgba(255,255,255,0.8)", lineHeight: "1.6" }}>
-              <p style={{ margin: "0 0 0.8rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <FaPhone /> +57 300 123 4567
-              </p>
-              <p style={{ margin: "0 0 0.8rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <FaEnvelope /> info@bosquesagrado.com
-              </p>
-              <p style={{ margin: "0", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <FaMapMarkerAlt /> Antioquia, Colombia
-              </p>
+              <p style={{ margin: "0 0 1rem" }}>📞 +57 314 589 4884</p>
+              <p style={{ margin: "0 0 1rem" }}>✉️ info@bosquesagrado.com</p>
+              <p style={{ margin: "0" }}>📍 Copacabana, Antioquia</p>
             </div>
           </div>
         </div>
 
+        {/* Línea divisoria */}
         <div style={{
           borderTop: "1px solid rgba(255,255,255,0.2)",
           paddingTop: "2rem",
           textAlign: "center",
-          color: "rgba(255,255,255,0.6)"
+          color: "rgba(255,255,255,0.6)",
+          width: "100%",
+          padding: "2rem 2rem 0"
         }}>
           <p style={{ margin: 0 }}>
             © 2024 Bosque Sagrado. Todos los derechos reservados.
           </p>
         </div>
       </footer>
+
+      {/* Estilos CSS para fuentes */}
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+        `}
+      </style>
     </div>
   );
 };
