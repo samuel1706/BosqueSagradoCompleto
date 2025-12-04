@@ -593,12 +593,12 @@ const Disponibilidad = () => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     let filtered = disponibilidades.filter(d => 
-      d.dia.includes(dateStr)
+      d.dia && d.dia.includes(dateStr)
     );
 
     // Aplicar filtro de cabaña
     if (selectedCabana !== "todas") {
-      filtered = filtered.filter(d => d.idCabana.toString() === selectedCabana);
+      filtered = filtered.filter(d => d.idCabana && d.idCabana.toString() === selectedCabana);
     }
 
     // Aplicar filtro de estado
@@ -698,28 +698,16 @@ const Disponibilidad = () => {
       const fecha = new Date(newDisponibilidad.dia);
       const dia = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
       
-      // Extraer mes y año de la fecha
-      const mes = fecha.toISOString().substring(0, 7); // YYYY-MM
-      const anio = fecha.getFullYear().toString();
-
       const disponibilidadData = {
-        ...newDisponibilidad,
         dia: dia,
-        mes: mes,
-        anio: anio,
         estado: newDisponibilidad.estado === "true" || newDisponibilidad.estado === true,
         idCabana: parseInt(newDisponibilidad.idCabana)
       };
 
-      // Si estamos editando, agregar el ID
-      if (isEditing) {
-        disponibilidadData.idDisponibilidad = newDisponibilidad.idDisponibilidad;
-      }
-
       console.log("📤 Enviando datos de disponibilidad:", disponibilidadData);
 
       let response;
-      if (isEditing) {
+      if (isEditing && newDisponibilidad.idDisponibilidad) {
         response = await axios.put(`${API_DISPONIBILIDAD}/${newDisponibilidad.idDisponibilidad}`, disponibilidadData, {
           headers: { 'Content-Type': 'application/json' }
         });
@@ -912,7 +900,7 @@ const Disponibilidad = () => {
     const fecha = disponibilidad.dia ? disponibilidad.dia.split('T')[0] : "";
     
     setNewDisponibilidad({
-      ...disponibilidad,
+      idDisponibilidad: disponibilidad.idDisponibilidad,
       dia: fecha,
       estado: disponibilidad.estado ? "true" : "false",
       idCabana: disponibilidad.idCabana ? disponibilidad.idCabana.toString() : ""

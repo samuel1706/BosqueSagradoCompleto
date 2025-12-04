@@ -500,7 +500,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}>*</span>}
+        {required && <span style={{ color: "red" }}></span>}
       </label>
       {type === "select" ? (
         <select
@@ -2595,26 +2595,6 @@ const Gestiservi = () => {
                   />
                 </div>
 
-                <div>
-                  <FormField
-                    label="Estado del Servicio"
-                    name="estado"
-                    type="select"
-                    value={newServicio.estado}
-                    onChange={handleChange}
-                    onBlur={handleInputBlur}
-                    error={formErrors.estado}
-                    success={formSuccess.estado}
-                    warning={formWarnings.estado}
-                    options={[
-                      { value: true, label: "Activo" },
-                      { value: false, label: "Inactivo" }
-                    ]}
-                    required={true}
-                    disabled={loading}
-                    touched={touchedFields.estado}
-                  />
-                </div>
 
                 {/* Selector de Sede para asociar servicio - NUEVO */}
                 <div style={{ gridColumn: '1 / -1' }}>

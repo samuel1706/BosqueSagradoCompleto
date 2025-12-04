@@ -1985,18 +1985,10 @@ const Users = () => {
               {isEditing && (
                 <div style={{ marginBottom: '18px' }}>
                   <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      name="estado"
-                      checked={newUser.estado}
-                      onChange={(e) => setNewUser(prev => ({ ...prev, estado: e.target.checked }))}
-                      style={{ marginRight: '8px' }}
-                    />
-                    Usuario Activo
+                    
+                    
                   </label>
-                  <div style={{ fontSize: '0.85rem', color: '#679750', marginTop: '6px' }}>
-                    {newUser.estado ? 'El usuario podrá acceder al sistema' : 'El usuario estará desactivado y no podrá acceder'}
-                  </div>
+                  
                 </div>
               )}
 

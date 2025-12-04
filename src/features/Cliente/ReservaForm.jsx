@@ -21,7 +21,8 @@ const cardStyle = {
   boxShadow: '0 15px 40px rgba(46, 89, 57, 0.12)',
   overflow: 'hidden',
   border: '1px solid rgba(103, 151, 80, 0.15)',
-  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+  width: '100%'
 };
 
 const inputStyle = {
@@ -36,7 +37,8 @@ const inputStyle = {
   fontSize: "15px",
   transition: "all 0.3s ease",
   fontFamily: 'inherit',
-  fontWeight: '500'
+  fontWeight: '500',
+  maxWidth: '100%'
 };
 
 const inputFocusStyle = {
@@ -73,7 +75,8 @@ const alertStyle = {
   maxWidth: '450px',
   borderLeft: '5px solid',
   backdropFilter: 'blur(10px)',
-  animation: 'slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+  animation: 'slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+  maxWidth: 'calc(100vw - 40px)'
 };
 
 const btnPrimaryStyle = {
@@ -89,7 +92,8 @@ const btnPrimaryStyle = {
   fontSize: "15px",
   minWidth: '160px',
   letterSpacing: '0.3px',
-  textTransform: 'uppercase'
+  textTransform: 'uppercase',
+  width: 'auto'
 };
 
 const btnSecondaryStyle = {
@@ -103,7 +107,8 @@ const btnSecondaryStyle = {
   transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
   minWidth: '140px',
   fontSize: "14px",
-  letterSpacing: '0.3px'
+  letterSpacing: '0.3px',
+  width: 'auto'
 };
 
 // ===============================================
@@ -137,6 +142,18 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
   const [preview, setPreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     setMonto(defaultMonto || 0);
@@ -177,7 +194,7 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
   const handleSubmit = async () => {
     setError("");
     if (!monto || monto <= 0) {
-      setError("❌ Ingresa un monto válido.");
+      setError("❌ El monto del abono no es válido.");
       return;
     }
     if (!file) {
@@ -212,7 +229,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
       justifyContent: "center",
       zIndex: 20000,
       padding: "16px",
-      animation: 'fadeIn 0.3s ease-out'
+      animation: 'fadeIn 0.3s ease-out',
+      overflow: 'auto'
     }}>
       <div style={{
         width: "95%",
@@ -224,7 +242,9 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
         padding: "28px",
         boxShadow: "0 25px 60px rgba(0,0,0,0.35)",
         border: "1px solid rgba(103, 151, 80, 0.2)",
-        animation: 'scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        animation: 'scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        boxSizing: 'border-box',
+        overflowX: 'hidden'
       }}>
         {/* Header del Modal */}
         <div style={{
@@ -233,9 +253,11 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
           alignItems: "center",
           marginBottom: "20px",
           paddingBottom: "18px",
-          borderBottom: "2px solid #E8F0E8"
+          borderBottom: "2px solid #E8F0E8",
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: 'wrap' }}>
             <div style={{
               backgroundColor: '#2E5939',
               color: 'white',
@@ -246,23 +268,26 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '18px',
-              boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
+              boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)',
+              flexShrink: 0
             }}>
               <FaFileInvoiceDollar />
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h3 style={{
                 margin: 0,
                 color: "#2E5939",
                 fontSize: "22px",
-                fontWeight: "800"
+                fontWeight: "800",
+                wordBreak: 'break-word'
               }}>
                 Realizar Abono Inicial
               </h3>
               <p style={{
                 margin: "4px 0 0 0",
                 color: "#679750",
-                fontSize: "13px"
+                fontSize: "13px",
+                wordBreak: 'break-word'
               }}>
                 Completa tu reserva con el depósito del 50%
               </p>
@@ -278,7 +303,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
               fontSize: "18px",
               padding: "6px",
               borderRadius: "50%",
-              transition: "all 0.3s ease"
+              transition: "all 0.3s ease",
+              flexShrink: 0
             }}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = "#f5f5f5";
@@ -300,13 +326,14 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
           alignItems: "start"
         }}>
           {/* Columna Izquierda - Formulario */}
-          <div>
+          <div style={{ width: '100%', minWidth: 0 }}>
             <div style={{
               padding: "18px",
               backgroundColor: "#F9FBFA",
               borderRadius: "14px",
               border: "2px solid #E8F0E8",
-              marginBottom: "18px"
+              marginBottom: "18px",
+              overflow: 'hidden'
             }}>
               <h4 style={{
                 margin: "0 0 10px 0",
@@ -315,7 +342,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                 fontWeight: "700",
                 display: "flex",
                 alignItems: "center",
-                gap: "8px"
+                gap: "8px",
+                flexWrap: 'wrap'
               }}>
                 <FaCreditCard /> Información Bancaria
               </h4>
@@ -324,18 +352,19 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                 gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
                 gap: "10px",
                 color: "#2E5939",
-                fontSize: "13px"
+                fontSize: "13px",
+                wordBreak: 'break-word'
               }}>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <strong>Banco:</strong> Bancolombia
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <strong>Cuenta:</strong> 123-456789-00
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <strong>Tipo:</strong> Ahorros
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <strong>Titular:</strong> Bosque Sagrado S.A.S
                 </div>
               </div>
@@ -347,34 +376,46 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                 fontSize: "12px",
                 color: "#FFA000",
                 fontWeight: "600",
-                border: "1px solid #FFA000"
+                border: "1px solid #FFA000",
+                wordBreak: 'break-word'
               }}>
                 💡 <strong>Importante:</strong> Usa el concepto "Reserva EcoGlamping" en la transferencia
               </div>
             </div>
 
             {/* Campos del formulario */}
-            <div style={{ marginBottom: "18px" }}>
+            <div style={{ marginBottom: "18px", width: '100%' }}>
               <label style={labelStyle}>
                 <FaMoneyBillAlt style={{ marginRight: "8px" }} />
-                Monto a Abonar (50% del total)
+                Monto a Abonar (50% del total) - <span style={{ color: "#FFA000" }}>NO MODIFICABLE</span>
               </label>
               <input
                 type="number"
                 value={monto}
-                onChange={(e) => setMonto(e.target.value)}
+                readOnly
                 style={{
                   ...inputStyle,
                   fontSize: "16px",
                   fontWeight: "700",
-                  color: "#2E5939"
+                  color: "#2E5939",
+                  width: '100%',
+                  backgroundColor: '#f5f5f5',
+                  cursor: 'not-allowed',
+                  borderColor: '#E8F0E8'
                 }}
-                min="0"
-                step="1000"
               />
+              <div style={{
+                marginTop: "6px",
+                fontSize: "12px",
+                color: "#679750",
+                fontStyle: "italic",
+                wordBreak: 'break-word'
+              }}>
+                Este monto es el 50% del total calculado automáticamente
+              </div>
             </div>
 
-            <div style={{ marginBottom: "18px" }}>
+            <div style={{ marginBottom: "18px", width: '100%' }}>
               <label style={labelStyle}>
                 <FaCreditCard style={{ marginRight: "8px" }} />
                 Método de Pago
@@ -389,6 +430,7 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                   backgroundRepeat: 'no-repeat',
                   backgroundPosition: 'right 16px center',
                   backgroundSize: '16px',
+                  width: '100%'
                 }}
               >
                 {metodosPago.map(m => (
@@ -399,7 +441,7 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
               </select>
             </div>
 
-            <div style={{ marginBottom: "18px" }}>
+            <div style={{ marginBottom: "18px", width: '100%' }}>
               <label style={labelStyle}>
                 <FaUpload style={{ marginRight: "8px" }} />
                 Comprobante de Pago
@@ -412,7 +454,9 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                 backgroundColor: '#F9FBFA',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                position: 'relative'
+                position: 'relative',
+                width: '100%',
+                boxSizing: 'border-box'
               }}>
                 <input
                   type="file"
@@ -430,7 +474,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: "10px"
+                    gap: "10px",
+                    width: '100%'
                   }}
                 >
                   <div style={{
@@ -442,22 +487,25 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#2E5939',
-                    fontSize: '20px'
+                    fontSize: '20px',
+                    flexShrink: 0
                   }}>
                     <FaUpload />
                   </div>
-                  <div>
+                  <div style={{ width: '100%', minWidth: 0 }}>
                     <div style={{
                       color: '#2E5939',
                       fontWeight: '700',
                       marginBottom: '4px',
-                      fontSize: "14px"
+                      fontSize: "14px",
+                      wordBreak: 'break-word'
                     }}>
                       {file ? 'Comprobante seleccionado' : 'Haz clic para subir comprobante'}
                     </div>
                     <div style={{
                       color: '#679750',
-                      fontSize: "12px"
+                      fontSize: "12px",
+                      wordBreak: 'break-word'
                     }}>
                       {file ? file.name : 'Formatos: JPG, PNG (Máx. 5MB)'}
                     </div>
@@ -478,7 +526,9 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                 marginBottom: '18px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: "8px"
+                gap: "8px",
+                width: '100%',
+                wordBreak: 'break-word'
               }}>
                 <FaExclamationTriangle />
                 {error}
@@ -489,7 +539,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
             <div style={{
               display: "flex",
               gap: "14px",
-              marginTop: "20px"
+              marginTop: "20px",
+              flexWrap: 'wrap'
             }}>
               <button
                 onClick={handleSubmit}
@@ -503,7 +554,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: "10px"
+                  gap: "10px",
+                  minWidth: 'auto'
                 }}
               >
                 {submitting ? (
@@ -531,7 +583,9 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                   ...btnSecondaryStyle,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: "10px"
+                  gap: "10px",
+                  justifyContent: 'center',
+                  minWidth: 'auto'
                 }}
               >
                 <FaTimes />
@@ -541,13 +595,14 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
           </div>
 
           {/* Columna Derecha - Vista Previa */}
-          <div>
+          <div style={{ width: '100%', minWidth: 0 }}>
             <div style={{
               backgroundColor: '#FBFDF9',
               borderRadius: '14px',
               padding: '18px',
               border: '2px solid #E8F0E8',
-              height: '100%'
+              height: '100%',
+              boxSizing: 'border-box'
             }}>
               <h4 style={{
                 margin: "0 0 14px 0",
@@ -556,28 +611,36 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                 fontWeight: "700",
                 display: "flex",
                 alignItems: "center",
-                gap: "8px"
+                gap: "8px",
+                flexWrap: 'wrap'
               }}>
                 <FaImage /> Vista Previa del Comprobante
               </h4>
              
               {preview ? (
-                <div>
+                <div style={{ width: '100%' }}>
                   <img
                     src={preview}
                     alt="Vista previa del comprobante"
                     style={{
                       width: "100%",
+                      maxWidth: '100%',
+                      height: 'auto',
+                      maxHeight: '200px',
+                      objectFit: 'contain',
                       borderRadius: "10px",
                       border: "2px solid #E8F0E8",
-                      marginBottom: "14px"
+                      marginBottom: "14px",
+                      boxSizing: 'border-box'
                     }}
                   />
                   <div style={{
                     padding: "10px",
                     backgroundColor: "#E8F5E8",
                     borderRadius: "8px",
-                    border: "2px solid #2E5939"
+                    border: "2px solid #2E5939",
+                    width: '100%',
+                    boxSizing: 'border-box'
                   }}>
                     <div style={{
                       color: "#2E5939",
@@ -585,7 +648,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                       fontWeight: "600",
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px"
+                      gap: "8px",
+                      flexWrap: 'wrap'
                     }}>
                       <FaCheck />
                       Comprobante listo para enviar
@@ -601,14 +665,16 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                   border: "2px dashed #E8F0E8",
                   borderRadius: "10px",
                   color: "#679750",
-                  backgroundColor: "#F9FBFA"
+                  backgroundColor: "#F9FBFA",
+                  width: '100%',
+                  boxSizing: 'border-box'
                 }}>
-                  <div style={{ textAlign: "center" }}>
+                  <div style={{ textAlign: "center", width: '100%' }}>
                     <FaImage size={40} style={{ marginBottom: "10px", opacity: 0.5 }} />
-                    <div style={{ fontSize: "13px", fontWeight: "600" }}>
+                    <div style={{ fontSize: "13px", fontWeight: "600", wordBreak: 'break-word' }}>
                       Vista previa disponible
                     </div>
-                    <div style={{ fontSize: "11px", marginTop: "4px" }}>
+                    <div style={{ fontSize: "11px", marginTop: "4px", wordBreak: 'break-word' }}>
                       Selecciona un comprobante
                     </div>
                   </div>
@@ -621,13 +687,16 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                 padding: "14px",
                 backgroundColor: "#FFF3E0",
                 borderRadius: "10px",
-                border: "2px solid #FFA000"
+                border: "2px solid #FFA000",
+                width: '100%',
+                boxSizing: 'border-box'
               }}>
                 <h5 style={{
                   color: "#FFA000",
                   margin: "0 0 6px 0",
                   fontSize: "13px",
-                  fontWeight: "700"
+                  fontWeight: "700",
+                  wordBreak: 'break-word'
                 }}>
                   📋 Información Importante
                 </h5>
@@ -636,7 +705,8 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                   fontSize: "11px",
                   lineHeight: "1.4",
                   margin: 0,
-                  paddingLeft: "14px"
+                  paddingLeft: "14px",
+                  wordBreak: 'break-word'
                 }}>
                   <li>Tu reserva se confirmará tras verificar el comprobante</li>
                   <li>Proceso de verificación: 24-48 horas</li>
@@ -662,14 +732,19 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
   const diasAsociados = paqueteSeleccionado && paqueteSeleccionado.dias ? parseInt(paqueteSeleccionado.dias) : calcularDiasEstadia();
   const personasAsociadas = paqueteSeleccionado && paqueteSeleccionado.personas ? paqueteSeleccionado.personas : (cabanaSeleccionada ? cabanaSeleccionada.capacidad : 1);
 
+  // CORREGIDO: Calcular el total general con impuestos incluidos
+  const subtotalAlojamiento = formData.montoTotal || 0;
   const totalServiciosExtras = serviciosSeleccionados.reduce((total, servicio) =>
     total + (servicio.precioServicio * diasAsociados), 0
   );
-
-  const subtotalAlojamiento = formData.montoTotal || 0;
-  const totalGeneral = subtotalAlojamiento + totalServiciosExtras;
-  const abonoInicial = Math.round(totalGeneral * 0.5);
-  const saldoRestante = totalGeneral - abonoInicial;
+  
+  const subtotalGeneral = subtotalAlojamiento + totalServiciosExtras;
+  const impuestos = subtotalGeneral * 0.19; // 19% de impuestos
+  const totalGeneralConImpuestos = subtotalGeneral + impuestos;
+  
+  // CORREGIDO: Calcular el 50% del TOTAL con impuestos
+  const abonoInicial = Math.round(totalGeneralConImpuestos * 0.5);
+  const saldoRestante = totalGeneralConImpuestos - abonoInicial;
 
   return (
     <div style={{
@@ -681,20 +756,24 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
       boxShadow: '0 15px 40px rgba(46, 89, 57, 0.12)',
       border: '1px solid rgba(103, 151, 80, 0.15)',
       height: 'fit-content',
-      minWidth: '340px'
+      minWidth: '340px',
+      maxWidth: '100%',
+      boxSizing: 'border-box'
     }}>
       {/* Header del recibo */}
       <div style={{
         textAlign: 'center',
         marginBottom: '20px',
         paddingBottom: '18px',
-        borderBottom: '2px solid #E8F0E8'
+        borderBottom: '2px solid #E8F0E8',
+        width: '100%'
       }}>
         <h3 style={{
           margin: '0 0 6px 0',
           color: '#2E5939',
           fontSize: "18px",
-          fontWeight: "800"
+          fontWeight: "800",
+          wordBreak: 'break-word'
         }}>
           Resumen de tu Reserva
         </h3>
@@ -702,7 +781,8 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           margin: 0,
           color: '#679750',
           fontSize: "13px",
-          fontWeight: "500"
+          fontWeight: "500",
+          wordBreak: 'break-word'
         }}>
           Detalles y costos de tu experiencia
         </p>
@@ -715,15 +795,19 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           padding: "14px",
           borderRadius: "10px",
           marginBottom: "18px",
-          border: '1px solid #E8F0E8'
+          border: '1px solid #E8F0E8',
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: "6px"
+            marginBottom: "6px",
+            flexWrap: 'wrap',
+            gap: '5px'
           }}>
-            <span style={{ color: '#2E5939', fontWeight: "600", fontSize: "13px" }}>
+            <span style={{ color: '#2E5939', fontWeight: "600", fontSize: "13px", wordBreak: 'break-word' }}>
               {formData.fechaEntrada && formData.fechaSalida ? `${formData.fechaEntrada} → ${formData.fechaSalida}` : (paqueteSeleccionado ? `Paquete: ${paqueteSeleccionado.nombrePaquete}` : 'Fechas por seleccionar')}
             </span>
             <span style={{
@@ -732,12 +816,13 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
               padding: "3px 10px",
               borderRadius: '18px',
               fontSize: "11px",
-              fontWeight: "700"
+              fontWeight: "700",
+              flexShrink: 0
             }}>
               {diasAsociados} noche{diasAsociados !== 1 ? 's' : ''}
             </span>
           </div>
-          <div style={{ color: '#679750', fontSize: "12px", fontWeight: "500" }}>
+          <div style={{ color: '#679750', fontSize: "12px", fontWeight: "500", wordBreak: 'break-word' }}>
             {personasAsociadas} huésped{personasAsociadas !== 1 ? 'es' : ''}
           </div>
         </div>
@@ -745,12 +830,13 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 
       {/* Alojamiento seleccionado */}
       {(cabanaSeleccionada || paqueteSeleccionado) && (
-        <div style={{ marginBottom: "18px" }}>
+        <div style={{ marginBottom: "18px", width: '100%' }}>
           <h4 style={{
             margin: '0 0 10px 0',
             color: '#2E5939',
             fontSize: "15px",
-            fontWeight: "700"
+            fontWeight: "700",
+            wordBreak: 'break-word'
           }}>
             Alojamiento
           </h4>
@@ -761,35 +847,53 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             padding: "14px",
             backgroundColor: '#F9FBFA',
             borderRadius: "10px",
-            border: '1px solid #E8F0E8'
+            border: '1px solid #E8F0E8',
+            width: '100%',
+            boxSizing: 'border-box'
           }}>
-            <div style={{
-              width: '45px',
-              height: '45px',
-              borderRadius: "8px",
-              backgroundColor: '#2E5939',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: "18px",
-              flexShrink: 0
-            }}>
-              {cabanaSeleccionada ? <FaHome /> : <FaStar />}
-            </div>
-            <div style={{ flex: 1 }}>
+            {cabanaSeleccionada && cabanaSeleccionada.imagen ? (
+              <img 
+                src={cabanaSeleccionada.imagen} 
+                alt={cabanaSeleccionada.nombre}
+                style={{
+                  width: '45px',
+                  height: '45px',
+                  borderRadius: "8px",
+                  objectFit: 'cover',
+                  flexShrink: 0
+                }}
+              />
+            ) : (
+              <div style={{
+                width: '45px',
+                height: '45px',
+                borderRadius: "8px",
+                backgroundColor: '#2E5939',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: "18px",
+                flexShrink: 0
+              }}>
+                {cabanaSeleccionada ? <FaHome /> : <FaStar />}
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
                 fontWeight: "700",
                 color: '#2E5939',
                 fontSize: "14px",
-                marginBottom: "3px"
+                marginBottom: "3px",
+                wordBreak: 'break-word'
               }}>
                 {cabanaSeleccionada ? cabanaSeleccionada.nombre : paqueteSeleccionado.nombrePaquete}
               </div>
               <div style={{
                 color: '#679750',
                 fontSize: "12px",
-                lineHeight: "1.4"
+                lineHeight: "1.4",
+                wordBreak: 'break-word'
               }}>
                 {cabanaSeleccionada ?
                   (cabanaSeleccionada.descripcion || "Cabaña premium en la naturaleza") :
@@ -803,12 +907,13 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 
       {/* Ubicación */}
       {sedeSeleccionada && (
-        <div style={{ marginBottom: "18px" }}>
+        <div style={{ marginBottom: "18px", width: '100%' }}>
           <h4 style={{
             margin: '0 0 10px 0',
             color: '#2E5939',
             fontSize: "15px",
-            fontWeight: "700"
+            fontWeight: "700",
+            wordBreak: 'break-word'
           }}>
             Ubicación
           </h4>
@@ -819,14 +924,16 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             padding: "14px",
             backgroundColor: '#F9FBFA',
             borderRadius: "10px",
-            border: '1px solid #E8F0E8'
+            border: '1px solid #E8F0E8',
+            width: '100%',
+            boxSizing: 'border-box'
           }}>
             <FaMapMarkerAlt style={{ color: '#2E5939', fontSize: "16px", flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: "600", color: '#2E5939', fontSize: "13px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: "600", color: '#2E5939', fontSize: "13px", wordBreak: 'break-word' }}>
                 {sedeSeleccionada.nombreSede}
               </div>
-              <div style={{ color: '#679750', fontSize: "12px" }}>
+              <div style={{ color: '#679750', fontSize: "12px", wordBreak: 'break-word' }}>
                 {sedeSeleccionada.ubicacionSede}
               </div>
             </div>
@@ -835,12 +942,13 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
       )}
 
       {/* Desglose de costos */}
-      <div style={{ marginBottom: "20px" }}>
+      <div style={{ marginBottom: "20px", width: '100%' }}>
         <h4 style={{
           margin: '0 0 14px 0',
           color: '#2E5939',
           fontSize: "15px",
-          fontWeight: "700"
+          fontWeight: "700",
+          wordBreak: 'break-word'
         }}>
           Desglose de Costos
         </h4>
@@ -853,10 +961,11 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             alignItems: 'center',
             marginBottom: "10px",
             paddingBottom: "10px",
-            borderBottom: '1px solid #E8F0E8'
+            borderBottom: '1px solid #E8F0E8',
+            width: '100%'
           }}>
-            <span style={{ color: '#2E5939', fontSize: "13px" }}>Subtotal alojamiento</span>
-            <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
+            <span style={{ color: '#2E5939', fontSize: "13px", wordBreak: 'break-word' }}>Subtotal alojamiento</span>
+            <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
               {formatCurrency(subtotalAlojamiento)}
             </span>
           </div>
@@ -864,18 +973,19 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
 
         {/* Servicios extras */}
         {serviciosSeleccionados.length > 0 && (
-          <div style={{ marginBottom: "10px" }}>
+          <div style={{ marginBottom: "10px", width: '100%' }}>
             {serviciosSeleccionados.map((servicio, index) => (
               <div key={index} style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: "6px"
+                marginBottom: "6px",
+                width: '100%'
               }}>
-                <span style={{ color: '#679750', fontSize: "12px" }}>
+                <span style={{ color: '#679750', fontSize: "12px", wordBreak: 'break-word' }}>
                   + {servicio.nombreServicio}
                 </span>
-                <span style={{ color: '#679750', fontWeight: "600", fontSize: "12px" }}>
+                <span style={{ color: '#679750', fontWeight: "600", fontSize: "12px", flexShrink: 0 }}>
                   {formatCurrency(servicio.precioServicio * diasAsociados)}
                 </span>
               </div>
@@ -886,10 +996,11 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
               alignItems: 'center',
               marginBottom: "10px",
               paddingBottom: "10px",
-              borderBottom: '1px solid #E8F0E8'
+              borderBottom: '1px solid #E8F0E8',
+              width: '100%'
             }}>
-              <span style={{ color: '#2E5939', fontSize: "13px" }}>Total servicios</span>
-              <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
+              <span style={{ color: '#2E5939', fontSize: "13px", wordBreak: 'break-word' }}>Total servicios</span>
+              <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
                 +{formatCurrency(totalServiciosExtras)}
               </span>
             </div>
@@ -903,11 +1014,12 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           alignItems: 'center',
           marginBottom: "10px",
           paddingBottom: "10px",
-          borderBottom: '1px solid #E8F0E8'
+          borderBottom: '1px solid #E8F0E8',
+          width: '100%'
         }}>
-          <span style={{ color: '#2E5939', fontSize: "13px", fontWeight: "600" }}>Subtotal</span>
-          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
-            {formatCurrency(totalGeneral)}
+          <span style={{ color: '#2E5939', fontSize: "13px", fontWeight: "600", wordBreak: 'break-word' }}>Subtotal</span>
+          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
+            {formatCurrency(subtotalGeneral)}
           </span>
         </div>
 
@@ -918,11 +1030,12 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           alignItems: 'center',
           marginBottom: "14px",
           paddingBottom: "14px",
-          borderBottom: '2px solid #E8F0E8'
+          borderBottom: '2px solid #E8F0E8',
+          width: '100%'
         }}>
-          <span style={{ color: '#2E5939', fontSize: "13px" }}>Impuestos y tasas (19%)</span>
-          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
-            {formatCurrency(totalGeneral * 0.19)}
+          <span style={{ color: '#2E5939', fontSize: "13px", wordBreak: 'break-word' }}>Impuestos y tasas (19%)</span>
+          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
+            {formatCurrency(impuestos)}
           </span>
         </div>
 
@@ -935,11 +1048,13 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           padding: "14px",
           backgroundColor: '#2E5939',
           borderRadius: "10px",
-          color: 'white'
+          color: 'white',
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
-          <span style={{ fontWeight: "700", fontSize: "15px" }}>TOTAL</span>
-          <span style={{ fontWeight: "900", fontSize: "18px" }}>
-            {formatCurrency(totalGeneral + (totalGeneral * 0.19))}
+          <span style={{ fontWeight: "700", fontSize: "15px", wordBreak: 'break-word' }}>TOTAL</span>
+          <span style={{ fontWeight: "900", fontSize: "18px", flexShrink: 0 }}>
+            {formatCurrency(totalGeneralConImpuestos)}
           </span>
         </div>
 
@@ -948,18 +1063,22 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           padding: "14px",
           backgroundColor: '#FFF3E0',
           borderRadius: "10px",
-          border: '2px solid #FFA000'
+          border: '2px solid #FFA000',
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: "6px"
+            marginBottom: "6px",
+            flexWrap: 'wrap',
+            gap: '5px'
           }}>
-            <span style={{ color: '#FFA000', fontWeight: "600", fontSize: "13px" }}>
+            <span style={{ color: '#FFA000', fontWeight: "600", fontSize: "13px", wordBreak: 'break-word' }}>
               Depósito inicial (50%)
             </span>
-            <span style={{ color: '#FFA000', fontWeight: "800", fontSize: "14px" }}>
+            <span style={{ color: '#FFA000', fontWeight: "800", fontSize: "14px", flexShrink: 0 }}>
               {formatCurrency(abonoInicial)}
             </span>
           </div>
@@ -967,12 +1086,14 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: "6px"
+            marginBottom: "6px",
+            flexWrap: 'wrap',
+            gap: '5px'
           }}>
-            <span style={{ color: '#FFA000', fontWeight: "600", fontSize: "13px" }}>
+            <span style={{ color: '#FFA000', fontWeight: "600", fontSize: "13px", wordBreak: 'break-word' }}>
               Saldo restante
             </span>
-            <span style={{ color: '#FFA000', fontWeight: "800", fontSize: "14px" }}>
+            <span style={{ color: '#FFA000', fontWeight: "800", fontSize: "14px", flexShrink: 0 }}>
               {formatCurrency(saldoRestante)}
             </span>
           </div>
@@ -981,9 +1102,11 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             padding: "6px",
             backgroundColor: 'rgba(255, 255, 255, 0.5)',
             borderRadius: "6px",
-            textAlign: 'center'
+            textAlign: 'center',
+            width: '100%',
+            boxSizing: 'border-box'
           }}>
-            <span style={{ color: '#FFA000', fontSize: "11px", fontWeight: "600" }}>
+            <span style={{ color: '#FFA000', fontSize: "11px", fontWeight: "600", wordBreak: 'break-word' }}>
               💳 Abono requerido para confirmar reserva
             </span>
           </div>
@@ -995,16 +1118,19 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
         padding: "14px",
         backgroundColor: '#E8F5E8',
         borderRadius: "10px",
-        border: '2px solid #2E5939'
+        border: '2px solid #2E5939',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: "8px",
-          marginBottom: "6px"
+          marginBottom: "6px",
+          flexWrap: 'wrap'
         }}>
           <FaShieldAlt style={{ color: '#2E5939' }} />
-          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px" }}>
+          <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", wordBreak: 'break-word' }}>
             Reserva Protegida
           </span>
         </div>
@@ -1012,7 +1138,8 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           margin: 0,
           color: '#679750',
           fontSize: "11px",
-          lineHeight: "1.4"
+          lineHeight: "1.4",
+          wordBreak: 'break-word'
         }}>
           Tu reserva está 100% protegida. Cancelación gratuita hasta 48 horas antes del check-in.
         </p>
@@ -1033,7 +1160,10 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
     alignItems: 'center',
     marginBottom: '40px',
     position: 'relative',
-    padding: '0 20px'
+    padding: '0 20px',
+    width: '100%',
+    maxWidth: '100%',
+    overflow: 'hidden'
   }}>
     <div style={{
       position: 'absolute',
@@ -1089,7 +1219,8 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
           fontSize: "13px",
           fontWeight: "700",
           color: index <= currentStep ? '#2E5939' : '#679750',
-          textAlign: 'center'
+          textAlign: 'center',
+          wordBreak: 'break-word'
         }}>
           {step.label}
         </span>
@@ -1098,7 +1229,7 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
   </div>
 );
 
-// Componente de tarjeta de selección premium - MÁS COMPACTO
+// Componente de tarjeta de selección premium - MODIFICADO PARA MOSTRAR IMÁGENES REALES
 const SelectionCard = ({
   title,
   description,
@@ -1109,7 +1240,8 @@ const SelectionCard = ({
   features = [],
   popular = false,
   capacity = 2,
-  disabled = false
+  disabled = false,
+  imageUrl = null // Nuevo prop para imagen real
 }) => (
   <div
     onClick={disabled ? null : onSelect}
@@ -1123,7 +1255,10 @@ const SelectionCard = ({
       position: 'relative',
       transform: isSelected ? 'translateY(-6px) scale(1.02)' : 'translateY(0)',
       boxShadow: isSelected ? '0 20px 40px rgba(46, 89, 57, 0.15)' : '0 6px 25px rgba(0,0,0,0.08)',
-      opacity: disabled ? 0.6 : 1
+      opacity: disabled ? 0.6 : 1,
+      width: '100%',
+      boxSizing: 'border-box',
+      maxWidth: '100%'
     }}
     onMouseEnter={(e) => {
       if (!isSelected && !disabled) {
@@ -1150,7 +1285,10 @@ const SelectionCard = ({
         fontSize: "11px",
         fontWeight: "800",
         textTransform: 'uppercase',
-        boxShadow: '0 3px 12px rgba(255, 160, 0, 0.25)'
+        boxShadow: '0 3px 12px rgba(255, 160, 0, 0.25)',
+        zIndex: 2,
+        maxWidth: 'calc(100% - 36px)',
+        wordBreak: 'break-word'
       }}>
         ⭐ Más Popular
       </div>
@@ -1169,7 +1307,9 @@ const SelectionCard = ({
         fontWeight: "800",
         textTransform: 'uppercase',
         boxShadow: '0 3px 12px rgba(244, 67, 54, 0.25)',
-        zIndex: 2
+        zIndex: 2,
+        maxWidth: 'calc(100% - 36px)',
+        wordBreak: 'break-word'
       }}>
         No Disponible
       </div>
@@ -1177,12 +1317,17 @@ const SelectionCard = ({
    
     <div style={{
       width: '100%',
-      height: '120px',
+      height: '180px', // Altura aumentada para mejor visualización de imágenes
       borderRadius: "14px",
       marginBottom: "18px",
       background: disabled
         ? 'linear-gradient(135deg, #cccccc 0%, #999999 100%)'
-        : 'linear-gradient(135deg, #2E5939 0%, #679750 100%)',
+        : imageUrl 
+          ? `url(${imageUrl})`
+          : 'linear-gradient(135deg, #2E5939 0%, #679750 100%)',
+      backgroundSize: imageUrl ? 'cover' : 'auto',
+      backgroundPosition: imageUrl ? 'center' : 'center',
+      backgroundRepeat: 'no-repeat',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1191,27 +1336,43 @@ const SelectionCard = ({
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {image}
+      {/* Mostrar imagen o icono según corresponda */}
+      {!imageUrl && image}
       <div style={{
         position: 'absolute',
         bottom: "10px",
         right: "10px",
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         padding: "4px 10px",
         borderRadius: '18px',
         fontSize: "11px",
         fontWeight: "700",
-        backdropFilter: 'blur(8px)'
+        color: 'white',
+        backdropFilter: 'blur(8px)',
+        maxWidth: 'calc(100% - 20px)',
+        wordBreak: 'break-word'
       }}>
         {capacity} personas
       </div>
+      {/* Overlay para mejorar legibilidad del texto sobre la imagen */}
+      {imageUrl && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.3))'
+        }} />
+      )}
     </div>
    
     <h4 style={{
       margin: '0 0 10px 0',
       color: disabled ? '#999' : '#2E5939',
       fontSize: "18px",
-      fontWeight: "800"
+      fontWeight: "800",
+      wordBreak: 'break-word'
     }}>
       {title}
     </h4>
@@ -1220,13 +1381,14 @@ const SelectionCard = ({
       margin: '0 0 18px 0',
       color: disabled ? '#bbb' : '#679750',
       fontSize: "14px",
-      lineHeight: "1.5"
+      lineHeight: "1.5",
+      wordBreak: 'break-word'
     }}>
       {description}
     </p>
    
     {features.length > 0 && (
-      <div style={{ marginBottom: "18px" }}>
+      <div style={{ marginBottom: "18px", width: '100%' }}>
         {features.map((feature, index) => (
           <div key={index} style={{
             display: 'flex',
@@ -1235,10 +1397,11 @@ const SelectionCard = ({
             marginBottom: "6px",
             fontSize: "13px",
             color: disabled ? '#bbb' : '#2E5939',
-            fontWeight: "500"
+            fontWeight: "500",
+            wordBreak: 'break-word'
           }}>
-            <FaCheck style={{ color: disabled ? '#bbb' : '#4CAF50', fontSize: "12px" }} />
-            {feature}
+            <FaCheck style={{ color: disabled ? '#bbb' : '#4CAF50', fontSize: "12px", flexShrink: 0 }} />
+            <span style={{ flex: 1 }}>{feature}</span>
           </div>
         ))}
       </div>
@@ -1247,12 +1410,14 @@ const SelectionCard = ({
     <div style={{
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center'
+      alignItems: 'center',
+      width: '100%'
     }}>
       <span style={{
         fontSize: "22px",
         fontWeight: "900",
-        color: disabled ? '#999' : '#2E5939'
+        color: disabled ? '#999' : '#2E5939',
+        wordBreak: 'break-word'
       }}>
         {price}
       </span>
@@ -1265,7 +1430,8 @@ const SelectionCard = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        flexShrink: 0
       }}>
         {isSelected && <FaCheck style={{ color: 'white', fontSize: "12px" }} />}
       </div>
@@ -1294,7 +1460,10 @@ const ServicioExtraCard = ({
         backgroundColor: isSelected ? '#F9FBFA' : 'white',
         display: 'flex',
         alignItems: 'center',
-        gap: "14px"
+        gap: "14px",
+        width: '100%',
+        boxSizing: 'border-box',
+        maxWidth: '100%'
       }}
       onMouseEnter={(e) => {
         if (!isSelected) {
@@ -1323,25 +1492,29 @@ const ServicioExtraCard = ({
         {isSelected && <FaCheck style={{ color: 'white', fontSize: "11px" }} />}
       </div>
      
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: "6px"
+          marginBottom: "6px",
+          flexWrap: 'wrap',
+          gap: '5px'
         }}>
           <h5 style={{
             margin: 0,
             color: '#2E5939',
             fontSize: "15px",
-            fontWeight: "700"
+            fontWeight: "700",
+            wordBreak: 'break-word'
           }}>
             {servicio.nombreServicio}
           </h5>
           <span style={{
             color: '#2E5939',
             fontWeight: "800",
-            fontSize: "15px"
+            fontSize: "15px",
+            flexShrink: 0
           }}>
             ${servicio.precioServicio.toLocaleString()} / noche
           </span>
@@ -1350,7 +1523,8 @@ const ServicioExtraCard = ({
           margin: 0,
           color: '#679750',
           fontSize: "13px",
-          lineHeight: "1.4"
+          lineHeight: "1.4",
+          wordBreak: 'break-word'
         }}>
           {servicio.descripcion}
         </p>
@@ -1359,7 +1533,8 @@ const ServicioExtraCard = ({
             marginTop: "6px",
             fontSize: "12px",
             color: '#FFA000',
-            fontWeight: "600"
+            fontWeight: "600",
+            wordBreak: 'break-word'
           }}>
             Total por {diasEstadia} noches: ${precioTotal.toLocaleString()}
           </div>
@@ -1379,6 +1554,18 @@ const AlertDialog = ({
   confirmText = "Sí, cancelar",
   cancelText = "Continuar"
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -1394,7 +1581,8 @@ const AlertDialog = ({
       justifyContent: 'center',
       zIndex: 10001,
       padding: "16px",
-      animation: 'fadeIn 0.3s ease-out'
+      animation: 'fadeIn 0.3s ease-out',
+      overflow: 'hidden'
     }}>
       <div style={{
         backgroundColor: 'white',
@@ -1405,7 +1593,9 @@ const AlertDialog = ({
         width: '100%',
         border: '1px solid #e0e0e0',
         animation: 'scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        textAlign: 'center'
+        textAlign: 'center',
+        boxSizing: 'border-box',
+        overflow: 'hidden'
       }}>
         <div style={{
           width: '70px',
@@ -1428,7 +1618,8 @@ const AlertDialog = ({
           margin: '0 0 14px 0',
           color: '#2E5939',
           fontSize: "20px",
-          fontWeight: "800"
+          fontWeight: "800",
+          wordBreak: 'break-word'
         }}>
           {title}
         </h3>
@@ -1437,7 +1628,8 @@ const AlertDialog = ({
           margin: '0 0 28px 0',
           color: '#666',
           fontSize: "15px",
-          lineHeight: "1.5"
+          lineHeight: "1.5",
+          wordBreak: 'break-word'
         }}>
           {message}
         </p>
@@ -1445,7 +1637,8 @@ const AlertDialog = ({
         <div style={{
           display: 'flex',
           gap: "14px",
-          justifyContent: 'center'
+          justifyContent: 'center',
+          flexWrap: 'wrap'
         }}>
           <button
             onClick={onCancel}
@@ -1459,7 +1652,9 @@ const AlertDialog = ({
               fontWeight: "700",
               fontSize: "14px",
               minWidth: '120px',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              width: '100%',
+              maxWidth: '200px'
             }}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = '#f8f9fa';
@@ -1485,7 +1680,9 @@ const AlertDialog = ({
               fontSize: "14px",
               minWidth: '120px',
               transition: 'all 0.3s ease',
-              boxShadow: '0 5px 18px rgba(46, 89, 57, 0.25)'
+              boxShadow: '0 5px 18px rgba(46, 89, 57, 0.25)',
+              width: '100%',
+              maxWidth: '200px'
             }}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = '#1e4629';
@@ -1537,7 +1734,7 @@ const FormField = ({
   };
 
   return (
-    <div style={{ marginBottom: '20px', ...style }}>
+    <div style={{ marginBottom: '20px', ...style, width: '100%' }}>
       <label style={labelStyle}>
         {icon && <span style={{ marginRight: "10px", color: '#679750' }}>{icon}</span>}
         {label}
@@ -1556,7 +1753,8 @@ const FormField = ({
             backgroundPosition: 'right 16px center',
             backgroundSize: "16px",
             cursor: disabled ? 'not-allowed' : 'pointer',
-            borderColor: !isValid ? '#e57373' : '#E8F0E8'
+            borderColor: !isValid ? '#e57373' : '#E8F0E8',
+            width: '100%'
           }}
           onFocus={(e) => !disabled && Object.assign(e.target.style, { ...inputFocusStyle, borderColor: !isValid ? '#e57373' : '#2E5939' })}
           onBlur={(e) => {
@@ -1587,7 +1785,8 @@ const FormField = ({
             minHeight: '100px',
             resize: 'vertical',
             fontFamily: 'inherit',
-            borderColor: !isValid ? '#e57373' : '#E8F0E8'
+            borderColor: !isValid ? '#e57373' : '#E8F0E8',
+            width: '100%'
           }}
           onFocus={(e) => Object.assign(e.target.style, { ...inputFocusStyle, borderColor: !isValid ? '#e57373' : '#2E5939' })}
           onBlur={(e) => {
@@ -1610,7 +1809,8 @@ const FormField = ({
           placeholder={placeholder}
           style={{
             ...inputStyle,
-            borderColor: !isValid ? '#e57373' : '#E8F0E8'
+            borderColor: !isValid ? '#e57373' : '#E8F0E8',
+            width: '100%'
           }}
           onFocus={(e) => Object.assign(e.target.style, { ...inputFocusStyle, borderColor: !isValid ? '#e57373' : '#2E5939' })}
           onBlur={(e) => {
@@ -1632,7 +1832,8 @@ const FormField = ({
           fontWeight: "600",
           display: 'flex',
           alignItems: 'center',
-          gap: "4px"
+          gap: "4px",
+          wordBreak: 'break-word'
         }}>
           <FaExclamationTriangle size={11} />
           {validationMessage}
@@ -1706,6 +1907,19 @@ export default function ReservaForm() {
   const [createdReservaId, setCreatedReservaId] = useState(null);
   const [abonoDefaultMonto, setAbonoDefaultMonto] = useState(0);
 
+  // Prevenir scroll cuando el modal de abono está abierto
+  useEffect(() => {
+    if (showAbonoModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showAbonoModal]);
+
   // Definir los pasos del formulario
   const steps = [
     { label: "Tus Datos", icon: <FaUser /> },
@@ -1753,7 +1967,7 @@ export default function ReservaForm() {
       const { cabana, usuario } = location.state;
       setFormData(prev => ({
         ...prev,
-        idSede: cabana.sede === "Copacabana" ? "1" : "2", // Ajusta según tus IDs de sede
+        idSede: cabana.sede === "Copacabana" ? "1" : "2",
         idCabana: cabana.id.toString()
       }));
     }
@@ -1771,7 +1985,7 @@ export default function ReservaForm() {
     calcularMontos();
   }, [formData.idPaquete, formData.fechaEntrada, formData.fechaSalida, formData.idCabana, serviciosSeleccionados]);
 
-  // CORREGIDO: Efecto para manejar fechas automáticamente cuando se selecciona un paquete
+  // Efecto para manejar fechas automáticamente cuando se selecciona un paquete
   useEffect(() => {
     const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
     if (paquete && paquete.dias) {
@@ -1842,12 +2056,16 @@ export default function ReservaForm() {
         fetchConManejoError(API_URLS.SEDES_POR_SERVICIO, [])
       ]);
 
+      // CORREGIDO: Procesar cabañas con imágenes
       const cabanasConDatos = cabanasData.map(cabana => ({
         idCabana: cabana.idCabana,
         nombre: cabana.nombre || `Cabaña ${cabana.idCabana}`,
         descripcion: cabana.descripcion || "Disfruta de una experiencia única en la naturaleza",
         precio: cabana.precio || 150000,
         capacidad: cabana.capacidad || 2,
+        imagen: cabana.imagen || cabana.foto || null, // Agregar campo de imagen
+        banios: cabana.banios || cabana.banos || 1,
+        area: cabana.area || 30,
         ...cabana
       }));
 
@@ -1994,7 +2212,7 @@ export default function ReservaForm() {
     }
   };
 
-  // Función para calcular montos automáticamente
+  // Función para calcular montos automáticamente incluyendo impuestos
   const calcularMontos = () => {
     const paqueteSeleccionado = apiData.paquetes.find(
       p => p.idPaquete === parseInt(formData.idPaquete)
@@ -2025,33 +2243,38 @@ export default function ReservaForm() {
       total + (servicio.precioServicio * diasEstadia), 0
     );
 
-    const montoTotal = (precioBase * diasEstadia) + totalServicios;
-    const abono = Math.round(montoTotal * 0.5);
-    const restante = montoTotal - abono;
+    const montoTotalAlojamiento = (precioBase * diasEstadia);
+    const subtotalGeneral = montoTotalAlojamiento + totalServicios;
+    const impuestos = subtotalGeneral * 0.19; // 19% de impuestos
+    const totalGeneralConImpuestos = subtotalGeneral + impuestos;
+    
+    // Calcular el 50% del TOTAL con impuestos
+    const abono = Math.round(totalGeneralConImpuestos * 0.5);
+    const restante = totalGeneralConImpuestos - abono;
 
     setFormData(prev => ({
       ...prev,
-      montoTotal: montoTotal,
+      montoTotal: montoTotalAlojamiento,
       abono: abono,
       restante: restante
     }));
+    
+    // Actualizar el monto del abono para el modal
+    setAbonoDefaultMonto(abono);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
    
-    // CORREGIDO: Validación especial para fechas
     if (name === 'fechaEntrada') {
       setFormData(prev => {
         const nuevaFechaEntrada = value;
         let nuevaFechaSalida = prev.fechaSalida;
        
-        // Si hay una fecha de salida anterior a la nueva fecha de entrada, resetearla
         if (nuevaFechaSalida && nuevaFechaEntrada >= nuevaFechaSalida) {
           nuevaFechaSalida = "";
         }
        
-        // Si hay un paquete seleccionado, calcular automáticamente la fecha de salida
         const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(prev.idPaquete));
         if (paquete && paquete.dias && nuevaFechaEntrada) {
           nuevaFechaSalida = addDays(nuevaFechaEntrada, paquete.dias);
@@ -2083,7 +2306,6 @@ export default function ReservaForm() {
         [name]: value
       };
      
-      // CORREGIDO: Si se selecciona un paquete y ya hay fecha de entrada, calcular automáticamente la fecha de salida
       if (name === 'idPaquete' && value && prev.fechaEntrada) {
         const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(value));
         if (paquete && paquete.dias) {
@@ -2115,7 +2337,6 @@ export default function ReservaForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Verificar que tenemos un usuario logueado
     if (!formData.idUsuario) {
       displayAlert("❌ No se pudo identificar al usuario. Por favor, inicia sesión nuevamente.", "error");
       return;
@@ -2313,7 +2534,6 @@ export default function ReservaForm() {
       return false;
     }
 
-    // CORREGIDO: Validación mejorada de fechas
     const hoy = new Date().toISOString().split('T')[0];
     if (formData.fechaEntrada < hoy) {
       displayAlert("❌ La fecha de entrada no puede ser anterior a hoy", "error");
@@ -2363,13 +2583,11 @@ export default function ReservaForm() {
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  // CORREGIDO: Función mejorada para calcular días de estadía
   const calcularDiasEstadia = () => {
     if (formData.fechaEntrada && formData.fechaSalida) {
       const entrada = new Date(formData.fechaEntrada);
       const salida = new Date(formData.fechaSalida);
      
-      // Validar que la fecha de salida sea posterior a la de entrada
       if (salida <= entrada) return 1;
      
       const diffTime = Math.abs(salida - entrada);
@@ -2378,7 +2596,6 @@ export default function ReservaForm() {
     return 1;
   };
 
-  // CORREGIDO: Función mejorada para agregar días a una fecha
   const addDays = (dateStr, days) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
@@ -2421,7 +2638,9 @@ export default function ReservaForm() {
       boxSizing: "border-box",
       margin: 0,
       background: "linear-gradient(135deg, #f5f8f2 0%, #e8f0e8 100%)",
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      overflowX: 'hidden',
+      maxWidth: '100vw'
     }}>
      
       {/* Modal de abono MEJORADO */}
@@ -2451,7 +2670,8 @@ export default function ReservaForm() {
           ...alertStyle,
           backgroundColor: alertMessage.includes('❌') ? '#ffebee' : '#e8f5e8',
           color: alertMessage.includes('❌') ? '#c62828' : '#2E5939',
-          borderLeftColor: alertMessage.includes('❌') ? '#e57373' : '#4caf50'
+          borderLeftColor: alertMessage.includes('❌') ? '#e57373' : '#4caf50',
+          overflow: 'hidden'
         }}>
           {alertMessage.includes('❌') ?
             <FaExclamationTriangle style={{ color: '#e57373', fontSize: "20px" }} /> :
@@ -2493,9 +2713,11 @@ export default function ReservaForm() {
         alignItems: "center",
         marginBottom: 32,
         flexWrap: 'wrap',
-        gap: '20px'
+        gap: '20px',
+        width: '100%',
+        maxWidth: '100%'
       }}>
-        <div>
+        <div style={{ maxWidth: '100%' }}>
           <h1 style={{
             margin: 0,
             color: "#2E5939",
@@ -2505,7 +2727,8 @@ export default function ReservaForm() {
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             marginBottom: "10px",
-            letterSpacing: "-0.3px"
+            letterSpacing: "-0.3px",
+            wordBreak: 'break-word'
           }}>
             🌲 Reserva tu Aventura en el Bosque
           </h1>
@@ -2515,7 +2738,8 @@ export default function ReservaForm() {
             fontSize: "16px",
             fontWeight: "500",
             maxWidth: "550px",
-            lineHeight: "1.5"
+            lineHeight: "1.5",
+            wordBreak: 'break-word'
           }}>
             Vive una experiencia única de glamping en medio de la naturaleza.
             Disfruta de lujo y comodidad en un entorno natural espectacular.
@@ -2528,7 +2752,8 @@ export default function ReservaForm() {
             display: 'flex',
             alignItems: 'center',
             gap: "10px",
-            padding: "14px 28px"
+            padding: "14px 28px",
+            maxWidth: '200px'
           }}
           onMouseOver={(e) => {
             e.target.style.backgroundColor = "#2E5939";
@@ -2552,11 +2777,14 @@ export default function ReservaForm() {
         display: 'grid',
         gridTemplateColumns: '1fr 340px',
         gap: '28px',
-        alignItems: 'start'
+        alignItems: 'start',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden'
       }}>
        
         {/* Columna izquierda - Formulario */}
-        <div>
+        <div style={{ width: '100%', maxWidth: '100%', minWidth: 0, overflow: 'hidden' }}>
           {/* Indicador de Progreso */}
           <StepIndicator
             currentStep={currentStep}
@@ -2566,9 +2794,9 @@ export default function ReservaForm() {
 
           {/* Formulario Premium */}
           <div style={cardStyle}>
-            <div style={{ padding: "32px" }}>
+            <div style={{ padding: "32px", width: '100%', boxSizing: 'border-box' }}>
               {loading && apiData.cabanas.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "60px" }}>
+                <div style={{ textAlign: "center", padding: "60px", width: '100%' }}>
                   <div style={{
                     width: '70px',
                     height: '70px',
@@ -2578,15 +2806,15 @@ export default function ReservaForm() {
                     animation: 'spin 1.2s linear infinite',
                     margin: '0 auto 20px'
                   }}></div>
-                  <div style={{ fontSize: "20px", marginBottom: "10px", color: "#2E5939", fontWeight: "700" }}>
+                  <div style={{ fontSize: "20px", marginBottom: "10px", color: "#2E5939", fontWeight: "700", wordBreak: 'break-word' }}>
                     Cargando tu experiencia...
                   </div>
-                  <div style={{ color: "#679750", fontSize: "15px" }}>
+                  <div style={{ color: "#679750", fontSize: "15px", wordBreak: 'break-word' }}>
                     Preparando las mejores opciones para tu aventura en el bosque
                   </div>
                 </div>
               ) : (
-                <form onSubmit={onFormSubmit} onKeyDown={preventEnterSubmit}>
+                <form onSubmit={onFormSubmit} onKeyDown={preventEnterSubmit} style={{ width: '100%' }}>
                   {/* Paso 1: Información Personal */}
                   {currentStep === 0 && (
                     <div style={{
@@ -2595,7 +2823,9 @@ export default function ReservaForm() {
                       borderRadius: "18px",
                       marginBottom: "28px",
                       border: '2px solid rgba(103, 151, 80, 0.15)',
-                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
@@ -2604,7 +2834,8 @@ export default function ReservaForm() {
                         alignItems: 'center',
                         gap: "14px",
                         fontSize: "22px",
-                        fontWeight: "800"
+                        fontWeight: "800",
+                        flexWrap: 'wrap'
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
@@ -2616,7 +2847,8 @@ export default function ReservaForm() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: "18px",
-                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)',
+                          flexShrink: 0
                         }}>
                           <FaUser />
                         </div>
@@ -2633,7 +2865,10 @@ export default function ReservaForm() {
                           marginBottom: "24px",
                           display: 'flex',
                           alignItems: 'center',
-                          gap: "14px"
+                          gap: "14px",
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          flexWrap: 'wrap'
                         }}>
                           <div style={{
                             width: '45px',
@@ -2649,12 +2884,13 @@ export default function ReservaForm() {
                           }}>
                             <FaUser />
                           </div>
-                          <div style={{ flex: 1 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <h4 style={{
                               margin: '0 0 6px 0',
                               color: '#2E5939',
                               fontSize: "16px",
-                              fontWeight: "700"
+                              fontWeight: "700",
+                              wordBreak: 'break-word'
                             }}>
                               ¡Hola, {usuarioLogueado.nombre} {usuarioLogueado.apellido}!
                             </h4>
@@ -2662,7 +2898,8 @@ export default function ReservaForm() {
                               margin: 0,
                               color: '#679750',
                               fontSize: "13px",
-                              lineHeight: "1.4"
+                              lineHeight: "1.4",
+                              wordBreak: 'break-word'
                             }}>
                               Tus datos han sido cargados automáticamente desde tu perfil. Puedes modificarlos si es necesario.
                             </p>
@@ -2670,7 +2907,12 @@ export default function ReservaForm() {
                         </div>
                       )}
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: "24px" }}>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+                        gap: "24px",
+                        width: '100%'
+                      }}>
                         <FormField
                           label="Nombre"
                           name="nombre"
@@ -2684,6 +2926,7 @@ export default function ReservaForm() {
                             isValid: value.length >= 2,
                             message: "El nombre debe tener al menos 2 caracteres"
                           })}
+                          style={{ width: '100%' }}
                         />
                         <FormField
                           label="Apellido"
@@ -2698,6 +2941,7 @@ export default function ReservaForm() {
                             isValid: value.length >= 2,
                             message: "El apellido debe tener al menos 2 caracteres"
                           })}
+                          style={{ width: '100%' }}
                         />
                         <FormField
                           label="Tipo de Documento"
@@ -2714,6 +2958,7 @@ export default function ReservaForm() {
                           required={true}
                           placeholder="Selecciona tu tipo de documento"
                           icon={<FaIdCard />}
+                          style={{ width: '100%' }}
                         />
                         <FormField
                           label="Número de Documento"
@@ -2728,6 +2973,7 @@ export default function ReservaForm() {
                             isValid: value.length >= 5,
                             message: "El número de documento debe tener al menos 5 caracteres"
                           })}
+                          style={{ width: '100%' }}
                         />
                         <FormField
                           label="Email"
@@ -2742,6 +2988,7 @@ export default function ReservaForm() {
                             isValid: /\S+@\S+\.\S+/.test(value),
                             message: "Ingresa un email válido"
                           })}
+                          style={{ width: '100%' }}
                         />
                         <FormField
                           label="Teléfono / Celular"
@@ -2756,12 +3003,13 @@ export default function ReservaForm() {
                             isValid: value.length >= 10,
                             message: "Ingresa un número de teléfono válido"
                           })}
+                          style={{ width: '100%' }}
                         />
                       </div>
                     </div>
                   )}
 
-                  {/* Paso 2: Selección de Alojamiento */}
+                  {/* Paso 2: Selección de Alojamiento - MODIFICADO PARA MOSTRAR IMÁGENES REALES */}
                   {currentStep === 1 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
@@ -2769,7 +3017,9 @@ export default function ReservaForm() {
                       borderRadius: "18px",
                       marginBottom: "28px",
                       border: '2px solid rgba(103, 151, 80, 0.15)',
-                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
@@ -2778,7 +3028,8 @@ export default function ReservaForm() {
                         alignItems: 'center',
                         gap: "14px",
                         fontSize: "22px",
-                        fontWeight: "800"
+                        fontWeight: "800",
+                        flexWrap: 'wrap'
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
@@ -2790,7 +3041,8 @@ export default function ReservaForm() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: "18px",
-                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)',
+                          flexShrink: 0
                         }}>
                           <FaHome />
                         </div>
@@ -2798,7 +3050,7 @@ export default function ReservaForm() {
                       </h3>
 
                       {/* Selector de Sede */}
-                      <div style={{ marginBottom: "28px" }}>
+                      <div style={{ marginBottom: "28px", width: '100%' }}>
                         <FormField
                           label="Ubicación"
                           name="idSede"
@@ -2811,16 +3063,18 @@ export default function ReservaForm() {
                           }))}
                           required={true}
                           icon={<FaMapMarkerAlt />}
+                          style={{ width: '100%' }}
                         />
                       </div>
 
                       {/* Cabañas en formato de cards - Filtradas por sede */}
-                      <div style={{ marginBottom: "28px" }}>
+                      <div style={{ marginBottom: "28px", width: '100%' }}>
                         <h4 style={{
                           color: '#2E5939',
                           marginBottom: "20px",
                           fontSize: "18px",
-                          fontWeight: "700"
+                          fontWeight: "700",
+                          wordBreak: 'break-word'
                         }}>
                           🏡 Selecciona tu Cabaña {formData.idSede && `(${filteredData.cabanas.length} disponibles)`}
                         </h4>
@@ -2831,18 +3085,21 @@ export default function ReservaForm() {
                             padding: "32px",
                             backgroundColor: '#F9FBFA',
                             borderRadius: "14px",
-                            border: '2px dashed #E8F0E8'
+                            border: '2px dashed #E8F0E8',
+                            width: '100%',
+                            boxSizing: 'border-box'
                           }}>
                             <FaHome style={{ fontSize: "42px", color: '#679750', marginBottom: "14px" }} />
-                            <h4 style={{ color: '#2E5939', marginBottom: "6px" }}>No hay cabañas disponibles</h4>
-                            <p style={{ color: '#679750' }}>Selecciona otra sede para ver las opciones disponibles.</p>
+                            <h4 style={{ color: '#2E5939', marginBottom: "6px", wordBreak: 'break-word' }}>No hay cabañas disponibles</h4>
+                            <p style={{ color: '#679750', wordBreak: 'break-word' }}>Selecciona otra sede para ver las opciones disponibles.</p>
                           </div>
                         ) : (
                           <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                             gap: "20px",
-                            marginBottom: "28px"
+                            marginBottom: "28px",
+                            width: '100%'
                           }}>
                             {filteredData.cabanas.map((cabana) => (
                               <SelectionCard
@@ -2857,6 +3114,7 @@ export default function ReservaForm() {
                                 popular={cabana.precio > 300000}
                                 capacity={cabana.capacidad || 2}
                                 disabled={false}
+                                imageUrl={cabana.imagen} // Pasar la URL de la imagen real
                               />
                             ))}
                           </div>
@@ -2864,12 +3122,13 @@ export default function ReservaForm() {
                       </div>
 
                       {/* Paquetes en formato de cards - Filtrados por sede */}
-                      <div style={{ marginBottom: "28px" }}>
+                      <div style={{ marginBottom: "28px", width: '100%' }}>
                         <h4 style={{
                           color: '#2E5939',
                           marginBottom: "20px",
                           fontSize: "18px",
-                          fontWeight: "700"
+                          fontWeight: "700",
+                          wordBreak: 'break-word'
                         }}>
                           📦 Paquetes de Experiencia {formData.idSede && `(${filteredData.paquetes.length} disponibles)`}
                         </h4>
@@ -2880,17 +3139,20 @@ export default function ReservaForm() {
                             padding: "32px",
                             backgroundColor: '#F9FBFA',
                             borderRadius: "14px",
-                            border: '2px dashed #E8F0E8'
+                            border: '2px dashed #E8F0E8',
+                            width: '100%',
+                            boxSizing: 'border-box'
                           }}>
                             <FaBox style={{ fontSize: "42px", color: '#679750', marginBottom: "14px" }} />
-                            <h4 style={{ color: '#2E5939', marginBottom: "6px" }}>No hay paquetes disponibles</h4>
-                            <p style={{ color: '#679750' }}>Selecciona otra sede para ver los paquetes disponibles.</p>
+                            <h4 style={{ color: '#2E5939', marginBottom: "6px", wordBreak: 'break-word' }}>No hay paquetes disponibles</h4>
+                            <p style={{ color: '#679750', wordBreak: 'break-word' }}>Selecciona otra sede para ver los paquetes disponibles.</p>
                           </div>
                         ) : (
                           <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                            gap: "20px"
+                            gap: "20px",
+                            width: '100%'
                           }}>
                             {filteredData.paquetes.map((paquete) => (
                               <SelectionCard
@@ -2925,7 +3187,9 @@ export default function ReservaForm() {
                       borderRadius: "18px",
                       marginBottom: "28px",
                       border: '2px solid rgba(103, 151, 80, 0.15)',
-                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
@@ -2934,7 +3198,8 @@ export default function ReservaForm() {
                         alignItems: 'center',
                         gap: "14px",
                         fontSize: "22px",
-                        fontWeight: "800"
+                        fontWeight: "800",
+                        flexWrap: 'wrap'
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
@@ -2946,19 +3211,21 @@ export default function ReservaForm() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: "18px",
-                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)',
+                          flexShrink: 0
                         }}>
                           <FaPlus />
                         </div>
                         Servicios Extras
                       </h3>
 
-                      <div style={{ marginBottom: "20px" }}>
+                      <div style={{ marginBottom: "20px", width: '100%' }}>
                         <p style={{
                           color: '#679750',
                           fontSize: "15px",
                           lineHeight: "1.5",
-                          marginBottom: "20px"
+                          marginBottom: "20px",
+                          wordBreak: 'break-word'
                         }}>
                           Personaliza tu experiencia seleccionando servicios adicionales.
                           Estos se aplicarán por cada noche de tu estadía.
@@ -2971,14 +3238,16 @@ export default function ReservaForm() {
                           padding: "32px",
                           backgroundColor: '#F9FBFA',
                           borderRadius: "14px",
-                          border: '2px dashed #E8F0E8'
+                          border: '2px dashed #E8F0E8',
+                          width: '100%',
+                          boxSizing: 'border-box'
                         }}>
                           <FaBox style={{ fontSize: "42px", color: '#679750', marginBottom: "14px" }} />
-                          <h4 style={{ color: '#2E5939', marginBottom: "6px" }}>No hay servicios disponibles</h4>
-                          <p style={{ color: '#679750' }}>Selecciona otra sede para ver los servicios disponibles.</p>
-                        </div>
+                          <h4 style={{ color: '#2E5939', marginBottom: "6px", wordBreak: 'break-word' }}>No hay servicios disponibles</h4>
+                          <p style={{ color: '#679750', wordBreak: 'break-word' }}>Selecciona otra sede para ver los servicios disponibles.</p>
+                          </div>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: "14px" }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: "14px", width: '100%' }}>
                           {filteredData.servicios.map((servicio) => {
                             const paqueteSeleccionado = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
                             const diasParaMostrar = paqueteSeleccionado && paqueteSeleccionado.dias ? Number(paqueteSeleccionado.dias) : calcularDiasEstadia();
@@ -3001,17 +3270,20 @@ export default function ReservaForm() {
                           padding: "18px",
                           backgroundColor: '#E8F5E8',
                           borderRadius: "14px",
-                          border: '2px solid #2E5939'
+                          border: '2px solid #2E5939',
+                          width: '100%',
+                          boxSizing: 'border-box'
                         }}>
                           <h5 style={{
                             color: '#2E5939',
                             marginBottom: "10px",
                             fontSize: "16px",
-                            fontWeight: "700"
+                            fontWeight: "700",
+                            wordBreak: 'break-word'
                           }}>
                             🎁 Servicios Seleccionados:
                           </h5>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: "6px" }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: "6px", width: '100%' }}>
                             {serviciosSeleccionados.map((servicio, index) => (
                               <div key={index} style={{
                                 display: 'flex',
@@ -3019,12 +3291,14 @@ export default function ReservaForm() {
                                 alignItems: 'center',
                                 padding: "10px",
                                 backgroundColor: 'white',
-                                borderRadius: "6px"
+                                borderRadius: "6px",
+                                width: '100%',
+                                boxSizing: 'border-box'
                               }}>
-                                <span style={{ color: '#2E5939', fontWeight: "600" }}>
+                                <span style={{ color: '#2E5939', fontWeight: "600", wordBreak: 'break-word' }}>
                                   {servicio.nombreServicio}
                                 </span>
-                                <span style={{ color: '#679750', fontWeight: "700" }}>
+                                <span style={{ color: '#679750', fontWeight: "700", flexShrink: 0 }}>
                                   +{formatCurrency(servicio.precioServicio * calcularDiasEstadia())}
                                 </span>
                               </div>
@@ -3037,10 +3311,12 @@ export default function ReservaForm() {
                               backgroundColor: '#2E5939',
                               borderRadius: "6px",
                               color: 'white',
-                              fontWeight: "800"
+                              fontWeight: "800",
+                              width: '100%',
+                              boxSizing: 'border-box'
                             }}>
-                              <span>Total servicios extras:</span>
-                              <span>
+                              <span style={{ wordBreak: 'break-word' }}>Total servicios extras:</span>
+                              <span style={{ flexShrink: 0 }}>
                                 +{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => total + (servicio.precioServicio * calcularDiasEstadia()), 0))}
                               </span>
                             </div>
@@ -3050,7 +3326,7 @@ export default function ReservaForm() {
                     </div>
                   )}
 
-                  {/* Paso 4: Fechas y Huéspedes - CORREGIDO */}
+                  {/* Paso 4: Fechas y Huéspedes */}
                   {currentStep === 3 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
@@ -3058,7 +3334,9 @@ export default function ReservaForm() {
                       borderRadius: "18px",
                       marginBottom: "28px",
                       border: '2px solid rgba(103, 151, 80, 0.15)',
-                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
@@ -3067,7 +3345,8 @@ export default function ReservaForm() {
                         alignItems: 'center',
                         gap: "14px",
                         fontSize: "22px",
-                        fontWeight: "800"
+                        fontWeight: "800",
+                        flexWrap: 'wrap'
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
@@ -3079,14 +3358,20 @@ export default function ReservaForm() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: "18px",
-                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)',
+                          flexShrink: 0
                         }}>
                           <FaCalendarAlt />
                         </div>
                         Fechas de tu Estadía
                       </h3>
                      
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: "24px" }}>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                        gap: "24px",
+                        width: '100%'
+                      }}>
                         <FormField
                           label="Fecha de Llegada (Check-in)"
                           name="fechaEntrada"
@@ -3099,6 +3384,7 @@ export default function ReservaForm() {
                             onFocus: (e) => e.target.showPicker?.()
                           }}
                           icon={<FaCalendarAlt />}
+                          style={{ width: '100%' }}
                         />
                        
                         <FormField
@@ -3117,6 +3403,7 @@ export default function ReservaForm() {
                             onFocus: (e) => e.target.showPicker?.()
                           }}
                           icon={<FaCalendarAlt />}
+                          style={{ width: '100%' }}
                         />
                       </div>
                      
@@ -3127,20 +3414,24 @@ export default function ReservaForm() {
                           padding: "16px",
                           backgroundColor: '#FFF3E0',
                           borderRadius: "12px",
-                          border: '2px solid #FFA000'
+                          border: '2px solid #FFA000',
+                          width: '100%',
+                          boxSizing: 'border-box'
                         }}>
                           <div style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: "10px",
-                            marginBottom: "8px"
+                            marginBottom: "8px",
+                            flexWrap: 'wrap'
                           }}>
-                            <FaInfoCircle style={{ color: '#FFA000', fontSize: "18px" }} />
+                            <FaInfoCircle style={{ color: '#FFA000', fontSize: "18px", flexShrink: 0 }} />
                             <h5 style={{
                               margin: 0,
                               color: '#FFA000',
                               fontSize: "15px",
-                              fontWeight: "700"
+                              fontWeight: "700",
+                              wordBreak: 'break-word'
                             }}>
                               Información del Paquete
                             </h5>
@@ -3149,7 +3440,8 @@ export default function ReservaForm() {
                             margin: 0,
                             color: '#2E5939',
                             fontSize: "14px",
-                            lineHeight: "1.4"
+                            lineHeight: "1.4",
+                            wordBreak: 'break-word'
                           }}>
                             Tu paquete <strong>"{paqueteSeleccionadoForm.nombrePaquete}"</strong> incluye <strong>{paqueteSeleccionadoForm.dias} noche(s)</strong> de estadía.
                             {formData.fechaEntrada && (
@@ -3167,12 +3459,14 @@ export default function ReservaForm() {
                           borderRadius: "14px",
                           textAlign: 'center',
                           border: '3px solid #2E5939',
-                          boxShadow: '0 6px 20px rgba(46, 89, 57, 0.12)'
+                          boxShadow: '0 6px 20px rgba(46, 89, 57, 0.12)',
+                          width: '100%',
+                          boxSizing: 'border-box'
                         }}>
-                          <strong style={{ color: '#2E5939', fontSize: "18px", display: 'block', marginBottom: "6px" }}>
+                          <strong style={{ color: '#2E5939', fontSize: "18px", display: 'block', marginBottom: "6px", wordBreak: 'break-word' }}>
                             🗓️ ¡Perfecto! Tu estadía será de {calcularDiasEstadia()} {calcularDiasEstadia() === 1 ? 'noche' : 'noches'}
                           </strong>
-                          <span style={{ color: '#679750', fontSize: "14px" }}>
+                          <span style={{ color: '#679750', fontSize: "14px", wordBreak: 'break-word' }}>
                             Del {formData.fechaEntrada} al {formData.fechaSalida}
                           </span>
                         </div>
@@ -3188,7 +3482,9 @@ export default function ReservaForm() {
                       borderRadius: "18px",
                       marginBottom: "28px",
                       border: '2px solid rgba(103, 151, 80, 0.15)',
-                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)'
+                      boxShadow: '0 6px 25px rgba(0,0,0,0.05)',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
                       <h3 style={{
                         color: '#2E5939',
@@ -3197,7 +3493,8 @@ export default function ReservaForm() {
                         alignItems: 'center',
                         gap: "14px",
                         fontSize: "22px",
-                        fontWeight: "800"
+                        fontWeight: "800",
+                        flexWrap: 'wrap'
                       }}>
                         <div style={{
                           backgroundColor: '#2E5939',
@@ -3209,7 +3506,8 @@ export default function ReservaForm() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: "18px",
-                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)'
+                          boxShadow: '0 6px 18px rgba(46, 89, 57, 0.25)',
+                          flexShrink: 0
                         }}>
                           <FaCreditCard />
                         </div>
@@ -3217,7 +3515,7 @@ export default function ReservaForm() {
                       </h3>
 
                       {/* Método de Pago */}
-                      <div style={{ marginBottom: "28px" }}>
+                      <div style={{ marginBottom: "28px", width: '100%' }}>
                         <FormField
                           label="Método de Pago"
                           name="idMetodoPago"
@@ -3227,11 +3525,12 @@ export default function ReservaForm() {
                           options={apiData.metodosPago.map(m => ({ value: m.idMetodoPago, label: m.nombreMetodoPago }))}
                           required={true}
                           icon={<FaCreditCard />}
+                          style={{ width: '100%' }}
                         />
                       </div>
 
                       {/* Observaciones */}
-                      <div style={{ marginBottom: "28px" }}>
+                      <div style={{ marginBottom: "28px", width: '100%' }}>
                         <FormField
                           label="Observaciones Especiales"
                           name="observaciones"
@@ -3239,6 +3538,7 @@ export default function ReservaForm() {
                           value={formData.observaciones}
                           onChange={handleInputChange}
                           placeholder="Alergias alimenticias, necesidades especiales, celebración especial, preferencias dietarias, etc."
+                          style={{ width: '100%' }}
                         />
                       </div>
 
@@ -3251,17 +3551,19 @@ export default function ReservaForm() {
                           fontSize: "14px",
                           color: '#2E5939',
                           border: '2px solid #E8F0E8',
-                          marginBottom: "20px"
+                          marginBottom: "20px",
+                          width: '100%',
+                          boxSizing: 'border-box'
                         }}>
-                          <div style={{ fontWeight: "800", marginBottom: "14px", fontSize: "15px", display: 'flex', alignItems: 'center', gap: "8px" }}>
+                          <div style={{ fontWeight: "800", marginBottom: "14px", fontSize: "15px", display: 'flex', alignItems: 'center', gap: "8px", flexWrap: 'wrap' }}>
                             <FaClock /> Detalles de tu Reserva
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: "10px" }}>
-                            <div>• Días de estadía: <strong>{calcularDiasEstadia()}</strong></div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: "10px", width: '100%' }}>
+                            <div style={{ wordBreak: 'break-word' }}>• Días de estadía: <strong>{calcularDiasEstadia()}</strong></div>
                             {serviciosSeleccionados.length > 0 && (
-                              <div>• Servicios extras: <strong>+{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => total + (servicio.precioServicio * calcularDiasEstadia()), 0))}</strong></div>
+                              <div style={{ wordBreak: 'break-word' }}>• Servicios extras: <strong>+{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => total + (servicio.precioServicio * calcularDiasEstadia()), 0))}</strong></div>
                             )}
-                            <div>• Abono requerido (50%): <strong>{formatCurrency(formData.abono)}</strong></div>
+                            <div style={{ wordBreak: 'break-word' }}>• Abono requerido (50%): <strong>{formatCurrency(formData.abono)}</strong></div>
                           </div>
                         </div>
                       )}
@@ -3275,7 +3577,10 @@ export default function ReservaForm() {
                     alignItems: "center",
                     marginTop: "40px",
                     paddingTop: "28px",
-                    borderTop: '3px solid #f0f0f0'
+                    borderTop: '3px solid #f0f0f0',
+                    width: '100%',
+                    flexWrap: 'wrap',
+                    gap: '15px'
                   }}>
                     <button
                       type="button"
@@ -3287,7 +3592,10 @@ export default function ReservaForm() {
                         alignItems: 'center',
                         gap: "10px",
                         opacity: currentStep === 0 ? 0.5 : 1,
-                        cursor: currentStep === 0 ? 'not-allowed' : 'pointer'
+                        cursor: currentStep === 0 ? 'not-allowed' : 'pointer',
+                        minWidth: 'auto',
+                        flex: 1,
+                        maxWidth: '200px'
                       }}
                       onMouseOver={(e) => {
                         if (currentStep !== 0) {
@@ -3315,7 +3623,10 @@ export default function ReservaForm() {
                           ...btnPrimaryStyle,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: "10px"
+                          gap: "10px",
+                          minWidth: 'auto',
+                          flex: 1,
+                          maxWidth: '200px'
                         }}
                         onMouseOver={(e) => {
                           e.target.style.backgroundColor = "#1e4629";
@@ -3341,7 +3652,10 @@ export default function ReservaForm() {
                           opacity: loading ? 0.7 : 1,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: "10px"
+                          gap: "10px",
+                          minWidth: 'auto',
+                          flex: 1,
+                          maxWidth: '200px'
                         }}
                         onMouseOver={(e) => {
                           if (!loading) {
@@ -3354,7 +3668,7 @@ export default function ReservaForm() {
                           if (!loading) {
                             e.target.style.backgroundColor = "#2E5939";
                             e.target.style.transform = "translateY(0)";
-                            e.target.style.boxShadow = "0 8px 25px rgba(46, 89, 57, 0.3)";
+                            e.target.style.boxShadow = "0 8px 25px rgba(46, 89,57, 0.3)";
                           }
                         }}
                       >
@@ -3386,13 +3700,15 @@ export default function ReservaForm() {
         </div>
 
         {/* Columna derecha - Resumen de la reserva */}
-        <ResumenReserva
-          formData={formData}
-          calcularDiasEstadia={calcularDiasEstadia}
-          formatCurrency={formatCurrency}
-          datosRelacionados={apiData}
-          serviciosSeleccionados={serviciosSeleccionados}
-        />
+        <div style={{ width: '100%', maxWidth: '340px', minWidth: 0, overflow: 'hidden' }}>
+          <ResumenReserva
+            formData={formData}
+            calcularDiasEstadia={calcularDiasEstadia}
+            formatCurrency={formatCurrency}
+            datosRelacionados={apiData}
+            serviciosSeleccionados={serviciosSeleccionados}
+          />
+        </div>
       </div>
 
       {/* Estilos CSS para animaciones */}
@@ -3439,6 +3755,7 @@ export default function ReservaForm() {
             .resumen-columna {
               order: -1;
               margin-bottom: 24px;
+              max-width: 100% !important;
             }
           }
 
@@ -3483,6 +3800,7 @@ export default function ReservaForm() {
               position: static !important;
               min-width: auto !important;
               margin-bottom: 24px;
+              max-width: 100% !important;
             }
           }
         `}

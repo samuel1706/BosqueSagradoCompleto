@@ -541,12 +541,36 @@ const HomeCliente = () => {
   };
 
   const handleReserveCabin = () => {
-    if (selectedCabin) {
-      setShowPopup(false);
-      // Pasar la cabaña seleccionada a la página de reserva
-      navigate("/reservar", { state: { cabana: selectedCabin } });
-    }
-  };
+  if (selectedCabin) {
+    setShowPopup(false);
+    // Pasar TODOS los datos de la cabaña seleccionada a la página de reserva
+    navigate("/reservar", { 
+      state: { 
+        cabana: {
+          ...selectedCabin,
+          // Asegurar que tenemos los campos correctos
+          id: selectedCabin.id,
+          idCabana: selectedCabin.id,
+          name: selectedCabin.name,
+          nombre: selectedCabin.name,
+          descripcion: selectedCabin.description,
+          descripcionCompleta: selectedCabin.descripcionCompleta,
+          precio: selectedCabin.precioNumerico,
+          precioNumerico: selectedCabin.precioNumerico,
+          capacidad: selectedCabin.capacidad,
+          habitaciones: selectedCabin.habitaciones,
+          idSede: selectedCabin.idSede,
+          idTipoCabana: selectedCabin.idTipoCabana,
+          tipo: selectedCabin.tipo,
+          sede: selectedCabin.sede,
+          imagenes: selectedCabin.imagenes,
+          comodidades: selectedCabin.comodidades,
+          estado: selectedCabin.estado
+        }
+      } 
+    });
+  }
+};
 
   const handleLogout = () => {
     Swal.fire({
@@ -680,7 +704,14 @@ const HomeCliente = () => {
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f8faf8", margin: 0 }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      backgroundColor: "#f8faf8", 
+      margin: 0,
+      padding: 0,
+      width: "100%",
+      overflowX: "hidden"
+    }}>
       {/* Header */}
       <nav style={{
         backgroundColor: "#2E5939",
@@ -691,7 +722,9 @@ const HomeCliente = () => {
         boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
         position: "sticky",
         top: 0,
-        zIndex: 100
+        zIndex: 100,
+        width: "100%",
+        boxSizing: "border-box"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <img 
@@ -802,7 +835,8 @@ const HomeCliente = () => {
           textAlign: "center",
           zIndex: 999,
           fontSize: "14px",
-          fontWeight: "bold"
+          fontWeight: "bold",
+          boxSizing: "border-box"
         }}>
           📡 Cargando datos desde la API...
         </div>
@@ -821,7 +855,8 @@ const HomeCliente = () => {
           textAlign: "center",
           zIndex: 999,
           fontSize: "14px",
-          fontWeight: "bold"
+          fontWeight: "bold",
+          boxSizing: "border-box"
         }}>
           ⚠️ {dataError}
         </div>
@@ -1006,7 +1041,8 @@ const HomeCliente = () => {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
               gap: "2rem",
-              justifyContent: "center"
+              justifyContent: "center",
+              width: "100%"
             }}>
               {sedesPaginadas.map((sede, index) => (
                 <div
@@ -1132,7 +1168,7 @@ const HomeCliente = () => {
         width: "100%",
         boxSizing: "border-box"
       }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
           <h2 style={{
             fontSize: "3rem",
             color: "#2E5939",
@@ -1148,16 +1184,17 @@ const HomeCliente = () => {
             padding: "2rem",
             borderRadius: "15px",
             boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
-            marginBottom: "2rem"
+            marginBottom: "2rem",
+            width: "100%"
           }}>
             <h3 style={{ color: "#2E5939", marginBottom: "1.5rem", textAlign: "center" }}>
               Encuentra tu Cabaña Ideal
             </h3>
            
             {/* Filtros desde la API - CORREGIDOS Y MEJORADOS */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "1rem", width: "100%" }}>
               {/* Filtro por sede - USANDO IDs */}
-              <div>
+              <div style={{ width: "100%" }}>
                 <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
                   <FaMapMarkerAlt style={{ marginRight: "0.5rem" }} /> Sede
                 </label>
@@ -1172,7 +1209,8 @@ const HomeCliente = () => {
                     fontSize: "1rem",
                     outline: "none",
                     background: "unset",
-                    color: "#000"
+                    color: "#000",
+                    boxSizing: "border-box"
                   }}
                 >
                   <option value="">Todas las sedes</option>
@@ -1183,7 +1221,7 @@ const HomeCliente = () => {
               </div>
 
               {/* Filtro por tipo desde API - USANDO IDs */}
-              <div>
+              <div style={{ width: "100%" }}>
                 <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
                   <FaHome style={{ marginRight: "0.5rem" }} /> Tipo
                 </label>
@@ -1198,7 +1236,8 @@ const HomeCliente = () => {
                     fontSize: "1rem",
                     outline: "none",
                     background: "unset",
-                    color: "#000"
+                    color: "#000",
+                    boxSizing: "border-box"
                   }}
                 >
                   <option value="">Todos los tipos</option>
@@ -1209,7 +1248,7 @@ const HomeCliente = () => {
               </div>
 
               {/* Filtro por capacidad */}
-              <div>
+              <div style={{ width: "100%" }}>
                 <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500" }}>
                   <FaUsers style={{ marginRight: "0.5rem" }} /> Capacidad mínima
                 </label>
@@ -1224,7 +1263,8 @@ const HomeCliente = () => {
                     fontSize: "1rem",
                     outline: "none",
                     background: "unset",
-                    color: "#000"
+                    color: "#000",
+                    boxSizing: "border-box"
                   }}
                 >
                   <option value="">Cualquier capacidad</option>
@@ -1272,8 +1312,13 @@ const HomeCliente = () => {
         width: "100%",
         boxSizing: "border-box"
       }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", 
+            gap: "2rem",
+            width: "100%"
+          }}>
             {cabañasParaMostrar.map((cabin, index) => (
               <div
                 key={cabin.id}
@@ -1284,6 +1329,7 @@ const HomeCliente = () => {
                   boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
                   cursor: "pointer",
                   transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  width: "100%"
                 }}
                 onClick={() => handleShowCabinDetails(cabin)}
                 onMouseEnter={(e) => {
@@ -1453,7 +1499,7 @@ const HomeCliente = () => {
         width: "100%",
         boxSizing: "border-box"
       }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
           <h2 style={{
             fontSize: "3rem",
             color: "#2E5939",
@@ -1463,7 +1509,12 @@ const HomeCliente = () => {
           }}>
             Servicios Exclusivos
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
+            gap: "2rem",
+            width: "100%"
+          }}>
             {serviciosParaMostrar.map((paquete, index) => (
               <div
                 key={index}
@@ -1472,6 +1523,7 @@ const HomeCliente = () => {
                   borderRadius: "20px",
                   overflow: "hidden",
                   boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+                  width: "100%"
                 }}
               >
                 <img
@@ -1572,13 +1624,14 @@ const HomeCliente = () => {
         width: "100%",
         boxSizing: "border-box"
       }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
           <div style={{
             backgroundColor: "#fff",
             padding: "3rem",
             borderRadius: "20px",
             boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-            marginBottom: "3rem"
+            marginBottom: "3rem",
+            width: "100%"
           }}>
             <h2 style={{
               fontSize: "3rem",
@@ -1589,7 +1642,7 @@ const HomeCliente = () => {
             }}>
               Nuestra Historia
             </h2>
-            <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "3rem", alignItems: "center", flexWrap: "wrap", width: "100%" }}>
               <div style={{ flex: 1, minWidth: "300px" }}>
                 <p style={{ fontSize: "1.2rem", lineHeight: "1.8", marginBottom: "1.5rem",color: "black" }}>
                   En <strong>Bosque Sagrado</strong>, creemos que la conexión con la naturaleza no debe estar reñida con el lujo y la comodidad. Somos un santuario de glamping ubicado en Antioquia, Colombia, dedicados a ofrecerte una escapada mágica.
@@ -1613,7 +1666,7 @@ const HomeCliente = () => {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", justifyContent: "center", width: "100%" }}>
             <div style={{
               flex: 1,
               minWidth: "280px",
@@ -1621,7 +1674,8 @@ const HomeCliente = () => {
               padding: "2.5rem",
               borderRadius: "15px",
               textAlign: "center",
-              boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
+              boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+              width: "100%"
             }}>
               <FaLightbulb size={60} color="#3E7E5C" style={{ marginBottom: "1.5rem" }} />
               <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>Nuestra Misión</h3>
@@ -1634,7 +1688,8 @@ const HomeCliente = () => {
               padding: "2.5rem",
               borderRadius: "15px",
               textAlign: "center",
-              boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
+              boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+              width: "100%"
             }}>
               <FaEye size={60} color="#3E7E5C" style={{ marginBottom: "1.5rem" }} />
               <h3 style={{ fontSize: "1.8rem", color: "#2E5939", marginBottom: "1rem" }}>Nuestra Visión</h3>
@@ -2217,7 +2272,8 @@ const HomeCliente = () => {
           gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
           gap: "3rem",
           marginBottom: "3rem",
-          padding: "0 2rem"
+          padding: "0 2rem",
+          width: "100%"
         }}>
           {/* Logo y descripción */}
           <div>
@@ -2387,7 +2443,8 @@ const HomeCliente = () => {
           textAlign: "center",
           color: "rgba(255,255,255,0.6)",
           width: "100%",
-          padding: "2rem 2rem 0"
+          padding: "2rem 2rem 0",
+          boxSizing: "border-box"
         }}>
           <p style={{ margin: 0 }}>
             © 2024 Bosque Sagrado. Todos los derechos reservados.
@@ -2399,6 +2456,17 @@ const HomeCliente = () => {
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+          
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          html, body {
+            width: 100%;
+            overflow-x: hidden;
+          }
         `}
       </style>
     </div>

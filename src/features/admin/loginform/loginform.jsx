@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye, FaCrown, FaMapMarkerAlt, FaStar, FaSearch, FaUsers, FaHome, FaBed, FaArrowUp, FaChevronDown, FaChevronUp, FaChair, FaDollarSign, FaImage } from "react-icons/fa";
+import { FaUser, FaLock, FaEnvelope, FaIdCard, FaPhone, FaCalendarAlt, FaCheck, FaChevronLeft, FaChevronRight, FaFacebook, FaInstagram, FaWhatsapp, FaLightbulb, FaEye, FaCrown, FaMapMarkerAlt, FaStar, FaSearch, FaUsers, FaHome, FaBed, FaArrowUp, FaChevronDown, FaChevronUp, FaChair, FaDollarSign, FaImage, FaExclamationCircle } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
@@ -1137,6 +1137,20 @@ function LoginRegister() {
     return selectedDate < today;
   };
 
+  // Calcular edad a partir de fecha de nacimiento
+  const calculateAge = (birthDate) => {
+    const today = new Date();
+    const birthDateObj = new Date(birthDate);
+    let age = today.getFullYear() - birthDateObj.getFullYear();
+    const monthDiff = today.getMonth() - birthDateObj.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   // NUEVA FUNCIÓN: Manejar olvidé contraseña
   const handleForgotPassword = () => {
     if (!loginEmail) {
@@ -1427,13 +1441,16 @@ function LoginRegister() {
     }
   };
 
-  // Función de Registro
+  // Función de Registro - CORREGIDA
   const validateRegisterForm = () => {
     let newErrors = {};
     let isValid = true;
 
     if (!numeroDocumento) {
       newErrors.numeroDocumento = "El número de documento es obligatorio.";
+      isValid = false;
+    } else if (numeroDocumento.length < 6) {
+      newErrors.numeroDocumento = "El número de documento debe tener al menos 6 caracteres.";
       isValid = false;
     }
 
@@ -1443,6 +1460,9 @@ function LoginRegister() {
     } else if (!isValidName(firstName)) {
       newErrors.firstName = "El nombre solo debe contener letras y espacios.";
       isValid = false;
+    } else if (firstName.length < 2) {
+      newErrors.firstName = "El nombre debe tener al menos 2 caracteres.";
+      isValid = false;
     }
 
     if (!lastName) {
@@ -1450,6 +1470,9 @@ function LoginRegister() {
       isValid = false;
     } else if (!isValidName(lastName)) {
       newErrors.lastName = "El apellido solo debe contener letras y espacios.";
+      isValid = false;
+    } else if (lastName.length < 2) {
+      newErrors.lastName = "El apellido debe tener al menos 2 caracteres.";
       isValid = false;
     }
 
@@ -1467,6 +1490,16 @@ function LoginRegister() {
     } else if (!isValidDate(fechaNacimiento)) {
       newErrors.fechaNacimiento = "La fecha de nacimiento debe ser una fecha válida en el pasado.";
       isValid = false;
+    } else {
+      // Verificar si es mayor de edad
+      const age = calculateAge(fechaNacimiento);
+      if (age < 18) {
+        newErrors.fechaNacimiento = "Debes ser mayor de 18 años para registrarte.";
+        isValid = false;
+      } else if (age > 120) {
+        newErrors.fechaNacimiento = "Por favor ingresa una fecha de nacimiento válida.";
+        isValid = false;
+      }
     }
 
     if (!registerEmail) {
@@ -1501,7 +1534,11 @@ function LoginRegister() {
     e.preventDefault();
  
     if (!validateRegisterForm()) {
-      showErrorAlert('Error en el formulario', 'Por favor corrige los errores marcados en el formulario');
+      // Mostrar el primer error encontrado
+      const firstErrorKey = Object.keys(errors)[0];
+      if (firstErrorKey) {
+        showErrorAlert('Error en el formulario', errors[firstErrorKey]);
+      }
       return;
     }
 
@@ -1519,6 +1556,10 @@ function LoginRegister() {
     setIsLoading(true);
  
     try {
+      // Calcular edad para mostrar en consola
+      const age = calculateAge(fechaNacimiento);
+      console.log(`📅 Edad del usuario: ${age} años`);
+      
       const userData = {
         tipoDocumento: tipoDocumento,
         numeroDocumento: numeroDocumento.trim(),
@@ -1532,6 +1573,7 @@ function LoginRegister() {
         estado: true
       };
 
+      console.log('📤 Enviando datos de registro:', userData);
       const result = await registerWithAPI(userData);
    
       if (result) {
@@ -1646,6 +1688,18 @@ function LoginRegister() {
 
   // Imagen de fondo para formularios
   const backgroundImage = "https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80";
+
+  // Estilo para campo de fecha con placeholder
+  const dateInputStyle = (hasError) => ({
+    flex: 1,
+    border: "none",
+    outline: "none",
+    fontSize: "1rem",
+    background: "unset",
+    color: fechaNacimiento ? "#000" : "#999",
+    fontFamily: "inherit",
+    width: "100%"
+  });
 
   return (
     <>
@@ -2331,15 +2385,89 @@ function LoginRegister() {
             </div>
           )}
 
-          {/* QUIENES SOMOS - MODIFICADO PARA MOSTRAR LOGO EN VEZ DE IMAGEN */}
-          {showAboutUs && (
-            <section style={{ 
-              padding: "4rem 2rem", 
-              backgroundColor: "#f8faf8", 
-              margin: 0,
-              width: "100%",
-              boxSizing: "border-box"
-            }}>
+          {/* QUIENES SOMOS - MODIFICADO PARA INCLUIR LA SECCIÓN "VIVE UNA EXPERIENCIA" */}
+{showAboutUs && (
+  <section style={{ 
+    padding: "0",  // CAMBIADO: De "4rem 2rem" a "0"
+    backgroundColor: "#f8faf8", 
+    margin: 0,
+    width: "100%",
+    boxSizing: "border-box"
+  }}>
+    {/* SECCIÓN VIVE UNA EXPERIENCIA ÚNICA CON FONDO VERDE */}
+    <div style={{ 
+      width: "100vw",  // CAMBIADO: De "100%" a "100vw" para usar todo el ancho de la ventana
+      height: "70vh", // CAMBIADO: De "70vh" a "100vh" para usar toda la altura de la ventana
+      background: "linear-gradient(135deg, rgba(46, 89, 57, 0.9) 0%, rgba(62, 126, 92, 0.8) 100%)",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      margin: 0,
+      padding: 0,
+      marginBottom: "5rem",
+      borderRadius: "0px",  // CAMBIADO: De "20px" a "0px"
+      overflow: "hidden"
+    }}>
+                <div style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  backgroundColor: "rgba(46, 89, 57, 0.9)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <div style={{
+                    textAlign: "center",
+                    color: "#fff",
+                    maxWidth: "800px",
+                    padding: "2rem",
+                  }}>
+                    <h2 style={{
+                      fontSize: "3.5rem",
+                      marginBottom: "1.5rem",
+                      fontFamily: "'Playfair Display', serif",
+                      fontWeight: "700",
+                      textShadow: "2px 2px 8px rgba(0,0,0,0.5)"
+                    }}>
+                      Vive una Experiencia Única
+                    </h2>
+                    <p style={{
+                      fontSize: "1.5rem",
+                      marginBottom: "2.5rem",
+                      lineHeight: "1.6",
+                      textShadow: "1px 1px 4px rgba(0,0,0,0.5)"
+                    }}>
+                      Descubre la magia de conectar con la naturaleza sin sacrificar el confort. 
+                      Nuestras cabañas premium te ofrecen el equilibrio perfecto entre lujo y aventura.
+                    </p>
+                    <button
+                      onClick={handleShowRegister}
+                      style={{
+                        backgroundColor: "#E8F5E9",
+                        color: "#2E5939",
+                        border: "none",
+                        padding: "18px 35px",
+                        borderRadius: "30px",
+                        fontWeight: "600",
+                        fontSize: "1.2rem",
+                        cursor: "pointer",
+                        boxShadow: "0 4px 15px rgba(0,0,0,0.2)"
+                      }}
+                    >
+                      Reserva Ahora
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* CONTENIDO ORIGINAL DE QUIENES SOMOS */}
               <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                 <div style={{
                   backgroundColor: "#fff",
@@ -2857,7 +2985,7 @@ function LoginRegister() {
                     </p>
                   </form>
                 ) : (
-                  // REGISTER FORM - 2 COLUMNAS
+                  // REGISTER FORM - 2 COLUMNAS - MEJORADO
                   <form onSubmit={handleRegisterSubmit}>
                     <div style={{ textAlign: "center", marginBottom: "2rem" }}>
                       <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
@@ -2875,12 +3003,30 @@ function LoginRegister() {
                       {/* Fila 1: Tipo Documento y Número Documento */}
                       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaIdCard style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Tipo de Documento
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.tipoDocumento ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.tipoDocumento ? "#fff5f5" : "#fff"
+                          }}>
+                            <FaIdCard style={{ marginRight: "12px", color: errors.tipoDocumento ? "#ff6b6b" : "#3E7E5C" }} />
                             <select
                               value={tipoDocumento}
                               onChange={(e) => setTipoDocumento(e.target.value)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
+                              style={{ 
+                                flex: 1, 
+                                border: "none", 
+                                outline: "none", 
+                                fontSize: "1rem", 
+                                background: "unset", 
+                                color: "#000",
+                                cursor: "pointer"
+                              }}
                             >
                               {tiposDocumento.map((tipo) => (
                                 <option key={tipo} value={tipo}>{tipo}</option>
@@ -2889,120 +3035,275 @@ function LoginRegister() {
                           </div>
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaIdCard style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Número de Documento *
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.numeroDocumento ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.numeroDocumento ? "#fff5f5" : "#fff"
+                          }}>
+                            <FaIdCard style={{ marginRight: "12px", color: errors.numeroDocumento ? "#ff6b6b" : "#3E7E5C" }} />
                             <input
                               type="text"
-                              placeholder="Número Documento"
+                              placeholder="Ej: 12345678"
                               required
                               value={numeroDocumento}
                               onChange={handleDocumentNumberChange}
                               style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
+                          {errors.numeroDocumento && (
+                            <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaExclamationCircle /> {errors.numeroDocumento}
+                            </p>
+                          )}
                         </div>
                       </div>
 
                       {/* Fila 2: Nombre y Apellido */}
                       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaUser style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Nombre *
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.firstName ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.firstName ? "#fff5f5" : "#fff"
+                          }}>
+                            <FaUser style={{ marginRight: "12px", color: errors.firstName ? "#ff6b6b" : "#3E7E5C" }} />
                             <input
                               type="text"
-                              placeholder="Nombre"
+                              placeholder="Ej: Juan"
                               required
                               value={firstName}
                               onChange={(e) => handleTextInputChange(e, setFirstName)}
                               style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
+                          {errors.firstName && (
+                            <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaExclamationCircle /> {errors.firstName}
+                            </p>
+                          )}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaUser style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Apellido *
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.lastName ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.lastName ? "#fff5f5" : "#fff"
+                          }}>
+                            <FaUser style={{ marginRight: "12px", color: errors.lastName ? "#ff6b6b" : "#3E7E5C" }} />
                             <input
                               type="text"
-                              placeholder="Apellido"
+                              placeholder="Ej: Pérez"
                               required
                               value={lastName}
                               onChange={(e) => handleTextInputChange(e, setLastName)}
                               style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
+                          {errors.lastName && (
+                            <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaExclamationCircle /> {errors.lastName}
+                            </p>
+                          )}
                         </div>
                       </div>
 
                       {/* Fila 3: Celular y Fecha Nacimiento */}
                       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaPhone style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Celular *
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.celular ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.celular ? "#fff5f5" : "#fff"
+                          }}>
+                            <FaPhone style={{ marginRight: "12px", color: errors.celular ? "#ff6b6b" : "#3E7E5C" }} />
                             <input
                               type="text"
-                              placeholder="Celular"
+                              placeholder="Ej: 3001234567"
                               required
                               value={celular}
                               onChange={handlePhoneChange}
                               style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
+                          {errors.celular && (
+                            <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaExclamationCircle /> {errors.celular}
+                            </p>
+                          )}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaCalendarAlt style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Fecha de Nacimiento *
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.fechaNacimiento ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.fechaNacimiento ? "#fff5f5" : "#fff",
+                            position: "relative"
+                          }}>
+                            <FaCalendarAlt style={{ marginRight: "12px", color: errors.fechaNacimiento ? "#ff6b6b" : "#3E7E5C" }} />
                             <input
                               type="date"
                               required
                               value={fechaNacimiento}
-                              onChange={(e) => setFechaNacimiento(e.target.value)}
-                              style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
+                              onChange={(e) => {
+                                setFechaNacimiento(e.target.value);
+                                // Limpiar error cuando se selecciona una fecha
+                                if (errors.fechaNacimiento) {
+                                  setErrors(prev => ({ ...prev, fechaNacimiento: null }));
+                                }
+                              }}
+                              style={dateInputStyle(errors.fechaNacimiento)}
+                              max={new Date().toISOString().split('T')[0]} // Máximo fecha actual
+                              min="1900-01-01" // Mínimo año 1900
                             />
+                            {!fechaNacimiento && (
+                              <span style={{
+                                position: "absolute",
+                                left: "3rem",
+                                color: "#999",
+                                pointerEvents: "none",
+                                fontSize: "1rem"
+                              }}>
+                               
+                              </span>
+                            )}
                           </div>
+                          {errors.fechaNacimiento && (
+                            <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaExclamationCircle /> {errors.fechaNacimiento}
+                            </p>
+                          )}
+                          {fechaNacimiento && !errors.fechaNacimiento && (
+                            <p style={{ color: "#3E7E5C", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaCheck /> Edad: {calculateAge(fechaNacimiento)} años
+                            </p>
+                          )}
                         </div>
                       </div>
 
                       {/* Email */}
-                      <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem" }}>
-                        <FaEnvelope style={{ marginRight: "12px", color: "#3E7E5C" }} />
-                        <input
-                          type="email"
-                          placeholder="Correo electrónico"
-                          required
-                          value={registerEmail}
-                          onChange={(e) => setRegisterEmail(e.target.value)}
-                          style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
-                        />
+                      <div style={{ marginBottom: "1rem" }}>
+                        <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                          Correo Electrónico *
+                        </label>
+                        <div style={{ 
+                          display: "flex", 
+                          alignItems: "center", 
+                          border: errors.registerEmail ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                          padding: "1rem", 
+                          borderRadius: "12px",
+                          backgroundColor: errors.registerEmail ? "#fff5f5" : "#fff"
+                        }}>
+                          <FaEnvelope style={{ marginRight: "12px", color: errors.registerEmail ? "#ff6b6b" : "#3E7E5C" }} />
+                          <input
+                            type="email"
+                            placeholder="Ej: juan.perez@email.com"
+                            required
+                            value={registerEmail}
+                            onChange={(e) => setRegisterEmail(e.target.value)}
+                            style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
+                          />
+                        </div>
+                        {errors.registerEmail && (
+                          <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                            <FaExclamationCircle /> {errors.registerEmail}
+                          </p>
+                        )}
                       </div>
 
                       {/* Fila 4: Contraseña y Confirmar Contraseña */}
                       <div style={{ display: "flex", gap: "1rem" }}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaLock style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Contraseña *
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.registerPassword ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.registerPassword ? "#fff5f5" : "#fff"
+                          }}>
+                            <FaLock style={{ marginRight: "12px", color: errors.registerPassword ? "#ff6b6b" : "#3E7E5C" }} />
                             <input
                               type="password"
-                              placeholder="Contraseña"
+                              placeholder="Mínimo 6 caracteres"
                               required
                               value={registerPassword}
                               onChange={(e) => setRegisterPassword(e.target.value)}
                               style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
+                          {errors.registerPassword && (
+                            <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaExclamationCircle /> {errors.registerPassword}
+                            </p>
+                          )}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", border: "1px solid #e0e0e0", padding: "1rem", borderRadius: "12px" }}>
-                            <FaLock style={{ marginRight: "12px", color: "#3E7E5C" }} />
+                          <label style={{ display: "block", marginBottom: "0.5rem", color: "#2E5939", fontWeight: "500", fontSize: "0.9rem" }}>
+                            Confirmar Contraseña *
+                          </label>
+                          <div style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            border: errors.confirmPassword ? "1px solid #ff6b6b" : "1px solid #e0e0e0", 
+                            padding: "1rem", 
+                            borderRadius: "12px",
+                            backgroundColor: errors.confirmPassword ? "#fff5f5" : "#fff"
+                          }}>
+                            <FaLock style={{ marginRight: "12px", color: errors.confirmPassword ? "#ff6b6b" : "#3E7E5C" }} />
                             <input
                               type="password"
-                              placeholder="Confirmar Contraseña"
+                              placeholder="Repite tu contraseña"
                               required
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
                               style={{ flex: 1, border: "none", outline: "none", fontSize: "1rem", background: "unset", color: "#000" }}
                             />
                           </div>
+                          {errors.confirmPassword && (
+                            <p style={{ color: "#ff6b6b", fontSize: "0.8rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                              <FaExclamationCircle /> {errors.confirmPassword}
+                            </p>
+                          )}
                         </div>
+                      </div>
+
+                      {/* Mensaje de campos obligatorios */}
+                      <div style={{ marginTop: "1rem", padding: "0.8rem", backgroundColor: "#f8faf8", borderRadius: "8px", border: "1px solid #e0e0e0" }}>
+                        <p style={{ color: "#5D6D63", fontSize: "0.8rem", margin: 0, textAlign: "center" }}>
+                          <FaExclamationCircle style={{ marginRight: "0.3rem" }} />
+                          Los campos marcados con * son obligatorios
+                        </p>
                       </div>
                     </div>
 
@@ -3035,6 +3336,17 @@ function LoginRegister() {
                         cursor: isLoading || !isServerOnline ? "not-allowed" : "pointer",
                         fontSize: "1.1rem",
                         marginBottom: "1.5rem",
+                        transition: "all 0.3s ease"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isLoading && isServerOnline) {
+                          e.currentTarget.style.backgroundColor = "#3E7E5C";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLoading && isServerOnline) {
+                          e.currentTarget.style.backgroundColor = "#2E5939";
+                        }
                       }}
                     >
                       {isLoading ? "Creando Cuenta..." : "Crear Cuenta"}
@@ -3136,78 +3448,6 @@ function LoginRegister() {
                   >
                     Nuestra Historia
                   </button>
-                </div>
-              </section>
-
-              {/* NUEVA SECCIÓN EXCLUSIVA CON IMAGEN DE FONDO COMPLETA */}
-              <section
-                style={{
-                  width: "100%",
-                  height: "70vh",
-                  backgroundImage: "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                  margin: 0,
-                  padding: 0,
-                }}
-              >
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  backgroundColor: "rgba(46, 89, 57, 0.7)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <div style={{
-                    textAlign: "center",
-                    color: "#fff",
-                    maxWidth: "800px",
-                    padding: "2rem",
-                  }}>
-                    <h2 style={{
-                      fontSize: "3.5rem",
-                      marginBottom: "1.5rem",
-                      fontFamily: "'Playfair Display', serif",
-                      fontWeight: "700",
-                      textShadow: "2px 2px 8px rgba(0,0,0,0.5)"
-                    }}>
-                      Vive una Experiencia Única
-                    </h2>
-                    <p style={{
-                      fontSize: "1.5rem",
-                      marginBottom: "2.5rem",
-                      lineHeight: "1.6",
-                      textShadow: "1px 1px 4px rgba(0,0,0,0.5)"
-                    }}>
-                      Descubre la magia de conectar con la naturaleza sin sacrificar el confort. 
-                      Nuestras cabañas premium te ofrecen el equilibrio perfecto entre lujo y aventura.
-                    </p>
-                    <button
-                      onClick={handleShowRegister}
-                      style={{
-                        backgroundColor: "#E8F5E9",
-                        color: "#2E5939",
-                        border: "none",
-                        padding: "18px 35px",
-                        borderRadius: "30px",
-                        fontWeight: "600",
-                        fontSize: "1.2rem",
-                        cursor: "pointer",
-                        boxShadow: "0 4px 15px rgba(0,0,0,0.2)"
-                      }}
-                    >
-                      Reserva Ahora
-                    </button>
-                  </div>
                 </div>
               </section>
 
