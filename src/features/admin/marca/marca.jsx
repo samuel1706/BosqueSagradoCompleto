@@ -86,6 +86,8 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflowY: 'auto',
+  padding: '20px 0'
 };
 
 const modalContentStyle = {
@@ -101,6 +103,7 @@ const modalContentStyle = {
   overflowY: 'auto',
   position: 'relative',
   border: "2px solid #679750",
+  margin: 'auto'
 };
 
 // Estilos mejorados para alertas
@@ -162,6 +165,7 @@ const detailsModalStyle = {
   maxHeight: '80vh',
   overflowY: 'auto',
   border: "2px solid #679750",
+  margin: 'auto'
 };
 
 const detailItemStyle = {
@@ -260,7 +264,8 @@ const FormField = ({
   maxLength,
   placeholder,
   showCharCount = false,
-  touched = false
+  touched = false,
+  onBlur
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
@@ -340,6 +345,7 @@ const FormField = ({
           name={name}
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           style={getInputStyle()}
           required={required}
           disabled={disabled}
@@ -361,6 +367,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled}
@@ -423,8 +430,45 @@ const Marca = () => {
   });
 
   // ===============================================
-  // EFECTOS
+  // EFECTOS PARA BLOQUEAR SCROLL
   // ===============================================
+  useEffect(() => {
+    // Efecto para bloquear/desbloquear el scroll del body
+    const handleBodyScroll = (shouldBlock) => {
+      if (shouldBlock) {
+        // Guardar la posición actual del scroll
+        const scrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        document.body.style.overflowY = 'hidden';
+      } else {
+        // Restaurar el scroll
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflowY = '';
+        
+        if (scrollY) {
+          window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+      }
+    };
+
+    // Bloquear scroll cuando se abre cualquier modal
+    if (showForm || showDetails || showDeleteConfirm) {
+      handleBodyScroll(true);
+    } else {
+      handleBodyScroll(false);
+    }
+
+    // Limpiar al desmontar el componente
+    return () => {
+      handleBodyScroll(false);
+    };
+  }, [showForm, showDetails, showDeleteConfirm]);
+
   useEffect(() => {
     fetchMarcas();
     fetchProductos();
@@ -1333,9 +1377,6 @@ const Marca = () => {
         )}
       </div>
 
-      {/* Resto del código permanece igual (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
-      {/* ... */}
-
       {/* Formulario de agregar/editar */}
       {showForm && (
         <div style={modalOverlayStyle}>
@@ -1375,6 +1416,24 @@ const Marca = () => {
                 showCharCount={true}
                 placeholder="Ej: Dove, Coca-Cola, Samsung, Nike, Adidas..."
                 touched={touchedFields.nombre}
+              />
+
+              <FormField
+                label="Estado"
+                name="estado"
+                type="select"
+                value={newMarca.estado}
+                onChange={handleChange}
+                onBlur={handleInputBlur}
+                error={formErrors.estado}
+                success={formSuccess.estado}
+                required={true}
+                disabled={loading}
+                options={[
+                  { value: "true", label: "Activa" },
+                  { value: "false", label: "Inactiva" }
+                ]}
+                touched={touchedFields.estado}
               />
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 20 }}>

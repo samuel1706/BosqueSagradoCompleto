@@ -87,6 +87,8 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflowY: "auto",
+  padding: "20px 0",
 };
 
 const modalContentStyle = {
@@ -95,13 +97,11 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "92%",
-  maxWidth: 820,
+  maxWidth: 900,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '90vh',
-  overflowY: 'auto',
-  position: 'relative',
   border: "2px solid #679750",
+  margin: "auto",
 };
 
 const sectionStyle = {
@@ -182,9 +182,8 @@ const detailsModalStyle = {
   maxWidth: 600,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '80vh',
-  overflowY: 'auto',
   border: "2px solid #679750",
+  margin: "20px auto",
 };
 
 const detailItemStyle = {
@@ -615,6 +614,11 @@ const Users = () => {
           transform: translateY(0);
         }
       }
+      
+      /* Prevenir scroll del body cuando hay modal abierto */
+      body.modal-open {
+        overflow: hidden;
+      }
     `;
     document.head.appendChild(style);
 
@@ -622,6 +626,19 @@ const Users = () => {
       document.head.removeChild(style);
     };
   }, []);
+
+  // Efecto para controlar el scroll del body cuando se abre/cierra el modal
+  useEffect(() => {
+    if (showForm || showDetails || showDeleteConfirm) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [showForm, showDetails, showDeleteConfirm]);
 
   // ===============================================
   // FUNCIONES DE ALERTAS MEJORADAS
@@ -1521,8 +1538,6 @@ const Users = () => {
             />
           </div>
 
-         
-
           {/* Botón para mostrar/ocultar filtros avanzados */}
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -1693,10 +1708,7 @@ const Users = () => {
         )}
       </div>
 
-      {/* Resto del código permanece igual (Formulario, Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
-      {/* ... El resto del código del componente permanece igual ... */}
-
-      {/* Formulario de agregar/editar */}
+      {/* Formulario de agregar/editar - SIN SCROLL INTERNO */}
       {showForm && (
         <div style={modalOverlayStyle}>
           <div style={{ ...modalContentStyle }}>
@@ -1985,10 +1997,16 @@ const Users = () => {
               {isEditing && (
                 <div style={{ marginBottom: '18px' }}>
                   <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    
-                    
+                    <input
+                      type="checkbox"
+                      name="estado"
+                      checked={newUser.estado}
+                      onChange={handleInputChange}
+                      disabled={loading}
+                      style={{ width: '18px', height: '18px' }}
+                    />
+                    Usuario Activo
                   </label>
-                  
                 </div>
               )}
 
@@ -2048,10 +2066,10 @@ const Users = () => {
         </div>
       )}
 
-      {/* Modal de detalles */}
+      {/* Modal de detalles - SIN SCROLL INTERNO */}
       {showDetails && currentUser && (
         <div style={modalOverlayStyle}>
-          <div style={{ ...detailsModalStyle, maxWidth: 600 }}>
+          <div style={{ ...detailsModalStyle }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles del Usuario</h2>
               <button

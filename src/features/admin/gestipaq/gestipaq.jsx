@@ -76,6 +76,8 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflowY: 'auto',
+  padding: '20px'
 };
 
 const modalContentStyle = {
@@ -773,6 +775,23 @@ const Gestipaq = () => {
   });
 
   // ===============================================
+  // FUNCIONES PARA MANEJO DEL SCROLL DEL BODY
+  // ===============================================
+  const disableBodyScroll = () => {
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+  };
+
+  const enableBodyScroll = () => {
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+  };
+
+  // ===============================================
   // EFECTOS
   // ===============================================
   useEffect(() => {
@@ -793,6 +812,19 @@ const Gestipaq = () => {
       });
     }
   }, [newPaquete, showForm, touchedFields]);
+
+  // Efecto para controlar el scroll del body cuando se abren modales
+  useEffect(() => {
+    if (showForm || showDetails || showDeleteConfirm || showAlert) {
+      disableBodyScroll();
+    } else {
+      enableBodyScroll();
+    }
+
+    return () => {
+      enableBodyScroll();
+    };
+  }, [showForm, showDetails, showDeleteConfirm, showAlert]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {

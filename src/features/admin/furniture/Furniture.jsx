@@ -89,6 +89,8 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflowY: 'auto',
+  padding: '20px 0'
 };
 
 const modalContentStyle = {
@@ -100,10 +102,11 @@ const modalContentStyle = {
   maxWidth: 600,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '90vh',
+  maxHeight: 'calc(90vh - 40px)',
   overflowY: 'auto',
   position: 'relative',
   border: "2px solid #679750",
+  margin: 'auto'
 };
 
 // Estilos mejorados para alertas
@@ -169,9 +172,10 @@ const detailsModalStyle = {
   maxWidth: 700,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '80vh',
+  maxHeight: 'calc(80vh - 40px)',
   overflowY: 'auto',
   border: "2px solid #679750",
+  margin: 'auto'
 };
 
 const detailItemStyle = {
@@ -512,8 +516,24 @@ const Furniture = () => {
   });
 
   // ===============================================
-  // EFECTOS
+  // EFECTOS PARA CONTROLAR EL SCROLL
   // ===============================================
+  useEffect(() => {
+    // Agregar/quitar clase al body para controlar el scroll
+    const body = document.body;
+    
+    if (showForm || showDetails || showDeleteConfirm) {
+      body.style.overflow = 'hidden';
+    } else {
+      body.style.overflow = 'auto';
+    }
+
+    // Cleanup al desmontar
+    return () => {
+      body.style.overflow = 'auto';
+    };
+  }, [showForm, showDetails, showDeleteConfirm]);
+
   useEffect(() => {
     fetchComodidades();
     fetchCabanaComodidades();

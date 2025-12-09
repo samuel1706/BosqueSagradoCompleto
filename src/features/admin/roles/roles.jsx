@@ -81,6 +81,8 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflowY: 'auto',
+  padding: '20px 0'
 };
 
 const modalContentStyle = {
@@ -96,6 +98,7 @@ const modalContentStyle = {
   overflowY: 'auto',
   position: 'relative',
   border: "2px solid #679750",
+  margin: 'auto'
 };
 
 // Estilos mejorados para alertas
@@ -164,6 +167,7 @@ const detailsModalStyle = {
   maxHeight: '80vh',
   overflowY: 'auto',
   border: "2px solid #679750",
+  margin: 'auto'
 };
 
 const detailItemStyle = {
@@ -274,7 +278,8 @@ const FormField = ({
   placeholder,
   showCharCount = false,
   rows = 3,
-  touched = false
+  touched = false,
+  onBlur
 }) => {
   const handleFilteredInputChange = (e) => {
     const { name, value } = e.target;
@@ -365,6 +370,7 @@ const FormField = ({
           name={name}
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           style={getInputStyle()}
           required={required}
           disabled={disabled}
@@ -385,6 +391,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={{
               ...getInputStyle(),
               minHeight: `${rows * 20}px`,
@@ -415,6 +422,7 @@ const FormField = ({
             name={name}
             value={value}
             onChange={handleFilteredInputChange}
+            onBlur={onBlur}
             style={getInputStyle()}
             required={required}
             disabled={disabled}
@@ -477,8 +485,45 @@ const Rol = () => {
   });
 
   // ===============================================
-  // EFECTOS
+  // EFECTOS PARA BLOQUEAR SCROLL
   // ===============================================
+  useEffect(() => {
+    // Efecto para bloquear/desbloquear el scroll del body
+    const handleBodyScroll = (shouldBlock) => {
+      if (shouldBlock) {
+        // Guardar la posición actual del scroll
+        const scrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        document.body.style.overflowY = 'hidden';
+      } else {
+        // Restaurar el scroll
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflowY = '';
+        
+        if (scrollY) {
+          window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+      }
+    };
+
+    // Bloquear scroll cuando se abre cualquier modal
+    if (showForm || showDetails || showDeleteConfirm) {
+      handleBodyScroll(true);
+    } else {
+      handleBodyScroll(false);
+    }
+
+    // Limpiar al desmontar el componente
+    return () => {
+      handleBodyScroll(false);
+    };
+  }, [showForm, showDetails, showDeleteConfirm]);
+
   useEffect(() => {
     fetchRoles();
   }, []);

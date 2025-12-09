@@ -1,5 +1,5 @@
 // src/components/Admisede.jsx
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, FaCheck, FaInfoCircle, FaMapMarkerAlt, FaBox, FaList, FaSlidersH } from "react-icons/fa";
 import axios from "axios";
 
@@ -75,6 +75,7 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflow: "hidden",
 };
 
 const modalContentStyle = {
@@ -557,6 +558,56 @@ const SelectorPaquetes = ({
 };
 
 // ===============================================
+// FUNCIÓN PARA BLOQUEAR/DESBLOQUEAR SCROLL
+// ===============================================
+const useBodyScrollLock = () => {
+  const lockScroll = useCallback(() => {
+    const body = document.body;
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+    
+    // Guardar la posición actual del scroll
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Aplicar estilos para bloquear el scroll
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollTop}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    
+    // Prevenir el desplazamiento en el cuerpo
+    if (scrollBarWidth > 0) {
+      body.style.paddingRight = `${scrollBarWidth}px`;
+    }
+    
+    // Guardar la posición del scroll para restaurarla después
+    body.setAttribute('data-scroll-position', scrollTop);
+  }, []);
+
+  const unlockScroll = useCallback(() => {
+    const body = document.body;
+    const scrollTop = body.getAttribute('data-scroll-position') || '0';
+    
+    // Remover estilos de bloqueo
+    body.style.removeProperty('overflow');
+    body.style.removeProperty('position');
+    body.style.removeProperty('top');
+    body.style.removeProperty('left');
+    body.style.removeProperty('right');
+    body.style.removeProperty('width');
+    body.style.removeProperty('padding-right');
+    
+    // Restaurar la posición del scroll
+    window.scrollTo(0, parseInt(scrollTop, 10));
+    
+    body.removeAttribute('data-scroll-position');
+  }, []);
+
+  return { lockScroll, unlockScroll };
+};
+
+// ===============================================
 // COMPONENTE PRINCIPAL Admisede CON GESTIÓN DE PAQUETES Y FILTROS MEJORADOS
 // ===============================================
 const Admisede = () => {
@@ -600,6 +651,26 @@ const Admisede = () => {
     celular: "",
     estado: "true"
   });
+
+  // Hook para manejar el bloqueo del scroll
+  const { lockScroll, unlockScroll } = useBodyScrollLock();
+
+  // ===============================================
+  // EFECTOS PARA MANEJAR EL SCROLL
+  // ===============================================
+  useEffect(() => {
+    // Bloquear scroll cuando hay modales abiertos
+    if (showForm || showDetails || showDeleteConfirm) {
+      lockScroll();
+    } else {
+      unlockScroll();
+    }
+
+    // Limpiar al desmontar
+    return () => {
+      unlockScroll();
+    };
+  }, [showForm, showDetails, showDeleteConfirm, lockScroll, unlockScroll]);
 
   // ===============================================
   // EFECTOS

@@ -681,6 +681,38 @@ const Cabins = () => {
     }
   }, [newCabin, showForm, touchedFields]);
 
+  // Efecto para controlar el scroll del body cuando hay modales abiertos
+  useEffect(() => {
+    const hasModalOpen = showForm || showDetails || showDeleteConfirm || showAlert;
+    
+    if (hasModalOpen) {
+      // Guardar la posición actual del scroll
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restaurar el scroll
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    return () => {
+      // Limpiar al desmontar
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [showForm, showDetails, showDeleteConfirm, showAlert]);
+
   // Efecto para agregar estilos de animación
   useEffect(() => {
     const style = document.createElement('style');
@@ -710,6 +742,13 @@ const Cabins = () => {
           opacity: 1;
           transform: translateY(0);
         }
+      }
+      
+      /* Clase para bloquear el scroll */
+      .modal-open {
+        overflow: hidden !important;
+        position: fixed;
+        width: 100%;
       }
     `;
     document.head.appendChild(style);
@@ -2624,7 +2663,6 @@ const Cabins = () => {
         </div>
       )}
 
-      {/* Resto del código permanece igual (Modal de detalles, Modal de confirmación, Tabla, Paginación) */}
       {/* Modal de detalles */}
       {showDetails && currentCabin && (
         <div style={modalOverlayStyle}>

@@ -82,6 +82,7 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflow: "hidden",
 };
 
 const modalContentStyle = {
@@ -478,6 +479,35 @@ const TipoCabana = () => {
   useEffect(() => {
     fetchTiposCabana();
   }, []);
+
+  // Efecto para bloquear el scroll cuando se abren modales
+  useEffect(() => {
+    if (showForm || showDetails || showDeleteConfirm) {
+      // Guardar la posición actual del scroll
+      const scrollY = window.scrollY;
+      // Bloquear el scroll del body
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+    } else {
+      // Restaurar el scroll del body
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+
+    return () => {
+      // Limpiar al desmontar
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+    };
+  }, [showForm, showDetails, showDeleteConfirm]);
 
   useEffect(() => {
     if (showForm) {

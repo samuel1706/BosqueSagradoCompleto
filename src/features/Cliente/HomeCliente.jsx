@@ -222,6 +222,35 @@ const HomeCliente = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Efecto para deshabilitar scroll cuando hay popup abierto
+  useEffect(() => {
+    if (showPopup) {
+      // Guardar el valor actual del scroll
+      const scrollY = window.scrollY;
+      // Deshabilitar scroll en body
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restaurar scroll cuando se cierra el popup
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+
+    // Limpiar el efecto al desmontar
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [showPopup]);
+
   // Cargar datos de la API al montar el componente
   useEffect(() => {
     const loadData = async () => {
@@ -1758,7 +1787,7 @@ const HomeCliente = () => {
             left: 0,
             width: "100%",
             height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: "rgba(0,0,0,0.8)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -2466,6 +2495,14 @@ const HomeCliente = () => {
           html, body {
             width: 100%;
             overflow-x: hidden;
+          }
+          
+          /* Estilos para deshabilitar scroll cuando hay popup */
+          body.no-scroll {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
           }
         `}
       </style>

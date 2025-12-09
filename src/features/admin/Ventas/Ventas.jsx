@@ -1,11 +1,11 @@
 // src/components/Ventas.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { 
-  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, 
-  FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaCreditCard, 
+import {
+  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle,
+  FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaCreditCard,
   FaReceipt, FaShoppingCart, FaFilter, FaSort, FaSortUp, FaSortDown,
   FaPrint, FaFileExport, FaChartBar, FaStore, FaUser, FaClipboardList,
-  FaBox, FaConciergeBell, FaSlidersH
+  FaBox, FaConciergeBell, FaSlidersH, FaTrashAlt, FaPlusCircle
 } from "react-icons/fa";
 import axios from "axios";
 
@@ -89,7 +89,7 @@ const modalContentStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 600,
+  maxWidth: 900,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -158,7 +158,7 @@ const detailsModalStyle = {
   borderRadius: 12,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   width: "90%",
-  maxWidth: 800,
+  maxWidth: 900,
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
@@ -254,9 +254,9 @@ const VALIDATION_RULES = {
 // ===============================================
 const API_VENTAS = "http://localhost:5272/api/Ventas";
 const API_RESERVAS = "http://localhost:5272/api/Reservas";
-const API_DETALLE_VENTA = "http://localhost:5272/api/DetalleVenta";
 const API_PRODUCTOS = "http://localhost:5272/api/Productos";
 const API_SERVICIOS = "http://localhost:5272/api/Servicios";
+const API_DETALLE_VENTA = "http://localhost:5272/api/DetalleVenta";
 const ITEMS_PER_PAGE = 10;
 
 // Métodos de pago predefinidos
@@ -274,10 +274,9 @@ const METODOS_PAGO = [
 // ===============================================
 const formatDate = (dateString) => {
   if (!dateString) return "Fecha no disponible";
-  
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
+    return date.toLocaleString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -295,25 +294,25 @@ const formatPrice = (price) => {
     currency: 'COP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(price);
+  }).format(Number(price) || 0);
 };
 
 // ===============================================
 // COMPONENTE FormField MEJORADO
 // ===============================================
-const FormField = ({ 
-  label, 
-  name, 
-  type = "text", 
-  value, 
-  onChange, 
+const FormField = ({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
   onBlur,
-  error, 
+  error,
   success,
   warning,
   options = [],
-  style = {}, 
-  required = true, 
+  style = {},
+  required = true,
   disabled = false,
   maxLength,
   placeholder,
@@ -343,7 +342,7 @@ const FormField = ({
     } else {
       filteredValue = value;
     }
-    
+   
     onChange({ target: { name, value: filteredValue } });
   };
 
@@ -398,7 +397,7 @@ const FormField = ({
     <div style={{ marginBottom: '15px', ...style }}>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "red" }}></span>}
+        {required && <span style={{ color: "red" }}>*</span>}
       </label>
       {type === "select" ? (
         <select
@@ -498,6 +497,57 @@ const FormField = ({
 };
 
 // ===============================================
+// FUNCIÓN PARA OBTENER ESTADÍSTICAS - AÑADIDA
+// ===============================================
+const getEstadisticas = (ventas, detallesVenta) => {
+  if (!ventas || ventas.length === 0) {
+    return {
+      totalVentas: 0,
+      ventasActivas: 0,
+      ventasAnuladas: 0,
+      ingresosTotales: 0,
+      metodoMasUtilizado: "No disponible"
+    };
+  }
+
+  // Contar ventas activas y anuladas
+  const ventasActivas = ventas.filter(v => v.estado === true || v.estado === "true").length;
+  const ventasAnuladas = ventas.length - ventasActivas;
+
+  // Calcular ingresos totales (sumar todos los detalles de venta)
+  let ingresosTotales = 0;
+  if (detallesVenta && detallesVenta.length > 0) {
+    ingresosTotales = detallesVenta.reduce((total, detalle) => {
+      return total + (Number(detalle.valorTotal) || 0);
+    }, 0);
+  }
+
+  // Método de pago más utilizado
+  const metodoPagoCount = {};
+  ventas.forEach(venta => {
+    const metodo = venta.metodoPago || "Desconocido";
+    metodoPagoCount[metodo] = (metodoPagoCount[metodo] || 0) + 1;
+  });
+
+  let metodoMasUtilizado = "No disponible";
+  let maxCount = 0;
+  Object.entries(metodoPagoCount).forEach(([metodo, count]) => {
+    if (count > maxCount) {
+      maxCount = count;
+      metodoMasUtilizado = metodo;
+    }
+  });
+
+  return {
+    totalVentas: ventas.length,
+    ventasActivas,
+    ventasAnuladas,
+    ingresosTotales,
+    metodoMasUtilizado
+  };
+};
+
+// ===============================================
 // COMPONENTE PRINCIPAL Ventas
 // ===============================================
 const Ventas = () => {
@@ -542,15 +592,154 @@ const Ventas = () => {
     idVenta: 0,
     fechaVenta: new Date().toISOString().slice(0, 16), // Formato para datetime-local
     idReserva: "",
-    metodoPago: "",
+    metodoPago: METODOS_PAGO[0],
     estado: true
   });
+
+  // detalles temporales en el formulario (productos/servicios agregados)
+  const [detallesTemp, setDetallesTemp] = useState([]);
+  const [selectedItemType, setSelectedItemType] = useState("producto"); // 'producto' o 'servicio'
+  const [selectedItemId, setSelectedItemId] = useState("");
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO, ORDENAMIENTO Y PAGINACIÓN
+  // ===============================================
+
+  // Función para manejar el ordenamiento
+  const handleSort = (field) => {
+    if (ordenarPor === field) {
+      setOrdenDireccion(ordenDireccion === "asc" ? "desc" : "asc");
+    } else {
+      setOrdenarPor(field);
+      setOrdenDireccion("desc");
+    }
+  };
+
+  // Función para obtener el ícono de ordenamiento
+  const getSortIcon = (field) => {
+    if (ordenarPor !== field) return <FaSort />;
+    return ordenDireccion === "asc" ? <FaSortUp /> : <FaSortDown />;
+  };
+
+  // Función para navegar a una página específica
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Filtrado y ordenamiento de ventas
+  const filteredVentas = useMemo(() => {
+    let filtered = [...ventas];
+
+    // Aplicar filtro de búsqueda
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(venta =>
+        String(venta.idVenta).toLowerCase().includes(term) ||
+        String(venta.idReserva).toLowerCase().includes(term) ||
+        String(venta.metodoPago).toLowerCase().includes(term)
+      );
+    }
+
+    // Aplicar filtros avanzados
+    if (filters.estado !== "all") {
+      const estadoFiltro = filters.estado === "activo";
+      filtered = filtered.filter(venta =>
+        venta.estado === estadoFiltro || venta.estado === String(estadoFiltro)
+      );
+    }
+
+    if (filters.metodoPago !== "all") {
+      filtered = filtered.filter(venta =>
+        venta.metodoPago === filters.metodoPago
+      );
+    }
+
+    if (filters.fechaDesde) {
+      const fechaDesde = new Date(filters.fechaDesde);
+      filtered = filtered.filter(venta => {
+        const fechaVenta = new Date(venta.fechaVenta);
+        return fechaVenta >= fechaDesde;
+      });
+    }
+
+    if (filters.fechaHasta) {
+      const fechaHasta = new Date(filters.fechaHasta);
+      fechaHasta.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(venta => {
+        const fechaVenta = new Date(venta.fechaVenta);
+        return fechaVenta <= fechaHasta;
+      });
+    }
+
+    // Ordenamiento
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (ordenarPor) {
+        case "id":
+          aValue = Number(a.idVenta);
+          bValue = Number(b.idVenta);
+          break;
+        case "fecha":
+          aValue = new Date(a.fechaVenta);
+          bValue = new Date(b.fechaVenta);
+          break;
+        case "reserva":
+          aValue = Number(a.idReserva);
+          bValue = Number(b.idReserva);
+          break;
+        case "metodo":
+          aValue = a.metodoPago?.toLowerCase() || "";
+          bValue = b.metodoPago?.toLowerCase() || "";
+          break;
+        case "estado":
+          aValue = a.estado ? 1 : 0;
+          bValue = b.estado ? 1 : 0;
+          break;
+        default:
+          aValue = new Date(a.fechaVenta);
+          bValue = new Date(b.fechaVenta);
+      }
+
+      if (ordenDireccion === "asc") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+
+    return filtered;
+  }, [ventas, searchTerm, filters, ordenarPor, ordenDireccion]);
+
+  // Paginación
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredVentas.length / ITEMS_PER_PAGE);
+  }, [filteredVentas]);
+
+  const paginatedVentas = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredVentas.slice(startIndex, endIndex);
+  }, [filteredVentas, currentPage]);
+
+  // Obtener estadísticas
+  const estadisticas = useMemo(() => {
+    return getEstadisticas(ventas, detallesVenta);
+  }, [ventas, detallesVenta]);
 
   // ===============================================
   // EFECTOS
   // ===============================================
   useEffect(() => {
     fetchAllData();
+  }, []);
+
+  // Establecer metodoPago por defecto si cambia METODOS_PAGO (por si luego usas API)
+  useEffect(() => {
+    if (!newVenta.metodoPago && METODOS_PAGO.length > 0) {
+      setNewVenta(prev => ({ ...prev, metodoPago: METODOS_PAGO[0] }));
+    }
   }, []);
 
   // Validar formulario en tiempo real solo para campos tocados
@@ -563,6 +752,20 @@ const Ventas = () => {
       });
     }
   }, [newVenta, showForm, touchedFields]);
+
+  // recalcular totales cuando cambian detalles o reserva/venta
+  const totalDetallesTemp = useMemo(() => {
+    return detallesTemp.reduce((s, d) => s + (Number(d.valorTotal || 0) || 0), 0);
+  }, [detallesTemp]);
+
+  const reservaMonto = useMemo(() => {
+    const r = reservas.find(x => Number(x.idReserva) === Number(newVenta.idReserva));
+    return r ? (Number(r.montoTotal) || 0) : 0;
+  }, [newVenta.idReserva, reservas]);
+
+  const totalVentaCalculado = useMemo(() => {
+    return Number(reservaMonto || 0) + Number(totalDetallesTemp || 0);
+  }, [reservaMonto, totalDetallesTemp]);
 
   // Efecto para agregar estilos de animación
   useEffect(() => {
@@ -578,7 +781,7 @@ const Ventas = () => {
           opacity: 1;
         }
       }
-      
+     
       @keyframes slideDown {
         from {
           opacity: 0;
@@ -673,7 +876,7 @@ const Ventas = () => {
         error = rules.errorMessages.min;
       } else {
         // Verificar si la reserva existe
-        const reservaExiste = reservas.find(r => r.idReserva === numericValue);
+        const reservaExiste = reservas.find(r => Number(r.idReserva) === numericValue);
         if (!reservaExiste) {
           warning = "La reserva especificada no existe en el sistema.";
         } else {
@@ -687,7 +890,7 @@ const Ventas = () => {
     else if (trimmedValue && fieldName === 'fechaVenta') {
       const fecha = new Date(trimmedValue);
       const ahora = new Date();
-      
+     
       if (fecha > ahora) {
         warning = "La fecha de venta es futura. Verifique que sea correcta.";
       }
@@ -720,7 +923,7 @@ const Ventas = () => {
     const estadoValid = validateField('estado', newVenta.estado);
 
     const isValid = fechaValid && reservaValid && metodoPagoValid && estadoValid;
-    
+   
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
       setTimeout(() => {
@@ -805,7 +1008,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+     
       if (Array.isArray(res.data)) {
         setVentas(res.data);
       } else {
@@ -826,7 +1029,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+     
       if (Array.isArray(res.data)) {
         setDetallesVenta(res.data);
       }
@@ -844,7 +1047,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+     
       if (Array.isArray(res.data)) {
         setReservas(res.data);
       }
@@ -862,9 +1065,12 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+     
       if (Array.isArray(res.data)) {
         setProductos(res.data);
+      } else {
+        // si la API devuelve objeto con $values
+        setProductos(Array.isArray(res.data?.$values) ? res.data.$values : []);
       }
     } catch (error) {
       console.error("❌ Error al obtener productos:", error);
@@ -880,85 +1086,14 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+     
       if (Array.isArray(res.data)) {
         setServicios(res.data);
+      } else {
+        setServicios(Array.isArray(res.data?.$values) ? res.data.$values : []);
       }
     } catch (error) {
       console.error("❌ Error al obtener servicios:", error);
-    }
-  };
-
-  const handleAddVenta = async (e) => {
-    e.preventDefault();
-    
-    if (isSubmitting) {
-      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
-      return;
-    }
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setLoading(true);
-    
-    try {
-      // Preparar datos según la estructura de la API
-      const ventaData = {
-        fechaVenta: newVenta.fechaVenta,
-        idReserva: parseInt(newVenta.idReserva),
-        metodoPago: newVenta.metodoPago.trim(),
-        estado: newVenta.estado === "true" || newVenta.estado === true
-      };
-
-      console.log("📤 Enviando datos:", ventaData);
-
-      if (isEditing) {
-        // Para edición, incluir el idVenta
-        ventaData.idVenta = newVenta.idVenta;
-        await axios.put(`${API_VENTAS}/${newVenta.idVenta}`, ventaData, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        displayAlert("Venta actualizada exitosamente.", "success");
-      } else {
-        await axios.post(API_VENTAS, ventaData, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        displayAlert("Venta registrada exitosamente.", "success");
-      }
-      
-      await fetchAllData();
-      closeForm();
-    } catch (error) {
-      console.error("❌ Error al guardar venta:", error);
-      handleApiError(error, isEditing ? "actualizar la venta" : "registrar la venta");
-    } finally {
-      setLoading(false);
-      setIsSubmitting(false);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (ventaToDelete) {
-      setLoading(true);
-      try {
-        await axios.delete(`${API_VENTAS}/${ventaToDelete.idVenta}`);
-        displayAlert("Venta eliminada exitosamente.", "success");
-        await fetchVentas();
-        
-        if (paginatedVentas.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        }
-      } catch (error) {
-        console.error("❌ Error al eliminar venta:", error);
-        handleApiError(error, "eliminar la venta");
-      } finally {
-        setLoading(false);
-        setVentaToDelete(null);
-        setShowDeleteConfirm(false);
-      }
     }
   };
 
@@ -968,7 +1103,7 @@ const Ventas = () => {
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
     let alertType = "error";
-    
+   
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
@@ -991,58 +1126,64 @@ const Ventas = () => {
     } else {
       errorMessage = `Error inesperado: ${error.message}`;
     }
-    
+   
     setError(errorMessage);
     displayAlert(errorMessage, alertType);
   };
 
   // Función para obtener información de la reserva
   const getReservaInfo = (idReserva) => {
-    const reserva = reservas.find(r => r.idReserva === idReserva);
+    const reserva = reservas.find(r => Number(r.idReserva) === Number(idReserva));
     if (!reserva) {
       return {
         existe: false,
         info: "Reserva no encontrada"
       };
     }
-    
+   
     return {
       existe: true,
       info: `Reserva #${reserva.idReserva}`,
-      fechaReserva: reserva.fechaReserva,
-      estado: reserva.estado ? 'Activa' : 'Cancelada'
+      fechaReserva: reserva.fechaReserva || reserva.fechaSalida || reserva.fechaFin || null,
+      estado: (reserva.idEstado ? (Number(reserva.idEstado) === 3 ? 'Cancelada' : 'Activa') : (reserva.estado ? 'Activa' : 'Cancelada')),
+      montoTotal: Number(reserva.montoTotal) || 0
     };
   };
 
   // Función para obtener detalles de una venta
   const getDetallesVenta = (idVenta) => {
-    return detallesVenta.filter(detalle => detalle.idVenta === idVenta);
+    return detallesVenta.filter(detalle => Number(detalle.idVenta) === Number(idVenta));
   };
 
-  // Función para obtener información de producto/servicio
+  // Función para obtener información de producto/servicio (CORREGIDA)
   const getItemInfo = (idProducto, idServicio) => {
-    if (idProducto && idProducto > 0) {
-      const producto = productos.find(p => p.idProducto === idProducto);
+    const pid = Number(idProducto || 0);
+    const sid = Number(idServicio || 0);
+
+    if (pid > 0) {
+      const producto = productos.find(p => Number(p.idProducto) === pid);
       return {
         tipo: 'producto',
-        nombre: producto?.nombreProducto || 'Producto no encontrado',
-        precio: producto?.precio || 0
+        nombre: producto?.nombreProducto || producto?.nombre || 'Producto no encontrado',
+        precio: Number(producto?.precio) || Number(producto?.valorUnitario) || 0,
+        referencia: producto
       };
-    } else if (idServicio && idServicio > 0) {
-      const servicio = servicios.find(s => s.idServicio === idServicio);
+    } else if (sid > 0) {
+      const servicio = servicios.find(s => Number(s.idServicio) === sid);
       return {
         tipo: 'servicio',
-        nombre: servicio?.nombreServicio || 'Servicio no encontrado',
-        precio: servicio?.precio || 0
+        nombre: servicio?.nombreServicio || servicio?.nombre || 'Servicio no encontrado',
+        precio: Number(servicio?.precio) || Number(servicio?.valorUnitario) || 0,
+        referencia: servicio
       };
     }
-    return { tipo: 'desconocido', nombre: 'Item no especificado', precio: 0 };
+    return { tipo: 'desconocido', nombre: 'Item no especificado', precio: 0, referencia: null };
   };
 
-  // Calcular total de una venta
+  // Calcular total de una venta (desde detalles guardados)
   const calcularTotalVenta = (idVenta) => {
     const detalles = getDetallesVenta(idVenta);
-    return detalles.reduce((total, detalle) => total + (detalle.valorTotal || 0), 0);
+    return detalles.reduce((total, detalle) => total + (Number(detalle.valorTotal || detalle.valorUnitario * detalle.cantidad) || 0), 0);
   };
 
   const handleChange = (e) => {
@@ -1063,9 +1204,9 @@ const Ventas = () => {
   const toggleEstado = async (venta) => {
     setLoading(true);
     try {
-      const updatedVenta = { 
-        ...venta, 
-        estado: !venta.estado 
+      const updatedVenta = {
+        ...venta,
+        estado: !venta.estado
       };
       await axios.put(`${API_VENTAS}/${venta.idVenta}`, updatedVenta, {
         headers: { 'Content-Type': 'application/json' }
@@ -1091,9 +1232,13 @@ const Ventas = () => {
       idVenta: 0,
       fechaVenta: new Date().toISOString().slice(0, 16),
       idReserva: "",
-      metodoPago: "",
+      metodoPago: METODOS_PAGO[0],
       estado: true
     });
+    setDetallesTemp([]);
+    setSelectedItemId("");
+    setSelectedItemType("producto");
+    setSelectedQuantity(1);
   };
 
   const closeDetailsModal = () => {
@@ -1111,15 +1256,25 @@ const Ventas = () => {
     setShowDetails(true);
   };
 
+  // cuando se edita, cargar detallesTemp desde detallesVenta
   const handleEdit = (venta) => {
     setNewVenta({
       ...venta,
       fechaVenta: venta.fechaVenta ? venta.fechaVenta.slice(0, 16) : new Date().toISOString().slice(0, 16),
-      idReserva: venta.idReserva.toString(),
-      metodoPago: venta.metodoPago || "",
-      estado: venta.estado ? "true" : "false"
+      idReserva: venta.idReserva ? String(venta.idReserva) : "",
+      metodoPago: venta.metodoPago || METODOS_PAGO[0],
+      estado: venta.estado ? true : false
     });
 
+    // cargar detalles asociados al abrir el modal
+    const detalles = getDetallesVenta(venta.idVenta).map(d => ({
+      ...d,
+      cantidad: Number(d.cantidad) || 1,
+      valorUnitario: Number(d.valorUnitario) || 0,
+      valorTotal: Number(d.valorTotal) || (Number(d.valorUnitario || 0) * Number(d.cantidad || 1))
+    }));
+
+    setDetallesTemp(detalles);
     setIsEditing(true);
     setShowForm(true);
     setFormErrors({});
@@ -1133,147 +1288,236 @@ const Ventas = () => {
     setShowDeleteConfirm(true);
   };
 
-  // ===============================================
-  // FUNCIONES DE FILTRADO Y ORDENAMIENTO MEJORADAS
-  // ===============================================
-  const filteredVentas = useMemo(() => {
-    let filtered = ventas.filter(venta => {
-      // Búsqueda general
-      const matchesSearch = 
-        venta.idVenta.toString().includes(searchTerm.toLowerCase()) ||
-        venta.idReserva.toString().includes(searchTerm.toLowerCase()) ||
-        venta.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Añadir detalle temporal (producto/servicio) en el formulario
+  const addDetalleTemp = () => {
+    const qty = Number(selectedQuantity) || 1;
+    if (!selectedItemId) {
+      displayAlert("Selecciona un producto o servicio para agregar.", "warning");
+      return;
+    }
+    const pid = selectedItemType === "producto" ? Number(selectedItemId) : 0;
+    const sid = selectedItemType === "servicio" ? Number(selectedItemId) : 0;
 
-      if (!matchesSearch) return false;
+    const info = getItemInfo(pid, sid);
+    const unit = Number(info.precio || 0);
+    const total = unit * qty;
 
-      // Filtro por estado
-      if (filters.estado !== "all") {
-        const estadoFilter = filters.estado === "activo";
-        if (venta.estado !== estadoFilter) return false;
-      }
+    const newDetalle = {
+      idDetalleVenta: 0, // 0 indica nuevo hasta que backend asigne id
+      idVenta: newVenta.idVenta || 0,
+      idProducto: pid,
+      idServicio: sid,
+      cantidad: qty,
+      valorUnitario: unit,
+      valorTotal: total
+    };
 
-      // Filtro por método de pago
-      if (filters.metodoPago !== "all") {
-        if (venta.metodoPago !== filters.metodoPago) return false;
-      }
-
-      // Filtro por fecha de inicio
-      if (filters.fechaDesde) {
-        const fechaDesde = new Date(filters.fechaDesde);
-        const fechaVenta = new Date(venta.fechaVenta);
-        if (fechaVenta < fechaDesde) return false;
-      }
-
-      // Filtro por fecha de fin
-      if (filters.fechaHasta) {
-        const fechaHasta = new Date(filters.fechaHasta);
-        fechaHasta.setHours(23, 59, 59, 999); // Incluir todo el día
-        const fechaVenta = new Date(venta.fechaVenta);
-        if (fechaVenta > fechaHasta) return false;
-      }
-
-      return true;
-    });
-
-    // Aplicar ordenamiento
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (ordenarPor) {
-        case "id":
-          aValue = a.idVenta;
-          bValue = b.idVenta;
-          break;
-        case "fecha":
-          aValue = new Date(a.fechaVenta);
-          bValue = new Date(b.fechaVenta);
-          break;
-        case "reserva":
-          aValue = a.idReserva;
-          bValue = b.idReserva;
-          break;
-        case "metodo":
-          aValue = a.metodoPago.toLowerCase();
-          bValue = b.metodoPago.toLowerCase();
-          break;
-        case "estado":
-          aValue = a.estado;
-          bValue = b.estado;
-          break;
-        default:
-          aValue = new Date(a.fechaVenta);
-          bValue = new Date(b.fechaVenta);
-      }
-
-      if (ordenDireccion === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });
-
-    return filtered;
-  }, [ventas, searchTerm, filters, ordenarPor, ordenDireccion]);
-
-  const totalPages = Math.ceil(filteredVentas.length / ITEMS_PER_PAGE);
-
-  const paginatedVentas = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredVentas.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredVentas, currentPage]);
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+    setDetallesTemp(prev => [...prev, newDetalle]);
+    setSelectedItemId("");
+    setSelectedQuantity(1);
   };
 
-  // Función para cambiar ordenamiento
-  const handleSort = (campo) => {
-    if (ordenarPor === campo) {
-      setOrdenDireccion(ordenDireccion === "asc" ? "desc" : "asc");
-    } else {
-      setOrdenarPor(campo);
-      setOrdenDireccion("asc");
+  const removeDetalleTemp = (index) => {
+    setDetallesTemp(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateDetalleCantidad = (index, qty) => {
+    setDetallesTemp(prev => prev.map((d, i) => {
+      if (i !== index) return d;
+      const nuevaCantidad = Number(qty) || 1;
+      return {
+        ...d,
+        cantidad: nuevaCantidad,
+        valorTotal: Number(d.valorUnitario || 0) * nuevaCantidad
+      };
+    }));
+  };
+
+  // Guarda venta y detalles (POST/PUT según corresponda) - CORREGIDA
+  const handleAddVenta = async (e) => {
+    e.preventDefault();
+   
+    if (isSubmitting) {
+      displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setLoading(true);
+   
+    try {
+      // Preparar datos según la estructura de la API
+      const ventaData = {
+        fechaVenta: newVenta.fechaVenta,
+        idReserva: parseInt(newVenta.idReserva),
+        metodoPago: (newVenta.metodoPago || "").toString().trim(),
+        estado: newVenta.estado === "true" || newVenta.estado === true
+      };
+
+      console.log("📤 Enviando datos de venta:", ventaData);
+
+      let ventaId = newVenta.idVenta || 0;
+      let res;
+
+      if (isEditing) {
+        // Para edición, incluir el idVenta
+        ventaData.idVenta = newVenta.idVenta;
+        await axios.put(`${API_VENTAS}/${newVenta.idVenta}`, ventaData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        ventaId = newVenta.idVenta;
+        displayAlert("Venta actualizada exitosamente.", "success");
+      } else {
+        res = await axios.post(API_VENTAS, ventaData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        // obtener idVenta de la respuesta
+        ventaId = res.data?.idVenta || res.data?.id || res.data;
+        console.log("✅ Venta creada con ID:", ventaId);
+        displayAlert("Venta registrada exitosamente.", "success");
+      }
+
+      // Guardar/actualizar detalles - MEJORADO Y CON VALIDACIONES
+      if (detallesTemp.length > 0) {
+        console.log(`📤 Guardando ${detallesTemp.length} detalles para venta ID: ${ventaId}`);
+
+        // Obtener ids existentes (cuando editamos) para poder eliminar los removidos
+        const existentes = isEditing ? getDetallesVenta(ventaId).map(d => Number(d.idDetalleVenta)).filter(Boolean) : [];
+
+        const procesadosIds = [];
+
+        for (const detalle of detallesTemp) {
+          // Normalizar y validar ids de producto/servicio
+          const pid = detalle.idProducto && Number(detalle.idProducto) > 0 ? Number(detalle.idProducto) : null;
+          const sid = detalle.idServicio && Number(detalle.idServicio) > 0 ? Number(detalle.idServicio) : null;
+
+          if (!pid && !sid) {
+            console.warn("Detalle inválido (ni producto ni servicio):", detalle);
+            displayAlert("Detalle inválido: cada detalle debe asociarse a un producto o servicio.", "error");
+            continue;
+          }
+
+          // Verificar que el producto/servicio exista en memoria antes de enviar (evita 400/FK)
+          if (pid && !productos.find(p => Number(p.idProducto) === pid && (p.idProducto || p.id))) {
+            displayAlert(`Producto con id ${pid} no existe. No se guardó ese detalle.`, "error");
+            continue;
+          }
+          if (sid && !servicios.find(s => Number(s.idServicio) === sid && (s.idServicio || s.id))) {
+            displayAlert(`Servicio con id ${sid} no existe. No se guardó ese detalle.`, "error");
+            continue;
+          }
+
+          const payload = {
+            idVenta: Number(ventaId),
+            cantidad: Number(detalle.cantidad) || 1,
+            valorUnitario: Number(detalle.valorUnitario) || 0,
+            valorTotal: Number(detalle.valorTotal) || (Number(detalle.valorUnitario || 0) * Number(detalle.cantidad || 1)),
+            // enviar null cuando no aplica (evita conflicto FK con 0)
+            idProducto: pid,
+            idServicio: sid
+          };
+
+          try {
+            if (detalle.idDetalleVenta && Number(detalle.idDetalleVenta) > 0) {
+              // actualizar detalle existente
+              const idDet = Number(detalle.idDetalleVenta);
+              await axios.put(`${API_DETALLE_VENTA}/${idDet}`, payload, { headers: { 'Content-Type': 'application/json' } });
+              procesadosIds.push(idDet);
+              console.log(`✅ Detalle actualizado: ${idDet}`);
+            } else {
+              // crear nuevo detalle
+              const resp = await axios.post(API_DETALLE_VENTA, payload, { headers: { 'Content-Type': 'application/json' } });
+              // intentar obtener id devuelto por el backend (si aplica)
+              const nuevoId = resp.data?.idDetalleVenta || resp.data?.id || resp.data;
+              if (nuevoId) procesadosIds.push(Number(nuevoId));
+              console.log("✅ Nuevo detalle creado", resp.data);
+            }
+          } catch (err) {
+            console.error("❌ Error al guardar detalle:", err);
+            if (err.response) {
+              console.error("Detalles del error del servidor:", err.response.data);
+              const serverMsg = typeof err.response.data === "string" ? err.response.data : (err.response.data?.message || err.response.data?.title || JSON.stringify(err.response.data));
+              displayAlert(`Error al guardar detalle: ${serverMsg}`, "error");
+            } else {
+              displayAlert("Error al guardar detalle (sin respuesta del servidor).", "error");
+            }
+          }
+        }
+
+        // Si estamos editando, eliminar detalles que existían y ya no están en detallesTemp
+        if (isEditing && existentes.length > 0) {
+          const aEliminar = existentes.filter(id => !procesadosIds.includes(id));
+          for (const idEliminar of aEliminar) {
+            try {
+              await axios.delete(`${API_DETALLE_VENTA}/${idEliminar}`);
+              console.log(`🗑️ Detalle eliminado: ${idEliminar}`);
+            } catch (err) {
+              console.error(`❌ Error al eliminar detalle ${idEliminar}:`, err);
+            }
+          }
+        }
+      } else {
+        console.log("ℹ️ No hay detalles para guardar");
+      }
+
+      // Recargar todos los datos
+      await fetchAllData();
+      closeForm();
+    } catch (error) {
+      console.error("❌ Error al guardar venta:", error);
+      // Mostrar más detalles del error
+      if (error.response) {
+        console.error("Error del servidor:", error.response.data);
+        console.error("Status:", error.response.status);
+        console.error("Headers:", error.response.headers);
+       
+        let errorMessage = "Error del servidor";
+        if (error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMessage = error.response.data;
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.response.data.title) {
+            errorMessage = error.response.data.title;
+          }
+        }
+       
+        displayAlert(`Error: ${errorMessage}`, "error");
+      } else if (error.request) {
+        displayAlert("No se recibió respuesta del servidor. Verifica que esté en ejecución.", "error");
+      } else {
+        displayAlert(`Error: ${error.message}`, "error");
+      }
+    } finally {
+      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Función para obtener ícono de ordenamiento
-  const getSortIcon = (campo) => {
-    if (ordenarPor !== campo) return <FaSort />;
-    return ordenDireccion === "asc" ? <FaSortUp /> : <FaSortDown />;
-  };
-
-  // Función para obtener estadísticas
-  const getEstadisticas = () => {
-    const totalVentas = ventas.length;
-    const ventasActivas = ventas.filter(v => v.estado).length;
-    const ventasAnuladas = ventas.filter(v => !v.estado).length;
-    
-    // Métodos de pago más utilizados
-    const metodosPagoCount = {};
-    ventas.forEach(venta => {
-      if (venta.metodoPago) {
-        metodosPagoCount[venta.metodoPago] = (metodosPagoCount[venta.metodoPago] || 0) + 1;
+  const confirmDelete = async () => {
+    if (ventaToDelete) {
+      setLoading(true);
+      try {
+        await axios.delete(`${API_VENTAS}/${ventaToDelete.idVenta}`);
+        displayAlert("Venta eliminada exitosamente.", "success");
+        await fetchVentas();
+       
+        if (paginatedVentas.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } catch (error) {
+        console.error("❌ Error al eliminar venta:", error);
+        handleApiError(error, "eliminar la venta");
+      } finally {
+        setLoading(false);
+        setVentaToDelete(null);
+        setShowDeleteConfirm(false);
       }
-    });
-    
-    const metodoMasUtilizado = Object.keys(metodosPagoCount).length > 0 
-      ? Object.keys(metodosPagoCount).reduce((a, b) => metodosPagoCount[a] > metodosPagoCount[b] ? a : b)
-      : "N/A";
-
-    // Calcular ingresos totales
-    const ingresosTotales = ventas.reduce((total, venta) => {
-      const detalles = getDetallesVenta(venta.idVenta);
-      const totalVenta = detalles.reduce((sum, detalle) => sum + (detalle.valorTotal || 0), 0);
-      return total + totalVenta;
-    }, 0);
-
-    return {
-      totalVentas,
-      ventasActivas,
-      ventasAnuladas,
-      metodoMasUtilizado,
-      ingresosTotales
-    };
+    }
   };
 
   // ===============================================
@@ -1283,14 +1527,14 @@ const Ventas = () => {
     const reservaInfo = getReservaInfo(venta.idReserva);
     const detalles = getDetallesVenta(venta.idVenta);
     const totalVenta = calcularTotalVenta(venta.idVenta);
-    
+   
     return (
       <div>
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>ID Venta</div>
           <div style={detailValueStyle}>#{venta.idVenta}</div>
         </div>
-        
+       
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>Fecha de Venta</div>
           <div style={detailValueStyle}>{formatDate(venta.fechaVenta)}</div>
@@ -1299,7 +1543,7 @@ const Ventas = () => {
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>Reserva Asociada</div>
           <div style={detailValueStyle}>
-            <div style={{ 
+            <div style={{
               backgroundColor: reservaInfo.existe ? '#E8F5E8' : '#fff3cd',
               padding: '10px',
               borderRadius: '8px',
@@ -1326,9 +1570,9 @@ const Ventas = () => {
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>Método de Pago</div>
           <div style={detailValueStyle}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '10px',
               backgroundColor: '#F7F4EA',
               padding: '10px',
@@ -1372,10 +1616,10 @@ const Ventas = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {detalles.map((detalle, index) => {
+                  {detalles.map((detalle) => {
                     const itemInfo = getItemInfo(detalle.idProducto, detalle.idServicio);
                     return (
-                      <tr key={detalle.idDetalleVenta} style={{ borderBottom: '1px solid #ddd' }}>
+                      <tr key={detalle.idDetalleVenta || `${detalle.idVenta}-${detalle.idProducto}-${detalle.idServicio}`} style={{ borderBottom: '1px solid #ddd' }}>
                         <td style={{ padding: '8px' }}>{itemInfo.nombre}</td>
                         <td style={{ padding: '8px', textAlign: 'center' }}>
                           <span style={{
@@ -1389,9 +1633,9 @@ const Ventas = () => {
                           </span>
                         </td>
                         <td style={{ padding: '8px', textAlign: 'center' }}>{detalle.cantidad}</td>
-                        <td style={{ padding: '8px', textAlign: 'right' }}>{formatPrice(detalle.valorUnitario)}</td>
+                        <td style={{ padding: '8px', textAlign: 'right' }}>{formatPrice(detalle.valorUnitario || itemInfo.precio)}</td>
                         <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
-                          {formatPrice(detalle.valorTotal)}
+                          {formatPrice(detalle.valorTotal || (detalle.valorUnitario || itemInfo.precio) * detalle.cantidad)}
                         </td>
                       </tr>
                     );
@@ -1435,22 +1679,20 @@ const Ventas = () => {
   // ===============================================
   // RENDERIZADO
   // ===============================================
-  const estadisticas = getEstadisticas();
-
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
-      
+     
       {/* Alerta Mejorada */}
       {showAlert && (
         <div style={getAlertStyle(alertType)}>
           {getAlertIcon(alertType)}
           <span style={{ flex: 1 }}>{alertMessage}</span>
-          <button 
+          <button
             onClick={() => setShowAlert(false)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'inherit', 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
               cursor: 'pointer',
               fontSize: '16px',
               padding: 0,
@@ -1526,11 +1768,12 @@ const Ventas = () => {
             setFormSuccess({});
             setFormWarnings({});
             setTouchedFields({});
+            setDetallesTemp([]);
             setNewVenta({
               idVenta: 0,
               fechaVenta: new Date().toISOString().slice(0, 16),
               idReserva: "",
-              metodoPago: "",
+              metodoPago: METODOS_PAGO[0],
               estado: true
             });
           }}
@@ -1547,14 +1790,6 @@ const Ventas = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-            e.target.style.transform = "translateY(-2px)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#2E5939";
-            e.target.style.transform = "translateY(0)";
           }}
         >
           <FaPlus /> Nueva Venta
@@ -1586,7 +1821,7 @@ const Ventas = () => {
               Total Ventas
             </div>
           </div>
-          
+         
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -1604,7 +1839,7 @@ const Ventas = () => {
               Ventas Activas
             </div>
           </div>
-          
+         
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -1646,7 +1881,7 @@ const Ventas = () => {
             padding: '20px',
             borderRadius: '12px',
             textAlign: 'center',
-            border: '2px solid ',
+            border: '2px solid #9C27B0',
             boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
             transition: 'transform 0.2s ease'
           }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
@@ -1662,7 +1897,7 @@ const Ventas = () => {
       )}
 
       {/* Barra de búsqueda y filtros - MEJORADO COMO EN TIPO CABAÑA */}
-      <div style={{ 
+      <div style={{
         marginBottom: '20px',
         backgroundColor: '#fff',
         borderRadius: '10px',
@@ -1670,15 +1905,23 @@ const Ventas = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '15px', 
+        <div style={{
+          display: 'flex',
+          gap: '15px',
           alignItems: 'center',
           flexWrap: 'wrap',
           marginBottom: showFilters ? '15px' : '0'
         }}>
-          <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
-            <FaSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#2E5939" }} />
+          <div style={{ position: "relative", flex: 1, maxWidth: 720, minWidth: 0 }}>
+            <FaSearch style={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#2E5939",
+              zIndex: 2,
+              pointerEvents: "none"
+            }} />
             <input
               type="text"
               placeholder="Buscar por ID venta, ID reserva o método de pago..."
@@ -1688,13 +1931,15 @@ const Ventas = () => {
                 setCurrentPage(1);
               }}
               style={{
-                padding: "12px 12px 12px 40px",
+                padding: "12px 12px 12px 44px",
                 borderRadius: 10,
                 border: "1px solid #ccc",
                 width: "100%",
+                minWidth: 0,
                 backgroundColor: "#F7F4EA",
                 color: "#2E5939",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+                boxSizing: "border-box"
               }}
             />
           </div>
@@ -1714,7 +1959,6 @@ const Ventas = () => {
               alignItems: 'center',
               gap: '8px',
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              marginLeft: '50px'
             }}
           >
             <FaSlidersH />
@@ -1831,7 +2075,7 @@ const Ventas = () => {
                   <option value="reserva">ID Reserva</option>
                   <option value="metodo">Método Pago</option>
                   <option value="estado">Estado</option>
-                </select>
+                               </select>
               </div>
 
               {/* Dirección del ordenamiento */}
@@ -1883,14 +2127,14 @@ const Ventas = () => {
                   color: "#2E5939",
                   fontSize: "20px",
                   cursor: "pointer",
-                }}
+                               }}
                 title="Cerrar"
                 disabled={isSubmitting}
               >
                 <FaTimes />
               </button>
             </div>
-            
+           
             <form onSubmit={handleAddVenta}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -1940,7 +2184,7 @@ const Ventas = () => {
                   />
                 </div>
 
-                <div style={{ gridColumn: '1 / -1' }}>
+                <div>
                   <FormField
                     label={
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1966,26 +2210,128 @@ const Ventas = () => {
                     touched={touchedFields.metodoPago}
                   />
                 </div>
+
+                {/* Sección: Reserva monto y totales */}
+                <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, color: '#679750' }}>Monto reserva (si existe)</div>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{formatPrice(reservaMonto)}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, color: '#679750' }}>Total detalles</div>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{formatPrice(totalDetallesTemp)}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, color: '#679750' }}>Total Venta</div>
+                    <div style={{ fontWeight: 900, fontSize: 20, color: '#2E5939' }}>{formatPrice(totalVentaCalculado)}</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Información de ayuda */}
-              <div style={{
-                backgroundColor: '#F7F4EA',
-                padding: '15px',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                border: '1px solid #E8F5E8'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                  <FaInfoCircle color="#2E5939" />
-                  <strong style={{ color: '#2E5939' }}>Información importante</strong>
+              {/* Sección agregar productos/servicios - MEJORADA */}
+              <div style={{ marginBottom: 18, padding: 12, borderRadius: 8, backgroundColor: '#FBFDF9', border: '1px solid rgba(103,151,80,0.08)' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label style={{ fontWeight: 700, color: '#2E5939' }}>Tipo</label>
+                    <select value={selectedItemType} onChange={(e) => { setSelectedItemType(e.target.value); setSelectedItemId(""); }} style={{ ...inputStyle, width: 160 }}>
+                      <option value="producto">Producto</option>
+                      <option value="servicio">Servicio</option>
+                    </select>
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Artículo</label>
+                    <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)} style={{ ...inputStyle, width: '100%' }}>
+                      <option value="">Seleccionar</option>
+                      {selectedItemType === "producto" && productos.map(p => {
+                        const nombre = p.nombreProducto || p.nombre || "Producto sin nombre";
+                        const precio = p.precio || p.valorUnitario || 0;
+                        return (
+                          <option key={p.idProducto || p.id} value={p.idProducto || p.id}>
+                            {nombre} — {formatPrice(precio)}
+                          </option>
+                        );
+                      })}
+                      {selectedItemType === "servicio" && servicios.map(s => {
+                        const nombre = s.nombreServicio || s.nombre || "Servicio sin nombre";
+                        const precio = s.precio || s.valorUnitario || 0;
+                        return (
+                          <option key={s.idServicio || s.id} value={s.idServicio || s.id}>
+                            {nombre} — {formatPrice(precio)}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div style={{ width: 120 }}>
+                    <label style={labelStyle}>Cantidad</label>
+                    <input type="number" min="1" value={selectedQuantity} onChange={(e) => setSelectedQuantity(e.target.value)} style={inputStyle} />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                    <button type="button" onClick={addDetalleTemp} style={{
+                      backgroundColor: "#2E5939",
+                      color: "#fff",
+                      padding: "10px 14px",
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8
+                    }}>
+                      <FaPlusCircle /> Agregar
+                    </button>
+                  </div>
                 </div>
-                <ul style={{ color: '#2E5939', margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.5' }}>
-                  <li>Verifique que el ID de reserva exista en el sistema</li>
-                  <li>La fecha de venta no puede ser futura</li>
-                  <li>Una venta anulada no se puede reactivar automáticamente</li>
-                  <li>Los detalles de venta (productos/servicios) se gestionan por separado</li>
-                </ul>
+              </div>
+
+              {/* Lista de detalles temporales */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>Detalles agregados</div>
+                {detallesTemp.length === 0 ? (
+                  <div style={{ padding: 12, borderRadius: 8, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7', color: '#856404' }}>
+                    No hay productos o servicios agregados.
+                  </div>
+                ) : (
+                  <div style={{ borderRadius: 8, border: '1px solid #E8F5E8', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead style={{ backgroundColor: '#F7F4EA' }}>
+                        <tr>
+                          <th style={{ padding: 10, textAlign: 'left' }}>Item</th>
+                          <th style={{ padding: 10, textAlign: 'center' }}>Tipo</th>
+                          <th style={{ padding: 10, textAlign: 'center' }}>Cantidad</th>
+                          <th style={{ padding: 10, textAlign: 'right' }}>Valor Unitario</th>
+                          <th style={{ padding: 10, textAlign: 'right' }}>Valor Total</th>
+                          <th style={{ padding: 10, textAlign: 'center' }}>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detallesTemp.map((d, idx) => {
+                          const info = getItemInfo(d.idProducto, d.idServicio);
+                          return (
+                            <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                              <td style={{ padding: 10 }}>{info.nombre}</td>
+                              <td style={{ padding: 10, textAlign: 'center' }}>{info.tipo === 'producto' ? 'Producto' : 'Servicio'}</td>
+                              <td style={{ padding: 10, textAlign: 'center' }}>
+                                <input type="number" min="1" value={d.cantidad} onChange={(e) => updateDetalleCantidad(idx, e.target.value)} style={{ width: 80, padding: 6, borderRadius: 6, border: '1px solid #ccc' }} />
+                              </td>
+                              <td style={{ padding: 10, textAlign: 'right' }}>{formatPrice(d.valorUnitario)}</td>
+                              <td style={{ padding: 10, textAlign: 'right', fontWeight: 700 }}>{formatPrice(d.valorTotal)}</td>
+                              <td style={{ padding: 10, textAlign: 'center' }}>
+                                <button type="button" onClick={() => removeDetalleTemp(idx)} style={{ background: 'none', border: 'none', color: '#e57373', cursor: 'pointer' }}>
+                                  <FaTrashAlt />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
@@ -2003,18 +2349,6 @@ const Ventas = () => {
                     boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease",
                     flex: 1
-                  }}
-                  onMouseOver={(e) => {
-                    if (!loading && !isSubmitting) {
-                      e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                      e.target.style.transform = "translateY(-2px)";
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!loading && !isSubmitting) {
-                      e.target.style.background = "#2E5939";
-                      e.target.style.transform = "translateY(0)";
-                    }
                   }}
                 >
                   {loading ? "Guardando..." : (isEditing ? "Actualizar Venta" : "Registrar Venta")}
@@ -2063,10 +2397,10 @@ const Ventas = () => {
                 <FaTimes />
               </button>
             </div>
-            
+           
             <DetallesVenta venta={selectedVenta} />
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 20 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: '10px', marginTop: 20 }}>
               <button
                 onClick={() => {
                   closeDetailsModal();
@@ -2085,14 +2419,6 @@ const Ventas = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = "#2E5939";
-                  e.target.style.transform = "translateY(0)";
                 }}
               >
                 <FaEdit />
@@ -2126,9 +2452,9 @@ const Ventas = () => {
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
               ¿Estás seguro de eliminar la venta "<strong>#{ventaToDelete.idVenta}</strong>"?
             </p>
-            
-            <div style={{ 
-              backgroundColor: '#fff3cd', 
+           
+            <div style={{
+              backgroundColor: '#fff3cd',
               border: '1px solid #ffeaa7',
               borderRadius: '8px',
               padding: '15px',
@@ -2146,7 +2472,7 @@ const Ventas = () => {
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 15 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: '15px' }}>
               <button
                 onClick={confirmDelete}
                 disabled={loading}
@@ -2177,16 +2503,6 @@ const Ventas = () => {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                   transition: "all 0.3s ease",
                 }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.background = "#2E5939";
-                  }
-                }}
               >
                 Cancelar
               </button>
@@ -2195,208 +2511,187 @@ const Ventas = () => {
         </div>
       )}
 
-      {/* Contenido principal */}
-      <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '10px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        overflow: 'hidden'
-      }}>
-        {/* Loading */}
-        {loading && (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "40px", 
-            color: "#2E5939"
-          }}>
-            <div style={{ fontSize: '18px', marginBottom: '10px' }}>
-              🔄 Cargando ventas...
-            </div>
-          </div>
-        )}
-
-        {/* Tabla */}
-        {!loading && (
-          <table style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            backgroundColor: "#fff",
-            color: "#2E5939",
-          }}>
-            <thead>
-              <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
-                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('id')}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    ID Venta
-                    {getSortIcon('id')}
+      {/* Tabla */}
+      {!loading && (
+        <table style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          backgroundColor: "#fff",
+          color: "#2E5939",
+        }}>
+          <thead>
+            <tr style={{ backgroundColor: "#679750", color: "#fff" }}>
+              <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('id')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  ID Venta
+                  {getSortIcon('id')}
+                </div>
+              </th>
+              <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('fecha')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  Fecha
+                  {getSortIcon('fecha')}
+                </div>
+              </th>
+              <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('reserva')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  ID Reserva
+                  {getSortIcon('reserva')}
+                </div>
+              </th>
+              <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('metodo')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  Método Pago
+                  {getSortIcon('metodo')}
+                </div>
+              </th>
+              <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('estado')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  Estado
+                  {getSortIcon('estado')}
+                </div>
+              </th>
+              <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedVentas.length === 0 && !loading ? (
+              <tr>
+                <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                    <FaInfoCircle size={30} color="#679750" />
+                    {ventas.length === 0 ? "No hay ventas registradas" : "No se encontraron resultados con los filtros aplicados"}
+                    {activeFiltersCount > 0 && (
+                      <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
+                        Filtros activos: {activeFiltersCount}
+                      </div>
+                    )}
+                    {ventas.length === 0 && (
+                      <button
+                        onClick={() => setShowForm(true)}
+                        style={{
+                          backgroundColor: "#2E5939",
+                          color: "white",
+                          padding: "8px 16px",
+                          border: "none",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          marginTop: '10px'
+                        }}
+                      >
+                        <FaPlus style={{ marginRight: '5px' }} />
+                        Registrar Primera Venta
+                      </button>
+                    )}
+                    {ventas.length > 0 && activeFiltersCount > 0 && (
+                      <button
+                        onClick={clearFilters}
+                        style={{
+                          backgroundColor: "#2E5939",
+                          color: "white",
+                          padding: "8px 16px",
+                          border: "none",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          marginTop: '10px',
+                        }}
+                      >
+                        Limpiar Filtros
+                      </button>
+                    )}
                   </div>
-                </th>
-                <th style={{ padding: "15px", textAlign: "left", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('fecha')}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    Fecha
-                    {getSortIcon('fecha')}
-                  </div>
-                </th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('reserva')}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                    ID Reserva
-                    {getSortIcon('reserva')}
-                  </div>
-                </th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('metodo')}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                    Método Pago
-                    {getSortIcon('metodo')}
-                  </div>
-                </th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold", cursor: 'pointer' }} onClick={() => handleSort('estado')}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                    Estado
-                    {getSortIcon('estado')}
-                  </div>
-                </th>
-                <th style={{ padding: "15px", textAlign: "center", fontWeight: "bold" }}>Acciones</th>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {paginatedVentas.length === 0 && !loading ? (
-                <tr>
-                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#2E5939" }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                      <FaInfoCircle size={30} color="#679750" />
-                      {ventas.length === 0 ? "No hay ventas registradas" : "No se encontraron resultados con los filtros aplicados"}
-                      {activeFiltersCount > 0 && (
-                        <div style={{ color: '#679750', fontSize: '14px', marginTop: '5px' }}>
-                          Filtros activos: {activeFiltersCount}
-                        </div>
-                      )}
-                      {ventas.length === 0 && (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          style={{
-                            backgroundColor: "#2E5939",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: "600",
-                            marginTop: '10px'
-                          }}
-                        >
-                          <FaPlus style={{ marginRight: '5px' }} />
-                          Registrar Primera Venta
-                        </button>
-                      )}
-                      {ventas.length > 0 && activeFiltersCount > 0 && (
-                        <button
-                          onClick={clearFilters}
-                          style={{
-                            backgroundColor: "#2E5939",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontWeight: "600",
-                            marginTop: '10px',
-                          }}
-                        >
-                          Limpiar Filtros
-                        </button>
-                      )}
+            ) : (
+              paginatedVentas.map((venta) => (
+                <tr key={venta.idVenta} style={{
+                  borderBottom: "1px solid #eee",
+                  backgroundColor: venta.estado ? '#fff' : '#f9f9f9'
+                }}>
+                  <td style={{ padding: "15px", fontWeight: "600" }}>
+                    #{venta.idVenta}
+                  </td>
+                  <td style={{ padding: "15px" }}>
+                    {formatDate(venta.fechaVenta)}
+                  </td>
+                  <td style={{ padding: "15px", textAlign: "center", fontWeight: "500" }}>
+                    #{venta.idReserva}
+                  </td>
+                  <td style={{ padding: "15px", textAlign: "center" }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      justifyContent: 'center'
+                    }}>
+                      <FaCreditCard color="#2E5939" />
+                      {venta.metodoPago}
+                    </div>
+                  </td>
+                  <td style={{ padding: "15px", textAlign: "center" }}>
+                    <button
+                      onClick={() => toggleEstado(venta)}
+                      disabled={loading}
+                      style={{
+                        cursor: loading ? "not-allowed" : "pointer",
+                        padding: "6px 12px",
+                        borderRadius: "20px",
+                        border: "none",
+                        backgroundColor: venta.estado ? "#4caf50" : "#e57373",
+                        color: "white",
+                        fontWeight: "600",
+                        fontSize: "12px",
+                        minWidth: "80px",
+                        opacity: loading ? 0.6 : 1,
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseOver={(e) => {
+                        if (!loading) {
+                          e.target.style.transform = "scale(1.05)";
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!loading) {
+                          e.target.style.transform = "scale(1)";
+                        }
+                      }}
+                    >
+                      {venta.estado ? "Activa" : "Anulada"}
+                    </button>
+                  </td>
+                  <td style={{ padding: "15px", textAlign: "center" }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                      <button
+                        onClick={() => handleView(venta)}
+                        style={btnAccion("#F7F4EA", "#2E5939")}
+                        title="Ver Detalles"
+                      >
+                        <FaEye />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(venta)}
+                        style={btnAccion("#F7F4EA", "#2E5939")}
+                        title="Editar Venta"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(venta); }}
+                        style={btnAccion("#fbe9e7", "#e57373")}
+                        title="Eliminar Venta"
+                      >
+                        <FaTrash />
+                      </button>
                     </div>
                   </td>
                 </tr>
-              ) : (
-                paginatedVentas.map((venta) => (
-                  <tr key={venta.idVenta} style={{ 
-                    borderBottom: "1px solid #eee",
-                    backgroundColor: venta.estado ? '#fff' : '#f9f9f9'
-                  }}>
-                    <td style={{ padding: "15px", fontWeight: "600" }}>
-                      #{venta.idVenta}
-                    </td>
-                    <td style={{ padding: "15px" }}>
-                      {formatDate(venta.fechaVenta)}
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center", fontWeight: "500" }}>
-                      #{venta.idReserva}
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px',
-                        justifyContent: 'center'
-                      }}>
-                        <FaCreditCard color="#2E5939" />
-                        {venta.metodoPago}
-                      </div>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <button
-                        onClick={() => toggleEstado(venta)}
-                        disabled={loading}
-                        style={{
-                          cursor: loading ? "not-allowed" : "pointer",
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          border: "none",
-                          backgroundColor: venta.estado ? "#4caf50" : "#e57373",
-                          color: "white",
-                          fontWeight: "600",
-                          fontSize: "12px",
-                          minWidth: "80px",
-                          opacity: loading ? 0.6 : 1,
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          if (!loading) {
-                            e.target.style.transform = "scale(1.05)";
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (!loading) {
-                            e.target.style.transform = "scale(1)";
-                          }
-                        }}
-                      >
-                        {venta.estado ? "Activa" : "Anulada"}
-                      </button>
-                    </td>
-                    <td style={{ padding: "15px", textAlign: "center" }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                        <button
-                          onClick={() => handleView(venta)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Ver Detalles"
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(venta)}
-                          style={btnAccion("#F7F4EA", "#2E5939")}
-                          title="Editar Venta"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(venta); }}
-                          style={btnAccion("#fbe9e7", "#e57373")}
-                          title="Eliminar Venta"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+              ))
+            )}
+          </tbody>
+        </table>
         )}
-      </div>
 
       {/* Paginación */}
       {totalPages > 1 && (
@@ -2408,7 +2703,7 @@ const Ventas = () => {
           >
             Anterior
           </button>
-          
+         
           <div style={{ display: "flex", gap: 5 }}>
             {[...Array(totalPages)].map((_, i) => {
               const page = i + 1;
@@ -2424,7 +2719,7 @@ const Ventas = () => {
               );
             })}
           </div>
-          
+         
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -2433,9 +2728,9 @@ const Ventas = () => {
             Siguiente
           </button>
 
-          <div style={{ 
-            color: '#2E5939', 
-            fontSize: '14px', 
+          <div style={{
+            color: '#2E5939',
+            fontSize: '14px',
             marginLeft: '15px',
             fontWeight: '500'
           }}>
@@ -2443,8 +2738,23 @@ const Ventas = () => {
           </div>
         </div>
       )}
+
+      {/* Indicador de carga */}
+      {loading && ventas.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#2E5939' }}>
+          <div style={{ fontSize: '18px', marginBottom: '10px' }}>Cargando datos...</div>
+          <div style={{ width: '100%', height: '4px', backgroundColor: '#E8F5E8', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{
+              width: '60%',
+              height: '100%',
+              backgroundColor: '#2E5939',
+              animation: 'loading 1.5s infinite ease-in-out'
+            }}></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default Ventas;
+export default Ventas;  

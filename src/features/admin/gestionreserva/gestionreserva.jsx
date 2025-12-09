@@ -1,12 +1,11 @@
-// src/components/GestionReserva.jsx
-import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaMoneyBillAlt, FaFilePdf, FaCalendarAlt, FaUser, FaMapMarkerAlt, FaHome, FaBox, FaCreditCard, FaSearch, FaSync, FaCheck, FaReceipt, FaInfoCircle, FaUsers, FaDollarSign, FaSlidersH } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaTimes, FaExclamationTriangle, FaPlus, FaMoneyBillAlt, FaFilePdf, FaCalendarAlt, FaUser, FaMapMarkerAlt, FaHome, FaBox, FaCreditCard, FaSearch, FaSync, FaCheck, FaReceipt, FaInfoCircle, FaUsers, FaDollarSign, FaSlidersH, FaList, FaMoneyBillWave } from "react-icons/fa";
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
 // ===============================================
-// ESTILOS MEJORADOS (CONSISTENTES CON CABINAS)
+// ESTILOS MEJORADOS
 // ===============================================
 const btnAccion = (bg, borderColor) => ({
   marginRight: 6,
@@ -79,18 +78,20 @@ const pageBtnStyle = (active) => ({
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 });
 
-const modalOverlayStyle = {
+// MODIFICADO: Se agregó overflow: 'hidden' al body cuando el modal está abierto
+const modalOverlayStyle = (isOpen) => ({
   position: "fixed",
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
   backgroundColor: "rgba(0, 0, 0, 0.6)",
-  display: "flex",
+  display: isOpen ? "flex" : "none",
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
-};
+  overflow: 'auto', // Permitir scroll solo dentro del modal si es necesario
+});
 
 const modalContentStyle = {
   backgroundColor: "#fff",
@@ -102,12 +103,12 @@ const modalContentStyle = {
   color: "#2E5939",
   boxSizing: 'border-box',
   maxHeight: '90vh',
-  overflowY: 'auto',
+  overflowY: 'auto', // Scroll solo dentro del modal si el contenido es muy largo
   position: 'relative',
   border: "2px solid #679750",
+  margin: '20px 0', // Espacio para que no toque los bordes de la ventana
 };
 
-// Estilos mejorados para alertas
 const alertStyle = {
   position: 'fixed',
   top: 20,
@@ -173,6 +174,7 @@ const detailsModalStyle = {
   maxHeight: '80vh',
   overflowY: 'auto',
   border: "2px solid #679750",
+  margin: '20px 0',
 };
 
 const detailItemStyle = {
@@ -267,18 +269,6 @@ const VALIDATION_RULES = {
     errorMessages: {
       required: "Debe seleccionar una cabaña."
     }
-  },
-  idEstado: {
-    required: true,
-    errorMessages: {
-      required: "Debe seleccionar un estado."
-    }
-  },
-  idMetodoPago: {
-    required: true,
-    errorMessages: {
-      required: "Debe seleccionar un método de pago."
-    }
   }
 };
 
@@ -297,25 +287,27 @@ const API_SERVICIOS = `${API_BASE_URL}/Servicios`;
 const API_SERVICIOS_RESERVA = `${API_BASE_URL}/ServiciosReserva`;
 const API_ABONOS = `${API_BASE_URL}/Abonos`;
 const API_VENTAS = `${API_BASE_URL}/Ventas`;
+const API_SEDES_POR_SERVICIO = `${API_BASE_URL}/SedesPorServicio`;
+const API_SEDE_POR_PAQUETE = `${API_BASE_URL}/SedePorPaquete`;
 
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
-// COMPONENTE FormField CORREGIDO
+// COMPONENTE FormField
 // ===============================================
-const FormField = ({ 
-  label, 
-  name, 
-  type = "text", 
-  value, 
-  onChange, 
+const FormField = ({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
   onBlur,
-  error, 
+  error,
   success,
   warning,
-  options = [], 
-  style = {}, 
-  required = true, 
+  options = [],
+  style = {},
+  required = true,
   disabled = false,
   placeholder,
   touched = false,
@@ -323,18 +315,16 @@ const FormField = ({
 }) => {
   const finalOptions = useMemo(() => {
     if (type === "select") {
-      // Usar un valor único para el placeholder
-      const placeholderOption = { 
-        value: "", 
-        label: placeholder || "Seleccionar", 
-        disabled: required 
+      const placeholderOption = {
+        value: "",
+        label: placeholder || "Seleccionar",
+        disabled: required
       };
       return [placeholderOption, ...options];
     }
     return options;
   }, [options, type, required, placeholder]);
 
-  // Solo mostrar errores si el campo ha sido tocado
   const showError = touched && error;
   const showSuccess = touched && success && !error;
   const showWarning = touched && warning && !error;
@@ -407,7 +397,7 @@ const FormField = ({
         >
           {finalOptions.map((option, index) => (
             <option
-              key={option.value || `placeholder-${name}-${index}`} // Clave única
+              key={option.value || `placeholder-${name}-${index}`}
               value={option.value}
               disabled={option.disabled}
             >
@@ -434,7 +424,7 @@ const FormField = ({
 };
 
 // ===============================================
-// COMPONENTE PRINCIPAL GestionReserva MEJORADO
+// COMPONENTE PRINCIPAL GestionReserva
 // ===============================================
 const GestionReserva = () => {
   const [reservas, setReservas] = useState([]);
@@ -448,7 +438,32 @@ const GestionReserva = () => {
   const [serviciosReserva, setServiciosReserva] = useState([]);
   const [abonos, setAbonos] = useState([]);
   const [ventas, setVentas] = useState([]);
-  
+  const [sedesPorServicio, setSedesPorServicio] = useState([]);
+  const [sedePorPaquete, setSedePorPaquete] = useState([]);
+
+  const [cabanasBySede, setCabanasBySede] = useState([]);
+  const [paquetesBySede, setPaquetesBySede] = useState([]);
+  const [serviciosBySede, setServiciosBySede] = useState([]);
+
+  const [estadisticas, setEstadisticas] = useState({
+    total: 0,
+    pendientes: 0,
+    abonadas: 0,
+    totalIngresos: 0
+  });
+
+  const [showAbonosModal, setShowAbonosModal] = useState(false);
+  const [abonosReserva, setAbonosReserva] = useState([]);
+  const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
+
+  const calcularEstadisticas = (reservasList = []) => {
+    const total = reservasList.length;
+    const pendientes = reservasList.filter(r => Number(r.idEstado) === 2).length;
+    const abonadas = reservasList.filter(r => Number(r.idEstado) === 1).length;
+    const totalIngresos = reservasList.reduce((acc, r) => acc + (Number(r.montoTotal) || 0), 0);
+    return { total, pendientes, abonadas, totalIngresos };
+  };
+
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -468,9 +483,6 @@ const GestionReserva = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
 
-  // ===============================================
-  // FILTROS MEJORADOS
-  // ===============================================
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     sede: '',
@@ -490,7 +502,7 @@ const GestionReserva = () => {
     restante: 0,
     montoTotal: 0,
     idUsuario: "",
-    idEstado: "",
+    idEstado: "2",
     idSede: "",
     idCabana: "",
     idMetodoPago: "",
@@ -516,14 +528,35 @@ const GestionReserva = () => {
     }
   }, [newReserva, showForm, touchedFields]);
 
-  // Efecto para calcular montos automáticamente cuando cambian cabaña, paquete o servicios
   useEffect(() => {
     if (showForm) {
       calcularMontos();
     }
   }, [newReserva.idCabana, newReserva.idPaquete, newReserva.serviciosSeleccionados]);
 
-  // Efecto para agregar estilos de animación
+  useEffect(() => {
+    const nuevasEstadisticas = calcularEstadisticas(reservas);
+    setEstadisticas(nuevasEstadisticas);
+  }, [reservas]);
+
+  // Efecto para bloquear el scroll del body cuando hay modales abiertos
+  useEffect(() => {
+    const isModalOpen = showForm || showDetails || showDeleteConfirm || showAbonosModal;
+    
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0'; // Para evitar el desplazamiento del contenido
+    } else {
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '0';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '0';
+    };
+  }, [showForm, showDetails, showDeleteConfirm, showAbonosModal]);
+
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -537,12 +570,12 @@ const GestionReserva = () => {
           opacity: 1;
         }
       }
-      
+     
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
-      
+     
       @keyframes slideDown {
         from {
           opacity: 0;
@@ -551,6 +584,15 @@ const GestionReserva = () => {
         to {
           opacity: 1;
           transform: translateY(0);
+        }
+      }
+     
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
         }
       }
     `;
@@ -562,7 +604,7 @@ const GestionReserva = () => {
   }, []);
 
   // ===============================================
-  // FUNCIONES DE ALERTAS MEJORADAS
+  // FUNCIONES DE ALERTAS
   // ===============================================
   const displayAlert = (message, type = "success") => {
     setAlertMessage(message);
@@ -605,7 +647,7 @@ const GestionReserva = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE LA API CON MANEJO MEJORADO DE ERRORES
+  // FUNCIONES DE LA API
   // ===============================================
   const fetchReservas = async () => {
     setLoading(true);
@@ -618,11 +660,13 @@ const GestionReserva = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+     
       if (Array.isArray(res.data)) {
         setReservas(res.data);
+        setEstadisticas(calcularEstadisticas(res.data));
       } else if (res.data && Array.isArray(res.data.$values)) {
         setReservas(res.data.$values);
+        setEstadisticas(calcularEstadisticas(res.data.$values));
       } else {
         throw new Error("Formato de datos inválido");
       }
@@ -674,7 +718,9 @@ const GestionReserva = () => {
         estadosData,
         abonosData,
         ventasData,
-        serviciosReservaData
+        serviciosReservaData,
+        sedesPorServicioData,
+        sedePorPaqueteData
       ] = await Promise.all([
         fetchConManejoError(API_CABANAS),
         fetchConManejoError(API_SEDES),
@@ -685,7 +731,9 @@ const GestionReserva = () => {
         fetchConManejoError(API_ESTADOS, configuracionPorDefecto.estados),
         fetchConManejoError(API_ABONOS),
         fetchConManejoError(API_VENTAS),
-        fetchConManejoError(API_SERVICIOS_RESERVA)
+        fetchConManejoError(API_SERVICIOS_RESERVA),
+        fetchConManejoError(API_SEDES_POR_SERVICIO),
+        fetchConManejoError(API_SEDE_POR_PAQUETE)
       ]);
 
       setCabinas(cabinasData);
@@ -698,6 +746,8 @@ const GestionReserva = () => {
       setAbonos(abonosData);
       setVentas(ventasData);
       setServiciosReserva(serviciosReservaData);
+      setSedesPorServicio(sedesPorServicioData);
+      setSedePorPaquete(sedePorPaqueteData);
 
     } catch (error) {
       console.error("Error crítico al cargar datos relacionados:", error);
@@ -707,7 +757,40 @@ const GestionReserva = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO MEJORADAS
+  // FUNCIONES PARA MANEJAR ABONOS
+  // ===============================================
+  const handleViewAbonos = async (reserva) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(API_ABONOS);
+      let abonosData = [];
+     
+      if (Array.isArray(response.data)) {
+        abonosData = response.data.filter(abono => abono.idReserva === reserva.idReserva);
+      } else if (response.data && Array.isArray(response.data.$values)) {
+        abonosData = response.data.$values.filter(abono => abono.idReserva === reserva.idReserva);
+      }
+     
+      setAbonosReserva(abonosData);
+      setReservaSeleccionada(reserva);
+      setShowAbonosModal(true);
+     
+    } catch (error) {
+      console.error("Error al obtener abonos:", error);
+      displayAlert("Error al cargar los abonos", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const closeAbonosModal = () => {
+    setShowAbonosModal(false);
+    setAbonosReserva([]);
+    setReservaSeleccionada(null);
+  };
+
+  // ===============================================
+  // FUNCIONES DE FILTRADO
   // ===============================================
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -730,7 +813,6 @@ const GestionReserva = () => {
     setCurrentPage(1);
   };
 
-  // Contador de filtros activos
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (filters.sede) count++;
@@ -743,7 +825,7 @@ const GestionReserva = () => {
   }, [filters]);
 
   // ===============================================
-  // FUNCIONES DE VALIDACIÓN MEJORADAS
+  // FUNCIONES DE VALIDACIÓN
   // ===============================================
   const validateField = (fieldName, value) => {
     const rules = VALIDATION_RULES[fieldName];
@@ -774,7 +856,7 @@ const GestionReserva = () => {
       }
     }
     else if (trimmedValue) {
-      success = `${fieldName === 'idUsuario' ? 'Usuario' : fieldName === 'idSede' ? 'Sede' : fieldName === 'idCabana' ? 'Cabaña' : fieldName === 'idEstado' ? 'Estado' : 'Método de pago'} válido.`;
+      success = `${fieldName === 'idUsuario' ? 'Usuario' : fieldName === 'idSede' ? 'Sede' : 'Cabaña'} válido.`;
     }
 
     setFormErrors(prev => ({ ...prev, [fieldName]: error }));
@@ -785,15 +867,12 @@ const GestionReserva = () => {
   };
 
   const validateForm = () => {
-    // Marcar todos los campos como tocados al enviar el formulario
     const allFieldsTouched = {
       fechaEntrada: true,
       fechaReserva: true,
       idUsuario: true,
       idSede: true,
-      idCabana: true,
-      idEstado: true,
-      idMetodoPago: true
+      idCabana: true
     };
     setTouchedFields(allFieldsTouched);
 
@@ -802,11 +881,9 @@ const GestionReserva = () => {
     const usuarioValid = validateField('idUsuario', newReserva.idUsuario);
     const sedeValid = validateField('idSede', newReserva.idSede);
     const cabanaValid = validateField('idCabana', newReserva.idCabana);
-    const estadoValid = validateField('idEstado', newReserva.idEstado);
-    const metodoPagoValid = validateField('idMetodoPago', newReserva.idMetodoPago);
 
-    const isValid = fechaEntradaValid && fechaReservaValid && usuarioValid && sedeValid && cabanaValid && estadoValid && metodoPagoValid;
-    
+    const isValid = fechaEntradaValid && fechaReservaValid && usuarioValid && sedeValid && cabanaValid;
+   
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
       setTimeout(() => {
@@ -820,7 +897,6 @@ const GestionReserva = () => {
     return isValid;
   };
 
-  // Función para marcar campo como tocado
   const markFieldAsTouched = (fieldName) => {
     setTouchedFields(prev => ({
       ...prev,
@@ -829,7 +905,7 @@ const GestionReserva = () => {
   };
 
   // ===============================================
-  // FUNCIONES PRINCIPALES - CORREGIDAS
+  // FUNCIONES PRINCIPALES
   // ===============================================
   const calcularMontos = () => {
     let total = 0;
@@ -883,40 +959,138 @@ const GestionReserva = () => {
 
     setNewReserva({
       idReserva: 0,
-      fechaReserva: fechaSalidaStr, // Fecha de salida
-      fechaEntrada: fechaEntradaStr, // Fecha de entrada
+      fechaReserva: fechaSalidaStr,
+      fechaEntrada: fechaEntradaStr,
       fechaRegistro: fechaActual,
       abono: 0,
       restante: 0,
       montoTotal: 0,
-      idUsuario: usuarios.length > 0 ? usuarios[0].idUsuario.toString() : "",
-      idEstado: "2", // Pendiente por defecto
-      idSede: sedes.length > 0 ? sedes[0].idSede.toString() : "",
-      idCabana: cabinas.length > 0 ? cabinas[0].idCabana.toString() : "",
+      idUsuario: "",
+      idEstado: "2",
+      idSede: "",
+      idCabana: "",
       idMetodoPago: metodosPago.length > 0 ? metodosPago[0].idMetodoPago.toString() : "",
       idPaquete: "",
       serviciosSeleccionados: []
     });
-    
-    // Limpiar validaciones
+   
     setFormErrors({});
     setFormSuccess({});
     setFormWarnings({});
     setTouchedFields({});
+   
+    setCabanasBySede([]);
+    setPaquetesBySede([]);
+    setServiciosBySede([]);
   };
 
-  // Función para obtener el nombre de la sede de un paquete
-  const getSedeNombreFromPaquete = (idPaquete) => {
-    if (!idPaquete) return '';
-    const paquete = paquetes.find(p => p.idPaquete === parseInt(idPaquete));
-    if (!paquete) return '';
-    const sede = sedes.find(s => s.idSede === paquete.idSede);
-    return sede ? sede.nombreSede : `Sede ${paquete.idSede}`;
+  const fetchRecursosParaSede = async (idSede) => {
+    if (!idSede) {
+      setCabanasBySede([]);
+      setPaquetesBySede([]);
+      setServiciosBySede([]);
+      return;
+    }
+    const id = parseInt(idSede);
+   
+    // Filtrar cabañas locales por sede
+    const cabinasLocal = cabinas.filter(c => {
+      const cabinaSedeId = parseInt(c.idSede || c.sedeId || 0);
+      return cabinaSedeId === id;
+    });
+   
+    // Filtrar paquetes por sede usando la relación sedePorPaquete
+    const paquetesDeSede = sedePorPaquete
+      .filter(sp => parseInt(sp.idSede || sp.sedeId || 0) === id)
+      .map(sp => paquetes.find(p => p.idPaquete === parseInt(sp.idPaquete || sp.paqueteId || 0)))
+      .filter(Boolean);
+   
+    // Filtrar servicios por sede usando sedesPorServicio
+    const serviciosDeSede = sedesPorServicio
+      .filter(ss => parseInt(ss.idSede || ss.sedeId || 0) === id)
+      .map(ss => servicios.find(s => s.idServicio === parseInt(ss.idServicio || ss.servicioId || 0)))
+      .filter(Boolean);
+
+    setCabanasBySede(cabinasLocal);
+    setPaquetesBySede(paquetesDeSede);
+    setServiciosBySede(serviciosDeSede);
+
+    // CONSULTAS ADICIONALES SI NO HAY DATOS LOCALES
+    try {
+      if (cabinasLocal.length === 0) {
+        const r = await axios.get(`${API_CABANAS}?idSede=${id}`, { timeout: 8000 });
+        if (Array.isArray(r.data)) setCabanasBySede(r.data);
+      }
+    } catch (e) {}
+
+    try {
+      if (paquetesDeSede.length === 0) {
+        const r = await axios.get(`${API_SEDE_POR_PAQUETE}?idSede=${id}`, { timeout: 8000 });
+        if (Array.isArray(r.data)) {
+          const paquetesIds = r.data.map(sp => sp.idPaquete || sp.paqueteId);
+          const paquetesFiltrados = paquetes.filter(p => paquetesIds.includes(p.idPaquete));
+          setPaquetesBySede(paquetesFiltrados);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      if (serviciosDeSede.length === 0) {
+        const r = await axios.get(`${API_SEDES_POR_SERVICIO}?idSede=${id}`, { timeout: 8000 });
+        if (Array.isArray(r.data)) {
+          const serviciosIds = r.data.map(ss => ss.idServicio || ss.servicioId);
+          const serviciosFiltrados = servicios.filter(s => serviciosIds.includes(s.idServicio));
+          setServiciosBySede(serviciosFiltrados);
+        }
+      }
+    } catch (e) {}
+  };
+
+  const handleSedeSelect = async (e) => {
+    const { value } = e.target;
+    setNewReserva(prev => ({
+      ...prev,
+      idSede: value,
+      idCabana: "",
+      idPaquete: "",
+      serviciosSeleccionados: []
+    }));
+    markFieldAsTouched('idSede');
+    await fetchRecursosParaSede(value);
+  };
+
+  // Comprueba solapamiento de fechas
+  const isDateOverlap = (startA, endA, startB, endB) => {
+    if (!startA || !endA || !startB || !endB) return false;
+    const aStart = new Date(startA);
+    const aEnd = new Date(endA);
+    const bStart = new Date(startB);
+    const bEnd = new Date(endB);
+    if (isNaN(aStart) || isNaN(aEnd) || isNaN(bStart) || isNaN(bEnd)) return false;
+    // Solapamiento (inclusive): true si los intervalos se cruzan
+    return aStart <= bEnd && bStart <= aEnd;
+  };
+
+  // Verifica disponibilidad de una cabaña en las fechas dadas.
+  // excludeReservaId: permite ignorar la propia reserva al editar.
+  const checkAvailability = (idCabana, fechaEntrada, fechaSalida, excludeReservaId = null) => {
+    if (!idCabana || !fechaEntrada || !fechaSalida) return false;
+    return reservas.some(r => {
+      // ignorar la propia reserva al editar
+      if (excludeReservaId && Number(r.idReserva) === Number(excludeReservaId)) return false;
+      // debe ser la misma cabaña
+      if (!r.idCabana || Number(r.idCabana) !== Number(idCabana)) return false;
+      // ignorar reservas canceladas (idEstado === 3)
+      if (Number(r.idEstado) === 3) return false;
+      const rEntrada = r.fechaEntrada;
+      const rSalida = r.fechaReserva || r.fechaSalida || "";
+      return isDateOverlap(fechaEntrada, fechaSalida, rEntrada, rSalida);
+    });
   };
 
   const handleAddReserva = async (e) => {
     e.preventDefault();
-    
+   
     if (isSubmitting) {
       displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
       return;
@@ -928,95 +1102,100 @@ const GestionReserva = () => {
 
     setIsSubmitting(true);
     setLoading(true);
-    
+   
     try {
-      // Preparar datos según el modelo del backend - CORREGIDO
+      // Verificar disponibilidad ANTES de crear/actualizar
+      const entrada = newReserva.fechaEntrada;
+      const salida = newReserva.fechaReserva;
+      const cabanaId = newReserva.idCabana;
+      const excludeId = isEditing ? newReserva.idReserva : null;
+      if (checkAvailability(cabanaId, entrada, salida, excludeId)) {
+        displayAlert("Conflicto: la cabaña seleccionada ya está reservada en las fechas indicadas.", "error");
+        setLoading(false);
+        setIsSubmitting(false);
+        return;
+      }
+      // Verifica si el usuario ya tiene una reserva activa en las mismas fechas
+      const reservaConflicto = reservas.find(r =>
+        r.idUsuario === newReserva.idUsuario &&
+        r.idEstado !== 3 && // Excluir reservas canceladas
+        isDateOverlap(entrada, salida, r.fechaEntrada, r.fechaReserva)
+      );
+      if (reservaConflicto) {
+        displayAlert("El usuario ya tiene una reserva activa en las fechas seleccionadas.", "error");
+        setLoading(false);
+        setIsSubmitting(false);
+        return;
+      }
+
       const reservaData = {
         idReserva: isEditing ? parseInt(newReserva.idReserva) : 0,
-        fechaReserva: newReserva.fechaReserva, // Fecha de salida
-        fechaEntrada: newReserva.fechaEntrada, // Fecha de entrada
+        fechaReserva: newReserva.fechaReserva,
+        fechaEntrada: newReserva.fechaEntrada,
         fechaRegistro: isEditing ? newReserva.fechaRegistro : new Date().toISOString().split('T')[0],
         abono: parseFloat(newReserva.abono) || 0,
         restante: parseFloat(newReserva.restante) || 0,
         montoTotal: parseFloat(newReserva.montoTotal) || 0,
         idUsuario: parseInt(newReserva.idUsuario),
-        idEstado: parseInt(newReserva.idEstado),
+        // al crear forzamos Pendiente (2); al editar respetamos el valor existente
+        idEstado: isEditing ? parseInt(newReserva.idEstado) : 2,
         idSede: parseInt(newReserva.idSede),
         idCabana: parseInt(newReserva.idCabana),
         idMetodoPago: parseInt(newReserva.idMetodoPago),
         idPaquete: newReserva.idPaquete ? parseInt(newReserva.idPaquete) : 0
       };
 
-      console.log("Enviando datos de reserva:", reservaData);
-
       let reservaId;
       let response;
 
       if (isEditing) {
-        // PUT para editar
         response = await axios.put(`${API_RESERVAS}/${newReserva.idReserva}`, reservaData, {
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           }
         });
         reservaId = newReserva.idReserva;
-        
-        // Actualizar servicios de reserva
+       
         await manejarServiciosReserva(reservaId);
-        
+       
         displayAlert("Reserva actualizada exitosamente.", "success");
       } else {
-        // POST para crear - CORREGIDO: usar el formato exacto que espera la API
         response = await axios.post(API_RESERVAS, reservaData, {
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           }
         });
-        
-        console.log("Respuesta del servidor:", response.data);
-        
-        // Obtener el ID de la reserva creada - CORREGIDO
+       
         reservaId = response.data.idReserva || response.data;
-        
+       
         if (!reservaId) {
-          // Si no viene el ID en la respuesta, intentar obtenerlo de otra manera
-          console.warn("No se pudo obtener el ID de la reserva de la respuesta directa");
-          // En este caso, hacemos una nueva consulta para obtener la última reserva
           const ultimasReservas = await axios.get(API_RESERVAS);
           if (ultimasReservas.data && ultimasReservas.data.length > 0) {
             const ultimaReserva = ultimasReservas.data[ultimasReservas.data.length - 1];
             reservaId = ultimaReserva.idReserva;
           }
         }
-        
+       
         if (!reservaId) {
           throw new Error("No se pudo obtener el ID de la reserva creada");
         }
-        
-        console.log("ID de reserva creada:", reservaId);
-        
-        // Crear servicios de reserva
+       
         await manejarServiciosReserva(reservaId);
-        
-        // Crear abono inicial
         await crearAbonoInicial(reservaId);
-        
-        // Crear venta
         await crearVenta(reservaId);
-        
+       
         displayAlert("Reserva agregada exitosamente.", "success");
       }
-      
+     
       await fetchReservas();
       await fetchDatosRelacionados();
-      
+     
       closeForm();
     } catch (error) {
       console.error("Error al guardar reserva:", error);
-      
-      // Manejo de errores más específico
+     
       if (error.response) {
         const errorMessage = error.response.data?.mensaje || error.response.data?.message || error.response.data?.title || error.response.data;
         displayAlert(errorMessage || `Error al ${isEditing ? "actualizar" : "crear"} la reserva`, "error");
@@ -1029,15 +1208,12 @@ const GestionReserva = () => {
     }
   };
 
-  // Función mejorada para manejar servicios
   const manejarServiciosReserva = async (idReserva) => {
     try {
-      // Solo proceder si hay servicios seleccionados
       if (!newReserva.serviciosSeleccionados || newReserva.serviciosSeleccionados.length === 0) {
         return;
       }
 
-      // Eliminar servicios existentes para esta reserva (solo en edición)
       if (isEditing) {
         const serviciosExistentes = serviciosReserva.filter(sr => sr.idReserva === parseInt(idReserva));
         for (const servicio of serviciosExistentes) {
@@ -1045,7 +1221,6 @@ const GestionReserva = () => {
         }
       }
 
-      // Crear nuevos servicios
       for (const idServicio of newReserva.serviciosSeleccionados) {
         const servicioData = {
           idServicioReserva: 0,
@@ -1058,20 +1233,21 @@ const GestionReserva = () => {
       }
     } catch (error) {
       console.error("Error al manejar servicios de reserva:", error);
-      // No lanzar error para no interrumpir el flujo principal
     }
   };
 
-  // Función mejorada para crear abono inicial
   const crearAbonoInicial = async (idReserva) => {
     try {
+      const monto = parseFloat(newReserva.abono) || 0;
+      if (monto <= 0) return;
+
+      const metodoSeleccionado = metodosPago.find(m => String(m.idMetodoPago) === String(newReserva.idMetodoPago))
+        || (metodosPago.length ? metodosPago[0] : null);
+
       const abonoData = {
-        idAbono: 0,
         idReserva: parseInt(idReserva),
-        fechaAbono: new Date().toISOString().split('T')[0],
-        montoAbono: parseFloat(newReserva.abono),
-        idMetodoPago: parseInt(newReserva.idMetodoPago),
-        verificacion: "Pendiente"
+        montoAbono: monto,
+        ...(metodoSeleccionado ? { idMetodoPago: parseInt(metodoSeleccionado.idMetodoPago) } : {})
       };
 
       await axios.post(API_ABONOS, abonoData, {
@@ -1079,11 +1255,9 @@ const GestionReserva = () => {
       });
     } catch (error) {
       console.error("Error al crear abono inicial:", error);
-      // No lanzar error para no interrumpir el flujo principal
     }
   };
 
-  // Función mejorada para crear venta
   const crearVenta = async (idReserva) => {
     try {
       const ventaData = {
@@ -1099,7 +1273,6 @@ const GestionReserva = () => {
       });
     } catch (error) {
       console.error("Error al crear venta:", error);
-      // No lanzar error para no interrumpir el flujo principal
     }
   };
 
@@ -1107,30 +1280,26 @@ const GestionReserva = () => {
     if (reservaToDelete) {
       setLoading(true);
       try {
-        // Eliminar servicios asociados
         const serviciosReservaEliminar = serviciosReserva.filter(sr => sr.idReserva === reservaToDelete.idReserva);
         for (const servicio of serviciosReservaEliminar) {
           await axios.delete(`${API_SERVICIOS_RESERVA}/${servicio.idServicioReserva}`);
         }
 
-        // Eliminar abonos asociados
         const abonosEliminar = abonos.filter(a => a.idReserva === reservaToDelete.idReserva);
         for (const abono of abonosEliminar) {
           await axios.delete(`${API_ABONOS}/${abono.idAbono}`);
         }
 
-        // Eliminar venta asociada
         const ventaEliminar = ventas.find(v => v.idReserva === reservaToDelete.idReserva);
         if (ventaEliminar) {
           await axios.delete(`${API_VENTAS}/${ventaEliminar.idVenta}`);
         }
 
-        // Finalmente eliminar la reserva
         await axios.delete(`${API_RESERVAS}/${reservaToDelete.idReserva}`);
         displayAlert("Reserva eliminada exitosamente.", "success");
         await fetchReservas();
         await fetchDatosRelacionados();
-        
+       
         if (paginatedReservas.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         }
@@ -1146,12 +1315,12 @@ const GestionReserva = () => {
   };
 
   // ===============================================
-  // FUNCIONES AUXILIARES MEJORADAS
+  // FUNCIONES AUXILIARES
   // ===============================================
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
     let alertType = "error";
-    
+   
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
@@ -1174,25 +1343,24 @@ const GestionReserva = () => {
     } else {
       errorMessage = `Error inesperado: ${error.message}`;
     }
-    
+   
     setError(errorMessage);
     displayAlert(errorMessage, alertType);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+   
     if ((name === 'fechaRegistro' || name === 'idEstado') && !isEditing) {
       return;
     }
-    
+   
     setNewReserva((prev) => ({
       ...prev,
       [name]: value
     }));
   };
 
-  // Nueva función para manejar el blur (cuando el campo pierde el foco)
   const handleInputBlur = (e) => {
     const { name } = e.target;
     markFieldAsTouched(name);
@@ -1203,23 +1371,15 @@ const GestionReserva = () => {
     setNewReserva(prev => {
       const serviciosActuales = [...prev.serviciosSeleccionados];
       const index = serviciosActuales.indexOf(servicioId);
-      
+     
       if (index > -1) {
         serviciosActuales.splice(index, 1);
       } else {
         serviciosActuales.push(servicioId);
       }
-      
+     
       return { ...prev, serviciosSeleccionados: serviciosActuales };
     });
-  };
-
-  // Nueva función para manejar la selección de paquetes
-  const handlePaqueteChange = (paqueteId) => {
-    setNewReserva(prev => ({
-      ...prev,
-      idPaquete: paqueteId
-    }));
   };
 
   const closeForm = () => {
@@ -1238,13 +1398,16 @@ const GestionReserva = () => {
       restante: 0,
       montoTotal: 0,
       idUsuario: "",
-      idEstado: "",
+      idEstado: "2",
       idSede: "",
       idCabana: "",
       idMetodoPago: "",
       idPaquete: "",
       serviciosSeleccionados: []
     });
+    setCabanasBySede([]);
+    setPaquetesBySede([]);
+    setServiciosBySede([]);
   };
 
   const closeDetailsModal = () => {
@@ -1260,7 +1423,7 @@ const GestionReserva = () => {
   const handleView = (reserva) => {
     const serviciosReservaFiltrados = serviciosReserva.filter(sr => sr.idReserva === reserva.idReserva);
     const serviciosIds = serviciosReservaFiltrados.map(sr => sr.idServicio);
-    
+   
     const abonosReserva = abonos.filter(a => a.idReserva === reserva.idReserva);
     const ventaReserva = ventas.find(v => v.idReserva === reserva.idReserva);
 
@@ -1273,7 +1436,7 @@ const GestionReserva = () => {
     setShowDetails(true);
   };
 
-  const handleEdit = (reserva) => {
+  const handleEdit = async (reserva) => {
     const serviciosReservaFiltrados = serviciosReserva.filter(sr => sr.idReserva === reserva.idReserva);
     const serviciosIds = serviciosReservaFiltrados.map(sr => sr.idServicio.toString());
 
@@ -1286,7 +1449,7 @@ const GestionReserva = () => {
       restante: reserva.restante || 0,
       montoTotal: reserva.montoTotal || 0,
       idUsuario: reserva.idUsuario?.toString() || "",
-      idEstado: reserva.idEstado?.toString() || "",
+      idEstado: reserva.idEstado?.toString() || "2",
       idSede: reserva.idSede?.toString() || "",
       idCabana: reserva.idCabana?.toString() || "",
       idMetodoPago: reserva.idMetodoPago?.toString() || "",
@@ -1299,6 +1462,10 @@ const GestionReserva = () => {
     setFormSuccess({});
     setFormWarnings({});
     setTouchedFields({});
+   
+    if (reserva.idSede) {
+      await fetchRecursosParaSede(reserva.idSede.toString());
+    }
   };
 
   const handleDeleteClick = (reserva) => {
@@ -1307,12 +1474,11 @@ const GestionReserva = () => {
   };
 
   // ===============================================
-  // FUNCIONES DE FILTRADO Y PAGINACIÓN MEJORADAS
+  // FUNCIONES DE FILTRADO Y PAGINACIÓN
   // ===============================================
   const filteredReservas = useMemo(() => {
     let filtered = reservas;
 
-    // Filtro por término de búsqueda
     if (searchTerm) {
       filtered = filtered.filter(reserva =>
         getUsuarioNombre(reserva.idUsuario)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1323,32 +1489,26 @@ const GestionReserva = () => {
       );
     }
 
-    // Filtro por sede
     if (filters.sede) {
       filtered = filtered.filter(reserva => reserva.idSede === parseInt(filters.sede));
     }
 
-    // Filtro por estado
     if (filters.estado) {
       filtered = filtered.filter(reserva => reserva.idEstado === parseInt(filters.estado));
     }
 
-    // Filtro por fecha desde
     if (filters.fechaDesde) {
       filtered = filtered.filter(reserva => reserva.fechaEntrada >= filters.fechaDesde);
     }
 
-    // Filtro por fecha hasta
     if (filters.fechaHasta) {
       filtered = filtered.filter(reserva => reserva.fechaEntrada <= filters.fechaHasta);
     }
 
-    // Filtro por monto mínimo
     if (filters.montoMin) {
       filtered = filtered.filter(reserva => reserva.montoTotal >= parseFloat(filters.montoMin));
     }
 
-    // Filtro por monto máximo
     if (filters.montoMax) {
       filtered = filtered.filter(reserva => reserva.montoTotal <= parseFloat(filters.montoMax));
     }
@@ -1415,9 +1575,11 @@ const GestionReserva = () => {
   };
 
   const formatPrecio = (precio) => {
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat('es-CO', {
       style: 'currency',
-      currency: 'MXN'
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(precio || 0);
   };
 
@@ -1446,7 +1608,213 @@ const GestionReserva = () => {
   };
 
   // ===============================================
-  // FUNCIÓN PARA GENERAR PDF - CORREGIDA
+  // MODAL DE ABONOS
+  // ===============================================
+  const renderAbonosModal = () => {
+    if (!showAbonosModal || !reservaSeleccionada) return null;
+
+    const totalAbonado = abonosReserva.reduce((total, abono) => total + (abono.montoAbono || 0), 0);
+    const porcentajeAbonado = reservaSeleccionada.montoTotal > 0
+      ? Math.round((totalAbonado / reservaSeleccionada.montoTotal) * 100)
+      : 0;
+
+    return (
+      <div style={modalOverlayStyle(showAbonosModal)}>
+        <div style={{
+          ...modalContentStyle,
+          maxWidth: 600,
+          padding: '25px'
+        }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20
+          }}>
+            <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
+              <FaMoneyBillWave style={{ marginRight: '10px' }} />
+              Abonos de la Reserva #{reservaSeleccionada.idReserva}
+            </h2>
+            <button
+              onClick={closeAbonosModal}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#2E5939",
+                fontSize: "20px",
+                cursor: "pointer",
+              }}
+              title="Cerrar"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          {/* Información de la reserva */}
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '15px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            border: '1px solid #679750'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontWeight: '600', color: '#2E5939' }}>Usuario:</span>
+              <span>{getUsuarioNombre(reservaSeleccionada.idUsuario)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontWeight: '600', color: '#2E5939' }}>Cabaña:</span>
+              <span>{getCabinaNombre(reservaSeleccionada.idCabana)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: '600', color: '#2E5939' }}>Monto Total:</span>
+              <span style={{ fontWeight: 'bold', color: '#2E5939' }}>{formatPrecio(reservaSeleccionada.montoTotal)}</span>
+            </div>
+          </div>
+
+          {/* Resumen de abonos */}
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: '20px',
+            borderRadius: '10px',
+            marginBottom: '25px',
+            border: '2px solid #4caf50',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2E5939', marginBottom: '10px' }}>
+              Resumen de Abonos
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '14px', color: '#679750', marginBottom: '5px' }}>Total Abonado</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+                  {formatPrecio(totalAbonado)}
+                </div>
+              </div>
+              <div style={{ height: '40px', width: '1px', backgroundColor: '#679750' }}></div>
+              <div>
+                <div style={{ fontSize: '14px', color: '#679750', marginBottom: '5px' }}>Porcentaje</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2E5939' }}>
+                  {porcentajeAbonado}%
+                </div>
+              </div>
+              <div style={{ height: '40px', width: '1px', backgroundColor: '#679750' }}></div>
+              <div>
+                <div style={{ fontSize: '14px', color: '#679750', marginBottom: '5px' }}>Pendiente</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: reservaSeleccionada.montoTotal - totalAbonado > 0 ? '#e74c3c' : '#2E5939' }}>
+                  {formatPrecio(reservaSeleccionada.montoTotal - totalAbonado)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de abonos */}
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ color: '#2E5939', marginBottom: '15px', borderBottom: '2px solid #679750', paddingBottom: '8px' }}>
+              Detalle de Abonos ({abonosReserva.length})
+            </h3>
+           
+            {abonosReserva.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '30px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px',
+                color: '#6c757d',
+                fontStyle: 'italic'
+              }}>
+                No se han registrado abonos para esta reserva
+              </div>
+            ) : (
+              <div style={{
+                maxHeight: '300px',
+                overflowY: 'auto',
+                borderRadius: '8px',
+                border: '1px solid #eee'
+              }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  backgroundColor: '#fff'
+                }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#679750', color: '#fff' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 'bold' }}>Fecha</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 'bold' }}>Monto</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 'bold' }}>Método</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 'bold' }}>Verificación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {abonosReserva.map((abono, index) => (
+                      <tr key={index} style={{
+                        borderBottom: '1px solid #eee',
+                        backgroundColor: index % 2 === 0 ? '#fff' : '#f8f9fa'
+                      }}>
+                        <td style={{ padding: '12px', color: '#2E5939' }}>
+                          {formatDate(abono.fechaAbono)}
+                        </td>
+                        <td style={{ padding: '12px', fontWeight: '600', color: '#2E5939' }}>
+                          {formatPrecio(abono.montoAbono)}
+                        </td>
+                        <td style={{ padding: '12px', color: '#2E5939' }}>
+                          {getMetodoPagoNombre(abono.idMetodoPago)}
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <span style={{
+                            color: abono.verificacion === 'Aprobado' ? '#4caf50' :
+                                  abono.verificacion === 'Pendiente' ? '#ff9800' : '#e74c3c',
+                            fontWeight: 'bold',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(46, 89, 57, 0.1)',
+                            fontSize: '12px'
+                          }}>
+                            {abono.verificacion || 'Pendiente'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Botón de cierre */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              onClick={closeAbonosModal}
+              style={{
+                backgroundColor: "#2E5939",
+                color: "#fff",
+                padding: "12px 30px",
+                border: "none",
+                borderRadius: 10,
+                cursor: "pointer",
+                fontWeight: "600",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                transition: "all 0.3s ease",
+              }}
+              onMouseOver={(e) => {
+                e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                e.target.style.transform = "translateY(-2px)";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.background = "#2E5939";
+                e.target.style.transform = "translateY(0)";
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ===============================================
+  // FUNCIÓN PARA GENERAR PDF
   // ===============================================
   const handleDownloadPDF = (reserva) => {
     const serviciosReservaFiltrados = serviciosReserva.filter(sr => sr.idReserva === reserva.idReserva);
@@ -1461,29 +1829,28 @@ const GestionReserva = () => {
     const abonosReserva = abonos.filter(a => a.idReserva === reserva.idReserva);
 
     const doc = new jsPDF();
-   
     // ENCABEZADO MEJORADO
     doc.setFillColor(46, 89, 57);
     doc.rect(0, 0, 210, 40, 'F');
-   
+ 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(24);
     doc.setTextColor(255, 255, 255);
     doc.text("🏕", 20, 25);
     doc.text("GLAMPING LUXURY", 35, 25);
-   
+ 
     doc.setFontSize(12);
     doc.setTextColor(200, 200, 200);
     doc.text("Vereda El Descanso, Villeta - Cundinamarca", 35, 32);
-   
+ 
     doc.setFontSize(20);
     doc.setTextColor(46, 89, 57);
     doc.text("COMPROBANTE DE RESERVA", 105, 55, { align: "center" });
-   
+ 
     doc.setDrawColor(103, 151, 80);
     doc.setLineWidth(1);
     doc.line(20, 60, 190, 60);
-   
+ 
     let y = 70;
 
     // INFORMACIÓN PRINCIPAL EN DOS COLUMNAS
@@ -1492,23 +1859,23 @@ const GestionReserva = () => {
     doc.setTextColor(46, 89, 57);
     doc.text("INFORMACIÓN DE LA RESERVA", 20, y);
     y += 10;
-   
+ 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-   
+ 
     doc.text(`ID Reserva: #${reserva.idReserva}`, 20, y);
     doc.text(`Estado: ${getEstadoNombre(reserva.idEstado)}`, 20, y + 6);
     doc.text(`Usuario: ${getUsuarioNombre(reserva.idUsuario)}`, 20, y + 12);
     doc.text(`Cabaña: ${getCabinaNombre(reserva.idCabana)}`, 20, y + 18);
     doc.text(`Sede: ${getSedeNombre(reserva.idSede)}`, 20, y + 24);
-   
+ 
     doc.text(`Fecha Entrada: ${formatDate(reserva.fechaEntrada)}`, 110, y);
     doc.text(`Fecha Salida: ${formatDate(reserva.fechaReserva)}`, 110, y + 6);
     doc.text(`Fecha Registro: ${formatDate(reserva.fechaRegistro)}`, 110, y + 12);
     doc.text(`Paquete: ${getPaqueteNombre(reserva.idPaquete)}`, 110, y + 18);
     doc.text(`Método de Pago: ${getMetodoPagoNombre(reserva.idMetodoPago)}`, 110, y + 24);
-   
+ 
     y += 35;
 
     // DETALLES DE PAGO CON DISEÑO MEJORADO
@@ -1517,23 +1884,23 @@ const GestionReserva = () => {
     doc.setTextColor(46, 89, 57);
     doc.text("DETALLES DE PAGO", 20, y);
     y += 8;
-   
+ 
     doc.setFillColor(247, 244, 234);
     doc.roundedRect(20, y, 170, 25, 3, 3, 'F');
-   
+ 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(46, 89, 57);
-   
+ 
     doc.text("Monto Total:", 30, y + 8);
     doc.text("Abono (50%):", 30, y + 16);
     doc.text("Restante:", 30, y + 24);
-   
+ 
     doc.setTextColor(0, 0, 0);
     doc.text(formatPrecio(reserva.montoTotal), 120, y + 8);
     doc.text(formatPrecio(reserva.abono), 120, y + 16);
     doc.text(formatPrecio(reserva.restante), 120, y + 24);
-   
+ 
     y += 35;
 
     // SERVICIOS EXTRAS CON DISEÑO MEJORADO
@@ -1543,15 +1910,15 @@ const GestionReserva = () => {
       doc.setTextColor(46, 89, 57);
       doc.text("SERVICIOS EXTRAS ADICIONALES", 20, y);
       y += 8;
-     
+   
       const serviciosTable = serviciosDetalle.map(servicio => [
         servicio.nombre,
         formatPrecio(servicio.precio)
       ]);
-     
+   
       const totalServicios = serviciosDetalle.reduce((total, serv) => total + (serv.precio || 0), 0);
       serviciosTable.push(['TOTAL SERVICIOS', formatPrecio(totalServicios)]);
-     
+   
       doc.autoTable({
         startY: y,
         head: [['Servicio', 'Precio']],
@@ -1574,7 +1941,7 @@ const GestionReserva = () => {
         },
         margin: { left: 20, right: 20 }
       });
-     
+   
       y = doc.lastAutoTable.finalY + 10;
     }
 
@@ -1585,17 +1952,17 @@ const GestionReserva = () => {
       doc.setTextColor(46, 89, 57);
       doc.text("HISTORIAL DE ABONOS", 20, y);
       y += 8;
-     
+   
       const abonosTable = abonosReserva.map(abono => [
         formatDate(abono.fechaAbono),
         formatPrecio(abono.montoAbono),
         getMetodoPagoNombre(abono.idMetodoPago),
         abono.verificacion
       ]);
-     
+   
       const totalAbonado = abonosReserva.reduce((total, abono) => total + (abono.montoAbono || 0), 0);
       abonosTable.push(['TOTAL ABONADO', formatPrecio(totalAbonado), '', '']);
-     
+   
       doc.autoTable({
         startY: y,
         head: [['Fecha', 'Monto', 'Método', 'Verificación']],
@@ -1618,7 +1985,7 @@ const GestionReserva = () => {
         },
         margin: { left: 20, right: 20 }
       });
-     
+   
       y = doc.lastAutoTable.finalY + 10;
     }
 
@@ -1626,12 +1993,12 @@ const GestionReserva = () => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-   
+ 
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
     doc.line(20, y, 190, y);
     y += 10;
-   
+ 
     doc.text("Glamping Luxury - Experiencias Únicas en la Naturaleza", 105, y, { align: "center" });
     y += 5;
     doc.text("📍 Vereda El Descanso, Villeta, Cundinamarca", 105, y, { align: "center" });
@@ -1640,7 +2007,7 @@ const GestionReserva = () => {
     y += 5;
     doc.text("🌐 www.glampingluxury.com", 105, y, { align: "center" });
     y += 10;
-   
+ 
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text("Este documento es un comprobante de reserva generado automáticamente.", 105, y, { align: "center" });
@@ -1654,23 +2021,10 @@ const GestionReserva = () => {
   };
 
   // ===============================================
-  // ESTADÍSTICAS
-  // ===============================================
-  const estadisticas = useMemo(() => {
-    const total = reservas.length;
-    const pendientes = reservas.filter(r => getEstadoNombre(r.idEstado).toLowerCase().includes('pendiente')).length;
-    const abonadas = reservas.filter(r => getEstadoNombre(r.idEstado).toLowerCase().includes('abonado')).length;
-    const completadas = reservas.filter(r => getEstadoNombre(r.idEstado).toLowerCase().includes('completada')).length;
-    const totalIngresos = reservas.reduce((sum, r) => sum + (r.montoTotal || 0), 0);
-
-    return { total, pendientes, abonadas, completadas, totalIngresos };
-  }, [reservas]);
-
-  // ===============================================
-  // RENDERIZADO DEL FORMULARIO MEJORADO - CORREGIDO
+  // RENDERIZADO DEL FORMULARIO MEJORADO
   // ===============================================
   const renderFormularioReserva = () => (
-    <div style={modalOverlayStyle}>
+    <div style={modalOverlayStyle(showForm)}>
       <div style={{...modalContentStyle, maxWidth: 800}}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>
@@ -1691,124 +2045,257 @@ const GestionReserva = () => {
             <FaTimes />
           </button>
         </div>
-        
+       
         <form onSubmit={handleAddReserva}>
           {/* Sección 1: Información Básica */}
-          <div style={{ 
-            backgroundColor: '#F7F4EA', 
-            padding: '20px', 
-            borderRadius: '10px', 
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '20px',
+            borderRadius: '10px',
             marginBottom: '20px',
             border: '1px solid #679750'
           }}>
             <h3 style={{ color: '#2E5939', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <FaInfoCircle /> Información Básica
+              <FaInfoCircle /> Información de la Reserva
             </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px' }}>
-              {/* Usuario */}
-              <FormField
-                label="Usuario"
-                name="idUsuario"
-                type="select"
-                value={newReserva.idUsuario}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                error={formErrors.idUsuario}
-                success={formSuccess.idUsuario}
-                warning={formWarnings.idUsuario}
-                options={usuarios.map(usuario => ({ 
-                  value: usuario.idUsuario.toString(), 
-                  label: `${usuario.nombre} ${usuario.apellido || ''} (${usuario.email || 'Sin email'})` 
-                }))}
-                required={true}
-                disabled={loading || usuarios.length === 0}
-                placeholder="Selecciona un usuario"
-                touched={touchedFields.idUsuario}
-                icon={<FaUser />}
-              />
+           
+            {/* 1. Usuario (Cliente) */}
+            <FormField
+              label="Usuario (Cliente)"
+              name="idUsuario"
+              type="select"
+              value={newReserva.idUsuario}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              error={formErrors.idUsuario}
+              success={formSuccess.idUsuario}
+              warning={formWarnings.idUsuario}
+              options={usuarios.map(usuario => ({
+                value: usuario.idUsuario.toString(),
+                label: `${usuario.nombre} ${usuario.apellido || ''} - ${usuario.email || 'Sin email'}`
+              }))}
+              required={true}
+              disabled={loading || usuarios.length === 0}
+              placeholder="Selecciona un usuario"
+              touched={touchedFields.idUsuario}
+              icon={<FaUser />}
+            />
 
-              {/* Sede */}
-              <FormField
-                label="Sede"
-                name="idSede"
-                type="select"
-                value={newReserva.idSede}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                error={formErrors.idSede}
-                success={formSuccess.idSede}
-                warning={formWarnings.idSede}
-                options={sedes.map(sede => ({ 
-                  value: sede.idSede.toString(), 
-                  label: sede.nombreSede 
-                }))}
-                required={true}
-                disabled={loading || sedes.length === 0}
-                placeholder="Selecciona una sede"
-                touched={touchedFields.idSede}
-                icon={<FaMapMarkerAlt />}
-              />
+            {/* 2. Estado */}
+            <FormField
+              label="Estado"
+              name="idEstado"
+              type="select"
+              value={newReserva.idEstado}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              error={formErrors.idEstado}
+              success={formSuccess.idEstado}
+              warning={formWarnings.idEstado}
+              options={estados.map(estado => ({
+                value: estado.idEstado.toString(),
+                label: estado.nombreEstado
+              }))}
+              required={true}
+              disabled={loading || !isEditing}
+              placeholder="Selecciona un estado"
+              touched={touchedFields.idEstado}
+            />
+            <div style={{ fontSize: '12px', color: '#679750', marginTop: '-10px', marginBottom: '15px' }}>
+              Nota: El estado predeterminado es "Pendiente" (ID 2)
+            </div>
 
-              {/* Cabaña */}
-              <FormField
-                label="Cabaña"
-                name="idCabana"
-                type="select"
-                value={newReserva.idCabana}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                error={formErrors.idCabana}
-                success={formSuccess.idCabana}
-                warning={formWarnings.idCabana}
-                options={cabinas.map(cabina => ({ 
-                  value: cabina.idCabana.toString(), 
-                  label: `${cabina.nombre} - ${formatPrecio(cabina.precio || 0)}` 
-                }))}
-                required={true}
-                disabled={loading || cabinas.length === 0}
-                placeholder="Selecciona una cabaña"
-                touched={touchedFields.idCabana}
-                icon={<FaHome />}
-              />
+            {/* 3. Sede */}
+            <FormField
+              label="Sede"
+              name="idSede"
+              type="select"
+              value={newReserva.idSede}
+              onChange={handleSedeSelect}
+              onBlur={handleInputBlur}
+              error={formErrors.idSede}
+              success={formSuccess.idSede}
+              warning={formWarnings.idSede}
+              options={sedes.map(sede => ({
+                value: sede.idSede.toString(),
+                label: sede.nombreSede
+              }))}
+              required={true}
+              disabled={loading || sedes.length === 0}
+              placeholder="Selecciona una sede"
+              touched={touchedFields.idSede}
+              icon={<FaMapMarkerAlt />}
+            />
 
-              {/* Estado */}
-              <FormField
-                label="Estado"
-                name="idEstado"
-                type="select"
-                value={newReserva.idEstado}
+            {/* 4. Cabañas disponibles en la sede seleccionada */}
+            <FormField
+              label="Cabaña"
+              name="idCabana"
+              type="select"
+              value={newReserva.idCabana}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              error={formErrors.idCabana}
+              success={formSuccess.idCabana}
+              warning={formWarnings.idCabana}
+              options={(cabanasBySede.length > 0 ? cabanasBySede : []).map(cabina => ({
+                value: cabina.idCabana.toString(),
+                label: `${cabina.nombre} - ${formatPrecio(cabina.precio || 0)}`
+              }))}
+              required={true}
+              disabled={loading || !newReserva.idSede || cabanasBySede.length === 0}
+              placeholder={newReserva.idSede ? "Selecciona una cabaña" : "Primero selecciona una sede"}
+              touched={touchedFields.idCabana}
+              icon={<FaHome />}
+            />
+            {newReserva.idSede && cabanasBySede.length === 0 && (
+              <div style={warningValidationStyle}>
+                <FaInfoCircle size={12} />
+                No hay cabañas disponibles para esta sede
+              </div>
+            )}
+
+            {/* 5. Paquetes disponibles en la sede seleccionada (Opcional) */}
+            <div style={{ marginBottom: '15px' }}>
+              <label style={labelStyle}>
+                <FaBox style={{ marginRight: '8px' }} />
+                Paquete (Opcional)
+              </label>
+              <select
+                name="idPaquete"
+                value={newReserva.idPaquete}
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
-                error={formErrors.idEstado}
-                success={formSuccess.idEstado}
-                warning={formWarnings.idEstado}
-                options={estados.map(estado => ({ 
-                  value: estado.idEstado.toString(), 
-                  label: estado.nombreEstado 
-                }))}
-                required={true}
-                disabled={loading || (!isEditing && newReserva.idEstado === "2")}
-                placeholder="Selecciona un estado"
-                touched={touchedFields.idEstado}
-              />
+                style={{
+                  ...inputStyle,
+                  appearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E5939' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                  backgroundSize: '16px'
+                }}
+                disabled={loading || !newReserva.idSede}
+              >
+                <option value="">Sin paquete - $0.00</option>
+                {paquetesBySede.map(paquete => (
+                  <option key={paquete.idPaquete} value={paquete.idPaquete.toString()}>
+                    {paquete.nombrePaquete} - {formatPrecio(paquete.precioPaquete)}
+                  </option>
+                ))}
+              </select>
+              {!newReserva.idSede ? (
+                <div style={warningValidationStyle}>
+                  <FaInfoCircle size={12} />
+                  Primero selecciona una sede para ver los paquetes disponibles
+                </div>
+              ) : paquetesBySede.length === 0 && (
+                <div style={warningValidationStyle}>
+                  <FaInfoCircle size={12} />
+                  No hay paquetes disponibles para esta sede
+                </div>
+              )}
+            </div>
+
+            {/* 6. Servicios extras disponibles en la sede (Opcionales) */}
+            <div style={{ marginTop: '15px' }}>
+              <label style={labelStyle}>
+                Servicios Extras (Opcionales)
+              </label>
+              <div style={{
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                padding: '15px',
+                backgroundColor: '#fff',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                opacity: newReserva.idSede ? 1 : 0.6
+              }}>
+                {!newReserva.idSede ? (
+                  <div style={{ textAlign: 'center', color: '#666', padding: '20px', fontStyle: 'italic' }}>
+                    Selecciona primero una sede para ver los servicios disponibles
+                  </div>
+                ) : serviciosBySede.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#666', padding: '20px', fontStyle: 'italic' }}>
+                    No hay servicios disponibles para esta sede
+                  </div>
+                ) : (
+                  serviciosBySede.map(servicio => (
+                    <div key={servicio.idServicio} style={{
+                      marginBottom: '10px',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      backgroundColor: newReserva.serviciosSeleccionados.includes(servicio.idServicio.toString()) ? '#E8F5E8' : 'transparent',
+                      border: `1px solid ${newReserva.serviciosSeleccionados.includes(servicio.idServicio.toString()) ? '#679750' : '#eee'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => handleServicioChange(servicio.idServicio.toString())}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        width: '100%'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={newReserva.serviciosSeleccionados.includes(servicio.idServicio.toString())}
+                          onChange={() => handleServicioChange(servicio.idServicio.toString())}
+                          style={{ margin: 0 }}
+                          disabled={!newReserva.idSede}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: '#2E5939', fontWeight: '600', fontSize: '14px' }}>
+                            {servicio.nombreServicio}
+                          </div>
+                          <div style={{
+                            color: '#679750',
+                            fontSize: '13px',
+                            marginTop: '2px'
+                          }}>
+                            {formatPrecio(servicio.precioServicio)}
+                          </div>
+                          {servicio.descripcion && (
+                            <div style={{
+                              color: '#666',
+                              fontSize: '12px',
+                              marginTop: '4px',
+                              fontStyle: 'italic'
+                            }}>
+                              {servicio.descripcion}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              {newReserva.serviciosSeleccionados.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <div style={successValidationStyle}>
+                    <FaCheck size={12} />
+                    {newReserva.serviciosSeleccionados.length} servicio(s) seleccionado(s)
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Sección 2: Fechas */}
-          <div style={{ 
-            backgroundColor: '#F7F4EA', 
-            padding: '20px', 
-            borderRadius: '10px', 
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '20px',
+            borderRadius: '10px',
             marginBottom: '20px',
             border: '1px solid #679750'
           }}>
             <h3 style={{ color: '#2E5939', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <FaCalendarAlt /> Fechas de la Reserva
             </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px 20px' }}>
-              {/* Fecha Entrada */}
+           
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px' }}>
+              {/* 7. Fecha de Entrada */}
               <FormField
                 label="Fecha de Entrada"
                 name="fechaEntrada"
@@ -1822,9 +2309,10 @@ const GestionReserva = () => {
                 required={true}
                 disabled={loading}
                 touched={touchedFields.fechaEntrada}
+                icon={<FaCalendarAlt />}
               />
 
-              {/* Fecha Salida */}
+              {/* 8. Fecha de Salida */}
               <FormField
                 label="Fecha de Salida"
                 name="fechaReserva"
@@ -1838,339 +2326,107 @@ const GestionReserva = () => {
                 required={true}
                 disabled={loading}
                 touched={touchedFields.fechaReserva}
+                icon={<FaCalendarAlt />}
               />
+            </div>
 
-              {/* Fecha Registro */}
+            {/* 9. Fecha de Registro (Automática) */}
+            <div style={{ marginTop: '15px' }}>
               <FormField
                 label="Fecha de Registro"
                 name="fechaRegistro"
                 type="date"
                 value={newReserva.fechaRegistro}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
                 required={true}
                 disabled={true}
                 touched={touchedFields.fechaRegistro}
               />
+              <div style={{ fontSize: '12px', color: '#679750', marginTop: '4px' }}>
+                Esta fecha se establece automáticamente al día de hoy y no se puede modificar
+              </div>
             </div>
           </div>
 
-          {/* Sección 3: Servicios y Paquetes - CORREGIDA */}
-          <div style={{ 
-            backgroundColor: '#F7F4EA', 
-            padding: '20px', 
-            borderRadius: '10px', 
-            marginBottom: '20px',
-            border: '1px solid #679750'
-          }}>
-            <h3 style={{ color: '#2E5939', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <FaBox /> Servicios y Paquetes (Opcionales)
-            </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              {/* Paquetes - CORREGIDO - AHORA MUESTRA TODOS LOS PAQUETES */}
-              <div>
-                <label style={labelStyle}>
-                  <FaBox style={{ marginRight: '8px' }} />
-                  Paquetes Disponibles
-                  <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px', fontWeight: 'normal' }}>
-                    (Selecciona un paquete opcional)
-                  </span>
-                </label>
-                <div style={{ 
-                  border: '1px solid #ccc', 
-                  borderRadius: '8px', 
-                  padding: '15px',
-                  backgroundColor: '#fff',
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
-                  {paquetes.length === 0 ? (
-                    <div style={{ 
-                      textAlign: 'center', 
-                      color: '#666', 
-                      padding: '20px',
-                      fontStyle: 'italic'
-                    }}>
-                      No hay paquetes disponibles
-                    </div>
-                  ) : (
-                    paquetes.map(paquete => {
-                      const sedeNombre = getSedeNombre(paquete.idSede);
-                      return (
-                        <div key={paquete.idPaquete} style={{ 
-                          marginBottom: '10px',
-                          padding: '8px',
-                          borderRadius: '6px',
-                          backgroundColor: newReserva.idPaquete === paquete.idPaquete.toString() ? '#E8F5E8' : 'transparent',
-                          border: `1px solid ${newReserva.idPaquete === paquete.idPaquete.toString() ? '#679750' : '#eee'}`,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onClick={() => handlePaqueteChange(paquete.idPaquete.toString())}
-                        >
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px',
-                            width: '100%'
-                          }}>
-                            <input
-                              type="radio"
-                              name="paquete"
-                              checked={newReserva.idPaquete === paquete.idPaquete.toString()}
-                              onChange={() => handlePaqueteChange(paquete.idPaquete.toString())}
-                              style={{ margin: 0 }}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ color: '#2E5939', fontWeight: '600', fontSize: '14px' }}>
-                                {paquete.nombrePaquete}
-                              </div>
-                              <div style={{ 
-                                color: '#679750', 
-                                fontSize: '13px',
-                                marginTop: '2px'
-                              }}>
-                                {formatPrecio(paquete.precioPaquete)}
-                              </div>
-                              <div style={{ 
-                                color: '#666', 
-                                fontSize: '12px',
-                                marginTop: '2px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}>
-                                <FaMapMarkerAlt size={10} />
-                                {sedeNombre}
-                              </div>
-                              {paquete.descripcion && (
-                                <div style={{ 
-                                  color: '#666', 
-                                  fontSize: '11px',
-                                  marginTop: '4px',
-                                  fontStyle: 'italic'
-                                }}>
-                                  {paquete.descripcion}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                {newReserva.idPaquete && (
-                  <div style={{ marginTop: '10px' }}>
-                    <div style={successValidationStyle}>
-                      <FaCheck size={12} />
-                      Paquete seleccionado: {paquetes.find(p => p.idPaquete === parseInt(newReserva.idPaquete))?.nombrePaquete}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Servicios Extras - MEJORADO */}
-              <div>
-                <label style={labelStyle}>
-                  Servicios Extras
-                  <span style={{ color: '#679750', fontSize: '0.8rem', marginLeft: '8px', fontWeight: 'normal' }}>
-                    (Selecciona los servicios extras que desees)
-                  </span>
-                </label>
-                <div style={{ 
-                  border: '1px solid #ccc', 
-                  borderRadius: '8px', 
-                  padding: '15px',
-                  backgroundColor: '#fff',
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
-                  {servicios.length === 0 ? (
-                    <div style={{ textAlign: 'center', color: '#666', padding: '20px', fontStyle: 'italic' }}>
-                      No hay servicios disponibles
-                    </div>
-                  ) : (
-                    servicios.map(servicio => (
-                      <div key={servicio.idServicio} style={{ 
-                        marginBottom: '10px',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        backgroundColor: newReserva.serviciosSeleccionados.includes(servicio.idServicio.toString()) ? '#E8F5E8' : 'transparent',
-                        border: `1px solid ${newReserva.serviciosSeleccionados.includes(servicio.idServicio.toString()) ? '#679750' : '#eee'}`,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onClick={() => handleServicioChange(servicio.idServicio.toString())}
-                      >
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '8px',
-                          width: '100%'
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={newReserva.serviciosSeleccionados.includes(servicio.idServicio.toString())}
-                            onChange={() => handleServicioChange(servicio.idServicio.toString())}
-                            style={{ margin: 0 }}
-                          />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ color: '#2E5939', fontWeight: '600', fontSize: '14px' }}>
-                              {servicio.nombreServicio}
-                            </div>
-                            <div style={{ 
-                              color: '#679750', 
-                              fontSize: '13px',
-                              marginTop: '2px'
-                            }}>
-                              {formatPrecio(servicio.precioServicio)}
-                            </div>
-                            {servicio.descripcion && (
-                              <div style={{ 
-                                color: '#666', 
-                                fontSize: '12px',
-                                marginTop: '4px',
-                                fontStyle: 'italic'
-                              }}>
-                                {servicio.descripcion}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                {newReserva.serviciosSeleccionados.length > 0 && (
-                  <div style={{ marginTop: '10px' }}>
-                    <div style={successValidationStyle}>
-                      <FaCheck size={12} />
-                      {newReserva.serviciosSeleccionados.length} servicio(s) seleccionado(s)
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Información de selección actual */}
-            {(newReserva.idPaquete || newReserva.serviciosSeleccionados.length > 0) && (
-              <div style={{ 
-                marginTop: '15px', 
-                padding: '15px', 
-                backgroundColor: '#E8F5E8', 
-                borderRadius: '8px',
-                border: '1px solid #679750'
-              }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#2E5939', fontSize: '14px' }}>Selección Actual:</h4>
-                <div style={{ fontSize: '13px', color: '#2E5939' }}>
-                  {newReserva.idPaquete && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <span>Paquete:</span>
-                      <span style={{ fontWeight: '600' }}>
-                        {paquetes.find(p => p.idPaquete === parseInt(newReserva.idPaquete))?.nombrePaquete}
-                      </span>
-                    </div>
-                  )}
-                  {newReserva.serviciosSeleccionados.length > 0 && (
-                    <div>
-                      <div style={{ marginBottom: '5px' }}>Servicios:</div>
-                      {newReserva.serviciosSeleccionados.map(servicioId => {
-                        const servicio = servicios.find(s => s.idServicio === parseInt(servicioId));
-                        return servicio ? (
-                          <div key={servicioId} style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            marginBottom: '3px',
-                            paddingLeft: '10px'
-                          }}>
-                            <span>• {servicio.nombreServicio}</span>
-                            <span>{formatPrecio(servicio.precioServicio)}</span>
-                          </div>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sección 4: Información de Pago */}
-          <div style={{ 
-            backgroundColor: '#F7F4EA', 
-            padding: '20px', 
-            borderRadius: '10px', 
+          {/* Sección 3: Información de Pago */}
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '20px',
+            borderRadius: '10px',
             marginBottom: '20px',
             border: '1px solid #679750'
           }}>
             <h3 style={{ color: '#2E5939', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <FaCreditCard /> Información de Pago
             </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '15px' }}>
-              {/* Método de Pago */}
+           
+            {/* 10. Método de Pago */}
+            <div style={{ marginBottom: '15px' }}>
               <FormField
                 label="Método de Pago"
                 name="idMetodoPago"
                 type="select"
                 value={newReserva.idMetodoPago}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                error={formErrors.idMetodoPago}
-                success={formSuccess.idMetodoPago}
-                warning={formWarnings.idMetodoPago}
-                options={metodosPago.map(metodo => ({ 
-                  value: metodo.idMetodoPago.toString(), 
-                  label: metodo.nombreMetodoPago 
+                options={metodosPago.map(metodo => ({
+                  value: metodo.idMetodoPago.toString(),
+                  label: metodo.nombreMetodoPago
                 }))}
                 required={true}
-                disabled={loading || metodosPago.length === 0}
-                placeholder="Selecciona un método de pago"
-                touched={touchedFields.idMetodoPago}
+                disabled={true}
+                placeholder="Método de pago"
                 icon={<FaCreditCard />}
               />
-
-              {/* Botón para calcular montos */}
-              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={calcularMontos}
-                  disabled={loading}
-                  style={{
-                    backgroundColor: "#679750",
-                    color: "white",
-                    padding: "12px 20px",
-                    border: "none",
-                    borderRadius: 8,
-                    cursor: loading ? "not-allowed" : "pointer",
-                    fontWeight: "600",
-                    width: '100%',
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                    transition: "all 0.3s ease",
-                  }}
-                  onMouseOver={(e) => {
-                    if (!loading) {
-                      e.target.style.backgroundColor = "#2E5939";
-                      e.target.style.transform = "translateY(-2px)";
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!loading) {
-                      e.target.style.backgroundColor = "#679750";
-                      e.target.style.transform = "translateY(0)";
-                    }
-                  }}
-                >
-                  <FaSync style={{ marginRight: '8px' }} />
-                  Calcular Montos
-                </button>
+              <div style={{ fontSize: '12px', color: '#679750', marginTop: '4px' }}>
+                Actualmente solo disponible: Transferencia
               </div>
             </div>
 
-            {/* Campos de montos */}
+            {/* Botón para calcular montos */}
+            <div style={{ marginBottom: '15px' }}>
+              <button
+                type="button"
+                onClick={calcularMontos}
+                disabled={loading || !newReserva.idCabana}
+                style={{
+                  backgroundColor: !newReserva.idCabana ? "#ccc" : "#679750",
+                  color: "white",
+                  padding: "12px 20px",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: loading || !newReserva.idCabana ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  width: '100%',
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease",
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onMouseOver={(e) => {
+                  if (!loading && newReserva.idCabana) {
+                    e.target.style.backgroundColor = "#2E5939";
+                    e.target.style.transform = "translateY(-2px)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading && newReserva.idCabana) {
+                    e.target.style.backgroundColor = "#679750";
+                    e.target.style.transform = "translateY(0)";
+                  }
+                }}
+              >
+                <FaSync /> Calcular Montos
+              </button>
+              <div style={{ fontSize: '12px', color: '#679750', marginTop: '4px', textAlign: 'center' }}>
+                Haz clic para calcular el total basado en la cabaña, paquete y servicios seleccionados
+              </div>
+            </div>
+
+            {/* Campos de montos calculados */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px 20px' }}>
+              {/* 11. Monto Total */}
               <FormField
                 label="Monto Total"
                 name="montoTotal"
@@ -2182,6 +2438,7 @@ const GestionReserva = () => {
                 icon={<FaMoneyBillAlt />}
               />
 
+              {/* 12. Abono (50%) */}
               <FormField
                 label="Abono (50%)"
                 name="abono"
@@ -2193,6 +2450,7 @@ const GestionReserva = () => {
                 icon={<FaMoneyBillAlt />}
               />
 
+              {/* 13. Restante */}
               <FormField
                 label="Restante"
                 name="restante"
@@ -2205,16 +2463,16 @@ const GestionReserva = () => {
               />
             </div>
 
-            {/* Resumen de precios */}
+            {/* Resumen de precios detallado */}
             {(newReserva.idCabana || newReserva.idPaquete || newReserva.serviciosSeleccionados.length > 0) && (
-              <div style={{ 
-                marginTop: '15px', 
-                padding: '15px', 
-                backgroundColor: '#E8F5E8', 
+              <div style={{
+                marginTop: '15px',
+                padding: '15px',
+                backgroundColor: '#E8F5E8',
                 borderRadius: '8px',
                 border: '1px solid #679750'
               }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#2E5939', fontSize: '14px' }}>Resumen de Precios:</h4>
+                <h4 style={{ margin: '0 0 10px 0', color: '#2E5939', fontSize: '14px' }}>Desglose de Precios:</h4>
                 <div style={{ fontSize: '13px', color: '#2E5939' }}>
                   {newReserva.idCabana && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
@@ -2276,7 +2534,7 @@ const GestionReserva = () => {
                 }
               }}
             >
-              {loading ? "Guardando..." : 
+              {loading ? "Guardando..." :
                (isEditing ? "Actualizar Reserva" : "Crear Reserva")}
             </button>
             <button
@@ -2308,18 +2566,18 @@ const GestionReserva = () => {
   // ===============================================
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
-      
+     
       {/* Alerta Mejorada */}
       {showAlert && (
         <div style={getAlertStyle(alertType)}>
           {getAlertIcon(alertType)}
           <span style={{ flex: 1 }}>{alertMessage}</span>
-          <button 
+          <button
             onClick={() => setShowAlert(false)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'inherit', 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
               cursor: 'pointer',
               fontSize: '16px',
               padding: 0,
@@ -2447,7 +2705,7 @@ const GestionReserva = () => {
               Total Reservas
             </div>
           </div>
-          
+         
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -2465,7 +2723,7 @@ const GestionReserva = () => {
               Pendientes
             </div>
           </div>
-          
+         
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -2504,17 +2762,17 @@ const GestionReserva = () => {
         </div>
       )}
 
-      {/* Barra de búsqueda y filtros - MEJORADO CON ESPACIADO */}
-      <div style={{ 
+      {/* Barra de búsqueda y filtros */}
+      <div style={{
         marginBottom: '20px',
         backgroundColor: '#fff',
         borderRadius: '10px',
         padding: '20px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          gap: '15px', 
+        <div style={{
+          display: 'flex',
+          gap: '15px',
           alignItems: 'center',
           flexWrap: 'wrap',
           marginBottom: showFilters ? '15px' : '0'
@@ -2671,11 +2929,11 @@ const GestionReserva = () => {
               <div>
                 <label style={labelStyle}>Monto Mínimo</label>
                 <div style={{ position: 'relative' }}>
-                  <FaDollarSign style={{ 
-                    position: "absolute", 
-                    left: 12, 
-                    top: "50%", 
-                    transform: "translateY(-50%)", 
+                  <FaDollarSign style={{
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
                     color: "#2E5939",
                     fontSize: '14px'
                   }} />
@@ -2698,11 +2956,11 @@ const GestionReserva = () => {
               <div>
                 <label style={labelStyle}>Monto Máximo</label>
                 <div style={{ position: 'relative' }}>
-                  <FaDollarSign style={{ 
-                    position: "absolute", 
-                    left: 12, 
-                    top: "50%", 
-                    transform: "translateY(-50%)", 
+                  <FaDollarSign style={{
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
                     color: "#2E5939",
                     fontSize: '14px'
                   }} />
@@ -2742,11 +3000,11 @@ const GestionReserva = () => {
       </div>
 
       {/* Formulario de agregar/editar */}
-      {showForm && renderFormularioReserva()}
+      {renderFormularioReserva()}
 
       {/* Modal de detalles */}
       {showDetails && currentReserva && (
-        <div style={modalOverlayStyle}>
+        <div style={modalOverlayStyle(showDetails)}>
           <div style={detailsModalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ margin: 0, color: "#2E5939", textAlign: 'center' }}>Detalles de la Reserva #{currentReserva.idReserva}</h2>
@@ -2764,23 +3022,23 @@ const GestionReserva = () => {
                 <FaTimes />
               </button>
             </div>
-            
+           
             <div>
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>ID Reserva</div>
                 <div style={detailValueStyle}>#{currentReserva.idReserva}</div>
               </div>
-              
+             
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Usuario</div>
                 <div style={detailValueStyle}>{getUsuarioNombre(currentReserva.idUsuario)}</div>
               </div>
-              
+             
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Cabaña</div>
                 <div style={detailValueStyle}>{getCabinaNombre(currentReserva.idCabana)}</div>
               </div>
-              
+             
               <div style={detailItemStyle}>
                 <div style={detailLabelStyle}>Sede</div>
                 <div style={detailValueStyle}>{getSedeNombre(currentReserva.idSede)}</div>
@@ -2837,14 +3095,17 @@ const GestionReserva = () => {
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           padding: '8px',
-                          backgroundColor: '#f8f9fa',
-                          borderRadius: '6px',
-                          marginBottom: '5px'
+                          backgroundColor: '#f0f8ff',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(0, 123, 255, 0.1)',
+                          marginBottom: '8px'
                         }}>
-                          <span>{getServicioNombre(parseInt(servicioId))}</span>
-                          <span style={{ color: '#679750', fontWeight: '600' }}>
-                            {formatPrecio(servicios.find(s => s.idServicio === parseInt(servicioId))?.precioServicio || 0)}
-                          </span>
+                          <div>
+                            <div style={{ fontWeight: '500' }}>{getServicioNombre(servicioId)}</div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>
+                              Precio: {formatPrecio(servicios.find(s => s.idServicio === servicioId)?.precioServicio || 0)}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2859,8 +3120,8 @@ const GestionReserva = () => {
                 <div style={detailItemStyle}>
                   <div style={detailLabelStyle}>Historial de Abonos</div>
                   <div style={detailValueStyle}>
-                    <div style={{ 
-                      display: 'grid', 
+                    <div style={{
+                      display: 'grid',
                       gap: '8px'
                     }}>
                       {currentReserva.abonos.map((abono, idx) => (
@@ -2879,8 +3140,8 @@ const GestionReserva = () => {
                               {getMetodoPagoNombre(abono.idMetodoPago)} - {abono.verificacion}
                             </div>
                           </div>
-                          <span style={{ 
-                            color: '#007bff', 
+                          <span style={{
+                            color: '#007bff',
                             fontWeight: 'bold',
                             fontSize: '14px'
                           }}>
@@ -2889,9 +3150,9 @@ const GestionReserva = () => {
                         </div>
                       ))}
                     </div>
-                    <div style={{ 
-                      padding: '12px', 
-                      backgroundColor: '#E8F5E8', 
+                    <div style={{
+                      padding: '12px',
+                      backgroundColor: '#E8F5E8',
                       borderRadius: '8px',
                       border: '1px solid #679750',
                       textAlign: 'center',
@@ -2967,15 +3228,15 @@ const GestionReserva = () => {
 
       {/* Modal de Confirmación de Eliminación */}
       {showDeleteConfirm && reservaToDelete && (
-        <div style={modalOverlayStyle}>
+        <div style={modalOverlayStyle(showDeleteConfirm)}>
           <div style={{ ...modalContentStyle, maxWidth: 450, textAlign: 'center' }}>
             <h3 style={{ marginBottom: 20, color: "#2E5939" }}>Confirmar Eliminación</h3>
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
               ¿Estás seguro de eliminar la reserva del usuario "<strong>{getUsuarioNombre(reservaToDelete.idUsuario)}</strong>"?
             </p>
-            
-            <div style={{ 
-              backgroundColor: '#fff3cd', 
+           
+            <div style={{
+              backgroundColor: '#fff3cd',
               border: '1px solid #ffeaa7',
               borderRadius: '8px',
               padding: '15px',
@@ -3039,6 +3300,9 @@ const GestionReserva = () => {
         </div>
       )}
 
+      {/* Modal de Abonos */}
+      {renderAbonosModal()}
+
       {/* Contenido principal */}
       <div style={{
         backgroundColor: '#fff',
@@ -3048,9 +3312,9 @@ const GestionReserva = () => {
       }}>
         {/* Loading */}
         {loading && (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "40px", 
+          <div style={{
+            textAlign: "center",
+            padding: "40px",
             color: "#2E5939"
           }}>
             <div style={{ fontSize: '18px', marginBottom: '10px' }}>
@@ -3112,7 +3376,7 @@ const GestionReserva = () => {
                 </tr>
               ) : (
                 paginatedReservas.map((reserva) => (
-                  <tr key={reserva.idReserva} style={{ 
+                  <tr key={reserva.idReserva} style={{
                     borderBottom: "1px solid #eee",
                   }}>
                     <td style={{ padding: "15px", fontWeight: "500" }}>
@@ -3154,6 +3418,13 @@ const GestionReserva = () => {
                           title="Ver Detalles"
                         >
                           <FaEye />
+                        </button>
+                        <button
+                          onClick={() => handleViewAbonos(reserva)}
+                          style={btnAccion("#F7F4EA", "#4caf50")}
+                          title="Ver Abonos"
+                        >
+                          <FaMoneyBillWave />
                         </button>
                         <button
                           onClick={() => handleEdit(reserva)}

@@ -173,22 +173,11 @@ function Sidebar() {
               </ul>
             </details>
           </li>
-
-          {/* 🆕 Ventas (debajo de Compras) */}
           <li>
-            <details>
-              <summary className="submenu-toggle" aria-haspopup="true" aria-expanded="false">
-                <FaShoppingBag /> &nbsp; Ventas
-              </summary>
-              <ul className="submenu">
-                <li>
-                  <Link to="/ventas/ventas">
-                    <FaShoppingBag /> &nbsp; Ventas
+                  <Link to="/ventas">
+                    <FaShoppingCart /> &nbsp; Ventas
                   </Link>
                 </li>
-              </ul>
-            </details>
-          </li>
         </ul>
       </nav>
 

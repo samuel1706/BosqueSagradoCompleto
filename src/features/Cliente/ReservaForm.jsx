@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -8,9 +9,69 @@ import {
   FaHeart, FaCouch, FaUtensils, FaWifi, FaCar, FaSnowflake,
   FaFire, FaShower, FaTree, FaSun, FaMoon, FaPlus, FaMinus,
   FaIdCard, FaUpload, FaImage, FaFileInvoiceDollar, FaReceipt,
-  FaInfoCircle
+  FaInfoCircle, FaChair, FaBed, FaBath, FaWineGlassAlt
 } from "react-icons/fa";
 import { getUserForReservation, isAuthenticated, getUserInfo } from "../../utils/auth";
+
+// ===============================================
+// CONFIGURACIÓN DE CLOUDINARY - USANDO TU CLOUD NAME
+// ===============================================
+const CLOUDINARY_CONFIG = {
+  cloudName: 'dou17w0m0', // Tu cloud name de Cloudinary
+  defaultFolder: 'cabanas',
+  defaultTransformation: 'w_400,h_300,c_fill,q_auto,f_auto'
+};
+
+// Función para construir URLs de Cloudinary optimizadas
+const getCloudinaryImageUrl = (imagePath, options = {}) => {
+  const { cloudName, defaultTransformation } = CLOUDINARY_CONFIG;
+  const { width = 400, height = 300, crop = 'fill', quality = 'auto' } = options;
+  
+  // Si no hay imagen, retornar null
+  if (!imagePath || imagePath.trim() === '') {
+    return null;
+  }
+  
+  // Si ya es una URL completa (http o https)
+  if (imagePath.startsWith('http')) {
+    // Si ya es una URL de Cloudinary, optimizarla
+    if (imagePath.includes('res.cloudinary.com')) {
+      // Asegurarse de que tenga las transformaciones correctas
+      const urlParts = imagePath.split('/upload/');
+      if (urlParts.length === 2) {
+        return `${urlParts[0]}/upload/${defaultTransformation}/${urlParts[1]}`;
+      }
+    }
+    return imagePath;
+  }
+  
+  // Si es solo un nombre de archivo sin extensión o path
+  const hasExtension = /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(imagePath);
+  
+  // Si incluye una ruta completa de Cloudinary (con version)
+  if (imagePath.startsWith('v')) {
+    // Eliminar cualquier prefijo "v1/" duplicado
+    let cleanPath = imagePath.replace(/^v1\//, '').replace(/^\//, '');
+    return `https://res.cloudinary.com/${cloudName}/image/upload/${defaultTransformation}/${cleanPath}`;
+  }
+  
+  // Si es solo un nombre de archivo
+  if (!hasExtension && !imagePath.includes('/')) {
+    // Intentar con extensiones comunes
+    const possibleExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    for (const ext of possibleExtensions) {
+      const testPath = `v1/${CLOUDINARY_CONFIG.defaultFolder}/${imagePath}${ext}`;
+      // En una implementación real, aquí verificarías si existe
+      return `https://res.cloudinary.com/${cloudName}/image/upload/${defaultTransformation}/${testPath}`;
+    }
+  }
+  
+  // Por defecto, usar la imagen de fallback
+  return null;
+};
+
+// Imagen de fallback
+const FALLBACK_IMAGE = "https://res.cloudinary.com/dou17w0m0/image/upload/w_400,h_300,c_fill,q_auto/v1/cabanas/default_cabin.jpg";
 
 // ===============================================
 // ESTILOS PREMIUM - OPTIMIZADOS
@@ -129,7 +190,9 @@ const API_URLS = {
   SERVICIO_POR_PAQUETE: `${API_BASE_URL}/ServicioPorPaquete`,
   SEDES_POR_SERVICIO: `${API_BASE_URL}/SedesPorServicio`,
   USUARIOS: `${API_BASE_URL}/Usuarios`,
-  ABONOS: `${API_BASE_URL}/Abonos`
+  ABONOS: `${API_BASE_URL}/Abonos`,
+  IMG_CABANA: `${API_BASE_URL}/ImgCabana`, // NUEVO: Para obtener imágenes de cabañas
+  IMG_PAQUETE: `${API_BASE_URL}/ImgPaquete` // NUEVO: Para obtener imágenes de paquetes
 };
 
 // ===============================================
@@ -149,7 +212,7 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
     } else {
       document.body.style.overflow = 'auto';
     }
-    
+   
     return () => {
       document.body.style.overflow = 'auto';
     };
@@ -498,7 +561,7 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                       fontWeight: '700',
                       marginBottom: '4px',
                       fontSize: "14px",
-                      wordBreak: 'break-word'
+                      wordBreak: "break-word"
                     }}>
                       {file ? 'Comprobante seleccionado' : 'Haz clic para subir comprobante'}
                     </div>
@@ -706,7 +769,7 @@ const AbonoModal = ({ isOpen, onClose, onSubmit, defaultMonto = 0, metodosPago =
                   lineHeight: "1.4",
                   margin: 0,
                   paddingLeft: "14px",
-                  wordBreak: 'break-word'
+                  wordBreak: "break-word"
                 }}>
                   <li>Tu reserva se confirmará tras verificar el comprobante</li>
                   <li>Proceso de verificación: 24-48 horas</li>
@@ -732,19 +795,27 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
   const diasAsociados = paqueteSeleccionado && paqueteSeleccionado.dias ? parseInt(paqueteSeleccionado.dias) : calcularDiasEstadia();
   const personasAsociadas = paqueteSeleccionado && paqueteSeleccionado.personas ? paqueteSeleccionado.personas : (cabanaSeleccionada ? cabanaSeleccionada.capacidad : 1);
 
-  // CORREGIDO: Calcular el total general con impuestos incluidos
-  const subtotalAlojamiento = formData.montoTotal || 0;
-  const totalServiciosExtras = serviciosSeleccionados.reduce((total, servicio) =>
-    total + (servicio.precioServicio * diasAsociados), 0
+  // Usar montoAlojamiento (base) y calcular subtotal/imapuestos localmente para mostrar desglose preciso
+  const montoAlojamiento = Number(formData.montoAlojamiento || 0);
+ 
+  // CORRECCIÓN: Calcular totalServiciosSeleccionados aquí mismo
+  const totalServiciosSeleccionados = serviciosSeleccionados.reduce((total, servicio) =>
+    total + (Number(servicio.precioServicio || 0) * diasAsociados), 0
   );
-  
-  const subtotalGeneral = subtotalAlojamiento + totalServiciosExtras;
-  const impuestos = subtotalGeneral * 0.19; // 19% de impuestos
-  const totalGeneralConImpuestos = subtotalGeneral + impuestos;
-  
-  // CORREGIDO: Calcular el 50% del TOTAL con impuestos
+
+  const subtotalGeneral = montoAlojamiento + totalServiciosSeleccionados;
+  const impuestos = Math.round(subtotalGeneral * 0.19);
+  const totalGeneralConImpuestos = Math.round(subtotalGeneral + impuestos);
+ 
   const abonoInicial = Math.round(totalGeneralConImpuestos * 0.5);
   const saldoRestante = totalGeneralConImpuestos - abonoInicial;
+
+  // Obtener imagen de la cabaña o paquete
+  const imagenPrincipal = cabanaSeleccionada ? 
+    (cabanaSeleccionada.imagenes && cabanaSeleccionada.imagenes.length > 0 ? 
+      getCloudinaryImageUrl(cabanaSeleccionada.imagenes[0]) : FALLBACK_IMAGE) :
+    (paqueteSeleccionado && paqueteSeleccionado.imagen ? 
+      getCloudinaryImageUrl(paqueteSeleccionado.imagen) : FALLBACK_IMAGE);
 
   return (
     <div style={{
@@ -787,6 +858,45 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           Detalles y costos de tu experiencia
         </p>
       </div>
+
+      {/* Imagen del alojamiento */}
+      {(cabanaSeleccionada || paqueteSeleccionado) && imagenPrincipal && (
+        <div style={{
+          width: '100%',
+          height: '180px',
+          borderRadius: '14px',
+          marginBottom: '18px',
+          overflow: 'hidden',
+          position: 'relative'
+        }}>
+          <img
+            src={imagenPrincipal}
+            alt={cabanaSeleccionada ? cabanaSeleccionada.nombre : paqueteSeleccionado.nombrePaquete}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transition: 'transform 0.3s ease'
+            }}
+            onError={(e) => {
+              e.target.src = FALLBACK_IMAGE;
+            }}
+          />
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            backgroundColor: 'rgba(46, 89, 57, 0.9)',
+            color: 'white',
+            padding: '4px 10px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: '700'
+          }}>
+            {personasAsociadas} persona{personasAsociadas !== 1 ? 's' : ''}
+          </div>
+        </div>
+      )}
 
       {/* Información de duración y personas */}
       {(paqueteSeleccionado || (formData.fechaEntrada && formData.fechaSalida)) && (
@@ -838,7 +948,7 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             fontWeight: "700",
             wordBreak: 'break-word'
           }}>
-            Alojamiento
+            {cabanaSeleccionada ? 'Cabaña' : 'Paquete'}
           </h4>
           <div style={{
             display: 'flex',
@@ -851,34 +961,20 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             width: '100%',
             boxSizing: 'border-box'
           }}>
-            {cabanaSeleccionada && cabanaSeleccionada.imagen ? (
-              <img 
-                src={cabanaSeleccionada.imagen} 
-                alt={cabanaSeleccionada.nombre}
-                style={{
-                  width: '45px',
-                  height: '45px',
-                  borderRadius: "8px",
-                  objectFit: 'cover',
-                  flexShrink: 0
-                }}
-              />
-            ) : (
-              <div style={{
-                width: '45px',
-                height: '45px',
-                borderRadius: "8px",
-                backgroundColor: '#2E5939',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: "18px",
-                flexShrink: 0
-              }}>
-                {cabanaSeleccionada ? <FaHome /> : <FaStar />}
-              </div>
-            )}
+            <div style={{
+              width: '45px',
+              height: '45px',
+              borderRadius: "8px",
+              backgroundColor: '#2E5939',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: "18px",
+              flexShrink: 0
+            }}>
+              {cabanaSeleccionada ? <FaHome /> : <FaStar />}
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
                 fontWeight: "700",
@@ -954,7 +1050,7 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
         </h4>
 
         {/* Subtotal alojamiento */}
-        {subtotalAlojamiento > 0 && (
+        {montoAlojamiento > 0 && (
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -966,7 +1062,7 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
           }}>
             <span style={{ color: '#2E5939', fontSize: "13px", wordBreak: 'break-word' }}>Subtotal alojamiento</span>
             <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
-              {formatCurrency(subtotalAlojamiento)}
+              {formatCurrency(montoAlojamiento)}
             </span>
           </div>
         )}
@@ -1001,7 +1097,7 @@ const ResumenReserva = ({ formData, calcularDiasEstadia, formatCurrency, datosRe
             }}>
               <span style={{ color: '#2E5939', fontSize: "13px", wordBreak: 'break-word' }}>Total servicios</span>
               <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
-                +{formatCurrency(totalServiciosExtras)}
+                +{formatCurrency(totalServiciosSeleccionados)}
               </span>
             </div>
           </div>
@@ -1229,215 +1325,227 @@ const StepIndicator = ({ currentStep, totalSteps, steps }) => (
   </div>
 );
 
-// Componente de tarjeta de selección premium - MODIFICADO PARA MOSTRAR IMÁGENES REALES
+// Componente de tarjeta de selección premium - MODIFICADO PARA MOSTRAR IMÁGENES DE CLOUDINARY
 const SelectionCard = ({
   title,
   description,
   price,
-  image,
+  imageUrl, // CAMBIADO: Ahora recibe imageUrl en lugar de image
   isSelected,
   onSelect,
   features = [],
   popular = false,
   capacity = 2,
   disabled = false,
-  imageUrl = null // Nuevo prop para imagen real
-}) => (
-  <div
-    onClick={disabled ? null : onSelect}
-    style={{
-      border: isSelected ? '3px solid #2E5939' : '2px solid #E8F0E8',
-      borderRadius: '18px',
-      padding: '24px',
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-      backgroundColor: disabled ? '#f5f5f5' : (isSelected ? '#F9FBFA' : 'white'),
-      position: 'relative',
-      transform: isSelected ? 'translateY(-6px) scale(1.02)' : 'translateY(0)',
-      boxShadow: isSelected ? '0 20px 40px rgba(46, 89, 57, 0.15)' : '0 6px 25px rgba(0,0,0,0.08)',
-      opacity: disabled ? 0.6 : 1,
-      width: '100%',
-      boxSizing: 'border-box',
-      maxWidth: '100%'
-    }}
-    onMouseEnter={(e) => {
-      if (!isSelected && !disabled) {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.12)';
-      }
-    }}
-    onMouseLeave={(e) => {
-      if (!isSelected && !disabled) {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.08)';
-      }
-    }}
-  >
-    {popular && (
-      <div style={{
-        position: 'absolute',
-        top: '-10px',
-        right: '18px',
-        backgroundColor: '#FFA000',
-        color: 'white',
-        padding: "6px 16px",
-        borderRadius: '20px',
-        fontSize: "11px",
-        fontWeight: "800",
-        textTransform: 'uppercase',
-        boxShadow: '0 3px 12px rgba(255, 160, 0, 0.25)',
-        zIndex: 2,
-        maxWidth: 'calc(100% - 36px)',
-        wordBreak: 'break-word'
-      }}>
-        ⭐ Más Popular
-      </div>
-    )}
-   
-    {disabled && (
-      <div style={{
-        position: 'absolute',
-        top: '-10px',
-        left: '18px',
-        backgroundColor: '#f44336',
-        color: 'white',
-        padding: "6px 14px",
-        borderRadius: '20px',
-        fontSize: "11px",
-        fontWeight: "800",
-        textTransform: 'uppercase',
-        boxShadow: '0 3px 12px rgba(244, 67, 54, 0.25)',
-        zIndex: 2,
-        maxWidth: 'calc(100% - 36px)',
-        wordBreak: 'break-word'
-      }}>
-        No Disponible
-      </div>
-    )}
-   
-    <div style={{
-      width: '100%',
-      height: '180px', // Altura aumentada para mejor visualización de imágenes
-      borderRadius: "14px",
-      marginBottom: "18px",
-      background: disabled
-        ? 'linear-gradient(135deg, #cccccc 0%, #999999 100%)'
-        : imageUrl 
-          ? `url(${imageUrl})`
-          : 'linear-gradient(135deg, #2E5939 0%, #679750 100%)',
-      backgroundSize: imageUrl ? 'cover' : 'auto',
-      backgroundPosition: imageUrl ? 'center' : 'center',
-      backgroundRepeat: 'no-repeat',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: 'white',
-      fontSize: "48px",
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Mostrar imagen o icono según corresponda */}
-      {!imageUrl && image}
-      <div style={{
-        position: 'absolute',
-        bottom: "10px",
-        right: "10px",
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: "4px 10px",
+  type = "cabin" // "cabin" o "package"
+}) => {
+  const [imageError, setImageError] = useState(false);
+  
+  // Usar imagen de fallback si hay error
+  const finalImageUrl = imageError || !imageUrl ? FALLBACK_IMAGE : imageUrl;
+
+  return (
+    <div
+      onClick={disabled ? null : onSelect}
+      style={{
+        border: isSelected ? '3px solid #2E5939' : '2px solid #E8F0E8',
         borderRadius: '18px',
-        fontSize: "11px",
-        fontWeight: "700",
-        color: 'white',
-        backdropFilter: 'blur(8px)',
-        maxWidth: 'calc(100% - 20px)',
-        wordBreak: 'break-word'
-      }}>
-        {capacity} personas
-      </div>
-      {/* Overlay para mejorar legibilidad del texto sobre la imagen */}
-      {imageUrl && (
+        padding: '24px',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        backgroundColor: disabled ? '#f5f5f5' : (isSelected ? '#F9FBFA' : 'white'),
+        position: 'relative',
+        transform: isSelected ? 'translateY(-6px) scale(1.02)' : 'translateY(0)',
+        boxShadow: isSelected ? '0 20px 40px rgba(46, 89, 57, 0.15)' : '0 6px 25px rgba(0,0,0,0.08)',
+        opacity: disabled ? 0.6 : 1,
+        width: '100%',
+        boxSizing: 'border-box',
+        maxWidth: '100%'
+      }}
+      onMouseEnter={(e) => {
+        if (!isSelected && !disabled) {
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.12)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected && !disabled) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.08)';
+        }
+      }}
+    >
+      {popular && (
         <div style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.3))'
-        }} />
+          top: '-10px',
+          right: '18px',
+          backgroundColor: '#FFA000',
+          color: 'white',
+          padding: "6px 16px",
+          borderRadius: '20px',
+          fontSize: "11px",
+          fontWeight: "800",
+          textTransform: 'uppercase',
+          boxShadow: '0 3px 12px rgba(255, 160, 0, 0.25)',
+          zIndex: 2,
+          maxWidth: 'calc(100% - 36px)',
+          wordBreak: 'break-word'
+        }}>
+          ⭐ Más Popular
+        </div>
       )}
-    </div>
-   
-    <h4 style={{
-      margin: '0 0 10px 0',
-      color: disabled ? '#999' : '#2E5939',
-      fontSize: "18px",
-      fontWeight: "800",
-      wordBreak: 'break-word'
-    }}>
-      {title}
-    </h4>
-   
-    <p style={{
-      margin: '0 0 18px 0',
-      color: disabled ? '#bbb' : '#679750',
-      fontSize: "14px",
-      lineHeight: "1.5",
-      wordBreak: 'break-word'
-    }}>
-      {description}
-    </p>
-   
-    {features.length > 0 && (
-      <div style={{ marginBottom: "18px", width: '100%' }}>
-        {features.map((feature, index) => (
-          <div key={index} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: "8px",
-            marginBottom: "6px",
-            fontSize: "13px",
-            color: disabled ? '#bbb' : '#2E5939',
-            fontWeight: "500",
-            wordBreak: 'break-word'
-          }}>
-            <FaCheck style={{ color: disabled ? '#bbb' : '#4CAF50', fontSize: "12px", flexShrink: 0 }} />
-            <span style={{ flex: 1 }}>{feature}</span>
-          </div>
-        ))}
-      </div>
-    )}
-   
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%'
-    }}>
-      <span style={{
-        fontSize: "22px",
-        fontWeight: "900",
-        color: disabled ? '#999' : '#2E5939',
-        wordBreak: 'break-word'
-      }}>
-        {price}
-      </span>
+     
+      {disabled && (
+        <div style={{
+          position: 'absolute',
+          top: '-10px',
+          left: '18px',
+          backgroundColor: '#f44336',
+          color: 'white',
+          padding: "6px 14px",
+          borderRadius: '20px',
+          fontSize: "11px",
+          fontWeight: "800",
+          textTransform: 'uppercase',
+          boxShadow: '0 3px 12px rgba(244, 67, 54, 0.25)',
+          zIndex: 2,
+          maxWidth: 'calc(100% - 36px)',
+          wordBreak: 'break-word'
+        }}>
+          No Disponible
+        </div>
+      )}
+     
+      {/* Contenedor de imagen optimizado */}
       <div style={{
-        width: '24px',
-        height: '24px',
-        borderRadius: '50%',
-        border: `2px solid ${disabled ? '#ccc' : '#2E5939'}`,
-        backgroundColor: isSelected ? '#2E5939' : 'transparent',
+        width: '100%',
+        height: '120px',
+        borderRadius: "14px",
+        marginBottom: "18px",
+        background: disabled ? 'linear-gradient(135deg, #cccccc 0%, #999999 100%)' : '#E8F0E8',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'all 0.3s ease',
-        flexShrink: 0
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        {isSelected && <FaCheck style={{ color: 'white', fontSize: "12px" }} />}
+        {!disabled && finalImageUrl ? (
+          <img
+            src={finalImageUrl}
+            alt={title}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transition: 'transform 0.3s ease'
+            }}
+            onError={() => setImageError(true)}
+            onLoad={() => setImageError(false)}
+          />
+        ) : (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: disabled ? '#999' : '#2E5939',
+            fontSize: "48px"
+          }}>
+            {type === 'cabin' ? <FaHome /> : <FaStar />}
+          </div>
+        )}
+        <div style={{
+          position: 'absolute',
+          bottom: "10px",
+          right: "10px",
+          backgroundColor: 'rgba(46, 89, 57, 0.8)',
+          padding: "4px 10px",
+          borderRadius: '18px',
+          fontSize: "11px",
+          fontWeight: "700",
+          color: 'white',
+          backdropFilter: 'blur(4px)',
+          maxWidth: 'calc(100% - 20px)',
+          wordBreak: 'break-word'
+        }}>
+          {capacity} persona{capacity !== 1 ? 's' : ''}
+        </div>
+      </div>
+     
+      <h4 style={{
+        margin: '0 0 10px 0',
+        color: disabled ? '#999' : '#2E5939',
+        fontSize: "18px",
+        fontWeight: "800",
+        wordBreak: 'break-word'
+      }}>
+        {title}
+      </h4>
+     
+      <p style={{
+        margin: '0 0 18px 0',
+        color: disabled ? '#bbb' : '#679750',
+        fontSize: "14px",
+        lineHeight: "1.5",
+        wordBreak: 'break-word'
+      }}>
+        {description}
+      </p>
+     
+      {features.length > 0 && (
+        <div style={{ marginBottom: "18px", width: '100%' }}>
+          {features.map((feature, index) => (
+            <div key={index} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: "8px",
+              marginBottom: "6px",
+              fontSize: "13px",
+              color: disabled ? '#bbb' : '#2E5939',
+              fontWeight: "500",
+              wordBreak: 'break-word'
+            }}>
+              <FaCheck style={{ color: disabled ? '#bbb' : '#4CAF50', fontSize: "12px", flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{feature}</span>
+            </div>
+          ))}
+        </div>
+      )}
+     
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%'
+      }}>
+        <span style={{
+          fontSize: "22px",
+          fontWeight: "900",
+          color: disabled ? '#999' : '#2E5939',
+          wordBreak: 'break-word'
+        }}>
+          {price}
+        </span>
+        <div style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          border: `2px solid ${disabled ? '#ccc' : '#2E5939'}`,
+          backgroundColor: isSelected ? '#2E5939' : 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.3s ease',
+          flexShrink: 0
+        }}>
+          {isSelected && <FaCheck style={{ color: 'white', fontSize: "12px" }} />}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Componente de servicio extra - MÁS COMPACTO
 const ServicioExtraCard = ({
@@ -1447,6 +1555,7 @@ const ServicioExtraCard = ({
   diasEstadia = 1
 }) => {
   const precioTotal = servicio.precioServicio * diasEstadia;
+  const imagenUrl = servicio.imagen ? getCloudinaryImageUrl(servicio.imagen, { width: 400, height: 200 }) : null;
 
   return (
     <div
@@ -1491,6 +1600,29 @@ const ServicioExtraCard = ({
       }}>
         {isSelected && <FaCheck style={{ color: 'white', fontSize: "11px" }} />}
       </div>
+     
+      {imagenUrl && (
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          flexShrink: 0
+        }}>
+          <img
+            src={imagenUrl}
+            alt={servicio.nombreServicio}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
+            }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
      
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
@@ -1560,7 +1692,7 @@ const AlertDialog = ({
     } else {
       document.body.style.overflow = 'auto';
     }
-    
+   
     return () => {
       document.body.style.overflow = 'auto';
     };
@@ -1867,7 +1999,9 @@ export default function ReservaForm() {
     sedePaquetes: [],
     cabanaSedes: [],
     servicios: [],
-    sedesPorServicio: []
+    sedesPorServicio: [],
+    imagenesCabanas: [], // NUEVO: Imágenes de cabañas
+    imagenesPaquetes: [] // NUEVO: Imágenes de paquetes
   });
 
   // Estado del formulario - INICIALIZADO DINÁMICAMENTE
@@ -1907,14 +2041,13 @@ export default function ReservaForm() {
   const [createdReservaId, setCreatedReservaId] = useState(null);
   const [abonoDefaultMonto, setAbonoDefaultMonto] = useState(0);
 
-  // Prevenir scroll cuando el modal de abono está abierto
   useEffect(() => {
     if (showAbonoModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
-    
+   
     return () => {
       document.body.style.overflow = 'auto';
     };
@@ -1931,21 +2064,18 @@ export default function ReservaForm() {
 
   // Cargar datos del usuario y datos relacionados al montar el componente
   useEffect(() => {
-    // Verificar si el usuario está autenticado
     if (!isAuthenticated()) {
       displayAlert("❌ Debes iniciar sesión para realizar una reserva", "error");
       setTimeout(() => navigate("/login"), 2000);
       return;
     }
 
-    // Obtener datos del usuario desde localStorage
     const usuarioData = getUserForReservation();
     const usuarioInfo = getUserInfo();
 
     if (usuarioData) {
       setUsuarioLogueado(usuarioInfo);
      
-      // Establecer los datos del usuario en el formulario
       setFormData(prev => ({
         ...prev,
         idUsuario: usuarioInfo?.id || null,
@@ -1962,7 +2092,6 @@ export default function ReservaForm() {
       return;
     }
 
-    // Verificar si se pasaron datos de cabaña desde el Landing
     if (location.state?.cabana) {
       const { cabana, usuario } = location.state;
       setFormData(prev => ({
@@ -1985,7 +2114,6 @@ export default function ReservaForm() {
     calcularMontos();
   }, [formData.idPaquete, formData.fechaEntrada, formData.fechaSalida, formData.idCabana, serviciosSeleccionados]);
 
-  // Efecto para manejar fechas automáticamente cuando se selecciona un paquete
   useEffect(() => {
     const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
     if (paquete && paquete.dias) {
@@ -1999,7 +2127,7 @@ export default function ReservaForm() {
     }
   }, [formData.idPaquete, formData.fechaEntrada, apiData.paquetes]);
 
-  // Función para cargar todos los datos de la API
+  // Función para cargar todos los datos de la API - MODIFICADA PARA IMÁGENES
   const cargarDatosRelacionados = async () => {
     try {
       setLoading(true);
@@ -2043,7 +2171,9 @@ export default function ReservaForm() {
         sedePaquetesData,
         cabanaSedesData,
         serviciosData,
-        sedesPorServicioData
+        sedesPorServicioData,
+        imagenesCabanasData,
+        imagenesPaquetesData
       ] = await Promise.all([
         fetchConManejoError(API_URLS.SEDES),
         fetchConManejoError(API_URLS.CABANAS),
@@ -2053,28 +2183,61 @@ export default function ReservaForm() {
         fetchConManejoError(API_URLS.SEDE_POR_PAQUETE),
         fetchConManejoError(API_URLS.CABANA_POR_SEDE),
         fetchConManejoError(API_URLS.SERVICIOS, configuracionPorDefecto.servicios),
-        fetchConManejoError(API_URLS.SEDES_POR_SERVICIO, [])
+        fetchConManejoError(API_URLS.SEDES_POR_SERVICIO, []),
+        fetchConManejoError(API_URLS.IMG_CABANA, []),
+        fetchConManejoError(API_URLS.IMG_PAQUETE, [])
       ]);
 
-      // CORREGIDO: Procesar cabañas con imágenes
-      const cabanasConDatos = cabanasData.map(cabana => ({
-        idCabana: cabana.idCabana,
-        nombre: cabana.nombre || `Cabaña ${cabana.idCabana}`,
-        descripcion: cabana.descripcion || "Disfruta de una experiencia única en la naturaleza",
-        precio: cabana.precio || 150000,
-        capacidad: cabana.capacidad || 2,
-        imagen: cabana.imagen || cabana.foto || null, // Agregar campo de imagen
-        banios: cabana.banios || cabana.banos || 1,
-        area: cabana.area || 30,
-        ...cabana
-      }));
+      // Procesar cabañas con imágenes
+      const cabanasConImagenes = cabanasData.map(cabana => {
+        // Buscar imágenes de esta cabaña
+        const imagenesCabana = imagenesCabanasData
+          .filter(img => img.idCabana === cabana.idCabana)
+          .map(img => getCloudinaryImageUrl(img.rutaImagen));
+        
+        return {
+          idCabana: cabana.idCabana,
+          nombre: cabana.nombre || `Cabaña ${cabana.idCabana}`,
+          descripcion: cabana.descripcion || "Disfruta de una experiencia única en la naturaleza",
+          precio: cabana.precio || 150000,
+          capacidad: cabana.capacidad || 2,
+          habitaciones: cabana.habitaciones || 1,
+          banios: cabana.banios || cabana.banos || 1,
+          area: cabana.area || 40,
+          imagenes: imagenesCabana.length > 0 ? imagenesCabana : [FALLBACK_IMAGE],
+          idSede: cabana.idSede,
+          idTipoCabana: cabana.idTipoCabana,
+          estado: cabana.estado || true,
+          ...cabana
+        };
+      });
+
+      // Procesar paquetes con imágenes
+      const paquetesConImagenes = paquetesData.map(paquete => {
+        // Buscar imágenes de este paquete
+        const imagenPaquete = imagenesPaquetesData
+          .find(img => img.idPaquete === paquete.idPaquete);
+        
+        return {
+          idPaquete: paquete.idPaquete,
+          nombrePaquete: paquete.nombrePaquete || `Paquete ${paquete.idPaquete}`,
+          descripcion: paquete.descripcion || "Paquete de experiencia completa",
+          precioPaquete: paquete.precioPaquete || 0,
+          dias: paquete.dias || 1,
+          personas: paquete.personas || 2,
+          descuento: paquete.descuento || 0,
+          imagen: imagenPaquete ? getCloudinaryImageUrl(imagenPaquete.rutaImagen) : FALLBACK_IMAGE,
+          estado: paquete.estado || true,
+          ...paquete
+        };
+      });
 
       const serviciosConDatos = serviciosData.map(servicio => ({
         idServicio: Number(servicio.idServicio ?? servicio.id ?? 0),
         nombreServicio: servicio.nombreServicio || servicio.nombre || `Servicio ${servicio.idServicio ?? servicio.id ?? 0}`,
         precioServicio: Number(servicio.precioServicio ?? servicio.precio ?? 0),
         descripcion: servicio.descripcion ?? "Servicio adicional para tu estadía",
-        imagen: servicio.imagen ?? "",
+        imagen: servicio.imagen ? getCloudinaryImageUrl(servicio.imagen, { width: 400, height: 200 }) : null,
         estado: servicio.estado !== undefined ? Boolean(servicio.estado) : true,
         ...servicio
       }));
@@ -2088,23 +2251,27 @@ export default function ReservaForm() {
  
       setApiData({
         sedes: sedesData,
-        cabanas: cabanasConDatos,
-        paquetes: paquetesData,
+        cabanas: cabanasConImagenes,
+        paquetes: paquetesConImagenes,
         estados: estadosData,
         metodosPago: metodosPagoData,
         sedePaquetes: sedePaquetesData,
         cabanaSedes: cabanaSedesData,
         servicios: serviciosConDatos,
-        sedesPorServicio: sedesPorServicioConDatos
+        sedesPorServicio: sedesPorServicioConDatos,
+        imagenesCabanas: imagenesCabanasData,
+        imagenesPaquetes: imagenesPaquetesData
       });
 
       console.log("📊 Datos de la API cargados:", {
         sedes: sedesData.length,
-        cabanas: cabanasConDatos.length,
-        paquetes: paquetesData.length,
+        cabanas: cabanasConImagenes.length,
+        paquetes: paquetesConImagenes.length,
         estados: estadosData.length,
         cabanaSedes: cabanaSedesData.length,
-        sedePaquetes: sedePaquetesData.length
+        sedePaquetes: sedePaquetesData.length,
+        imagenesCabanas: imagenesCabanasData.length,
+        imagenesPaquetes: imagenesPaquetesData.length
       });
 
       if (sedesData.length > 0) {
@@ -2212,7 +2379,6 @@ export default function ReservaForm() {
     }
   };
 
-  // Función para calcular montos automáticamente incluyendo impuestos
   const calcularMontos = () => {
     const paqueteSeleccionado = apiData.paquetes.find(
       p => p.idPaquete === parseInt(formData.idPaquete)
@@ -2222,74 +2388,71 @@ export default function ReservaForm() {
       c => c.idCabana === parseInt(formData.idCabana)
     );
    
-    let precioBase = 0;
+    let precioBasePorNoche = 0;
     if (paqueteSeleccionado) {
-      precioBase = parseFloat(paqueteSeleccionado.precioPaquete || 0);
+      precioBasePorNoche = Number(paqueteSeleccionado.precioPaquete || 0);
     } else if (cabanaSeleccionada) {
-      precioBase = parseFloat(cabanaSeleccionada.precio || 0);
+      precioBasePorNoche = Number(cabanaSeleccionada.precio || 0);
     }
-   
+
     let diasEstadia = 1;
     if (paqueteSeleccionado && paqueteSeleccionado.dias) {
       diasEstadia = parseInt(paqueteSeleccionado.dias) || 1;
     } else if (formData.fechaEntrada && formData.fechaSalida) {
       const entrada = new Date(formData.fechaEntrada);
       const salida = new Date(formData.fechaSalida);
-      const diffTime = Math.abs(salida - entrada);
-      diasEstadia = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+      const diffTime = Math.max(0, salida - entrada);
+      diasEstadia = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     }
 
     const totalServicios = serviciosSeleccionados.reduce((total, servicio) =>
-      total + (servicio.precioServicio * diasEstadia), 0
+      total + (Number(servicio.precioServicio || 0) * diasEstadia), 0
     );
 
-    const montoTotalAlojamiento = (precioBase * diasEstadia);
-    const subtotalGeneral = montoTotalAlojamiento + totalServicios;
-    const impuestos = subtotalGeneral * 0.19; // 19% de impuestos
-    const totalGeneralConImpuestos = subtotalGeneral + impuestos;
-    
-    // Calcular el 50% del TOTAL con impuestos
-    const abono = Math.round(totalGeneralConImpuestos * 0.5);
-    const restante = totalGeneralConImpuestos - abono;
+    const montoAlojamiento = Math.round(precioBasePorNoche * diasEstadia);
+    const subtotalGeneral = montoAlojamiento + Math.round(totalServicios);
+    const impuestos = Math.round(subtotalGeneral * 0.19);
+    const totalConImpuestos = Math.round(subtotalGeneral + impuestos);
+    const abonoCalc = Math.round(totalConImpuestos * 0.5);
+    const restanteCalc = totalConImpuestos - abonoCalc;
 
     setFormData(prev => ({
       ...prev,
-      montoTotal: montoTotalAlojamiento,
-      abono: abono,
-      restante: restante
+      montoAlojamiento: montoAlojamiento,
+      montoTotal: totalConImpuestos,
+      abono: abonoCalc,
+      restante: restanteCalc
     }));
-    
-    // Actualizar el monto del abono para el modal
-    setAbonoDefaultMonto(abono);
+   
+    setAbonoDefaultMonto(abonoCalc);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-   
+
     if (name === 'fechaEntrada') {
       setFormData(prev => {
         const nuevaFechaEntrada = value;
         let nuevaFechaSalida = prev.fechaSalida;
-       
         if (nuevaFechaSalida && nuevaFechaEntrada >= nuevaFechaSalida) {
           nuevaFechaSalida = "";
         }
-       
         const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(prev.idPaquete));
         if (paquete && paquete.dias && nuevaFechaEntrada) {
           nuevaFechaSalida = addDays(nuevaFechaEntrada, paquete.dias);
         }
-       
         return {
           ...prev,
           fechaEntrada: nuevaFechaEntrada,
-          fechaSalida: nuevaFechaSalida
+          fechaSalida: nuevaFechaSalida,
+          fechaReserva: nuevaFechaSalida || prev.fechaReserva
         };
       });
     } else if (name === 'fechaSalida') {
       setFormData(prev => ({
         ...prev,
-        [name]: value
+        fechaSalida: value,
+        fechaReserva: value
       }));
     } else {
       setFormData(prev => ({
@@ -2310,6 +2473,7 @@ export default function ReservaForm() {
         const paquete = apiData.paquetes.find(p => p.idPaquete === parseInt(value));
         if (paquete && paquete.dias) {
           newData.fechaSalida = addDays(prev.fechaEntrada, paquete.dias);
+          newData.fechaReserva = newData.fechaSalida;
         }
       }
      
@@ -2348,12 +2512,30 @@ export default function ReservaForm() {
 
     setLoading(true);
     try {
+      // Verificar disponibilidad de la cabaña en las fechas seleccionadas
+      const cabanaSeleccionadaId = formData.idCabana ? String(formData.idCabana) : null;
+      const fechaEntradaToCheck = formData.fechaEntrada;
+      const fechaSalidaToCheck = formData.fechaSalida || formData.fechaReserva || "";
+      if (cabanaSeleccionadaId && fechaEntradaToCheck && fechaSalidaToCheck) {
+        const conflict = await hasConflictWithExisting(cabanaSeleccionadaId, fechaEntradaToCheck, fechaSalidaToCheck);
+        if (conflict) {
+          displayAlert("❌ La cabaña seleccionada ya tiene una reserva en las mismas fechas. Elige otras fechas o una cabaña distinta.", "error");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const fechaSalidaToSend = formData.fechaSalida || formData.fechaReserva || "";
+      const fechaRegistroToSend = formData.fechaRegistro && formData.fechaRegistro !== ""
+        ? formData.fechaRegistro
+        : new Date().toISOString().split('T')[0];
+ 
       const reservaData = {
         idReserva: 0,
-        fechaReserva: formatDateForAPI(formData.fechaReserva),
+        fechaReserva: formatDateForAPI(fechaSalidaToSend),
         fechaEntrada: formatDateForAPI(formData.fechaEntrada),
-        fechaSalida: formatDateForAPI(formData.fechaSalida),
-        fechaRegistro: formatDateForAPI(formData.fechaRegistro),
+        fechaSalida: formatDateForAPI(formData.fechaSalida || fechaSalidaToSend),
+        fechaRegistro: formatDateForAPI(fechaRegistroToSend),
         abono: parseFloat(formData.abono) || 0,
         restante: parseFloat(formData.restante) || 0,
         montoTotal: parseFloat(formData.montoTotal) || 0,
@@ -2603,6 +2785,62 @@ export default function ReservaForm() {
     return d.toISOString().split('T')[0];
   };
 
+  // Comprueba solapamiento de dos intervalos de fechas (formato YYYY-MM-DD)
+  const isDateOverlap = (startA, endA, startB, endB) => {
+    if (!startA || !endA || !startB || !endB) return false;
+    const aStart = new Date(startA);
+    const aEnd = new Date(endA);
+    const bStart = new Date(startB);
+    const bEnd = new Date(endB);
+    if (isNaN(aStart) || isNaN(aEnd) || isNaN(bStart) || isNaN(bEnd)) return false;
+    // Inclusivo: si un intervalo empieza el mismo día que otro termina, se considera conflicto
+    return aStart <= bEnd && bStart <= aEnd;
+  };
+
+  // Obtener todas las reservas existentes desde la API (fallback a array vacío)
+  const fetchReservasExistentes = async () => {
+    try {
+      const res = await fetch(API_URLS.RESERVAS);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data?.$values || []);
+    } catch (err) {
+      console.warn("No se pudieron cargar reservas para verificación:", err);
+      return [];
+    }
+  };
+
+  // Devuelve true si existe conflicto (misma cabaña y solapamiento de fechas)
+  const hasConflictWithExisting = async (idCabana, fechaEntrada, fechaSalida) => {
+    if (!idCabana || !fechaEntrada || !fechaSalida) return false;
+    try {
+      const reservasExistentes = await fetchReservasExistentes();
+      return reservasExistentes.some(r => {
+        // normalizar campos de reserva (puede variar según backend)
+        const rCabana = r.idCabana ?? r.idCabana;
+        if (!rCabana || Number(rCabana) !== Number(idCabana)) return false;
+        // ignorar reservas canceladas (ajusta id si tu backend usa otro)
+        if (Number(r.idEstado) === 3) return false;
+        const rEntrada = r.fechaEntrada ?? r.fechaInicio ?? "";
+        const rSalida = r.fechaReserva ?? r.fechaSalida ?? r.fechaFin ?? "";
+        return isDateOverlap(fechaEntrada, fechaSalida, rEntrada, rSalida);
+      });
+    } catch (e) {
+      console.warn("Error verificando conflictos:", e);
+      return false;
+    }
+  };
+
+  // Función para obtener características de cabaña
+  const getCabanaFeatures = (cabana) => {
+    const features = [];
+    if (cabana.capacidad) features.push(`${cabana.capacidad} personas`);
+    if (cabana.habitaciones) features.push(`${cabana.habitaciones} habitación${cabana.habitaciones > 1 ? 'es' : ''}`);
+    if (cabana.banios || cabana.banos) features.push(`${cabana.banios ?? cabana.banos} baño${(cabana.banios ?? cabana.banos) > 1 ? 's' : ''}`);
+    if (cabana.area) features.push(`${cabana.area} m²`);
+    return features;
+  };
+
   const paqueteSeleccionadoForm = apiData.paquetes.find(p => p.idPaquete === parseInt(formData.idPaquete));
   const fechaSalidaEsperada = (paqueteSeleccionadoForm && paqueteSeleccionadoForm.dias && formData.fechaEntrada)
     ? addDays(formData.fechaEntrada, paqueteSeleccionadoForm.dias)
@@ -2615,18 +2853,6 @@ export default function ReservaForm() {
     } catch {
       return `COP ${n.toFixed(0)}`;
     }
-  };
-
-  const getCabanaIcon = (cabana) => {
-    return <FaMountain />;
-  };
-
-  const getCabanaFeatures = (cabana) => {
-    const features = [];
-    if (cabana.capacidad) features.push(`${cabana.capacidad} personas`);
-    if (cabana.banios || cabana.banos) features.push(`${cabana.banios ?? cabana.banos} baño(s)`);
-    if (cabana.area) features.push(`${cabana.area} m²`);
-    return features;
   };
 
   return (
@@ -2739,7 +2965,7 @@ export default function ReservaForm() {
             fontWeight: "500",
             maxWidth: "550px",
             lineHeight: "1.5",
-            wordBreak: 'break-word'
+            wordBreak: "break-word"
           }}>
             Vive una experiencia única de glamping en medio de la naturaleza.
             Disfruta de lujo y comodidad en un entorno natural espectacular.
@@ -2907,9 +3133,9 @@ export default function ReservaForm() {
                         </div>
                       )}
 
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                         gap: "24px",
                         width: '100%'
                       }}>
@@ -3009,7 +3235,7 @@ export default function ReservaForm() {
                     </div>
                   )}
 
-                  {/* Paso 2: Selección de Alojamiento - MODIFICADO PARA MOSTRAR IMÁGENES REALES */}
+                  {/* Paso 2: Selección de Alojamiento - MODIFICADO PARA IMÁGENES */}
                   {currentStep === 1 && (
                     <div style={{
                       backgroundColor: '#FBFDF9',
@@ -3107,14 +3333,14 @@ export default function ReservaForm() {
                                 title={cabana.nombre}
                                 description={cabana.descripcion || "Disfruta de una experiencia única en la naturaleza"}
                                 price={formatCurrency(cabana.precio || 0)}
-                                image={getCabanaIcon(cabana)}
+                                imageUrl={cabana.imagenes && cabana.imagenes.length > 0 ? cabana.imagenes[0] : FALLBACK_IMAGE}
                                 isSelected={formData.idCabana === cabana.idCabana.toString()}
                                 onSelect={() => handleSelectChange('idCabana', cabana.idCabana.toString())}
                                 features={getCabanaFeatures(cabana)}
                                 popular={cabana.precio > 300000}
                                 capacity={cabana.capacidad || 2}
                                 disabled={false}
-                                imageUrl={cabana.imagen} // Pasar la URL de la imagen real
+                                type="cabin"
                               />
                             ))}
                           </div>
@@ -3160,7 +3386,7 @@ export default function ReservaForm() {
                                 title={paquete.nombrePaquete}
                                 description={paquete.descripcion || `Incluye servicios especiales para ${paquete.personas} personas`}
                                 price={formatCurrency(paquete.precioPaquete || 0)}
-                                image={<FaStar />}
+                                imageUrl={paquete.imagen || FALLBACK_IMAGE}
                                 isSelected={formData.idPaquete === paquete.idPaquete.toString()}
                                 onSelect={() => handleSelectChange('idPaquete', paquete.idPaquete.toString())}
                                 features={[
@@ -3171,6 +3397,7 @@ export default function ReservaForm() {
                                 popular={paquete.descuento > 0}
                                 capacity={paquete.personas}
                                 disabled={false}
+                                type="package"
                               />
                             ))}
                           </div>
@@ -3245,7 +3472,7 @@ export default function ReservaForm() {
                           <FaBox style={{ fontSize: "42px", color: '#679750', marginBottom: "14px" }} />
                           <h4 style={{ color: '#2E5939', marginBottom: "6px", wordBreak: 'break-word' }}>No hay servicios disponibles</h4>
                           <p style={{ color: '#679750', wordBreak: 'break-word' }}>Selecciona otra sede para ver los servicios disponibles.</p>
-                          </div>
+                        </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: "14px", width: '100%' }}>
                           {filteredData.servicios.map((servicio) => {
@@ -3307,16 +3534,13 @@ export default function ReservaForm() {
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
-                              padding: "10px",
-                              backgroundColor: '#2E5939',
-                              borderRadius: "6px",
-                              color: 'white',
-                              fontWeight: "800",
-                              width: '100%',
-                              boxSizing: 'border-box'
+                              marginBottom: "10px",
+                              paddingBottom: "10px",
+                              borderBottom: '1px solid #E8F0E8',
+                              width: '100%'
                             }}>
-                              <span style={{ wordBreak: 'break-word' }}>Total servicios extras:</span>
-                              <span style={{ flexShrink: 0 }}>
+                              <span style={{ color: '#2E5939', fontSize: "13px", wordBreak: 'break-word' }}>Total servicios</span>
+                              <span style={{ color: '#2E5939', fontWeight: "700", fontSize: "13px", flexShrink: 0 }}>
                                 +{formatCurrency(serviciosSeleccionados.reduce((total, servicio) => total + (servicio.precioServicio * calcularDiasEstadia()), 0))}
                               </span>
                             </div>
@@ -3366,9 +3590,9 @@ export default function ReservaForm() {
                         Fechas de tu Estadía
                       </h3>
                      
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                         gap: "24px",
                         width: '100%'
                       }}>
@@ -3652,6 +3876,7 @@ export default function ReservaForm() {
                           opacity: loading ? 0.7 : 1,
                           display: 'flex',
                           alignItems: 'center',
+                          justifyContent: 'center',
                           gap: "10px",
                           minWidth: 'auto',
                           flex: 1,
@@ -3668,7 +3893,7 @@ export default function ReservaForm() {
                           if (!loading) {
                             e.target.style.backgroundColor = "#2E5939";
                             e.target.style.transform = "translateY(0)";
-                            e.target.style.boxShadow = "0 8px 25px rgba(46, 89,57, 0.3)";
+                            e.target.style.boxShadow = "0 8px 25px rgba(46, 89, 57, 0.3)";
                           }
                         }}
                       >

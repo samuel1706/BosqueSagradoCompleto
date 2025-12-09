@@ -4,7 +4,8 @@ import {
   FaEye, FaEdit, FaTrash, FaPlus, FaMinus, FaFilePdf, FaTimes,
   FaSearch, FaExclamationTriangle, FaCheck, FaInfoCircle, FaBox,
   FaShoppingCart, FaDollarSign, FaUser, FaSync, FaToggleOn,
-  FaToggleOff, FaFileAlt, FaSlidersH, FaBuilding
+  FaToggleOff, FaFileAlt, FaSlidersH, FaBuilding, FaCalendarAlt,
+  FaIdCard, FaPhone, FaEnvelope, FaMapMarkerAlt, FaListAlt
 } from "react-icons/fa";
 import { usePDF } from 'react-to-pdf';
 import axios from "axios";
@@ -81,6 +82,8 @@ const modalOverlayStyle = {
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
+  overflow: "auto",
+  padding: "20px 0",
 };
 
 const modalContentStyle = {
@@ -145,37 +148,46 @@ const alertWarningStyle = {
   borderLeftColor: '#ffc107',
 };
 
+// ESTILOS MEJORADOS PARA MODAL DE DETALLES
 const detailsModalStyle = {
   backgroundColor: "#fff",
-  padding: 30,
-  borderRadius: 12,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+  padding: 0,
+  borderRadius: 16,
+  boxShadow: "0 15px 40px rgba(0,0,0,0.25)",
   width: "90%",
-  maxWidth: 700,
+  maxWidth: 850,
   color: "#2E5939",
   boxSizing: 'border-box',
-  maxHeight: '80vh',
-  overflowY: 'auto',
-  border: "2px solid #679750",
+  maxHeight: '90vh',
+  overflow: 'hidden',
+  border: "3px solid #679750",
+  position: 'relative',
 };
 
 const detailItemStyle = {
-  marginBottom: 15,
-  paddingBottom: 15,
-  borderBottom: "1px solid rgba(46, 89, 57, 0.1)"
+  marginBottom: 18,
+  paddingBottom: 18,
+  borderBottom: "1px solid rgba(46, 89, 57, 0.15)",
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '15px'
 };
 
 const detailLabelStyle = {
   fontWeight: "bold",
   color: "#2E5939",
-  marginBottom: 5,
-  fontSize: "14px"
+  fontSize: "15px",
+  minWidth: '150px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px'
 };
 
 const detailValueStyle = {
   fontSize: 16,
   color: "#2E5939",
-  fontWeight: "500"
+  fontWeight: "500",
+  flex: 1
 };
 
 const validationMessageStyle = {
@@ -519,31 +531,8 @@ const AdminCompras = () => {
   const { toPDF, targetRef } = usePDF({filename: `compra_${selectedCompra?.idCompra || 'nueva'}.pdf`});
 
   // ===============================================
-  // EFECTOS
+  // EFECTOS PARA CONTROLAR EL SCROLL DEL BODY
   // ===============================================
-  useEffect(() => {
-    fetchCompras();
-    fetchProveedores();
-    fetchProductos();
-    fetchDetalleCompras();
-  }, []);
-
-  // Validar formulario en tiempo real solo para campos tocados
-  useEffect(() => {
-    if (showForm) {
-      Object.keys(touchedFields).forEach(fieldName => {
-        if (touchedFields[fieldName]) {
-          validateField(fieldName, newCompra[fieldName]);
-        }
-      });
-    }
-  }, [newCompra, showForm, touchedFields]);
-
-  // Calcular totales cuando cambian los productos
-  useEffect(() => {
-    calcularTotales();
-  }, [productosCompra]);
-
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -575,6 +564,42 @@ const AdminCompras = () => {
       document.head.removeChild(style);
     };
   }, []);
+
+  // Efecto para controlar el scroll del body cuando se abren modales
+  useEffect(() => {
+    if (showForm || showDetails || showDeleteConfirm || showPdfModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showForm, showDetails, showDeleteConfirm, showPdfModal]);
+
+  useEffect(() => {
+    fetchCompras();
+    fetchProveedores();
+    fetchProductos();
+    fetchDetalleCompras();
+  }, []);
+
+  // Validar formulario en tiempo real solo para campos tocados
+  useEffect(() => {
+    if (showForm) {
+      Object.keys(touchedFields).forEach(fieldName => {
+        if (touchedFields[fieldName]) {
+          validateField(fieldName, newCompra[fieldName]);
+        }
+      });
+    }
+  }, [newCompra, showForm, touchedFields]);
+
+  // Calcular totales cuando cambian los productos
+  useEffect(() => {
+    calcularTotales();
+  }, [productosCompra]);
 
   // ===============================================
   // FUNCIONES DE ALERTAS MEJORADAS
@@ -1327,91 +1352,491 @@ const AdminCompras = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  // ===============================================
-  // COMPONENTE PDF TEMPLATE
-  // ===============================================
-  const PDFTemplate = ({ compra, proveedor, detallesCompra }) => {
-    return (
-      <div style={{ padding: 20, fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
-        <h1 style={{ textAlign: 'center', color: '#2E5939', marginBottom: '30px' }}>Factura de Compra #{compra.idCompra}</h1>
-       
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+// ===============================================
+// COMPONENTE PDF TEMPLATE MEJORADO CON LOGO - SIN PRODUCTOS
+// ===============================================
+const PDFTemplate = ({ compra, proveedor, detallesCompra }) => {
+  return (
+    <div style={{
+      padding: 40,
+      fontFamily: 'Arial, sans-serif',
+      width: '100%',
+      minHeight: '100vh',
+      backgroundColor: '#fff',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* Encabezado con Logo - Diseño mejorado */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 40,
+        paddingBottom: 25,
+        borderBottom: '3px solid #2E5939'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <img
+            src="/images/Logo.png"
+            alt="Logo Bosque Sagrado"
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'contain'
+            }}
+          />
           <div>
-            <h3 style={{ color: '#2E5939', marginBottom: '10px' }}>Glamping Luxury</h3>
-            <p>NIT: 900.123.456-7</p>
-            <p>Dirección: Vereda El Descanso, Villeta</p>
-            <p>Teléfono: 310 123 4567</p>
-          </div>
-         
-          <div style={{ textAlign: 'right' }}>
-            <h3 style={{ color: '#2E5939', marginBottom: '10px' }}>Datos de la Compra</h3>
-            <p><strong>Método de Pago:</strong> {compra.metodoPago}</p>
-            <p><strong>Estado:</strong> {compra.estado ? 'Activa' : 'Inactiva'}</p>
-          </div>
-        </div>
-       
-        <div style={{ marginBottom: '30px' }}>
-          <h3 style={{ color: '#2E5939', marginBottom: '10px' }}>Proveedor</h3>
-          <p><strong>Nombre:</strong> {proveedor.nombre}</p>
-          <p><strong>Contacto:</strong> {proveedor.celular}</p>
-          <p><strong>Email:</strong> {proveedor.correo}</p>
-          <p><strong>Documento:</strong> {proveedor.tipoDocumento} {proveedor.numeroDocumento}</p>
-          <p><strong>Dirección:</strong> {proveedor.direccion}, {proveedor.ciudad}, {proveedor.departamento}</p>
-        </div>
-       
-        <h3 style={{ color: '#2E5939', marginBottom: '10px' }}>Detalle de la Compra</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '30px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#F7F4EA', color: '#2E5939' }}>
-              <th style={{ padding: '10px', border: '1px solid #679750', textAlign: 'left' }}>Producto</th>
-              <th style={{ padding: '10px', border: '1px solid #679750', textAlign: 'center' }}>Cantidad</th>
-              <th style={{ padding: '10px', border: '1px solid #679750', textAlign: 'right' }}>Precio Unitario</th>
-              <th style={{ padding: '10px', border: '1px solid #679750', textAlign: 'right' }}>Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detallesCompra.map((detalle, index) => (
-              <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
-                <td style={{ padding: '10px', border: '1px solid #679750' }}>
-                  {getProductoNombre(detalle.idProducto)}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #679750', textAlign: 'center' }}>
-                  {detalle.cantidad}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #679750', textAlign: 'right' }}>
-                  ${(detalle.subtotal / detalle.cantidad).toLocaleString('es-CO')}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #679750', textAlign: 'right' }}>
-                  ${detalle.subtotal.toLocaleString('es-CO')}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-       
-        <div style={{ textAlign: 'right', marginTop: '20px' }}>
-          <div style={{ marginBottom: '10px' }}>
-            <span style={{ display: 'inline-block', width: '150px', fontWeight: 'bold' }}>Subtotal:</span>
-            <span style={{ display: 'inline-block', width: '150px', textAlign: 'right' }}>${compra.subtotal.toLocaleString('es-CO')}</span>
-          </div>
-          <div style={{ marginBottom: '10px' }}>
-            <span style={{ display: 'inline-block', width: '150px', fontWeight: 'bold' }}>IVA (19%):</span>
-            <span style={{ display: 'inline-block', width: '150px', textAlign: 'right' }}>${compra.iva.toLocaleString('es-CO')}</span>
-          </div>
-          <div style={{ marginBottom: '10px', fontSize: '1.2em', fontWeight: 'bold' }}>
-            <span style={{ display: 'inline-block', width: '150px' }}>Total:</span>
-            <span style={{ display: 'inline-block', width: '150px', textAlign: 'right' }}>${compra.total.toLocaleString('es-CO')}</span>
+            <h1 style={{
+              color: '#2E5939',
+              margin: 0,
+              fontSize: 32,
+              fontWeight: 'bold',
+              letterSpacing: 1
+            }}>
+              BOSQUE SAGRADO
+            </h1>
+            <p style={{
+              color: '#679750',
+              margin: '5px 0 0 0',
+              fontSize: 18,
+              fontWeight: 600
+            }}>
+              Bosque Sagrado Glamping
+            </p>
           </div>
         </div>
        
-        <div style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #2E5939', textAlign: 'center' }}>
-          <p>Gracias por su compra</p>
-          <p>Glamping Luxury - Vereda El Descanso, Villeta</p>
-          <p>Tel: 310 123 4567 | Email: info@glampingluxury.com</p>
+        <div style={{ textAlign: 'right' }}>
+          <h2 style={{
+            color: '#2E5939',
+            margin: '0 0 15px 0',
+            fontSize: 28,
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }}>
+            FACTURA DE COMPRA
+          </h2>
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: '12px 20px',
+            borderRadius: 8,
+            display: 'inline-block'
+          }}>
+            <p style={{ margin: '8px 0', color: '#2E5939', fontSize: 16, fontWeight: 'bold' }}>
+              <span style={{ color: '#679750' }}>N°:</span> {compra.idCompra}
+            </p>
+            <p style={{ margin: '8px 0', color: '#2E5939', fontSize: 16, fontWeight: 'bold' }}>
+              <span style={{ color: '#679750' }}>Fecha:</span> {new Date().toLocaleDateString('es-CO')}
+            </p>
+          </div>
         </div>
       </div>
-    );
-  };
+     
+      {/* Contenedor principal de información */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 35
+      }}>
+        {/* Sección de información de empresa y proveedor */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 40,
+          marginBottom: 10
+        }}>
+          {/* Información de Bosque Sagrado */}
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: 25,
+            borderRadius: 10,
+            border: '2px solid #679750',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+          }}>
+            <h3 style={{
+              color: '#2E5939',
+              backgroundColor: '#E8F5E8',
+              padding: '12px 20px',
+              borderRadius: '6px',
+              margin: '0 0 20px 0',
+              fontSize: 20,
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              BOSQUE SAGRADO
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>NIT:</strong> 900.123.456-7
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Dirección:</strong> Copacabana - Medellín
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Teléfono:</strong> 310 2224383
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Email:</strong> info@bosquesagrado.com
+                </p>
+              </div>
+            </div>
+          </div>
+       
+          {/* Información del Proveedor */}
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: 25,
+            borderRadius: 10,
+            border: '2px solid #679750',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+          }}>
+            <h3 style={{
+              color: '#2E5939',
+              backgroundColor: '#E8F5E8',
+              padding: '12px 20px',
+              borderRadius: '6px',
+              margin: '0 0 20px 0',
+              fontSize: 20,
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              PROVEEDOR
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Nombre:</strong> {proveedor.nombre}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Contacto:</strong> {proveedor.celular}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Email:</strong> {proveedor.correo}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Documento:</strong> {proveedor.tipoDocumento} {proveedor.numeroDocumento}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#2E5939',
+                  borderRadius: '50%'
+                }}></div>
+                <p style={{ margin: 0, color: '#2E5939', fontSize: 16, flex: 1 }}>
+                  <strong>Dirección:</strong> {proveedor.direccion}, {proveedor.ciudad}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección de información de la compra y totales */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1.5fr',
+          gap: 40,
+          flex: 1
+        }}>
+          {/* Información de la Compra */}
+          <div style={{
+            backgroundColor: '#F7F4EA',
+            padding: 30,
+            borderRadius: 10,
+            border: '2px solid #679750',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <h3 style={{
+              color: '#2E5939',
+              marginBottom: 25,
+              fontSize: 22,
+              fontWeight: 'bold',
+              textAlign: 'center',
+              textTransform: 'uppercase'
+            }}>
+              Información de la Compra
+            </h3>
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              gap: 20
+            }}>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '15px 20px',
+                borderRadius: 8,
+                border: '1px solid rgba(46, 89, 57, 0.2)'
+              }}>
+                <p style={{
+                  margin: 0,
+                  color: '#2E5939',
+                  fontSize: 16,
+                  textAlign: 'center'
+                }}>
+                  <strong style={{ color: '#679750', display: 'block', marginBottom: 5 }}>Método de Pago</strong>
+                  <span style={{ fontSize: 18, fontWeight: 'bold' }}>{compra.metodoPago}</span>
+                </p>
+              </div>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '15px 20px',
+                borderRadius: 8,
+                border: '1px solid rgba(46, 89, 57, 0.2)'
+              }}>
+                <p style={{
+                  margin: 0,
+                  color: '#2E5939',
+                  fontSize: 16,
+                  textAlign: 'center'
+                }}>
+                  <strong style={{ color: '#679750', display: 'block', marginBottom: 5 }}>Estado</strong>
+                  <span style={{
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                    color: compra.estado ? '#4caf50' : '#e57373'
+                  }}>
+                    {compra.estado ? 'ACTIVO' : 'INACTIVO'}
+                  </span>
+                </p>
+              </div>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '15px 20px',
+                borderRadius: 8,
+                border: '1px solid rgba(46, 89, 57, 0.2)'
+              }}>
+                <p style={{
+                  margin: 0,
+                  color: '#2E5939',
+                  fontSize: 16,
+                  textAlign: 'center'
+                }}>
+                  <strong style={{ color: '#679750', display: 'block', marginBottom: 5 }}>Fecha de Generación</strong>
+                  <span style={{ fontSize: 18, fontWeight: 'bold' }}>
+                    {new Date().toLocaleDateString('es-CO', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+         
+          {/* Totales - Diseño destacado */}
+          <div style={{
+            backgroundColor: '#E8F5E8',
+            padding: 35,
+            borderRadius: 12,
+            border: '3px solid #2E5939',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            <h3 style={{
+              color: '#2E5939',
+              marginBottom: 35,
+              fontSize: 26,
+              fontWeight: 'bold',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: 1
+            }}>
+              Resumen Financiero
+            </h3>
+           
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20
+            }}>
+              {/* Subtotal */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '18px 25px',
+                backgroundColor: 'white',
+                borderRadius: 8,
+                border: '1px solid rgba(46, 89, 57, 0.3)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}>
+                <span style={{
+                  fontWeight: 'bold',
+                  color: '#2E5939',
+                  fontSize: 18
+                }}>Subtotal:</span>
+                <span style={{
+                  textAlign: 'right',
+                  color: '#2E5939',
+                  fontSize: 20,
+                  fontWeight: 'bold'
+                }}>${compra.subtotal.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</span>
+              </div>
+             
+              {/* IVA */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '18px 25px',
+                backgroundColor: 'white',
+                borderRadius: 8,
+                border: '1px solid rgba(46, 89, 57, 0.3)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}>
+                <span style={{
+                  fontWeight: 'bold',
+                  color: '#2E5939',
+                  fontSize: 18
+                }}>IVA (19%):</span>
+                <span style={{
+                  textAlign: 'right',
+                  color: '#2E5939',
+                  fontSize: 20,
+                  fontWeight: 'bold'
+                }}>${compra.iva.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</span>
+              </div>
+             
+              {/* Total - Destacado */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '25px 30px',
+                backgroundColor: '#2E5939',
+                borderRadius: 10,
+                marginTop: 10,
+                boxShadow: '0 4px 15px rgba(46, 89, 57, 0.3)'
+              }}>
+                <span style={{
+                  color: 'white',
+                  fontSize: 22,
+                  fontWeight: 'bold',
+                  letterSpacing: 1
+                }}>TOTAL:</span>
+                <span style={{
+                  textAlign: 'right',
+                  color: 'white',
+                  fontSize: 28,
+                  fontWeight: 'bold',
+                  letterSpacing: 1
+                }}>${compra.total.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+     
+      {/* Pie de página - Espaciado adecuado */}
+      <div style={{
+        marginTop: 50,
+        paddingTop: 25,
+        borderTop: '3px solid #2E5939',
+        textAlign: 'center',
+        color: '#679750'
+      }}>
+        <p style={{
+          margin: '8px 0',
+          fontWeight: 'bold',
+          fontSize: 16,
+          color: '#2E5939'
+        }}>
+          ¡Gracias por su compra!
+        </p>
+        <p style={{ margin: '8px 0', fontSize: 15, fontWeight: 600 }}>
+          Bosque Sagrado Glamping
+        </p>
+<p style={{ margin: '8px 0', fontSize: 15 }}>
+          Copacabana - Medellín
+        </p>
+        <p style={{ margin: '8px 0', fontSize: 15 }}>
+          Tel: 310 2224383 | Email: info@bosquesagrado.com
+        </p>
+        <p style={{
+          margin: '15px 0 0 0',
+          fontSize: 12,
+          color: '#2E5939',
+          fontStyle: 'italic',
+          opacity: 0.8
+        }}>
+          Este documento es una factura de compra generada electrónicamente
+        </p>
+      </div>
+    </div>
+  );
+};
 
   // Calcular totales para mostrar en el formulario
   const { subtotal, iva, total } = calcularTotales();
@@ -2179,147 +2604,327 @@ const AdminCompras = () => {
         </div>
       )}
 
-      {/* Modal de detalles */}
+      {/* Modal de detalles - MEJORADO */}
       {showDetails && selectedCompra && (
         <div style={modalOverlayStyle}>
-          <div style={{...detailsModalStyle, maxWidth: '700px'}}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, color: "#2E5939" }}>Detalles de la Compra #{selectedCompra.idCompra}</h2>
+          <div style={detailsModalStyle}>
+            {/* Encabezado del modal con fondo decorativo */}
+            <div style={{
+              backgroundColor: '#2E5939',
+              padding: '25px 30px',
+              color: 'white',
+              borderTopLeftRadius: '13px',
+              borderTopRightRadius: '13px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h2 style={{
+                  margin: 0,
+                  fontSize: '24px',
+                  fontWeight: 'bold'
+                }}>
+                  Detalles de la Compra
+                </h2>
+                <p style={{
+                  margin: '5px 0 0 0',
+                  opacity: 0.9,
+                  fontSize: '16px'
+                }}>
+                  N° {selectedCompra.idCompra} • {new Date().toLocaleDateString('es-CO')}
+                </p>
+              </div>
               <button
                 onClick={closeDetailsModal}
                 style={{
-                  background: "none",
+                  background: "rgba(255,255,255,0.2)",
                   border: "none",
-                  color: "#2E5939",
-                  fontSize: "20px",
+                  color: "white",
+                  fontSize: "22px",
                   cursor: "pointer",
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.3s ease',
+                  position: 'relative',
+                  zIndex: 1
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "rgba(255,255,255,0.3)";
+                  e.target.style.transform = "rotate(90deg)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "rgba(255,255,255,0.2)";
+                  e.target.style.transform = "rotate(0deg)";
                 }}
               >
                 <FaTimes />
               </button>
+              <div style={{
+                position: 'absolute',
+                right: '-50px',
+                top: '-50px',
+                width: '200px',
+                height: '200px',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                borderRadius: '50%'
+              }}></div>
             </div>
-           
-            <div>
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Proveedor</div>
-                <div style={detailValueStyle}>{getProveedorNombre(selectedCompra.idProveedor)}</div>
-              </div>
-             
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Método de Pago</div>
-                <div style={detailValueStyle}>{selectedCompra.metodoPago}</div>
-              </div>
 
-              {/* Productos de la compra */}
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Productos ({selectedDetalleCompras.length})</div>
-                <div style={detailValueStyle}>
-                  {selectedDetalleCompras.length > 0 ? (
-                    <div style={{ marginTop: '10px' }}>
-                      {selectedDetalleCompras.map((detalle, index) => (
-                        <div key={index} style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '12px',
-                          backgroundColor: 'rgba(46, 89, 57, 0.05)',
-                          borderRadius: '8px',
-                          marginBottom: '8px',
-                          border: '1px solid rgba(46, 89, 57, 0.1)'
-                        }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                              {getProductoNombre(detalle.idProducto)}
-                            </div>
-                            <div style={{ fontSize: '14px', color: '#679750' }}>
-                              Cantidad: {detalle.cantidad} |
-                              Precio unitario: ${(detalle.subtotal / detalle.cantidad).toLocaleString('es-CO')}
-                            </div>
-                          </div>
-                          <div style={{ fontWeight: 'bold', color: '#2E5939' }}>
-                            ${detalle.subtotal.toLocaleString('es-CO')}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ color: '#e57373', fontStyle: 'italic' }}>
-                      No hay productos registrados para esta compra
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Subtotal</div>
-                <div style={detailValueStyle}>${selectedCompra.subtotal.toLocaleString('es-CO')}</div>
-              </div>
-
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>IVA (19%)</div>
-                <div style={detailValueStyle}>${selectedCompra.iva.toLocaleString('es-CO')}</div>
-              </div>
-
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Total</div>
-                <div style={{...detailValueStyle, fontWeight: 'bold', color: '#679750', fontSize: '1.2em'}}>
-                  ${selectedCompra.total.toLocaleString('es-CO')}
-                </div>
-              </div>
-
-              <div style={detailItemStyle}>
-                <div style={detailLabelStyle}>Estado</div>
+            <div style={{ padding: '30px' }}>
+              {/* Información principal en tarjetas */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px',
+                marginBottom: '30px'
+              }}>
                 <div style={{
-                  ...detailValueStyle,
-                  color: selectedCompra.estado ? '#4caf50' : '#e57373',
-                  fontWeight: 'bold'
+                  backgroundColor: '#F7F4EA',
+                  padding: '20px',
+                  borderRadius: '10px',
+                  border: '1px solid #679750',
+                  boxShadow: '0 3px 10px rgba(0,0,0,0.08)'
                 }}>
-                  {selectedCompra.estado ? '🟢 Activa' : '🔴 Inactiva'}
+                  <h3 style={{
+                    margin: '0 0 15px 0',
+                    color: '#2E5939',
+                    fontSize: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <FaBuilding /> Información del Proveedor
+                  </h3>
+                  <div style={detailItemStyle}>
+                    <span style={detailLabelStyle}><FaUser /> Nombre:</span>
+                    <span style={detailValueStyle}>{getProveedorNombre(selectedCompra.idProveedor)}</span>
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: '#F7F4EA',
+                  padding: '20px',
+                  borderRadius: '10px',
+                  border: '1px solid #679750',
+                  boxShadow: '0 3px 10px rgba(0,0,0,0.08)'
+                }}>
+                  <h3 style={{
+                    margin: '0 0 15px 0',
+                    color: '#2E5939',
+                    fontSize: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <FaDollarSign /> Información de Pago
+                  </h3>
+                  <div style={detailItemStyle}>
+                    <span style={detailLabelStyle}><FaDollarSign /> Método:</span>
+                    <span style={detailValueStyle}>{selectedCompra.metodoPago}</span>
+                  </div>
+                  <div style={detailItemStyle}>
+                    <span style={detailLabelStyle}><FaToggleOn /> Estado:</span>
+                    <span style={{
+                      ...detailValueStyle,
+                      color: selectedCompra.estado ? '#4caf50' : '#e57373',
+                      fontWeight: 'bold',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      {selectedCompra.estado ?
+                        <><div style={{
+                          width: '10px',
+                          height: '10px',
+                          backgroundColor: '#4caf50',
+                          borderRadius: '50%',
+                          display: 'inline-block'
+                        }}></div> Activa</> :
+                        <><div style={{
+                          width: '10px',
+                          height: '10px',
+                          backgroundColor: '#e57373',
+                          borderRadius: '50%',
+                          display: 'inline-block'
+                        }}></div> Inactiva</>
+                      }
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: 20 }}>
-              <button
-                onClick={() => handleOpenPdfModal(selectedCompra)}
-                style={{
-                  backgroundColor: "#2E5939",
-                  color: "#fff",
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  fontWeight: "600",
+              {/* Totales en tarjeta destacada */}
+              <div style={{
+                backgroundColor: '#E8F5E8',
+                padding: '25px',
+                borderRadius: '10px',
+                border: '2px solid #679750',
+                marginBottom: '30px',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{
+                  margin: '0 0 20px 0',
+                  color: '#2E5939',
+                  fontSize: '20px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
-                  transition: "all 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = "#2E5939";
-                  e.target.style.transform = "translateY(0)";
-                }}
-              >
-                <FaFilePdf /> Exportar PDF
-              </button>
-              <button
-                onClick={closeDetailsModal}
-                style={{
-                  backgroundColor: "#ccc",
-                  color: "#333",
-                  padding: "10px 20px",
-                  border: "none",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  fontWeight: "600",
-                }}
-              >
-                Cerrar
-              </button>
+                  gap: '10px'
+                }}>
+                  <FaListAlt /> Resumen Financiero
+                </h3>
+               
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '15px'
+                }}>
+                  <div style={{
+                    backgroundColor: 'white',
+                    padding: '15px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    border: '1px solid rgba(46, 89, 57, 0.2)'
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#679750',
+                      marginBottom: '8px',
+                      fontWeight: '600'
+                    }}>
+                      Subtotal
+                    </div>
+                    <div style={{
+                      fontSize: '22px',
+                      color: '#2E5939',
+                      fontWeight: 'bold'
+                    }}>
+                      ${selectedCompra.subtotal.toLocaleString('es-CO')}
+                    </div>
+                  </div>
+                 
+                  <div style={{
+                    backgroundColor: 'white',
+                    padding: '15px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    border: '1px solid rgba(46, 89, 57, 0.2)'
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#679750',
+                      marginBottom: '8px',
+                      fontWeight: '600'
+                    }}>
+                      IVA (19%)
+                    </div>
+                    <div style={{
+                      fontSize: '22px',
+                      color: '#2E5939',
+                      fontWeight: 'bold'
+                    }}>
+                      ${selectedCompra.iva.toLocaleString('es-CO')}
+                    </div>
+                  </div>
+                 
+                  <div style={{
+                    backgroundColor: '#2E5939',
+                    padding: '15px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    border: '1px solid #2E5939',
+                    boxShadow: '0 4px 8px rgba(46, 89, 57, 0.3)'
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      color: 'white',
+                      marginBottom: '8px',
+                      fontWeight: '600',
+                      opacity: 0.9
+                    }}>
+                      Total
+                    </div>
+                    <div style={{
+                      fontSize: '24px',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }}>
+                      ${selectedCompra.total.toLocaleString('es-CO')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "15px",
+                marginTop: "30px",
+                paddingTop: '20px',
+                borderTop: '1px solid rgba(46, 89, 57, 0.1)'
+              }}>
+                <button
+                  onClick={() => handleOpenPdfModal(selectedCompra)}
+                  style={{
+                    backgroundColor: "#2E5939",
+                    color: "#fff",
+                    padding: "12px 25px",
+                    border: "none",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    transition: "all 0.3s ease",
+                    fontSize: '15px',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.background = "linear-gradient(90deg, #67d630, #95d34e)";
+                    e.target.style.transform = "translateY(-3px)";
+                    e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.2)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.background = "#2E5939";
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                  }}
+                >
+                  <FaFilePdf size={18} /> Exportar a PDF
+                </button>
+                <button
+                  onClick={closeDetailsModal}
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "#2E5939",
+                    padding: "12px 25px",
+                    border: "2px solid #2E5939",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    transition: "all 0.3s ease",
+                    fontSize: '15px'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = "rgba(46, 89, 57, 0.1)";
+                    e.target.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = "transparent";
+                    e.target.style.transform = "translateY(0)";
+                  }}
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
