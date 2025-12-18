@@ -363,15 +363,15 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_SERVICIOS = "http://localhost:5272/api/Servicios";
-const API_PRODUCTOS_POR_SERVICIO = "http://localhost:5272/api/ProductoPorServicio";
-const API_SEDES_POR_SERVICIO = "http://localhost:5272/api/SedesPorServicio";
-const API_SERVICIOS_POR_PAQUETE = "http://localhost:5272/api/ServicioPorPaquete";
-const API_SERVICIOS_RESERVA = "http://localhost:5272/api/ServiciosReserva";
-const API_PRODUCTOS = "http://localhost:5272/api/Productos";
-const API_SEDES = "http://localhost:5272/api/Sede";
-const API_PAQUETES = "http://localhost:5272/api/Paquetes";
-const API_RESERVAS = "http://localhost:5272/api/Reservas";
+const API_SERVICIOS = "https://www.bosquesagrado.somee.com/api/Servicio";
+const API_PRODUCTOS_POR_SERVICIO = "https://www.bosquesagrado.somee.com/api/ProductoPorServicio";
+const API_SEDES_POR_SERVICIO = "https://www.bosquesagrado.somee.com/api/SedesPorServicio";
+const API_SERVICIOS_POR_PAQUETE = "https://www.bosquesagrado.somee.com/api/ServicioPorPaquete";
+const API_SERVICIOS_RESERVA = "https://www.bosquesagrado.somee.com/api/ServiciosReserva";
+const API_PRODUCTOS = "https://www.bosquesagrado.somee.com/api/Productos";
+const API_SEDES = "https://www.bosquesagrado.somee.com/api/Sede";
+const API_PAQUETES = "https://www.bosquesagrado.somee.com/api/Paquetes";
+const API_RESERVAS = "https://www.bosquesagrado.somee.com/api/Reservas";
 const ITEMS_PER_PAGE = 5;
 
 // ===============================================
@@ -1491,7 +1491,7 @@ const Gestiservi = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
+      errorMessage = "No se puede conectar al servidor en https://www.bosquesagrado.somee.com";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;

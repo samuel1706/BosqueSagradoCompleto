@@ -37,7 +37,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchSedes = async () => {
       try {
-        const response = await fetch("http://localhost:5272/api/reportes/sedes");
+        const response = await fetch("https://www.bosquesagrado.somee.com/api/reportes/sedes");
         if (!response.ok) {
           throw new Error("Error al obtener sedes");
         }
@@ -61,7 +61,7 @@ const Dashboard = () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:5272/api/reportes/reservas/${sedeSeleccionada}/${filtro}`
+          `https://www.bosquesagrado.somee.com/api/reportes/reservas/${sedeSeleccionada}/${filtro}`
         );
 
         if (!response.ok) {
@@ -86,7 +86,7 @@ const Dashboard = () => {
     const fetchDatosGraficos = async () => {
       try {
         const responseCabañas = await fetch(
-          `http://localhost:5272/api/reportes/cabanas-populares/${filtro}`
+          `https://www.bosquesagrado.somee.com/api/reportes/cabanas-populares/${filtro}`
         );
         if (responseCabañas.ok) {
           const dataCabañas = await responseCabañas.json();
@@ -94,7 +94,7 @@ const Dashboard = () => {
         }
 
         const responseSedes = await fetch(
-          `http://localhost:5272/api/reportes/reservas-sedes/${filtro}`
+          `https://www.bosquesagrado.somee.com/api/reportes/reservas-sedes/${filtro}`
         );
         if (responseSedes.ok) {
           const dataSedes = await responseSedes.json();
@@ -120,7 +120,7 @@ const Dashboard = () => {
         console.log(`🔍 BUSCANDO RESERVAS: Sede=${sedeSeleccionada}, Año=${año}, Mes=${mes}`);
         
         const response = await fetch(
-          `http://localhost:5272/api/reportes/reservas-mes/${sedeSeleccionada}/${año}/${mes}`
+          `https://www.bosquesagrado.somee.com/api/reportes/reservas-mes/${sedeSeleccionada}/${año}/${mes}`
         );
         
         if (response.ok) {
@@ -168,7 +168,7 @@ const Dashboard = () => {
     try {
       console.log(`📅 Obteniendo reservas para fecha EXACTA: ${fecha}`);
       const response = await fetch(
-        `http://localhost:5272/api/reportes/reservas-fecha/${sedeSeleccionada}/${fecha}`
+        `https://www.bosquesagrado.somee.com/api/reportes/reservas-fecha/${sedeSeleccionada}/${fecha}`
       );
       
       if (response.ok) {

@@ -275,7 +275,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_BASE_URL = "http://localhost:5272/api";
+const API_BASE_URL = "https://www.bosquesagrado.somee.com/api";
 const API_RESERVAS = `${API_BASE_URL}/Reservas`;
 const API_CABANAS = `${API_BASE_URL}/Cabanas`;
 const API_SEDES = `${API_BASE_URL}/Sede`;
@@ -283,7 +283,7 @@ const API_PAQUETES = `${API_BASE_URL}/Paquetes`;
 const API_ESTADOS = `${API_BASE_URL}/EstadosReserva`;
 const API_USUARIOS = `${API_BASE_URL}/Usuarios`;
 const API_METODOS_PAGO = `${API_BASE_URL}/metodopago`;
-const API_SERVICIOS = `${API_BASE_URL}/Servicios`;
+const API_SERVICIOS = `${API_BASE_URL}/Servicio`;
 const API_SERVICIOS_RESERVA = `${API_BASE_URL}/ServiciosReserva`;
 const API_ABONOS = `${API_BASE_URL}/Abonos`;
 const API_VENTAS = `${API_BASE_URL}/Ventas`;
@@ -1324,7 +1324,7 @@ const GestionReserva = () => {
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
+      errorMessage = "No se puede conectar al servidor en https://www.bosquesagrado.somee.com";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;

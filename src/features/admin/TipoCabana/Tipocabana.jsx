@@ -254,7 +254,7 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_TIPO_CABANA = "http://localhost:5272/api/TipoCabana";
+const API_TIPO_CABANA = "https://www.bosquesagrado.somee.com/api/TipoCabana";
 const ITEMS_PER_PAGE = 10;
 
 // ===============================================
@@ -867,7 +867,7 @@ const TipoCabana = () => {
 
     if (axios.isAxiosError(error)) {
       if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-        errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en http://localhost:5272";
+        errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en https://www.bosquesagrado.somee.com";
       } else if (error.code === 'ECONNREFUSED') {
         errorMessage = "No se puede conectar al servidor. Verifica que esté ejecutándose en el puerto 5272";
       } else if (error.response) {

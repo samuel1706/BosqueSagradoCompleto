@@ -1,8 +1,8 @@
 // src/components/Ventas.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle,
-  FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaCreditCard,
+import { 
+  FaEye, FaEdit, FaTrash, FaTimes, FaSearch, FaPlus, FaExclamationTriangle, 
+  FaCheck, FaInfoCircle, FaDollarSign, FaCalendarAlt, FaCreditCard, 
   FaReceipt, FaShoppingCart, FaFilter, FaSort, FaSortUp, FaSortDown,
   FaPrint, FaFileExport, FaChartBar, FaStore, FaUser, FaClipboardList,
   FaBox, FaConciergeBell, FaSlidersH, FaTrashAlt, FaPlusCircle
@@ -252,11 +252,11 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_VENTAS = "http://localhost:5272/api/Ventas";
-const API_RESERVAS = "http://localhost:5272/api/Reservas";
-const API_PRODUCTOS = "http://localhost:5272/api/Productos";
-const API_SERVICIOS = "http://localhost:5272/api/Servicios";
-const API_DETALLE_VENTA = "http://localhost:5272/api/DetalleVenta";
+const API_VENTAS = "https://www.bosquesagrado.somee.com/api/Ventas";
+const API_RESERVAS = "https://www.bosquesagrado.somee.com/api/Reservas";
+const API_PRODUCTOS = "https://www.bosquesagrado.somee.com/api/Producto";
+const API_SERVICIOS = "https://www.bosquesagrado.somee.com/api/Servicio";
+const API_DETALLE_VENTA = "https://www.bosquesagrado.somee.com/api/DetalleVenta";
 const ITEMS_PER_PAGE = 10;
 
 // Métodos de pago predefinidos
@@ -300,19 +300,19 @@ const formatPrice = (price) => {
 // ===============================================
 // COMPONENTE FormField MEJORADO
 // ===============================================
-const FormField = ({
-  label,
-  name,
-  type = "text",
-  value,
-  onChange,
+const FormField = ({ 
+  label, 
+  name, 
+  type = "text", 
+  value, 
+  onChange, 
   onBlur,
-  error,
+  error, 
   success,
   warning,
   options = [],
-  style = {},
-  required = true,
+  style = {}, 
+  required = true, 
   disabled = false,
   maxLength,
   placeholder,
@@ -342,7 +342,7 @@ const FormField = ({
     } else {
       filteredValue = value;
     }
-   
+    
     onChange({ target: { name, value: filteredValue } });
   };
 
@@ -644,13 +644,13 @@ const Ventas = () => {
     // Aplicar filtros avanzados
     if (filters.estado !== "all") {
       const estadoFiltro = filters.estado === "activo";
-      filtered = filtered.filter(venta =>
+      filtered = filtered.filter(venta => 
         venta.estado === estadoFiltro || venta.estado === String(estadoFiltro)
       );
     }
 
     if (filters.metodoPago !== "all") {
-      filtered = filtered.filter(venta =>
+      filtered = filtered.filter(venta => 
         venta.metodoPago === filters.metodoPago
       );
     }
@@ -781,7 +781,7 @@ const Ventas = () => {
           opacity: 1;
         }
       }
-     
+      
       @keyframes slideDown {
         from {
           opacity: 0;
@@ -890,7 +890,7 @@ const Ventas = () => {
     else if (trimmedValue && fieldName === 'fechaVenta') {
       const fecha = new Date(trimmedValue);
       const ahora = new Date();
-     
+      
       if (fecha > ahora) {
         warning = "La fecha de venta es futura. Verifique que sea correcta.";
       }
@@ -923,7 +923,7 @@ const Ventas = () => {
     const estadoValid = validateField('estado', newVenta.estado);
 
     const isValid = fechaValid && reservaValid && metodoPagoValid && estadoValid;
-   
+    
     if (!isValid) {
       displayAlert("Por favor, corrige los errores en el formulario antes de guardar.", "error");
       setTimeout(() => {
@@ -1008,7 +1008,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-     
+      
       if (Array.isArray(res.data)) {
         setVentas(res.data);
       } else {
@@ -1029,7 +1029,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-     
+      
       if (Array.isArray(res.data)) {
         setDetallesVenta(res.data);
       }
@@ -1047,7 +1047,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-     
+      
       if (Array.isArray(res.data)) {
         setReservas(res.data);
       }
@@ -1065,7 +1065,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-     
+      
       if (Array.isArray(res.data)) {
         setProductos(res.data);
       } else {
@@ -1086,7 +1086,7 @@ const Ventas = () => {
           'Content-Type': 'application/json'
         }
       });
-     
+      
       if (Array.isArray(res.data)) {
         setServicios(res.data);
       } else {
@@ -1103,11 +1103,11 @@ const Ventas = () => {
   const handleApiError = (error, operation) => {
     let errorMessage = `Error al ${operation}`;
     let alertType = "error";
-   
+    
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
       errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose.";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor en http://localhost:5272";
+      errorMessage = "No se puede conectar al servidor en https://www.bosquesagrado.somee.com";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = `Error de validación: ${error.response.data?.title || error.response.data?.message || 'Datos inválidos'}`;
@@ -1126,7 +1126,7 @@ const Ventas = () => {
     } else {
       errorMessage = `Error inesperado: ${error.message}`;
     }
-   
+    
     setError(errorMessage);
     displayAlert(errorMessage, alertType);
   };
@@ -1140,7 +1140,7 @@ const Ventas = () => {
         info: "Reserva no encontrada"
       };
     }
-   
+    
     return {
       existe: true,
       info: `Reserva #${reserva.idReserva}`,
@@ -1204,9 +1204,9 @@ const Ventas = () => {
   const toggleEstado = async (venta) => {
     setLoading(true);
     try {
-      const updatedVenta = {
-        ...venta,
-        estado: !venta.estado
+      const updatedVenta = { 
+        ...venta, 
+        estado: !venta.estado 
       };
       await axios.put(`${API_VENTAS}/${venta.idVenta}`, updatedVenta, {
         headers: { 'Content-Type': 'application/json' }
@@ -1336,7 +1336,7 @@ const Ventas = () => {
   // Guarda venta y detalles (POST/PUT según corresponda) - CORREGIDA
   const handleAddVenta = async (e) => {
     e.preventDefault();
-   
+    
     if (isSubmitting) {
       displayAlert("Ya se está procesando una solicitud. Por favor espere.", "warning");
       return;
@@ -1348,7 +1348,7 @@ const Ventas = () => {
 
     setIsSubmitting(true);
     setLoading(true);
-   
+    
     try {
       // Preparar datos según la estructura de la API
       const ventaData = {
@@ -1474,7 +1474,7 @@ const Ventas = () => {
         console.error("Error del servidor:", error.response.data);
         console.error("Status:", error.response.status);
         console.error("Headers:", error.response.headers);
-       
+        
         let errorMessage = "Error del servidor";
         if (error.response.data) {
           if (typeof error.response.data === 'string') {
@@ -1485,7 +1485,7 @@ const Ventas = () => {
             errorMessage = error.response.data.title;
           }
         }
-       
+        
         displayAlert(`Error: ${errorMessage}`, "error");
       } else if (error.request) {
         displayAlert("No se recibió respuesta del servidor. Verifica que esté en ejecución.", "error");
@@ -1505,7 +1505,7 @@ const Ventas = () => {
         await axios.delete(`${API_VENTAS}/${ventaToDelete.idVenta}`);
         displayAlert("Venta eliminada exitosamente.", "success");
         await fetchVentas();
-       
+        
         if (paginatedVentas.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         }
@@ -1527,14 +1527,14 @@ const Ventas = () => {
     const reservaInfo = getReservaInfo(venta.idReserva);
     const detalles = getDetallesVenta(venta.idVenta);
     const totalVenta = calcularTotalVenta(venta.idVenta);
-   
+    
     return (
       <div>
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>ID Venta</div>
           <div style={detailValueStyle}>#{venta.idVenta}</div>
         </div>
-       
+        
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>Fecha de Venta</div>
           <div style={detailValueStyle}>{formatDate(venta.fechaVenta)}</div>
@@ -1543,7 +1543,7 @@ const Ventas = () => {
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>Reserva Asociada</div>
           <div style={detailValueStyle}>
-            <div style={{
+            <div style={{ 
               backgroundColor: reservaInfo.existe ? '#E8F5E8' : '#fff3cd',
               padding: '10px',
               borderRadius: '8px',
@@ -1570,9 +1570,9 @@ const Ventas = () => {
         <div style={detailItemStyle}>
           <div style={detailLabelStyle}>Método de Pago</div>
           <div style={detailValueStyle}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
               gap: '10px',
               backgroundColor: '#F7F4EA',
               padding: '10px',
@@ -1681,18 +1681,18 @@ const Ventas = () => {
   // ===============================================
   return (
     <div style={{ position: "relative", padding: 20, marginLeft: 260, backgroundColor: "#f5f8f2", minHeight: "100vh" }}>
-     
+      
       {/* Alerta Mejorada */}
       {showAlert && (
         <div style={getAlertStyle(alertType)}>
           {getAlertIcon(alertType)}
           <span style={{ flex: 1 }}>{alertMessage}</span>
-          <button
+          <button 
             onClick={() => setShowAlert(false)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'inherit',
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'inherit', 
               cursor: 'pointer',
               fontSize: '16px',
               padding: 0,
@@ -1821,7 +1821,7 @@ const Ventas = () => {
               Total Ventas
             </div>
           </div>
-         
+          
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -1839,7 +1839,7 @@ const Ventas = () => {
               Ventas Activas
             </div>
           </div>
-         
+          
           <div style={{
             backgroundColor: '#E8F5E8',
             padding: '20px',
@@ -1897,7 +1897,7 @@ const Ventas = () => {
       )}
 
       {/* Barra de búsqueda y filtros - MEJORADO COMO EN TIPO CABAÑA */}
-      <div style={{
+      <div style={{ 
         marginBottom: '20px',
         backgroundColor: '#fff',
         borderRadius: '10px',
@@ -1905,9 +1905,9 @@ const Ventas = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         {/* Búsqueda principal CON BOTÓN DE FILTROS AL LADO */}
-        <div style={{
-          display: 'flex',
-          gap: '15px',
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
           alignItems: 'center',
           flexWrap: 'wrap',
           marginBottom: showFilters ? '15px' : '0'
@@ -2134,7 +2134,7 @@ const Ventas = () => {
                 <FaTimes />
               </button>
             </div>
-           
+            
             <form onSubmit={handleAddVenta}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px 20px', marginBottom: '20px' }}>
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -2397,7 +2397,7 @@ const Ventas = () => {
                 <FaTimes />
               </button>
             </div>
-           
+            
             <DetallesVenta venta={selectedVenta} />
 
             <div style={{ display: "flex", justifyContent: "center", gap: '10px', marginTop: 20 }}>
@@ -2452,9 +2452,9 @@ const Ventas = () => {
             <p style={{ marginBottom: 30, fontSize: '1.1rem', color: "#2E5939" }}>
               ¿Estás seguro de eliminar la venta "<strong>#{ventaToDelete.idVenta}</strong>"?
             </p>
-           
-            <div style={{
-              backgroundColor: '#fff3cd',
+            
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
               border: '1px solid #ffeaa7',
               borderRadius: '8px',
               padding: '15px',
@@ -2606,7 +2606,7 @@ const Ventas = () => {
               </tr>
             ) : (
               paginatedVentas.map((venta) => (
-                <tr key={venta.idVenta} style={{
+                <tr key={venta.idVenta} style={{ 
                   borderBottom: "1px solid #eee",
                   backgroundColor: venta.estado ? '#fff' : '#f9f9f9'
                 }}>
@@ -2620,9 +2620,9 @@ const Ventas = () => {
                     #{venta.idReserva}
                   </td>
                   <td style={{ padding: "15px", textAlign: "center" }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
                       gap: '8px',
                       justifyContent: 'center'
                     }}>
@@ -2703,7 +2703,7 @@ const Ventas = () => {
           >
             Anterior
           </button>
-         
+          
           <div style={{ display: "flex", gap: 5 }}>
             {[...Array(totalPages)].map((_, i) => {
               const page = i + 1;
@@ -2719,7 +2719,7 @@ const Ventas = () => {
               );
             })}
           </div>
-         
+          
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -2728,9 +2728,9 @@ const Ventas = () => {
             Siguiente
           </button>
 
-          <div style={{
-            color: '#2E5939',
-            fontSize: '14px',
+          <div style={{ 
+            color: '#2E5939', 
+            fontSize: '14px', 
             marginLeft: '15px',
             fontWeight: '500'
           }}>
@@ -2744,9 +2744,9 @@ const Ventas = () => {
         <div style={{ textAlign: 'center', padding: '40px', color: '#2E5939' }}>
           <div style={{ fontSize: '18px', marginBottom: '10px' }}>Cargando datos...</div>
           <div style={{ width: '100%', height: '4px', backgroundColor: '#E8F5E8', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{
-              width: '60%',
-              height: '100%',
+            <div style={{ 
+              width: '60%', 
+              height: '100%', 
               backgroundColor: '#2E5939',
               animation: 'loading 1.5s infinite ease-in-out'
             }}></div>
@@ -2757,4 +2757,4 @@ const Ventas = () => {
   );
 };
 
-export default Ventas;  
+export default Ventas;

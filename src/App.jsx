@@ -23,7 +23,7 @@ import Disponibilidad from "./features/admin/Disponibilidad/Disponibilidad";
 import Ventas from "./features/admin/Ventas/Ventas";
 
 // ✅ Componentes del Cliente
-import HomeCliente from "./features/cliente/HomeCliente";
+import HomeCliente from "./features/Cliente/HomeCliente";
 import Landing from "./features/Cliente/Landing";
 import MisReservas from "./features/Cliente/MisReservas";
 import ReservaForm from "./features/Cliente/ReservaForm";

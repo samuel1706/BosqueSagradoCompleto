@@ -365,8 +365,8 @@ const VALIDATION_RULES = {
 // ===============================================
 // DATOS DE CONFIGURACIÓN
 // ===============================================
-const API_DISPONIBILIDAD = "http://localhost:5272/api/Disponibilidad";
-const API_CABANAS = "http://localhost:5272/api/Cabanas";
+const API_DISPONIBILIDAD = "https://www.bosquesagrado.somee.com/api/Disponibilidad";
+const API_CABANAS = "https://www.bosquesagrado.somee.com/api/Cabanas";
 
 // ===============================================
 // COMPONENTE FormField PARA DISPONIBILIDAD
@@ -801,9 +801,9 @@ const Disponibilidad = () => {
     let alertType = "error";
     
     if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-      errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en http://localhost:5272";
+      errorMessage = "Error de conexión. Verifica que el servidor esté ejecutándose en https://www.bosquesagrado.somee.com";
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = "No se puede conectar al servidor. Asegúrate de que la API esté corriendo en http://localhost:5272";
+      errorMessage = "No se puede conectar al servidor. Asegúrate de que la API esté corriendo en https://www.bosquesagrado.somee.com";
     } else if (error.response) {
       if (error.response.status === 400) {
         errorMessage = "Error de validación: Verifica los datos ingresados";

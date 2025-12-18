@@ -175,7 +175,7 @@ const btnSecondaryStyle = {
 // ===============================================
 // URLs DE LA API
 // ===============================================
-const API_BASE_URL = "http://localhost:5272/api";
+const API_BASE_URL = "https://www.bosquesagrado.somee.com/api";
 const API_URLS = {
   RESERVAS: `${API_BASE_URL}/Reservas`,
   SEDES: `${API_BASE_URL}/Sede`,
@@ -185,7 +185,7 @@ const API_URLS = {
   METODOS_PAGO: `${API_BASE_URL}/metodopago`,
   SEDE_POR_PAQUETE: `${API_BASE_URL}/SedePorPaquete`,
   CABANA_POR_SEDE: `${API_BASE_URL}/CabanaPorSede`,
-  SERVICIOS: `${API_BASE_URL}/Servicios`,
+  SERVICIOS: `${API_BASE_URL}/Servicio`,
   SERVICIOS_RESERVA: `${API_BASE_URL}/ServiciosReserva`,
   SERVICIO_POR_PAQUETE: `${API_BASE_URL}/ServicioPorPaquete`,
   SEDES_POR_SERVICIO: `${API_BASE_URL}/SedesPorServicio`,

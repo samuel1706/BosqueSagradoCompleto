@@ -98,7 +98,7 @@ const btnSecondary = {
 // ===============================================
 // CONFIG API COMPLETA
 // ===============================================
-const API_BASE = "http://localhost:5272/api";
+const API_BASE = "https://www.bosquesagrado.somee.com/api";
 const API_RESERVAS = `${API_BASE}/Reservas`;
 const API_SEDES = `${API_BASE}/Sede`;
 const API_CABANAS = `${API_BASE}/Cabanas`;
